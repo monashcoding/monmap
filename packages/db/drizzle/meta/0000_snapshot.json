@@ -1,9 +1,93 @@
 {
-  "id": "e55e3d78-db1b-4515-870f-498492f44932",
+  "id": "a6302018-c42f-489e-b4f6-ecad0088b958",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.area_of_study_units": {
+      "name": "area_of_study_units",
+      "schema": "",
+      "columns": {
+        "aos_year": {
+          "name": "aos_year",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "aos_code": {
+          "name": "aos_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_code": {
+          "name": "unit_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grouping": {
+          "name": "grouping",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "aos_units_aos_idx": {
+          "name": "aos_units_aos_idx",
+          "columns": [
+            {
+              "expression": "aos_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "aos_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "aos_units_unit_idx": {
+          "name": "aos_units_unit_idx",
+          "columns": [
+            {
+              "expression": "unit_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "area_of_study_units_aos_year_aos_code_unit_code_grouping_pk": {
+          "name": "area_of_study_units_aos_year_aos_code_unit_code_grouping_pk",
+          "columns": [
+            "aos_year",
+            "aos_code",
+            "unit_code",
+            "grouping"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.areas_of_study": {
       "name": "areas_of_study",
       "schema": "",
@@ -129,8 +213,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "relationship": {
-          "name": "relationship",
+        "kind": {
+          "name": "kind",
+          "type": "aos_relationship_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "relationship_label": {
+          "name": "relationship_label",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -178,18 +269,45 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "course_aos_kind_idx": {
+          "name": "course_aos_kind_idx",
+          "columns": [
+            {
+              "expression": "course_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "course_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "course_areas_of_study_course_year_course_code_aos_year_aos_code_relationship_pk": {
-          "name": "course_areas_of_study_course_year_course_code_aos_year_aos_code_relationship_pk",
+        "course_areas_of_study_course_year_course_code_aos_year_aos_code_relationship_label_pk": {
+          "name": "course_areas_of_study_course_year_course_code_aos_year_aos_code_relationship_label_pk",
           "columns": [
             "course_year",
             "course_code",
             "aos_year",
             "aos_code",
-            "relationship"
+            "relationship_label"
           ]
         }
       },
@@ -337,6 +455,162 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.enrolment_rules": {
+      "name": "enrolment_rules",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "year": {
+          "name": "year",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_code": {
+          "name": "unit_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rule_type": {
+          "name": "rule_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "enrolment_rules_unit_idx": {
+          "name": "enrolment_rules_unit_idx",
+          "columns": [
+            {
+              "expression": "year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "unit_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.requisite_refs": {
+      "name": "requisite_refs",
+      "schema": "",
+      "columns": {
+        "year": {
+          "name": "year",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_code": {
+          "name": "unit_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requisite_type": {
+          "name": "requisite_type",
+          "type": "requisite_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requires_unit_code": {
+          "name": "requires_unit_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "requisite_refs_forward_idx": {
+          "name": "requisite_refs_forward_idx",
+          "columns": [
+            {
+              "expression": "year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "unit_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "requisite_refs_reverse_idx": {
+          "name": "requisite_refs_reverse_idx",
+          "columns": [
+            {
+              "expression": "year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "requires_unit_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "requisite_refs_year_unit_code_requisite_type_requires_unit_code_pk": {
+          "name": "requisite_refs_year_unit_code_requisite_type_requires_unit_code_pk",
+          "columns": [
+            "year",
+            "unit_code",
+            "requisite_type",
+            "requires_unit_code"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.requisites": {
       "name": "requisites",
       "schema": "",
@@ -461,6 +735,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "attendance_mode_code": {
+          "name": "attendance_mode_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "offered": {
           "name": "offered",
           "type": "boolean",
@@ -508,6 +788,21 @@
             },
             {
               "expression": "location",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "offerings_mode_idx": {
+          "name": "offerings_mode_idx",
+          "columns": [
+            {
+              "expression": "attendance_mode_code",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -652,6 +947,18 @@
     }
   },
   "enums": {
+    "public.aos_relationship_kind": {
+      "name": "aos_relationship_kind",
+      "schema": "public",
+      "values": [
+        "major",
+        "extended_major",
+        "minor",
+        "specialisation",
+        "elective",
+        "other"
+      ]
+    },
     "public.requisite_type": {
       "name": "requisite_type",
       "schema": "public",
