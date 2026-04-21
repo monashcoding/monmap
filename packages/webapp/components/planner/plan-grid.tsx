@@ -20,6 +20,25 @@ import { usePlanner } from "./planner-context";
 import { SemesterSlot } from "./semester-slot";
 
 /**
+ * Per-year accent gradients. All sit in Monash purple so the strips
+ * read as chapter dividers rather than decoration; each year drops a
+ * step darker to reinforce "later in the degree = deeper". White
+ * text + yellow accent dot gives the strip a badge-like feel without
+ * competing with the coloured unit cards below.
+ */
+const YEAR_GRADIENTS: string[] = [
+  "linear-gradient(90deg, #5b2d90 0%, #7b4ab5 100%)",
+  "linear-gradient(90deg, #4a248a 0%, #5b2d90 100%)",
+  "linear-gradient(90deg, #3a1a63 0%, #4a248a 100%)",
+  "linear-gradient(90deg, #2a104f 0%, #3a1a63 100%)",
+  "linear-gradient(90deg, #1c0836 0%, #2a104f 100%)",
+];
+
+function yearGradient(index: number): string {
+  return YEAR_GRADIENTS[Math.min(index, YEAR_GRADIENTS.length - 1)];
+}
+
+/**
  * The main planner pane — one row per (year, slot). The left label
  * column carries a three-dot menu that lets a student grow or shrink
  * the slot's unit capacity (1..MAX_SLOT_CAPACITY, never below the
@@ -30,7 +49,7 @@ export function PlanGrid() {
   const startYear = Number(state.courseYear) || new Date().getFullYear();
 
   return (
-    <div className="flex min-w-0 flex-col gap-0 rounded-3xl border bg-card shadow-card">
+    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-3xl border bg-card shadow-card">
       {state.years.map((year, yearIndex) =>
         year.slots.map((slot, slotIndex) => (
           <SemesterRow
@@ -83,8 +102,11 @@ function SemesterRow({
   return (
     <>
       {showYearHeader ? (
-        <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div
+          className="relative flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-white"
+          style={{ backgroundImage: yearGradient(yearIndex) }}
+        >
+          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-white">
             {yearHeaderLabel}
           </h3>
           {removableYear ? (
@@ -93,6 +115,7 @@ function SemesterRow({
               size="icon-xs"
               aria-label={`Remove ${yearHeaderLabel}`}
               onClick={onRemoveYear}
+              className="text-white/70 hover:bg-white/15 hover:text-white"
             >
               <Trash2Icon />
             </Button>

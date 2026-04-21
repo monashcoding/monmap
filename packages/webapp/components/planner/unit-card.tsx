@@ -128,7 +128,7 @@ function UnitMenu({
       {open ? (
         <div
           role="menu"
-          className="absolute right-1 top-6 z-10 flex flex-col rounded-xl border bg-popover p-1 shadow-lg"
+          className="absolute right-1 top-6 z-10 flex w-max flex-col rounded-xl border bg-popover p-1 shadow-lg"
           onMouseLeave={() => onOpenChange(false)}
         >
           <button
@@ -137,7 +137,7 @@ function UnitMenu({
               onOpenChange(false);
               onRemove();
             }}
-            className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+            className="flex items-center gap-2 whitespace-nowrap rounded-md px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
           >
             <XIcon className="size-3" />
             Remove unit
