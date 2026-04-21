@@ -163,6 +163,66 @@ export interface CourseRows {
   };
 }
 
+/**
+ * Walk a course's curriculumStructure and return every AoS code it
+ * references, paired with the nearest ancestor container's title (e.g.
+ * "Part B. Major studies", "Discipline elective studies"). The title
+ * gives the UI enough context to classify the reference without us
+ * baking in Monash's curriculum taxonomy here.
+ */
+export function extractCourseAosRefs(
+  courseYear: string,
+  courseCode: string,
+  curriculumStructure: unknown,
+  aosCodes: ReadonlySet<string>,
+): Array<{
+  courseYear: string;
+  courseCode: string;
+  aosYear: string;
+  aosCode: string;
+  relationship: string;
+}> {
+  const out = new Map<string, {
+    courseYear: string;
+    courseCode: string;
+    aosYear: string;
+    aosCode: string;
+    relationship: string;
+  }>();
+
+  const walk = (node: unknown, nearestTitle: string): void => {
+    if (Array.isArray(node)) {
+      for (const x of node) walk(x, nearestTitle);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    const n = node as Record<string, unknown>;
+    const title = typeof n["title"] === "string" ? n["title"] : typeof n["name"] === "string" ? n["name"] : null;
+    const titleForChildren = title || nearestTitle;
+    for (const [, v] of Object.entries(n)) {
+      if (typeof v === "string") {
+        const upper = v.toUpperCase();
+        if (aosCodes.has(upper)) {
+          const key = `${upper}|${titleForChildren}`;
+          if (!out.has(key)) {
+            out.set(key, {
+              courseYear,
+              courseCode,
+              aosYear: courseYear,
+              aosCode: upper,
+              relationship: titleForChildren || "referenced",
+            });
+          }
+        }
+      } else {
+        walk(v, titleForChildren);
+      }
+    }
+  };
+  walk(curriculumStructure, "");
+  return [...out.values()];
+}
+
 export function parseCourse(year: string, raw: CourseContent): CourseRows {
   return {
     course: {
