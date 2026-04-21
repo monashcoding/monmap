@@ -4,9 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "scrape": "tsx src/index.ts",
-    "scrape:all": "tsx src/index.ts --all-years",
-    "typecheck": "tsc --noEmit",
+    "scrape": "pnpm --filter @monmap/scraper scrape",
+    "scrape:all": "pnpm --filter @monmap/scraper scrape -- --all-years",
+    "ingest": "pnpm --filter @monmap/ingest start",
+    "db:generate": "pnpm --filter @monmap/db generate",
+    "db:migrate": "pnpm --filter @monmap/db migrate",
+    "db:studio": "pnpm --filter @monmap/db studio",
+    "typecheck": "pnpm -r typecheck",
     "package": "tar -czf monmap-handbook-$(date +%Y%m%d).tar.gz -C data raw manifest.json && ls -lh monmap-handbook-*.tar.gz"
   },
   "devDependencies": {

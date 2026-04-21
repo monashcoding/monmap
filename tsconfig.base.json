@@ -11,9 +11,6 @@
     "noEmit": true,
     "skipLibCheck": true,
     "lib": ["ES2022"],
-    "types": ["node"],
-    "outDir": "dist",
-    "rootDir": "src"
-  },
-  "include": ["src/**/*"]
+    "types": ["node"]
+  }
 }
