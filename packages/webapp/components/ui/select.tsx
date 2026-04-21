@@ -6,7 +6,39 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+type SelectLabelRegistry = {
+  get: (value: unknown) => React.ReactNode | undefined
+  register: (value: unknown, label: React.ReactNode) => () => void
+}
+
+const SelectLabelContext = React.createContext<SelectLabelRegistry | null>(null)
+
+function Select({
+  children,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Root>) {
+  const mapRef = React.useRef<Map<unknown, React.ReactNode>>(new Map())
+  const [, force] = React.useReducer((n: number) => n + 1, 0)
+  const api = React.useMemo<SelectLabelRegistry>(
+    () => ({
+      get: (value) => mapRef.current.get(value),
+      register: (value, label) => {
+        mapRef.current.set(value, label)
+        force()
+        return () => {
+          mapRef.current.delete(value)
+          force()
+        }
+      },
+    }),
+    []
+  )
+  return (
+    <SelectLabelContext.Provider value={api}>
+      <SelectPrimitive.Root {...props}>{children}</SelectPrimitive.Root>
+    </SelectLabelContext.Provider>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -18,13 +50,30 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   )
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({
+  className,
+  children,
+  ...props
+}: SelectPrimitive.Value.Props) {
+  const ctx = React.useContext(SelectLabelContext)
+  const resolved =
+    children ??
+    ((value: unknown) => {
+      if (value == null || value === "") return null
+      const label = ctx?.get(value)
+      if (label != null) return label
+      return typeof value === "string" || typeof value === "number"
+        ? String(value)
+        : null
+    })
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
       className={cn("flex flex-1 text-left", className)}
       {...props}
-    />
+    >
+      {resolved}
+    </SelectPrimitive.Value>
   )
 }
 
@@ -111,10 +160,19 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  label,
+  value,
   ...props
-}: SelectPrimitive.Item.Props) {
+}: SelectPrimitive.Item.Props & { label?: React.ReactNode }) {
+  const ctx = React.useContext(SelectLabelContext)
+  const registered = label ?? children
+  React.useEffect(() => {
+    if (!ctx) return
+    return ctx.register(value, registered)
+  }, [ctx, value, registered])
   return (
     <SelectPrimitive.Item
+      value={value}
       data-slot="select-item"
       className={cn(
         "relative flex w-full cursor-default items-center gap-2.5 rounded-2xl py-2 pr-8 pl-3 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",

@@ -13,10 +13,62 @@ import {
 } from "@/components/ui/input-group"
 import { ChevronDownIcon, XIcon, CheckIcon } from "lucide-react"
 
-const Combobox = ComboboxPrimitive.Root
+type ComboboxLabelRegistry = {
+  get: (value: unknown) => React.ReactNode | undefined
+  register: (value: unknown, label: React.ReactNode) => () => void
+}
 
-function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
-  return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
+const ComboboxLabelContext = React.createContext<ComboboxLabelRegistry | null>(
+  null
+)
+
+function Combobox(props: React.ComponentProps<typeof ComboboxPrimitive.Root>) {
+  const mapRef = React.useRef<Map<unknown, React.ReactNode>>(new Map())
+  const [, force] = React.useReducer((n: number) => n + 1, 0)
+  const api = React.useMemo<ComboboxLabelRegistry>(
+    () => ({
+      get: (value) => mapRef.current.get(value),
+      register: (value, label) => {
+        mapRef.current.set(value, label)
+        force()
+        return () => {
+          mapRef.current.delete(value)
+          force()
+        }
+      },
+    }),
+    []
+  )
+  return (
+    <ComboboxLabelContext.Provider value={api}>
+      <ComboboxPrimitive.Root {...props} />
+    </ComboboxLabelContext.Provider>
+  )
+}
+
+function ComboboxValue({ children, ...props }: ComboboxPrimitive.Value.Props) {
+  const ctx = React.useContext(ComboboxLabelContext)
+  const resolved =
+    children ??
+    ((value: unknown) => {
+      if (value == null || value === "") return null
+      if (Array.isArray(value)) {
+        return value
+          .map((v) => ctx?.get(v) ?? (typeof v === "string" ? v : String(v)))
+          .filter(Boolean)
+          .join(", ")
+      }
+      const label = ctx?.get(value)
+      if (label != null) return label
+      return typeof value === "string" || typeof value === "number"
+        ? String(value)
+        : null
+    })
+  return (
+    <ComboboxPrimitive.Value data-slot="combobox-value" {...props}>
+      {resolved}
+    </ComboboxPrimitive.Value>
+  )
 }
 
 function ComboboxTrigger({
@@ -98,7 +150,7 @@ function ComboboxContent({
     "side" | "align" | "sideOffset" | "alignOffset" | "anchor"
   >) {
   return (
-    <ComboboxPrimitive.Portal>
+    <ComboboxPrimitive.Portal keepMounted>
       <ComboboxPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
@@ -134,10 +186,19 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
 function ComboboxItem({
   className,
   children,
+  label,
+  value,
   ...props
-}: ComboboxPrimitive.Item.Props) {
+}: ComboboxPrimitive.Item.Props & { label?: React.ReactNode }) {
+  const ctx = React.useContext(ComboboxLabelContext)
+  const registered = label ?? children
+  React.useEffect(() => {
+    if (!ctx || value === undefined) return
+    return ctx.register(value, registered)
+  }, [ctx, value, registered])
   return (
     <ComboboxPrimitive.Item
+      value={value}
       data-slot="combobox-item"
       className={cn(
         "relative flex w-full cursor-default items-center gap-2.5 rounded-2xl py-2 pr-8 pl-3 text-sm font-medium outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
