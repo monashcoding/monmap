@@ -129,6 +129,25 @@
     0 6px 14px -8px rgba(89, 45, 144, 0.16);
 }
 
+/*
+ * Short attention-grabbing pulse for error unit cards when the user
+ * presses Validate. Three beats of a red ring + 2 % scale-up is enough
+ * to catch the eye; any longer feels like an alarm.
+ */
+@keyframes validation-flash {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.25);
+    transform: scale(1.02);
+  }
+}
+@utility animate-validation-flash {
+  animation: validation-flash 0.55s ease-in-out 3;
+}
+
 /* Selection tint — picks up the brand yellow instead of system blue. */
 ::selection {
     background: color-mix(in oklch, var(--monash-yellow) 60%, transparent);

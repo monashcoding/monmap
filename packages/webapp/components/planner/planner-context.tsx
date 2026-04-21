@@ -61,6 +61,15 @@ export interface PlannerContextValue {
   mergeUnits: (units: PlannerUnit[]) => void;
   /** Load and set a new course by code. */
   switchCourse: (code: string) => Promise<void>;
+
+  /**
+   * Monotonic counter bumped each time the user asks "validate" —
+   * error unit cards watch this to run a brief pulse animation. Using
+   * a counter rather than a boolean lets the effect re-fire even if
+   * the count would otherwise be unchanged.
+   */
+  flashVersion: number;
+  flashErrors: () => void;
 }
 
 const PlannerCtx = createContext<PlannerContextValue | null>(null);
@@ -100,6 +109,20 @@ export function PlannerProvider({
   );
 
   const [isSyncing, startTransition] = useTransition();
+
+  const [flashVersion, setFlashVersion] = useState(0);
+  const flashErrors = useCallback(() => {
+    setFlashVersion((n) => n + 1);
+    // Scroll the first errored card into view so the pulse is never
+    // off-screen. Runs in the next tick so the DOM has had time to
+    // reflect the current validation pass.
+    requestAnimationFrame(() => {
+      const first = document.querySelector<HTMLElement>('[data-validation-status="error"]');
+      if (first) {
+        first.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  }, []);
 
   // Rehydrate from localStorage exactly once on mount. We do this in
   // an effect (not initial reducer state) so SSR and the first client
@@ -244,6 +267,8 @@ export function PlannerProvider({
     isSyncing,
     mergeUnits,
     switchCourse,
+    flashVersion,
+    flashErrors,
   };
 
   return <PlannerCtx.Provider value={value}>{children}</PlannerCtx.Provider>;

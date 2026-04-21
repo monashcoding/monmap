@@ -22,7 +22,7 @@ import { usePlanner } from "./planner-context";
  * text labels. State-only operations (no server round-trip).
  */
 export function LeftSidebar() {
-  const { state, dispatch, validations, switchCourse } = usePlanner();
+  const { state, dispatch, validations, switchCourse, flashErrors } = usePlanner();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const errorCount = useMemo(() => {
@@ -78,17 +78,13 @@ export function LeftSidebar() {
         description={errorCount === 0 ? "All good" : `${errorCount} issue${errorCount === 1 ? "" : "s"}`}
         tone={errorCount === 0 ? "good" : "bad"}
         onClick={() => {
-          toast[errorCount === 0 ? "success" : "warning"](
-            errorCount === 0
-              ? "Plan validates cleanly"
-              : `${errorCount} validation issue${errorCount === 1 ? "" : "s"}`,
-            {
-              description:
-                errorCount === 0
-                  ? "Every unit meets its prereqs and is offered in its slot."
-                  : "Hover or tap a red unit card to see details.",
-            },
-          );
+          if (errorCount === 0) {
+            toast.success("Plan validates cleanly", {
+              description: "Every unit meets its prereqs and is offered in its slot.",
+            });
+            return;
+          }
+          flashErrors();
         }}
       />
 

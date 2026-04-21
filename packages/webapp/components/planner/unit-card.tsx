@@ -6,7 +6,7 @@ import {
   MoreVerticalIcon,
   XIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { facultyStyle } from "@/lib/planner/faculty-color";
@@ -34,7 +34,7 @@ export function UnitCard({
   yearIndex: number;
   slotIndex: number;
 }) {
-  const { units, validations, dispatch } = usePlanner();
+  const { units, validations, dispatch, flashVersion } = usePlanner();
   const unit = units.get(code);
   const validation = validations.get(keyFor(yearIndex, slotIndex, code));
   const faculty = useMemo(() => facultyStyle(code), [code]);
@@ -47,8 +47,24 @@ export function UnitCard({
     return "ok";
   }, [validation]);
 
+  // Pulse the card when the user presses Validate and this card has
+  // outstanding errors. We key on flashVersion (a monotonic counter)
+  // so re-clicking Validate re-runs the animation even if the error
+  // set is unchanged.
+  const [isFlashing, setIsFlashing] = useState(false);
+  const lastFlashRef = useRef(0);
+  useEffect(() => {
+    if (flashVersion === lastFlashRef.current) return;
+    lastFlashRef.current = flashVersion;
+    if (flashVersion === 0 || status !== "error") return;
+    setIsFlashing(true);
+    const t = setTimeout(() => setIsFlashing(false), 1700);
+    return () => clearTimeout(t);
+  }, [flashVersion, status]);
+
   return (
     <div
+      data-validation-status={status}
       className={cn(
         "group/card relative flex min-w-0 items-stretch overflow-hidden rounded-xl border bg-background shadow-card transition-[transform,box-shadow,border-color] duration-200 animate-in fade-in-0 slide-in-from-top-1",
         "hover:-translate-y-px",
@@ -57,6 +73,7 @@ export function UnitCard({
         status === "warn" && "border-amber-500/70 ring-1 ring-amber-500/20",
         status === "ok" && "border-border",
         status === "loading" && "border-dashed",
+        isFlashing && "animate-validation-flash",
       )}
     >
       <div
