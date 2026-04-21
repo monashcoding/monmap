@@ -6,7 +6,8 @@
   "scripts": {
     "scrape": "tsx src/index.ts",
     "scrape:all": "tsx src/index.ts --all-years",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "package": "tar -czf monmap-handbook-$(date +%Y%m%d).tar.gz -C data raw manifest.json && ls -lh monmap-handbook-*.tar.gz"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
