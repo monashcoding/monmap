@@ -9,10 +9,15 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "test": "node --test 'lib/planner/*.test.ts'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@monmap/db": "workspace:*",
     "@base-ui/react": "^1.4.1",
+    "drizzle-orm": "^0.38.0",
+    "postgres": "^3.4.5",
+    "dotenv": "^16.4.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

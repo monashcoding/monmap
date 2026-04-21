@@ -2,7 +2,13 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * Light-only theme. Palette is built around Monash's yellow (#ffe330)
+ * and purple (#5b2d90): white paper-ish canvas, a faint lavender in
+ * surfaces/borders so the app doesn't read as "gray on white", and
+ * the brand purple as the interactive accent. The `.dark` variant
+ * is deliberately not shipped — see theme-provider.tsx.
+ */
 
 @theme inline {
     --font-heading: var(--font-sans);
@@ -48,82 +54,117 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    /* Brand anchors. Used directly by components that opt into the
+       Monash palette (the app icon, the Course Progression Guide
+       pill, the rails on FIT unit cards). */
+    --monash-yellow: #ffe330;
+    --monash-yellow-ink: #1d1300;
+    --monash-purple: #5b2d90;
+    --monash-purple-deep: #3a1a63;
+    --monash-purple-soft: #f4eef9;
+
+    /* Semantic tokens — what shadcn/base-ui pull from. */
+    --background: oklch(0.995 0.004 300);   /* paper white, a drop of lavender */
+    --foreground: oklch(0.17 0.02 295);     /* near-black, purple undertone */
+
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.17 0.02 295);
+
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: #ffe330;
-    --primary-foreground: #252525;
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: #ffe330;
-    --accent-foreground: #252525;
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: #7070e0;
-    --chart-2: #5757d3;
-    --chart-3: #4a4abf;
-    --chart-4: #3d3da8;
-    --chart-5: #303090;
+    --popover-foreground: oklch(0.17 0.02 295);
+
+    --primary: var(--monash-yellow);
+    --primary-foreground: var(--monash-yellow-ink);
+
+    /* Secondary = soft lavender surface — used for chips, badges,
+       and the low-contrast card zebra rows. */
+    --secondary: var(--monash-purple-soft);
+    --secondary-foreground: var(--monash-purple-deep);
+
+    --muted: oklch(0.965 0.01 300);
+    --muted-foreground: oklch(0.50 0.03 295);
+
+    /* Accent = Monash purple. This is the hover/press colour for
+       buttons, combobox items, and interactive list rows. Yellow
+       stays as the *brand* mark; purple is the *interaction* mark. */
+    --accent: var(--monash-purple);
+    --accent-foreground: #ffffff;
+
+    --destructive: oklch(0.58 0.22 27);
+
+    --border: oklch(0.92 0.015 300);
+    --input: oklch(0.94 0.01 300);
+    --ring: var(--monash-purple);
+
+    /* Chart palette — purple-leaning so data viz stays on-brand. */
+    --chart-1: #5b2d90;
+    --chart-2: #7b4ab5;
+    --chart-3: #a57fd4;
+    --chart-4: #ffe330;
+    --chart-5: #c99c00;
+
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: #ffe330;
-    --sidebar-primary-foreground: #252525;
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+
+    --sidebar: oklch(0.985 0.008 300);
+    --sidebar-foreground: oklch(0.17 0.02 295);
+    --sidebar-primary: var(--monash-yellow);
+    --sidebar-primary-foreground: var(--monash-yellow-ink);
+    --sidebar-accent: oklch(0.95 0.015 300);
+    --sidebar-accent-foreground: var(--monash-purple-deep);
+    --sidebar-border: oklch(0.92 0.015 300);
+    --sidebar-ring: var(--monash-purple);
 }
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: #ffe330;
-    --primary-foreground: #252525;
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: #ffe330;
-    --accent-foreground: #252525;
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: #7070e0;
-    --chart-2: #5757d3;
-    --chart-3: #4a4abf;
-    --chart-4: #3d3da8;
-    --chart-5: #303090;
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: #ffe330;
-    --sidebar-primary-foreground: #252525;
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+/*
+ * Consistent card elevation — one shadow, everywhere. Registered as
+ * a Tailwind v4 @utility so `className="shadow-card"` is recognised
+ * by the scanner and output in the final CSS. The subtle purple
+ * tint in the blur is what makes surfaces feel like they belong to
+ * the Monash palette rather than a generic neutral.
+ */
+@utility shadow-card {
+  box-shadow:
+    0 1px 0 rgba(17, 12, 30, 0.02),
+    0 4px 10px -4px rgba(17, 12, 30, 0.10),
+    0 6px 14px -8px rgba(89, 45, 144, 0.16);
+}
+
+/* Selection tint — picks up the brand yellow instead of system blue. */
+::selection {
+    background: color-mix(in oklch, var(--monash-yellow) 60%, transparent);
+    color: var(--monash-yellow-ink);
+}
+
+/*
+ * Page backdrop — soft lavender wash with a yellow sunrise from the
+ * top-left. Fixed attachment + -z-10 so it lives under the whole app
+ * and doesn't scroll with the viewport. Keeps monmap from reading
+ * as "shadcn default on white" without tinting any actual surface.
+ */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    background:
+        radial-gradient(60rem 40rem at -10% -10%, color-mix(in oklch, var(--monash-yellow) 25%, transparent) 0%, transparent 55%),
+        radial-gradient(50rem 50rem at 110% 20%, color-mix(in oklch, var(--monash-purple) 18%, transparent) 0%, transparent 60%),
+        linear-gradient(180deg, var(--monash-purple-soft) 0%, #ffffff 60%);
+    pointer-events: none;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
+  html, body {
+    color-scheme: light;
+  }
   body {
-    @apply bg-background text-foreground;
-    }
+    @apply text-foreground;
+    background: transparent;
+  }
   html {
     @apply font-sans;
-    }
+  }
 }
