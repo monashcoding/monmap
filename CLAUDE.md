@@ -2,6 +2,13 @@
 
 Rules that every package in this monorepo must follow.
 
+**Before writing a query or UI view against the handbook data**, skim
+[`docs/handbook-internals.md`](docs/handbook-internals.md) — it
+captures the non-obvious shape of Monash's data (CourseLoop field
+conventions, what the tree JSONB looks like, fields that silently
+lie about their content, cross-year references) that won't be
+apparent from the schema or the column names alone.
+
 ## 1. `.env` lives at the repository root
 
 There is exactly one `.env` file, at the repo root. Packages do **not** ship
