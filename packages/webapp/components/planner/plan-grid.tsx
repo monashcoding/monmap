@@ -1,23 +1,40 @@
-"use client";
+"use client"
 
-import { MinusIcon, MoreVerticalIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core"
+import { MinusIcon, MoreVerticalIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { useState } from "react"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
 import {
   MAX_SLOT_CAPACITY,
   slotCapacity,
   type PlannerSlot,
-} from "@/lib/planner/types";
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period";
+} from "@/lib/planner/types"
+import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
 
-import { usePlanner } from "./planner-context";
-import { SemesterSlot } from "./semester-slot";
+import { usePlanner } from "./planner-context"
+import { SemesterSlot } from "./semester-slot"
+import { UnitCard } from "./unit-card"
+
+interface ActiveDrag {
+  yearIndex: number
+  slotIndex: number
+  code: string
+}
 
 /**
  * Per-year accent gradients. All sit in Monash purple so the strips
@@ -32,10 +49,10 @@ const YEAR_GRADIENTS: string[] = [
   "linear-gradient(90deg, #3a1a63 0%, #4a248a 100%)",
   "linear-gradient(90deg, #2a104f 0%, #3a1a63 100%)",
   "linear-gradient(90deg, #1c0836 0%, #2a104f 100%)",
-];
+]
 
 function yearGradient(index: number): string {
-  return YEAR_GRADIENTS[Math.min(index, YEAR_GRADIENTS.length - 1)];
+  return YEAR_GRADIENTS[Math.min(index, YEAR_GRADIENTS.length - 1)]
 }
 
 /**
@@ -45,34 +62,106 @@ function yearGradient(index: number): string {
  * units already placed).
  */
 export function PlanGrid() {
-  const { state, course, dispatch } = usePlanner();
-  const startYear = Number(state.courseYear) || new Date().getFullYear();
+  const { state, course, dispatch } = usePlanner()
+  const startYear = Number(state.courseYear) || new Date().getFullYear()
+  const [active, setActive] = useState<ActiveDrag | null>(null)
+
+  // 6px activation distance lets the unit-detail popover button still
+  // fire on a click — only "real" drags engage dnd-kit.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  )
+
+  function onDragStart(e: DragStartEvent) {
+    const data = e.active.data.current as ActiveDrag | undefined
+    if (data) setActive(data)
+  }
+
+  function onDragEnd(e: DragEndEvent) {
+    setActive(null)
+    const a = e.active.data.current as ActiveDrag | undefined
+    const overData = e.over?.data.current as
+      | { kind: "unit"; yearIndex: number; slotIndex: number; code: string }
+      | { kind: "slot"; yearIndex: number; slotIndex: number }
+      | undefined
+    if (!a || !overData) return
+
+    if (overData.kind === "unit") {
+      if (overData.code === a.code) return
+      dispatch({
+        type: "swap_units",
+        a: { yearIndex: a.yearIndex, slotIndex: a.slotIndex, code: a.code },
+        b: {
+          yearIndex: overData.yearIndex,
+          slotIndex: overData.slotIndex,
+          code: overData.code,
+        },
+      })
+      return
+    }
+
+    // Dropped on empty slot area.
+    if (
+      a.yearIndex === overData.yearIndex &&
+      a.slotIndex === overData.slotIndex
+    ) {
+      return
+    }
+    const target = state.years[overData.yearIndex]?.slots[overData.slotIndex]
+    if (target && target.unitCodes.length >= slotCapacity(target)) return
+    dispatch({
+      type: "move_unit",
+      fromYearIndex: a.yearIndex,
+      fromSlotIndex: a.slotIndex,
+      toYearIndex: overData.yearIndex,
+      toSlotIndex: overData.slotIndex,
+      code: a.code,
+    })
+  }
 
   return (
-    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-3xl border bg-card shadow-card">
-      {state.years.map((year, yearIndex) =>
-        year.slots.map((slot, slotIndex) => (
-          <SemesterRow
-            key={`${yearIndex}:${slotIndex}:${slot.kind}`}
-            yearIndex={yearIndex}
-            slotIndex={slotIndex}
-            slot={slot}
-            yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
-            removableYear={state.years.length > 1 && slotIndex === 0}
-            onRemoveYear={() => dispatch({ type: "remove_year", yearIndex })}
-            showYearHeader={slotIndex === 0}
-            yearHeaderLabel={year.label}
-          />
-        )),
-      )}
+    <DndContext
+      sensors={sensors}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setActive(null)}
+    >
+      <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-3xl border bg-card shadow-card">
+        {state.years.map((year, yearIndex) =>
+          year.slots.map((slot, slotIndex) => (
+            <SemesterRow
+              key={`${yearIndex}:${slotIndex}:${slot.kind}`}
+              yearIndex={yearIndex}
+              slotIndex={slotIndex}
+              slot={slot}
+              yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
+              removableYear={state.years.length > 1 && slotIndex === 0}
+              onRemoveYear={() => dispatch({ type: "remove_year", yearIndex })}
+              showYearHeader={slotIndex === 0}
+              yearHeaderLabel={year.label}
+            />
+          ))
+        )}
 
-      {!course ? (
-        <div className="px-6 py-10 text-center text-xs text-muted-foreground">
-          Pick a course on the right to get started.
-        </div>
-      ) : null}
-    </div>
-  );
+        {!course ? (
+          <div className="px-6 py-10 text-center text-xs text-muted-foreground">
+            Pick a course on the right to get started.
+          </div>
+        ) : null}
+      </div>
+
+      <DragOverlay dropAnimation={null}>
+        {active ? (
+          <UnitCard
+            code={active.code}
+            yearIndex={active.yearIndex}
+            slotIndex={active.slotIndex}
+            isDragOverlay
+          />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  )
 }
 
 function SemesterRow({
@@ -85,19 +174,19 @@ function SemesterRow({
   showYearHeader,
   yearHeaderLabel,
 }: {
-  yearIndex: number;
-  slotIndex: number;
-  slot: PlannerSlot;
-  yearLabel: string;
-  removableYear: boolean;
-  onRemoveYear: () => void;
-  showYearHeader: boolean;
-  yearHeaderLabel: string;
+  yearIndex: number
+  slotIndex: number
+  slot: PlannerSlot
+  yearLabel: string
+  removableYear: boolean
+  onRemoveYear: () => void
+  showYearHeader: boolean
+  yearHeaderLabel: string
 }) {
-  const { dispatch } = usePlanner();
-  const capacity = slotCapacity(slot);
-  const canDecrease = capacity > Math.max(1, slot.unitCodes.length);
-  const canIncrease = capacity < MAX_SLOT_CAPACITY;
+  const { dispatch } = usePlanner()
+  const capacity = slotCapacity(slot)
+  const canDecrease = capacity > Math.max(1, slot.unitCodes.length)
+  const canIncrease = capacity < MAX_SLOT_CAPACITY
 
   return (
     <>
@@ -106,7 +195,7 @@ function SemesterRow({
           className="relative flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-white"
           style={{ backgroundImage: yearGradient(yearIndex) }}
         >
-          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-white">
+          <h3 className="text-xs font-semibold tracking-[0.12em] text-white uppercase">
             {yearHeaderLabel}
           </h3>
           {removableYear ? (
@@ -178,5 +267,5 @@ function SemesterRow({
         <SemesterSlot yearIndex={yearIndex} slotIndex={slotIndex} />
       </div>
     </>
-  );
+  )
 }
