@@ -1,7 +1,8 @@
-"use client";
+"use client"
 
-import { CoursePicker } from "./course-picker";
-import { RequirementsPanel } from "./requirements-panel";
+import { AoSTemplates } from "./aos-templates"
+import { CoursePicker } from "./course-picker"
+import { RequirementsPanel } from "./requirements-panel"
 
 /**
  * Right-side "Course Progression Guide" — mirrors MonPlan's right
@@ -15,17 +16,19 @@ export function RightSidebar() {
       <div className="relative overflow-hidden rounded-3xl border bg-[var(--monash-purple)] px-4 py-3 text-white shadow-card">
         <div
           aria-hidden
-          className="absolute -right-6 -top-6 size-20 rounded-full bg-[var(--monash-yellow)] opacity-20 blur-xl"
+          className="absolute -top-6 -right-6 size-20 rounded-full bg-[var(--monash-yellow)] opacity-20 blur-xl"
         />
-        <h2 className="relative text-sm font-semibold leading-snug">
+        <h2 className="relative text-sm leading-snug font-semibold">
           Course Progression Guide
         </h2>
         <p className="relative mt-0.5 text-[11px] leading-snug opacity-80">
-          Pick your course and specialisations — units you add are checked against them.
+          Pick your course and specialisations — units you add are checked
+          against them.
         </p>
       </div>
       <CoursePicker />
+      <AoSTemplates />
       <RequirementsPanel />
     </aside>
-  );
+  )
 }
