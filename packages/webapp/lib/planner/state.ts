@@ -61,6 +61,15 @@ export type PlannerAction =
       a: { yearIndex: number; slotIndex: number; code: string }
       b: { yearIndex: number; slotIndex: number; code: string }
     }
+  | {
+      type: "bulk_load"
+      placements: ReadonlyArray<{
+        yearIndex: number
+        slotIndex: number
+        code: string
+      }>
+      mode: "merge" | "replace"
+    }
   | { type: "add_year" }
   | { type: "remove_year"; yearIndex: number }
   | { type: "add_optional_slot"; yearIndex: number; kind: PeriodKind }
@@ -158,6 +167,56 @@ export function plannerReducer(
         ...s,
         unitCodes: newB,
       }))
+    }
+
+    case "bulk_load": {
+      let next: PlannerState =
+        action.mode === "replace"
+          ? {
+              ...state,
+              years: state.years.map((y) => ({
+                ...y,
+                slots: y.slots.map((s) => ({ ...s, unitCodes: [] })),
+              })),
+            }
+          : state
+      const maxYi = action.placements.reduce(
+        (m, p) => Math.max(m, p.yearIndex),
+        -1
+      )
+      while (next.years.length <= maxYi) {
+        next = {
+          ...next,
+          years: [...next.years, defaultYear(next.years.length + 1)],
+        }
+      }
+      const grouped = new Map<string, string[]>()
+      for (const p of action.placements) {
+        const k = `${p.yearIndex}:${p.slotIndex}`
+        const list = grouped.get(k)
+        if (list) list.push(p.code)
+        else grouped.set(k, [p.code])
+      }
+      return {
+        ...next,
+        years: next.years.map((y, yi) => ({
+          ...y,
+          slots: y.slots.map((s, si) => {
+            const adds = grouped.get(`${yi}:${si}`)
+            if (!adds || adds.length === 0) return s
+            const seen = new Set(s.unitCodes)
+            const merged = [...s.unitCodes]
+            for (const c of adds) {
+              if (!seen.has(c)) {
+                merged.push(c)
+                seen.add(c)
+              }
+            }
+            if (merged.length === s.unitCodes.length) return s
+            return { ...s, unitCodes: merged }
+          }),
+        })),
+      }
     }
 
     case "add_year":

@@ -7,11 +7,16 @@ import {
   requisites,
   unitOfferings,
   units,
-} from "@monmap/db";
-import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
+} from "@monmap/db"
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm"
 
-import { getDb, HANDBOOK_YEAR } from "./client.ts";
-import { classifyTeachingPeriod } from "../planner/teaching-period.ts";
+import { getDb, HANDBOOK_YEAR } from "./client.ts"
+import {
+  extractRequirementGroups,
+  pickDefaultUnits,
+  type RequirementGroup,
+} from "./curriculum.ts"
+import { classifyTeachingPeriod } from "../planner/teaching-period.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourse,
@@ -20,7 +25,7 @@ import type {
   PlannerUnit,
   RequisiteBlock,
   RequisiteRule,
-} from "../planner/types.ts";
+} from "../planner/types.ts"
 
 /**
  * All queries are year-scoped to HANDBOOK_YEAR. Multi-year planning
@@ -31,16 +36,16 @@ import type {
 
 export async function listCoursesForPicker(
   search: string | null,
-  limit = 50,
+  limit = 50
 ): Promise<PlannerCourse[]> {
-  const db = getDb();
+  const db = getDb()
   const conds = [
     eq(courses.year, HANDBOOK_YEAR),
     sql`${courses.creditPoints} > 0`,
-  ];
+  ]
   if (search && search.trim()) {
-    const q = `%${search.trim()}%`;
-    conds.push(or(ilike(courses.title, q), ilike(courses.code, q))!);
+    const q = `%${search.trim()}%`
+    conds.push(or(ilike(courses.title, q), ilike(courses.code, q))!)
   }
   const rows = await db
     .select({
@@ -55,7 +60,7 @@ export async function listCoursesForPicker(
     .from(courses)
     .where(and(...conds))
     .orderBy(courses.title)
-    .limit(limit);
+    .limit(limit)
 
   return rows.map((r) => ({
     year: r.year,
@@ -65,7 +70,7 @@ export async function listCoursesForPicker(
     aqfLevel: r.aqfLevel,
     type: r.type,
     overview: r.overview,
-  }));
+  }))
 }
 
 /**
@@ -74,15 +79,36 @@ export async function listCoursesForPicker(
  * relationshipLabels (rare but possible).
  */
 export async function fetchCourseWithAoS(
-  code: string,
+  code: string
 ): Promise<PlannerCourseWithAoS | null> {
-  const db = getDb();
+  const db = getDb()
   const [course] = await db
     .select()
     .from(courses)
     .where(and(eq(courses.year, HANDBOOK_YEAR), eq(courses.code, code)))
-    .limit(1);
-  if (!course) return null;
+    .limit(1)
+  if (!course) return null
+
+  // Extract degree-level requirements from the course's
+  // curriculumStructure. Intersect against the units table to drop
+  // cross-year / dangling refs from both the group options and the
+  // flat default-load list.
+  const rawCourseGroups = extractRequirementGroups(course.curriculumStructure)
+  let courseRequirements: RequirementGroup[] = []
+  let courseUnits: { code: string; grouping: string }[] = []
+  if (rawCourseGroups.length > 0) {
+    const allCodes = new Set<string>()
+    for (const g of rawCourseGroups) for (const c of g.options) allCodes.add(c)
+    const validRows = await db
+      .select({ code: units.code })
+      .from(units)
+      .where(
+        and(eq(units.year, HANDBOOK_YEAR), inArray(units.code, [...allCodes]))
+      )
+    const valid = new Set(validRows.map((r) => r.code))
+    courseRequirements = filterGroups(rawCourseGroups, valid)
+    courseUnits = pickDefaultUnits(courseRequirements)
+  }
 
   const links = await db
     .select({
@@ -92,21 +118,22 @@ export async function fetchCourseWithAoS(
       relationshipLabel: courseAreasOfStudy.relationshipLabel,
       title: areasOfStudy.title,
       creditPoints: areasOfStudy.creditPoints,
+      curriculumStructure: areasOfStudy.curriculumStructure,
     })
     .from(courseAreasOfStudy)
     .leftJoin(
       areasOfStudy,
       and(
         eq(courseAreasOfStudy.aosYear, areasOfStudy.year),
-        eq(courseAreasOfStudy.aosCode, areasOfStudy.code),
-      ),
+        eq(courseAreasOfStudy.aosCode, areasOfStudy.code)
+      )
     )
     .where(
       and(
         eq(courseAreasOfStudy.courseYear, HANDBOOK_YEAR),
-        eq(courseAreasOfStudy.courseCode, code),
-      ),
-    );
+        eq(courseAreasOfStudy.courseCode, code)
+      )
+    )
 
   if (links.length === 0) {
     return {
@@ -118,10 +145,19 @@ export async function fetchCourseWithAoS(
       type: course.type,
       overview: course.overview,
       areasOfStudy: [],
-    };
+      courseUnits,
+      courseRequirements,
+    }
   }
 
-  const aosCodes = [...new Set(links.map((l) => l.aosCode))];
+  // Build per-AoS requirement groups from each AoS's curriculum.
+  const aosGroups = new Map<string, RequirementGroup[]>()
+  for (const l of links) {
+    if (aosGroups.has(l.aosCode)) continue
+    aosGroups.set(l.aosCode, extractRequirementGroups(l.curriculumStructure))
+  }
+
+  const aosCodes = [...new Set(links.map((l) => l.aosCode))]
   const unitRows = await db
     .select({
       aosCode: areaOfStudyUnits.aosCode,
@@ -132,36 +168,51 @@ export async function fetchCourseWithAoS(
     .where(
       and(
         eq(areaOfStudyUnits.aosYear, HANDBOOK_YEAR),
-        inArray(areaOfStudyUnits.aosCode, aosCodes),
-      ),
+        inArray(areaOfStudyUnits.aosCode, aosCodes)
+      )
     )
-    .orderBy(areaOfStudyUnits.grouping, areaOfStudyUnits.unitCode);
+    .orderBy(areaOfStudyUnits.grouping, areaOfStudyUnits.unitCode)
 
-  const unitsByAos = new Map<string, { code: string; grouping: string }[]>();
+  const unitsByAos = new Map<string, { code: string; grouping: string }[]>()
   for (const u of unitRows) {
-    const list = unitsByAos.get(u.aosCode) ?? [];
-    list.push({ code: u.unitCode, grouping: u.grouping });
-    unitsByAos.set(u.aosCode, list);
+    const list = unitsByAos.get(u.aosCode) ?? []
+    list.push({ code: u.unitCode, grouping: u.grouping })
+    unitsByAos.set(u.aosCode, list)
   }
 
   // De-duplicate course→AoS edges that share (code, kind) — first label wins
-  const byCode = new Map<string, PlannerAreaOfStudy>();
+  const byCode = new Map<string, PlannerAreaOfStudy>()
   for (const l of links) {
-    if (byCode.has(l.aosCode)) continue;
+    if (byCode.has(l.aosCode)) continue
+    const allUnits = unitsByAos.get(l.aosCode) ?? []
+    const groups = aosGroups.get(l.aosCode) ?? []
+    // Fall back to treating every listed unit as required if the AoS
+    // has no curriculumStructure (rare — but seen on a few AoS).
+    let requirements: RequirementGroup[]
+    let requiredUnits: { code: string; grouping: string }[]
+    if (groups.length > 0) {
+      requirements = groups
+      requiredUnits = pickDefaultUnits(groups)
+    } else {
+      requirements = groupsFromFlat(allUnits)
+      requiredUnits = allUnits
+    }
     byCode.set(l.aosCode, {
       code: l.aosCode,
       title: l.title ?? l.aosCode,
       kind: l.kind,
       relationshipLabel: l.relationshipLabel,
       creditPoints: l.creditPoints,
-      units: unitsByAos.get(l.aosCode) ?? [],
-    });
+      units: allUnits,
+      requiredUnits,
+      requirements,
+    })
   }
 
   const orderedAos = [...byCode.values()].sort((a, b) => {
-    if (a.kind !== b.kind) return kindOrder(a.kind) - kindOrder(b.kind);
-    return a.title.localeCompare(b.title);
-  });
+    if (a.kind !== b.kind) return kindOrder(a.kind) - kindOrder(b.kind)
+    return a.title.localeCompare(b.title)
+  })
 
   return {
     year: course.year,
@@ -172,17 +223,58 @@ export async function fetchCourseWithAoS(
     type: course.type,
     overview: course.overview,
     areasOfStudy: orderedAos,
-  };
+    courseUnits,
+    courseRequirements,
+  }
+}
+
+function filterGroups(
+  groups: readonly RequirementGroup[],
+  validCodes: ReadonlySet<string>
+): RequirementGroup[] {
+  const out: RequirementGroup[] = []
+  for (const g of groups) {
+    const options = g.options.filter((c) => validCodes.has(c))
+    if (options.length === 0) continue
+    out.push({
+      grouping: g.grouping,
+      options,
+      required: Math.min(options.length, g.required),
+    })
+  }
+  return out
+}
+
+function groupsFromFlat(
+  units: ReadonlyArray<{ code: string; grouping: string }>
+): RequirementGroup[] {
+  const m = new Map<string, string[]>()
+  for (const u of units) {
+    const list = m.get(u.grouping) ?? []
+    if (!list.includes(u.code)) list.push(u.code)
+    m.set(u.grouping, list)
+  }
+  return [...m.entries()].map(([grouping, options]) => ({
+    grouping,
+    options,
+    required: options.length,
+  }))
 }
 
 function kindOrder(k: PlannerAreaOfStudy["kind"]): number {
   switch (k) {
-    case "major": return 0;
-    case "extended_major": return 1;
-    case "specialisation": return 2;
-    case "minor": return 3;
-    case "elective": return 4;
-    case "other": return 5;
+    case "major":
+      return 0
+    case "extended_major":
+      return 1
+    case "specialisation":
+      return 2
+    case "minor":
+      return 3
+    case "elective":
+      return 4
+    case "other":
+      return 5
   }
 }
 
@@ -191,10 +283,10 @@ function kindOrder(k: PlannerAreaOfStudy["kind"]): number {
  * silently dropped — the caller can diff against the input list.
  */
 export async function fetchUnitsByCode(
-  codes: readonly string[],
+  codes: readonly string[]
 ): Promise<PlannerUnit[]> {
-  if (codes.length === 0) return [];
-  const db = getDb();
+  if (codes.length === 0) return []
+  const db = getDb()
   const rows = await db
     .select({
       year: units.year,
@@ -206,7 +298,7 @@ export async function fetchUnitsByCode(
       school: units.school,
     })
     .from(units)
-    .where(and(eq(units.year, HANDBOOK_YEAR), inArray(units.code, [...codes])));
+    .where(and(eq(units.year, HANDBOOK_YEAR), inArray(units.code, [...codes])))
 
   return rows.map((r) => ({
     year: r.year,
@@ -216,18 +308,18 @@ export async function fetchUnitsByCode(
     level: r.level,
     synopsis: r.synopsis,
     school: r.school,
-  }));
+  }))
 }
 
 export async function searchUnits(
   query: string,
-  limit = 25,
+  limit = 25
 ): Promise<PlannerUnit[]> {
-  const trimmed = query.trim();
-  if (!trimmed) return [];
+  const trimmed = query.trim()
+  if (!trimmed) return []
 
-  const db = getDb();
-  const q = `%${trimmed}%`;
+  const db = getDb()
+  const q = `%${trimmed}%`
   const rows = await db
     .select({
       year: units.year,
@@ -242,11 +334,11 @@ export async function searchUnits(
     .where(
       and(
         eq(units.year, HANDBOOK_YEAR),
-        or(ilike(units.code, q), ilike(units.title, q)),
-      ),
+        or(ilike(units.code, q), ilike(units.title, q))
+      )
     )
     .orderBy(units.code)
-    .limit(limit);
+    .limit(limit)
 
   return rows.map((r) => ({
     year: r.year,
@@ -256,16 +348,16 @@ export async function searchUnits(
     level: r.level,
     synopsis: r.synopsis,
     school: r.school,
-  }));
+  }))
 }
 
 export async function fetchOfferingsForCodes(
-  codes: readonly string[],
+  codes: readonly string[]
 ): Promise<Map<string, PlannerOffering[]>> {
-  const out = new Map<string, PlannerOffering[]>();
-  if (codes.length === 0) return out;
+  const out = new Map<string, PlannerOffering[]>()
+  if (codes.length === 0) return out
 
-  const db = getDb();
+  const db = getDb()
   const rows = await db
     .select({
       unitCode: unitOfferings.unitCode,
@@ -278,31 +370,31 @@ export async function fetchOfferingsForCodes(
       and(
         eq(unitOfferings.year, HANDBOOK_YEAR),
         eq(unitOfferings.offered, true),
-        inArray(unitOfferings.unitCode, [...codes]),
-      ),
-    );
+        inArray(unitOfferings.unitCode, [...codes])
+      )
+    )
 
   for (const r of rows) {
-    const list = out.get(r.unitCode) ?? [];
+    const list = out.get(r.unitCode) ?? []
     list.push({
       unitCode: r.unitCode,
       teachingPeriod: r.teachingPeriod ?? "",
       location: r.location,
       attendanceModeCode: r.attendanceModeCode,
       periodKind: classifyTeachingPeriod(r.teachingPeriod),
-    });
-    out.set(r.unitCode, list);
+    })
+    out.set(r.unitCode, list)
   }
-  return out;
+  return out
 }
 
 export async function fetchRequisitesForCodes(
-  codes: readonly string[],
+  codes: readonly string[]
 ): Promise<Map<string, RequisiteBlock[]>> {
-  const out = new Map<string, RequisiteBlock[]>();
-  if (codes.length === 0) return out;
+  const out = new Map<string, RequisiteBlock[]>()
+  if (codes.length === 0) return out
 
-  const db = getDb();
+  const db = getDb()
   const rows = await db
     .select({
       unitCode: requisites.unitCode,
@@ -313,28 +405,33 @@ export async function fetchRequisitesForCodes(
     .where(
       and(
         eq(requisites.year, HANDBOOK_YEAR),
-        inArray(requisites.unitCode, [...codes]),
-      ),
-    );
+        inArray(requisites.unitCode, [...codes])
+      )
+    )
 
   for (const r of rows) {
-    const list = out.get(r.unitCode) ?? [];
+    const list = out.get(r.unitCode) ?? []
     list.push({
       requisiteType: r.requisiteType,
       rule: (r.rule as RequisiteRule | null) ?? null,
-    });
-    out.set(r.unitCode, list);
+    })
+    out.set(r.unitCode, list)
   }
-  return out;
+  return out
 }
 
 export async function fetchEnrolmentRulesForCodes(
-  codes: readonly string[],
-): Promise<Map<string, { ruleType: string | null; description: string | null }[]>> {
-  const out = new Map<string, { ruleType: string | null; description: string | null }[]>();
-  if (codes.length === 0) return out;
+  codes: readonly string[]
+): Promise<
+  Map<string, { ruleType: string | null; description: string | null }[]>
+> {
+  const out = new Map<
+    string,
+    { ruleType: string | null; description: string | null }[]
+  >()
+  if (codes.length === 0) return out
 
-  const db = getDb();
+  const db = getDb()
   const rows = await db
     .select({
       unitCode: enrolmentRules.unitCode,
@@ -345,16 +442,16 @@ export async function fetchEnrolmentRulesForCodes(
     .where(
       and(
         eq(enrolmentRules.year, HANDBOOK_YEAR),
-        inArray(enrolmentRules.unitCode, [...codes]),
-      ),
-    );
+        inArray(enrolmentRules.unitCode, [...codes])
+      )
+    )
 
   for (const r of rows) {
-    const list = out.get(r.unitCode) ?? [];
-    list.push({ ruleType: r.ruleType, description: r.description });
-    out.set(r.unitCode, list);
+    const list = out.get(r.unitCode) ?? []
+    list.push({ ruleType: r.ruleType, description: r.description })
+    out.set(r.unitCode, list)
   }
-  return out;
+  return out
 }
 
 /**
@@ -363,15 +460,15 @@ export async function fetchEnrolmentRulesForCodes(
  * parallel DB queries internally).
  */
 export async function hydratePlannerUnits(codes: readonly string[]): Promise<{
-  units: Map<string, PlannerUnit>;
-  offerings: Map<string, PlannerOffering[]>;
-  requisites: Map<string, RequisiteBlock[]>;
+  units: Map<string, PlannerUnit>
+  offerings: Map<string, PlannerOffering[]>
+  requisites: Map<string, RequisiteBlock[]>
 }> {
   const [unitList, offerings, reqs] = await Promise.all([
     fetchUnitsByCode(codes),
     fetchOfferingsForCodes(codes),
     fetchRequisitesForCodes(codes),
-  ]);
-  const unitsByCode = new Map(unitList.map((u) => [u.code, u]));
-  return { units: unitsByCode, offerings, requisites: reqs };
+  ])
+  const unitsByCode = new Map(unitList.map((u) => [u.code, u]))
+  return { units: unitsByCode, offerings, requisites: reqs }
 }
