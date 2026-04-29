@@ -28,21 +28,26 @@ import type {
 } from "../planner/types.ts"
 
 /**
- * All queries are year-scoped to HANDBOOK_YEAR. Multi-year planning
- * isn't in scope for this MVP — the handbook has one populated year
- * (2026) and mixing years breaks the requisite-evaluation model we
- * depend on (requisite leaves already erase year per `requisite_refs`).
+ * All queries take a `year` parameter so a student can plan against a
+ * different handbook year (e.g. 2022 if they started their degree
+ * then). Defaults to HANDBOOK_YEAR for backward compat. Per-row year
+ * tracking (each plan year using its own handbook) is not implemented
+ * — start year drives everything, matching MonPlan's pragmatic model.
  */
+
+export async function listAvailableYears(): Promise<string[]> {
+  const db = getDb()
+  const rows = await db.selectDistinct({ year: courses.year }).from(courses)
+  return rows.map((r) => r.year).sort()
+}
 
 export async function listCoursesForPicker(
   search: string | null,
-  limit = 50
+  limit = 50,
+  year: string = HANDBOOK_YEAR
 ): Promise<PlannerCourse[]> {
   const db = getDb()
-  const conds = [
-    eq(courses.year, HANDBOOK_YEAR),
-    sql`${courses.creditPoints} > 0`,
-  ]
+  const conds = [eq(courses.year, year), sql`${courses.creditPoints} > 0`]
   if (search && search.trim()) {
     const q = `%${search.trim()}%`
     conds.push(or(ilike(courses.title, q), ilike(courses.code, q))!)
@@ -79,13 +84,14 @@ export async function listCoursesForPicker(
  * relationshipLabels (rare but possible).
  */
 export async function fetchCourseWithAoS(
-  code: string
+  code: string,
+  year: string = HANDBOOK_YEAR
 ): Promise<PlannerCourseWithAoS | null> {
   const db = getDb()
   const [course] = await db
     .select()
     .from(courses)
-    .where(and(eq(courses.year, HANDBOOK_YEAR), eq(courses.code, code)))
+    .where(and(eq(courses.year, year), eq(courses.code, code)))
     .limit(1)
   if (!course) return null
 
@@ -102,9 +108,7 @@ export async function fetchCourseWithAoS(
     const validRows = await db
       .select({ code: units.code })
       .from(units)
-      .where(
-        and(eq(units.year, HANDBOOK_YEAR), inArray(units.code, [...allCodes]))
-      )
+      .where(and(eq(units.year, year), inArray(units.code, [...allCodes])))
     const valid = new Set(validRows.map((r) => r.code))
     courseRequirements = filterGroups(rawCourseGroups, valid)
     courseUnits = pickDefaultUnits(courseRequirements)
@@ -130,7 +134,7 @@ export async function fetchCourseWithAoS(
     )
     .where(
       and(
-        eq(courseAreasOfStudy.courseYear, HANDBOOK_YEAR),
+        eq(courseAreasOfStudy.courseYear, year),
         eq(courseAreasOfStudy.courseCode, code)
       )
     )
@@ -167,7 +171,7 @@ export async function fetchCourseWithAoS(
     .from(areaOfStudyUnits)
     .where(
       and(
-        eq(areaOfStudyUnits.aosYear, HANDBOOK_YEAR),
+        eq(areaOfStudyUnits.aosYear, year),
         inArray(areaOfStudyUnits.aosCode, aosCodes)
       )
     )
@@ -283,7 +287,8 @@ function kindOrder(k: PlannerAreaOfStudy["kind"]): number {
  * silently dropped — the caller can diff against the input list.
  */
 export async function fetchUnitsByCode(
-  codes: readonly string[]
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
 ): Promise<PlannerUnit[]> {
   if (codes.length === 0) return []
   const db = getDb()
@@ -298,7 +303,7 @@ export async function fetchUnitsByCode(
       school: units.school,
     })
     .from(units)
-    .where(and(eq(units.year, HANDBOOK_YEAR), inArray(units.code, [...codes])))
+    .where(and(eq(units.year, year), inArray(units.code, [...codes])))
 
   return rows.map((r) => ({
     year: r.year,
@@ -313,7 +318,8 @@ export async function fetchUnitsByCode(
 
 export async function searchUnits(
   query: string,
-  limit = 25
+  limit = 25,
+  year: string = HANDBOOK_YEAR
 ): Promise<PlannerUnit[]> {
   const trimmed = query.trim()
   if (!trimmed) return []
@@ -332,10 +338,7 @@ export async function searchUnits(
     })
     .from(units)
     .where(
-      and(
-        eq(units.year, HANDBOOK_YEAR),
-        or(ilike(units.code, q), ilike(units.title, q))
-      )
+      and(eq(units.year, year), or(ilike(units.code, q), ilike(units.title, q)))
     )
     .orderBy(units.code)
     .limit(limit)
@@ -352,7 +355,8 @@ export async function searchUnits(
 }
 
 export async function fetchOfferingsForCodes(
-  codes: readonly string[]
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
 ): Promise<Map<string, PlannerOffering[]>> {
   const out = new Map<string, PlannerOffering[]>()
   if (codes.length === 0) return out
@@ -368,7 +372,7 @@ export async function fetchOfferingsForCodes(
     .from(unitOfferings)
     .where(
       and(
-        eq(unitOfferings.year, HANDBOOK_YEAR),
+        eq(unitOfferings.year, year),
         eq(unitOfferings.offered, true),
         inArray(unitOfferings.unitCode, [...codes])
       )
@@ -389,7 +393,8 @@ export async function fetchOfferingsForCodes(
 }
 
 export async function fetchRequisitesForCodes(
-  codes: readonly string[]
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
 ): Promise<Map<string, RequisiteBlock[]>> {
   const out = new Map<string, RequisiteBlock[]>()
   if (codes.length === 0) return out
@@ -403,10 +408,7 @@ export async function fetchRequisitesForCodes(
     })
     .from(requisites)
     .where(
-      and(
-        eq(requisites.year, HANDBOOK_YEAR),
-        inArray(requisites.unitCode, [...codes])
-      )
+      and(eq(requisites.year, year), inArray(requisites.unitCode, [...codes]))
     )
 
   for (const r of rows) {
@@ -421,7 +423,8 @@ export async function fetchRequisitesForCodes(
 }
 
 export async function fetchEnrolmentRulesForCodes(
-  codes: readonly string[]
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
 ): Promise<
   Map<string, { ruleType: string | null; description: string | null }[]>
 > {
@@ -441,7 +444,7 @@ export async function fetchEnrolmentRulesForCodes(
     .from(enrolmentRules)
     .where(
       and(
-        eq(enrolmentRules.year, HANDBOOK_YEAR),
+        eq(enrolmentRules.year, year),
         inArray(enrolmentRules.unitCode, [...codes])
       )
     )
@@ -459,15 +462,18 @@ export async function fetchEnrolmentRulesForCodes(
  * set of codes. Single round-trip from the UI's perspective (three
  * parallel DB queries internally).
  */
-export async function hydratePlannerUnits(codes: readonly string[]): Promise<{
+export async function hydratePlannerUnits(
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
+): Promise<{
   units: Map<string, PlannerUnit>
   offerings: Map<string, PlannerOffering[]>
   requisites: Map<string, RequisiteBlock[]>
 }> {
   const [unitList, offerings, reqs] = await Promise.all([
-    fetchUnitsByCode(codes),
-    fetchOfferingsForCodes(codes),
-    fetchRequisitesForCodes(codes),
+    fetchUnitsByCode(codes, year),
+    fetchOfferingsForCodes(codes, year),
+    fetchRequisitesForCodes(codes, year),
   ])
   const unitsByCode = new Map(unitList.map((u) => [u.code, u]))
   return { units: unitsByCode, offerings, requisites: reqs }
