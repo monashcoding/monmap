@@ -160,10 +160,10 @@ export function extractRequirementGroups(
 }
 
 /**
- * Flatten requirement groups into the "default load" list — the first
- * `required` options of each group. Used for templates ("Load all" /
- * prewarm) where we want a single list of unit codes to place on the
- * plan, picking the handbook's first option for any choice groups.
+ * Flatten requirement groups into the "default load" list — only groups
+ * where every listed option is required (required === options.length).
+ * Choice/elective groups ("pick 2 of 6") are skipped entirely so the
+ * template never auto-places an arbitrary elective unit.
  */
 export function pickDefaultUnits(
   groups: readonly RequirementGroup[]
@@ -171,7 +171,8 @@ export function pickDefaultUnits(
   const out: Array<{ code: string; grouping: string }> = []
   const seen = new Set<string>()
   for (const g of groups) {
-    for (const code of g.options.slice(0, g.required)) {
+    if (g.required < g.options.length) continue
+    for (const code of g.options) {
       const key = `${code}|${g.grouping}`
       if (seen.has(key)) continue
       seen.add(key)
@@ -182,7 +183,7 @@ export function pickDefaultUnits(
 }
 
 /**
- * Convenience: extract the flat default-units list directly from raw
+ * Convenience: extract only the fully-required units directly from raw
  * curriculum JSONB. Equivalent to
  * `pickDefaultUnits(extractRequirementGroups(structure))`.
  */
