@@ -182,10 +182,13 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
   const { loadUnitsTemplate } = usePlanner()
   const [open, setOpen] = useState(false)
 
-  const groupings = useMemo(() => groupByGrouping(aos), [aos])
+  const groupings = useMemo(
+    () => groupByGrouping(aos.requiredUnits),
+    [aos.requiredUnits]
+  )
   const allCodes = useMemo(
-    () => [...new Set(aos.units.map((u) => u.code))],
-    [aos]
+    () => [...new Set(aos.requiredUnits.map((u) => u.code))],
+    [aos.requiredUnits]
   )
 
   return (
@@ -272,9 +275,11 @@ interface Grouping {
   codes: string[]
 }
 
-function groupByGrouping(aos: PlannerAreaOfStudy): Grouping[] {
+function groupByGrouping(
+  units: { code: string; grouping: string }[]
+): Grouping[] {
   const map = new Map<string, Set<string>>()
-  for (const u of aos.units) {
+  for (const u of units) {
     const set = map.get(u.grouping) ?? new Set<string>()
     set.add(u.code)
     map.set(u.grouping, set)
