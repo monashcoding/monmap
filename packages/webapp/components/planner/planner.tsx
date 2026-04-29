@@ -1,29 +1,31 @@
-"use client";
+"use client"
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner"
 import type {
   PlannerCourse,
   PlannerCourseWithAoS,
   PlannerOffering,
   PlannerUnit,
   RequisiteBlock,
-} from "@/lib/planner/types";
+} from "@/lib/planner/types"
 
-import { Header } from "./header";
-import { LeftSidebar } from "./left-sidebar";
-import { PlanGrid } from "./plan-grid";
-import { PlannerProvider } from "./planner-context";
-import { RightSidebar } from "./right-sidebar";
-import { SummaryBar } from "./summary-bar";
+import { Header } from "./header"
+import { LeftSidebar } from "./left-sidebar"
+import { PlanGrid } from "./plan-grid"
+import { PlannerProvider } from "./planner-context"
+import { RightSidebar } from "./right-sidebar"
+import { SummaryBar } from "./summary-bar"
 
 interface PlannerProps {
-  courses: PlannerCourse[];
-  defaultCourse: PlannerCourseWithAoS | null;
+  initialYear: string
+  availableYears: string[]
+  courses: PlannerCourse[]
+  defaultCourse: PlannerCourseWithAoS | null
   prewarmed: {
-    units: Record<string, PlannerUnit>;
-    offerings: Record<string, PlannerOffering[]>;
-    requisites: Record<string, RequisiteBlock[]>;
-  };
+    units: Record<string, PlannerUnit>
+    offerings: Record<string, PlannerOffering[]>
+    requisites: Record<string, RequisiteBlock[]>
+  }
 }
 
 /**
@@ -39,6 +41,8 @@ interface PlannerProps {
 export function Planner(props: PlannerProps) {
   return (
     <PlannerProvider
+      initialYear={props.initialYear}
+      availableYears={props.availableYears}
       courses={props.courses}
       defaultCourse={props.defaultCourse}
       prewarmed={props.prewarmed}
@@ -58,5 +62,5 @@ export function Planner(props: PlannerProps) {
 
       <Toaster position="bottom-right" richColors closeButton />
     </PlannerProvider>
-  );
+  )
 }

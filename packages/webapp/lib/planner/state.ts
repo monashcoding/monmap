@@ -41,6 +41,7 @@ export function defaultYear(nth: number): PlannerYear {
 
 export type PlannerAction =
   | { type: "set_course"; code: string | null }
+  | { type: "set_year"; year: string }
   | {
       type: "set_aos"
       role: keyof PlannerState["selectedAos"]
@@ -95,6 +96,16 @@ export function plannerReducer(
         courseCode: action.code,
         // Clear AoS selections when course changes — the prior picks
         // are almost certainly invalid for the new course.
+        selectedAos: {},
+      }
+
+    case "set_year":
+      if (state.courseYear === action.year) return state
+      return {
+        ...state,
+        courseYear: action.year,
+        // AoS codes are year-scoped — clear them when switching years
+        // since the prior picks may not exist in the target handbook.
         selectedAos: {},
       }
 

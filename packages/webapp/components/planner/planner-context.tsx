@@ -13,7 +13,11 @@ import {
 } from "react"
 import { toast } from "sonner"
 
-import { hydrateUnitsAction, loadCourseAction } from "@/app/actions"
+import {
+  hydrateUnitsAction,
+  listCoursesAction,
+  loadCourseAction,
+} from "@/app/actions"
 import { distribute } from "@/lib/planner/distribute"
 import { plannedUnitCodes } from "@/lib/planner/progress"
 import {
@@ -46,6 +50,8 @@ export interface PlannerContextValue {
 
   courses: PlannerCourse[]
   course: PlannerCourseWithAoS | null
+  /** Years that actually exist in the database. */
+  availableYears: string[]
 
   units: Map<string, PlannerUnit>
   offerings: Map<string, PlannerOffering[]>
@@ -62,6 +68,8 @@ export interface PlannerContextValue {
   mergeUnits: (units: PlannerUnit[]) => void
   /** Load and set a new course by code. */
   switchCourse: (code: string) => Promise<void>
+  /** Switch the handbook year — refetches course, picker list, and unit data. */
+  switchYear: (year: string) => Promise<void>
   /**
    * Hydrate the given codes and place them onto the plan via the
    * distribution algorithm. `mode: "merge"` (default) appends; codes
@@ -93,23 +101,28 @@ export function usePlanner(): PlannerContextValue {
 
 export function PlannerProvider({
   children,
-  courses,
+  initialYear,
+  availableYears,
+  courses: initialCourses,
   defaultCourse,
   prewarmed,
 }: {
   children: React.ReactNode
+  initialYear: string
+  availableYears: string[]
   courses: PlannerCourse[]
   defaultCourse: PlannerCourseWithAoS | null
   prewarmed: Hydrated
 }) {
   const [state, dispatch] = useReducer(
     plannerReducer,
-    defaultState("2026", defaultCourse?.code ?? null, 3)
+    defaultState(initialYear, defaultCourse?.code ?? null, 3)
   )
 
   const [course, setCourse] = useState<PlannerCourseWithAoS | null>(
     defaultCourse
   )
+  const [courses, setCourses] = useState<PlannerCourse[]>(initialCourses)
 
   const [unitsMap, setUnitsMap] = useState<Map<string, PlannerUnit>>(
     () => new Map(Object.entries(prewarmed.units))
@@ -126,9 +139,6 @@ export function PlannerProvider({
   const [flashVersion, setFlashVersion] = useState(0)
   const flashErrors = useCallback(() => {
     setFlashVersion((n) => n + 1)
-    // Scroll the first errored card into view so the pulse is never
-    // off-screen. Runs in the next tick so the DOM has had time to
-    // reflect the current validation pass.
     requestAnimationFrame(() => {
       const first = document.querySelector<HTMLElement>(
         '[data-validation-status="error"]'
@@ -150,21 +160,50 @@ export function PlannerProvider({
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return
       const parsed = JSON.parse(raw) as PlannerState
-      if (parsed && Array.isArray(parsed.years)) {
-        dispatch({ type: "hydrate", state: parsed })
-        // If the restored plan has a different course from the default,
-        // load it.
-        if (parsed.courseCode && parsed.courseCode !== defaultCourse?.code) {
-          void (async () => {
-            const c = await loadCourseAction(parsed.courseCode!)
-            setCourse(c)
-          })()
-        }
+      if (!parsed || !Array.isArray(parsed.years)) return
+
+      // The saved year may not exist in the DB anymore (e.g. old data
+      // got trimmed). Fall back to the server-provided initial year.
+      const savedYear =
+        parsed.courseYear && availableYears.includes(parsed.courseYear)
+          ? parsed.courseYear
+          : initialYear
+      const merged: PlannerState = { ...parsed, courseYear: savedYear }
+      dispatch({ type: "hydrate", state: merged })
+
+      const yearChanged = savedYear !== initialYear
+      const codeChanged =
+        (parsed.courseCode ?? null) !== (defaultCourse?.code ?? null)
+      // If the saved year/course differs from what the server prewarmed,
+      // refetch everything against the saved year.
+      if (yearChanged || codeChanged) {
+        void (async () => {
+          if (yearChanged) {
+            const list = await listCoursesAction(null, savedYear)
+            setCourses(list)
+          }
+          const c = parsed.courseCode
+            ? await loadCourseAction(parsed.courseCode, savedYear)
+            : null
+          setCourse(c)
+          if (c) {
+            const codes = [
+              ...new Set([
+                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
+                ...c.courseUnits.map((u) => u.code),
+              ]),
+            ]
+            const res = await hydrateUnitsAction(codes, savedYear)
+            setUnitsMap(new Map(Object.entries(res.units)))
+            setOfferingsMap(new Map(Object.entries(res.offerings)))
+            setRequisitesMap(new Map(Object.entries(res.requisites)))
+          }
+        })()
       }
     } catch {
       // Ignore — corrupt localStorage is a user problem, not a crash.
     }
-  }, [defaultCourse?.code])
+  }, [defaultCourse?.code, initialYear, availableYears])
 
   // Persist plan state on every change (minus the very first render,
   // which would just round-trip the default).
@@ -189,9 +228,10 @@ export function PlannerProvider({
       (c) => !unitsMap.has(c) || !offeringsMap.has(c) || !requisitesMap.has(c)
     )
     if (needed.length === 0) return
+    const yearForFetch = state.courseYear
     startTransition(async () => {
       try {
-        const res = await hydrateUnitsAction(needed)
+        const res = await hydrateUnitsAction(needed, yearForFetch)
         setUnitsMap((m) => {
           const next = new Map(m)
           for (const [k, v] of Object.entries(res.units)) next.set(k, v)
@@ -200,8 +240,6 @@ export function PlannerProvider({
         setOfferingsMap((m) => {
           const next = new Map(m)
           for (const [k, v] of Object.entries(res.offerings)) next.set(k, v)
-          // For units that have no offering rows, still set an empty
-          // array so we don't re-fetch them.
           for (const code of needed) if (!next.has(code)) next.set(code, [])
           return next
         })
@@ -217,7 +255,7 @@ export function PlannerProvider({
         })
       }
     })
-  }, [plannedCodes, unitsMap, offeringsMap, requisitesMap])
+  }, [plannedCodes, unitsMap, offeringsMap, requisitesMap, state.courseYear])
 
   const validations = useMemo(
     () => validatePlan(state, unitsMap, offeringsMap, requisitesMap),
@@ -246,7 +284,7 @@ export function PlannerProvider({
       }
       startTransition(async () => {
         try {
-          const res = await hydrateUnitsAction(unique)
+          const res = await hydrateUnitsAction(unique, state.courseYear)
           const nextUnits = new Map(unitsMap)
           for (const [k, v] of Object.entries(res.units)) nextUnits.set(k, v)
           const nextOff = new Map(offeringsMap)
@@ -282,51 +320,104 @@ export function PlannerProvider({
     [state, unitsMap, offeringsMap]
   )
 
-  const switchCourse = useCallback(async (code: string) => {
-    startTransition(async () => {
-      try {
-        const c = await loadCourseAction(code)
-        setCourse(c)
-        dispatch({ type: "set_course", code })
-        // Merge any new AoS units into the local cache so the
-        // requirements panel renders titles without a second round-trip.
-        if (c) {
-          const codes = [
-            ...new Set([
-              ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
-              ...c.courseUnits.map((u) => u.code),
-            ]),
-          ]
-          const res = await hydrateUnitsAction(codes)
-          setUnitsMap((m) => {
-            const next = new Map(m)
-            for (const [k, v] of Object.entries(res.units)) next.set(k, v)
-            return next
-          })
-          setOfferingsMap((m) => {
-            const next = new Map(m)
-            for (const [k, v] of Object.entries(res.offerings)) next.set(k, v)
-            return next
-          })
-          setRequisitesMap((m) => {
-            const next = new Map(m)
-            for (const [k, v] of Object.entries(res.requisites)) next.set(k, v)
-            return next
+  const switchCourse = useCallback(
+    async (code: string) => {
+      const yearForFetch = state.courseYear
+      startTransition(async () => {
+        try {
+          const c = await loadCourseAction(code, yearForFetch)
+          setCourse(c)
+          dispatch({ type: "set_course", code })
+          if (c) {
+            const codes = [
+              ...new Set([
+                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
+                ...c.courseUnits.map((u) => u.code),
+              ]),
+            ]
+            const res = await hydrateUnitsAction(codes, yearForFetch)
+            setUnitsMap((m) => {
+              const next = new Map(m)
+              for (const [k, v] of Object.entries(res.units)) next.set(k, v)
+              return next
+            })
+            setOfferingsMap((m) => {
+              const next = new Map(m)
+              for (const [k, v] of Object.entries(res.offerings)) next.set(k, v)
+              return next
+            })
+            setRequisitesMap((m) => {
+              const next = new Map(m)
+              for (const [k, v] of Object.entries(res.requisites))
+                next.set(k, v)
+              return next
+            })
+          }
+        } catch (err) {
+          toast.error("Couldn't load course", {
+            description: err instanceof Error ? err.message : "Unknown error",
           })
         }
-      } catch (err) {
-        toast.error("Couldn't load course", {
-          description: err instanceof Error ? err.message : "Unknown error",
-        })
-      }
-    })
-  }, [])
+      })
+    },
+    [state.courseYear]
+  )
+
+  const switchYear = useCallback(
+    async (year: string) => {
+      if (year === state.courseYear) return
+      startTransition(async () => {
+        try {
+          dispatch({ type: "set_year", year })
+          // Refetch the courses list so the picker reflects the year.
+          const list = await listCoursesAction(null, year)
+          setCourses(list)
+          // Refetch the currently-selected course (if any) against the
+          // new year. The course may not exist there — surface that as
+          // a null course and let the UI prompt for a new pick.
+          const code = state.courseCode
+          const c = code ? await loadCourseAction(code, year) : null
+          setCourse(c)
+          if (c) {
+            const codes = [
+              ...new Set([
+                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
+                ...c.courseUnits.map((u) => u.code),
+              ]),
+            ]
+            const res = await hydrateUnitsAction(codes, year)
+            // Replace, don't merge — old year's offerings/requisites are
+            // stale and would mis-validate against the new year.
+            setUnitsMap(new Map(Object.entries(res.units)))
+            setOfferingsMap(new Map(Object.entries(res.offerings)))
+            setRequisitesMap(new Map(Object.entries(res.requisites)))
+          } else {
+            setUnitsMap(new Map())
+            setOfferingsMap(new Map())
+            setRequisitesMap(new Map())
+            if (code) {
+              toast.warning(`${code} isn't in the ${year} handbook`, {
+                description:
+                  "Pick another course or switch back to a year that has it.",
+              })
+            }
+          }
+        } catch (err) {
+          toast.error("Couldn't switch year", {
+            description: err instanceof Error ? err.message : "Unknown error",
+          })
+        }
+      })
+    },
+    [state.courseYear, state.courseCode]
+  )
 
   const value: PlannerContextValue = {
     state,
     dispatch,
     courses,
     course,
+    availableYears,
     units: unitsMap,
     offerings: offeringsMap,
     requisites: requisitesMap,
@@ -335,6 +426,7 @@ export function PlannerProvider({
     isSyncing,
     mergeUnits,
     switchCourse,
+    switchYear,
     loadUnitsTemplate,
     flashVersion,
     flashErrors,
