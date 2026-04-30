@@ -42,7 +42,7 @@ export function UnitSearchDialog({
   yearIndex: number
   slotIndex: number
 }) {
-  const { dispatch, state, course, mergeUnits, units } = usePlanner()
+  const { addUnit, state, course, mergeUnits, units } = usePlanner()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<PlannerUnit[]>([])
   const [loading, setLoading] = useState(false)
@@ -115,10 +115,10 @@ export function UnitSearchDialog({
 
   const addAndClose = useCallback(
     (code: string) => {
-      dispatch({ type: "add_unit", yearIndex, slotIndex, code })
+      addUnit(yearIndex, slotIndex, code)
       onOpenChange(false)
     },
-    [dispatch, yearIndex, slotIndex, onOpenChange]
+    [addUnit, yearIndex, slotIndex, onOpenChange]
   )
 
   return (

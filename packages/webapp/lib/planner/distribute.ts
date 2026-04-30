@@ -63,12 +63,35 @@ export function distribute(args: {
     const targetYear = yearForLevel(unit?.level, state.years.length)
     const offers = offerings.get(code) ?? []
     const hasOfferings = offers.length > 0
-    const offersS1 = offers.some(
-      (o) => o.periodKind === "S1" || o.periodKind === "FULL_YEAR"
-    )
-    const offersS2 = offers.some(
-      (o) => o.periodKind === "S2" || o.periodKind === "FULL_YEAR"
-    )
+    const offersS1 = offers.some((o) => o.periodKind === "S1")
+    const offersS2 = offers.some((o) => o.periodKind === "S2")
+    const offersFY = offers.some((o) => o.periodKind === "FULL_YEAR")
+    // True FY: only available as a year-long unit, no S1/S2 alternative.
+    const isFullYear = offersFY && !offersS1 && !offersS2
+
+    if (isFullYear) {
+      let placed = false
+      for (let yi = targetYear; yi < maxYears && !placed; yi++) {
+        ensureYear(yi)
+        const s1 = slotIdx(yi, "S1")
+        const s2 = slotIdx(yi, "S2")
+        if (s1 < 0 || s2 < 0) continue
+        // Need room in BOTH semesters — otherwise the twins can't fit.
+        if (
+          (fill[yi]?.[s1] ?? 0) < capOf(yi, s1) &&
+          (fill[yi]?.[s2] ?? 0) < capOf(yi, s2)
+        ) {
+          placements.push({ code, yearIndex: yi, slotIndex: s1 })
+          placements.push({ code, yearIndex: yi, slotIndex: s2 })
+          const row = (fill[yi] ??= [0, 0])
+          row[s1] = (row[s1] ?? 0) + 1
+          row[s2] = (row[s2] ?? 0) + 1
+          placed = true
+        }
+      }
+      continue
+    }
+
     // Fallback: unknown offerings OR only Summer/Winter — treat as both
     // S1 and S2 candidates so the unit lands somewhere; the validator
     // will surface "not offered in period" rather than silently dropping.

@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { LayersIcon } from "lucide-react";
-import { useMemo } from "react";
+import { LayersIcon } from "lucide-react"
+import { useMemo } from "react"
 
-import { cn } from "@/lib/utils";
-import { summarizePlan } from "@/lib/planner/progress";
+import { cn } from "@/lib/utils"
+import { summarizePlan } from "@/lib/planner/progress"
 
-import { usePlanner } from "./planner-context";
+import { usePlanner } from "./planner-context"
 
 /**
  * Thin credit-point + validation banner above the grid. Intentionally
@@ -14,31 +14,33 @@ import { usePlanner } from "./planner-context";
  * at-a-glance summary.
  */
 export function SummaryBar() {
-  const { state, course, units, validations } = usePlanner();
+  const { state, course, units, offerings, validations } = usePlanner()
 
   const summary = useMemo(
-    () => summarizePlan(state, course, units),
-    [state, course, units],
-  );
+    () => summarizePlan(state, course, units, offerings),
+    [state, course, units, offerings]
+  )
 
   const errorCount = useMemo(() => {
-    let e = 0;
-    for (const v of validations.values()) e += v.errors.length;
-    return e;
-  }, [validations]);
+    let e = 0
+    for (const v of validations.values()) e += v.errors.length
+    return e
+  }, [validations])
 
   const pct = Math.min(
     100,
     summary.targetCreditPoints
-      ? Math.round((summary.totalCreditPoints / summary.targetCreditPoints) * 100)
-      : 0,
-  );
+      ? Math.round(
+          (summary.totalCreditPoints / summary.targetCreditPoints) * 100
+        )
+      : 0
+  )
 
   return (
     <section className="flex flex-wrap items-center gap-5 rounded-3xl border bg-card px-5 py-3 shadow-card">
       <div className="flex min-w-[240px] flex-1 flex-col gap-1.5">
         <div className="flex items-baseline justify-between">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span className="text-[10px] tracking-wide text-muted-foreground uppercase">
             Credit points planned
           </span>
           <span className="text-xs tabular-nums">
@@ -46,7 +48,8 @@ export function SummaryBar() {
               {summary.totalCreditPoints}
             </span>
             <span className="text-muted-foreground">
-              {" "}/ {summary.targetCreditPoints}
+              {" "}
+              / {summary.targetCreditPoints}
             </span>
           </span>
         </div>
@@ -54,7 +57,7 @@ export function SummaryBar() {
           <div
             className={cn(
               "absolute inset-y-0 left-0 rounded-full transition-[width,background-color] duration-500 ease-out",
-              errorCount === 0 ? "bg-emerald-500" : "bg-amber-500",
+              errorCount === 0 ? "bg-emerald-500" : "bg-amber-500"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -69,11 +72,12 @@ export function SummaryBar() {
 
       {summary.duplicateUnitCodes.length > 0 ? (
         <div className="basis-full text-[11px] text-destructive">
-          Duplicate placements: {summary.duplicateUnitCodes.join(", ")}. Units should appear once.
+          Duplicate placements: {summary.duplicateUnitCodes.join(", ")}. Units
+          should appear once.
         </div>
       ) : null}
     </section>
-  );
+  )
 }
 
 function Stat({
@@ -81,9 +85,9 @@ function Stat({
   label,
   value,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
+  icon: React.ReactNode
+  label: string
+  value: string
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -91,11 +95,11 @@ function Stat({
         {icon}
       </div>
       <div className="leading-tight">
-        <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
+        <div className="text-[9px] tracking-wide text-muted-foreground uppercase">
           {label}
         </div>
         <div className="text-xs font-semibold tabular-nums">{value}</div>
       </div>
     </div>
-  );
+  )
 }

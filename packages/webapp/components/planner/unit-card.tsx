@@ -45,7 +45,9 @@ export function UnitCard({
   slotIndex: number
   isDragOverlay?: boolean
 }) {
-  const { units, validations, dispatch, flashVersion } = usePlanner()
+  const { units, validations, removeUnit, isFullYear, flashVersion } =
+    usePlanner()
+  const isFY = isFullYear(code)
   const unit = units.get(code)
   const validation = validations.get(keyFor(yearIndex, slotIndex, code))
   const faculty = useMemo(() => facultyStyle(code), [code])
@@ -53,8 +55,14 @@ export function UnitCard({
 
   const dragId = unitDragId(yearIndex, slotIndex, code)
   const dragData = useMemo(
-    () => ({ kind: "unit" as const, yearIndex, slotIndex, code }),
-    [yearIndex, slotIndex, code]
+    () => ({
+      kind: "unit" as const,
+      yearIndex,
+      slotIndex,
+      code,
+      isFullYear: isFY,
+    }),
+    [yearIndex, slotIndex, code, isFY]
   )
   const draggable = useDraggable({
     id: dragId,
@@ -159,6 +167,11 @@ export function UnitCard({
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tabular-nums">{code}</span>
             <StatusIcon status={status} />
+            {isFY ? (
+              <span className="ml-auto rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary uppercase">
+                Full year
+              </span>
+            ) : null}
           </div>
           <div className="line-clamp-2 text-[11px] leading-snug text-foreground/90">
             {unit?.title ?? (
@@ -175,9 +188,7 @@ export function UnitCard({
         <UnitMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
-          onRemove={() =>
-            dispatch({ type: "remove_unit", yearIndex, slotIndex, code })
-          }
+          onRemove={() => removeUnit(yearIndex, slotIndex, code)}
         />
       )}
     </div>

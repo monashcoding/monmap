@@ -19,6 +19,7 @@ import {
   loadCourseAction,
 } from "@/app/actions"
 import { distribute } from "@/lib/planner/distribute"
+import { isFullYearUnit } from "@/lib/planner/full-year"
 import { plannedUnitCodes } from "@/lib/planner/progress"
 import {
   defaultState,
@@ -66,6 +67,14 @@ export interface PlannerContextValue {
 
   /** Merge additional unit data (from search results) into the local cache. */
   mergeUnits: (units: PlannerUnit[]) => void
+  /** True if a code is a full-year unit per current offerings data. */
+  isFullYear: (code: string) => boolean
+  /** All FY codes currently placed anywhere in the plan. */
+  fullYearCodes: string[]
+  /** Add a unit, automatically routing FY units to S1[0]+S2[0] of the year. */
+  addUnit: (yearIndex: number, slotIndex: number, code: string) => void
+  /** Remove a unit, stripping both halves if FY. */
+  removeUnit: (yearIndex: number, slotIndex: number, code: string) => void
   /** Load and set a new course by code. */
   switchCourse: (code: string) => Promise<void>
   /** Switch the handbook year — refetches course, picker list, and unit data. */
@@ -262,6 +271,41 @@ export function PlannerProvider({
     [state, unitsMap, offeringsMap, requisitesMap]
   )
 
+  // Self-heal: when offerings catch up after a unit was added (search
+  // results don't pre-load offerings, so FY detection fires *after*
+  // placement), promote half-placed FY units to twinned placement.
+  useEffect(() => {
+    for (let yi = 0; yi < state.years.length; yi++) {
+      const year = state.years[yi]
+      if (!year) continue
+      const s1 = year.slots.find((s) => s.kind === "S1")
+      const s2 = year.slots.find((s) => s.kind === "S2")
+      if (!s1 || !s2) continue
+      const seen = new Set<string>()
+      for (const code of [...s1.unitCodes, ...s2.unitCodes]) {
+        if (seen.has(code)) continue
+        seen.add(code)
+        if (!isFullYearUnit(code, offeringsMap)) continue
+        const inS1 = s1.unitCodes.includes(code)
+        const inS2 = s2.unitCodes.includes(code)
+        if (inS1 && inS2) continue
+        // Half-placed FY unit — strip and re-add as proper twin.
+        dispatch({ type: "remove_full_year_unit", code })
+        // Compute fullYearCodes excluding the unit we just stripped.
+        const others: string[] = []
+        for (const c of plannedCodes)
+          if (c !== code && isFullYearUnit(c, offeringsMap)) others.push(c)
+        dispatch({
+          type: "add_full_year_unit",
+          yearIndex: yi,
+          code,
+          fullYearCodes: others,
+        })
+        return
+      }
+    }
+  }, [state.years, offeringsMap, plannedCodes])
+
   const mergeUnits = useCallback((list: PlannerUnit[]) => {
     setUnitsMap((m) => {
       const next = new Map(m)
@@ -269,6 +313,45 @@ export function PlannerProvider({
       return next
     })
   }, [])
+
+  const isFullYear = useCallback(
+    (code: string) => isFullYearUnit(code, offeringsMap),
+    [offeringsMap]
+  )
+
+  const fullYearCodes = useMemo(() => {
+    const out = new Set<string>()
+    for (const c of plannedCodes)
+      if (isFullYearUnit(c, offeringsMap)) out.add(c)
+    return [...out]
+  }, [plannedCodes, offeringsMap])
+
+  const addUnit = useCallback(
+    (yearIndex: number, slotIndex: number, code: string) => {
+      if (isFullYearUnit(code, offeringsMap)) {
+        dispatch({
+          type: "add_full_year_unit",
+          yearIndex,
+          code,
+          fullYearCodes,
+        })
+      } else {
+        dispatch({ type: "add_unit", yearIndex, slotIndex, code })
+      }
+    },
+    [offeringsMap, fullYearCodes]
+  )
+
+  const removeUnit = useCallback(
+    (yearIndex: number, slotIndex: number, code: string) => {
+      if (isFullYearUnit(code, offeringsMap)) {
+        dispatch({ type: "remove_full_year_unit", code })
+      } else {
+        dispatch({ type: "remove_unit", yearIndex, slotIndex, code })
+      }
+    },
+    [offeringsMap]
+  )
 
   const loadUnitsTemplate = useCallback(
     async (
@@ -425,6 +508,10 @@ export function PlannerProvider({
     plannedCodes,
     isSyncing,
     mergeUnits,
+    isFullYear,
+    fullYearCodes,
+    addUnit,
+    removeUnit,
     switchCourse,
     switchYear,
     loadUnitsTemplate,

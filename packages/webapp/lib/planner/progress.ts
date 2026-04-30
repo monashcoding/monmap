@@ -1,6 +1,8 @@
+import { isFullYearUnit } from "./full-year.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
+  PlannerOffering,
   PlannerState,
   PlannerUnit,
 } from "./types.ts"
@@ -19,7 +21,8 @@ export interface ProgressSummary {
 export function summarizePlan(
   state: PlannerState,
   course: PlannerCourseWithAoS | null,
-  unitsByCode: ReadonlyMap<string, PlannerUnit>
+  unitsByCode: ReadonlyMap<string, PlannerUnit>,
+  offeringsByCode?: ReadonlyMap<string, PlannerOffering[]>
 ): ProgressSummary {
   let total = 0
   const byYear: number[] = []
@@ -28,30 +31,59 @@ export function summarizePlan(
 
   for (const year of state.years) {
     let yearTotal = 0
+    // Track which FY codes have already had their CP counted in this
+    // year — a FY twin sits in both S1[0] and S2[0] of the same year
+    // and a 12cp unit shouldn't count as 24cp toward the degree.
+    const fyAlreadyCountedThisYear = new Set<string>()
     for (const slot of year.slots) {
       for (const code of slot.unitCodes) {
         const cp = unitsByCode.get(code)?.creditPoints ?? 0
+        const isFY =
+          offeringsByCode != null && isFullYearUnit(code, offeringsByCode)
+
+        if (isFY && fyAlreadyCountedThisYear.has(code)) {
+          // Second twin half — count toward per-slot kind so the per-
+          // semester load chart still shows the unit's presence, but
+          // don't double the running degree total.
+          if (slot.kind === "S1" || slot.kind === "S2") byKind[slot.kind] += cp
+          continue
+        }
+
         total += cp
         yearTotal += cp
         if (slot.kind === "S1" || slot.kind === "S2") byKind[slot.kind] += cp
         else byKind.OTHER += cp
-        seen.set(code, (seen.get(code) ?? 0) + 1)
+        if (isFY) fyAlreadyCountedThisYear.add(code)
+        else seen.set(code, (seen.get(code) ?? 0) + 1)
       }
     }
     byYear.push(yearTotal)
   }
 
+  // Flag only "real" duplicates — FY twins were already excluded above.
   const duplicates = [...seen.entries()]
     .filter(([, n]) => n > 1)
     .map(([c]) => c)
     .sort()
+
+  // For unique unit count include FY units (counted once per year above
+  // means they're not in `seen`; add the FY count separately).
+  let fyCount = 0
+  if (offeringsByCode != null) {
+    const fyPlaced = new Set<string>()
+    for (const year of state.years)
+      for (const slot of year.slots)
+        for (const code of slot.unitCodes)
+          if (isFullYearUnit(code, offeringsByCode)) fyPlaced.add(code)
+    fyCount = fyPlaced.size
+  }
 
   return {
     totalCreditPoints: total,
     targetCreditPoints: course?.creditPoints ?? 144,
     creditPointsByYear: byYear,
     creditPointsBySlotKind: byKind,
-    uniqueUnitCount: seen.size,
+    uniqueUnitCount: seen.size + fyCount,
     duplicateUnitCodes: duplicates,
   }
 }

@@ -62,6 +62,32 @@ export type PlannerAction =
       a: { yearIndex: number; slotIndex: number; code: string }
       b: { yearIndex: number; slotIndex: number; code: string }
     }
+  /**
+   * Place a full-year unit into a year. The reducer puts it at the
+   * next FY position in *both* S1 and S2 of that year, shifting any
+   * existing non-FY units rightward. `fullYearCodes` lists every FY
+   * code currently anywhere in the plan so the reducer can compute
+   * the prefix length without recomputing from offerings.
+   */
+  | {
+      type: "add_full_year_unit"
+      yearIndex: number
+      code: string
+      fullYearCodes: ReadonlyArray<string>
+    }
+  /** Remove a FY unit from wherever it lives — strips both S1 and S2. */
+  | { type: "remove_full_year_unit"; code: string }
+  /**
+   * Move a FY unit between years. Removes from `fromYearIndex` (both
+   * halves) and inserts into `toYearIndex` at the next FY position.
+   */
+  | {
+      type: "move_full_year_unit"
+      fromYearIndex: number
+      toYearIndex: number
+      code: string
+      fullYearCodes: ReadonlyArray<string>
+    }
   | {
       type: "bulk_load"
       placements: ReadonlyArray<{
@@ -180,6 +206,85 @@ export function plannerReducer(
       }))
     }
 
+    case "add_full_year_unit": {
+      const year = state.years[action.yearIndex]
+      if (!year) return state
+      const fySet = new Set(action.fullYearCodes)
+      // Already placed somewhere? Bail — caller should use move instead.
+      for (const y of state.years) {
+        for (const s of y.slots) {
+          if (s.unitCodes.includes(action.code)) return state
+        }
+      }
+      const nextYears = state.years.map((y, yi) => {
+        if (yi !== action.yearIndex) return y
+        return {
+          ...y,
+          slots: y.slots.map((s) => {
+            if (s.kind !== "S1" && s.kind !== "S2") return s
+            const fyN = countPrefix(s.unitCodes, fySet)
+            const next = [...s.unitCodes]
+            next.splice(fyN, 0, action.code)
+            return { ...s, unitCodes: next }
+          }),
+        }
+      })
+      return { ...state, years: nextYears }
+    }
+
+    case "remove_full_year_unit": {
+      return {
+        ...state,
+        years: state.years.map((y) => ({
+          ...y,
+          slots: y.slots.map((s) => {
+            if (s.kind !== "S1" && s.kind !== "S2") return s
+            if (!s.unitCodes.includes(action.code)) return s
+            return {
+              ...s,
+              unitCodes: s.unitCodes.filter((c) => c !== action.code),
+            }
+          }),
+        })),
+      }
+    }
+
+    case "move_full_year_unit": {
+      if (action.fromYearIndex === action.toYearIndex) return state
+      const fySet = new Set(action.fullYearCodes)
+      // Strip from source
+      const stripped = state.years.map((y, yi) => {
+        if (yi !== action.fromYearIndex) return y
+        return {
+          ...y,
+          slots: y.slots.map((s) => {
+            if (s.kind !== "S1" && s.kind !== "S2") return s
+            if (!s.unitCodes.includes(action.code)) return s
+            return {
+              ...s,
+              unitCodes: s.unitCodes.filter((c) => c !== action.code),
+            }
+          }),
+        }
+      })
+      // Insert into target
+      const inserted = stripped.map((y, yi) => {
+        if (yi !== action.toYearIndex) return y
+        return {
+          ...y,
+          slots: y.slots.map((s) => {
+            if (s.kind !== "S1" && s.kind !== "S2") return s
+            if (s.unitCodes.includes(action.code)) return s
+            const fyN = countPrefix(s.unitCodes, fySet)
+            const next = [...s.unitCodes]
+            next.splice(fyN, 0, action.code)
+            return { ...s, unitCodes: next }
+          }),
+        }
+      })
+      return { ...state, years: inserted }
+    }
+
     case "bulk_load": {
       let next: PlannerState =
         action.mode === "replace"
@@ -290,6 +395,18 @@ export function plannerReducer(
     case "hydrate":
       return action.state
   }
+}
+
+function countPrefix(
+  unitCodes: readonly string[],
+  fullYearCodes: ReadonlySet<string>
+): number {
+  let n = 0
+  for (const c of unitCodes) {
+    if (fullYearCodes.has(c)) n++
+    else break
+  }
+  return n
 }
 
 function withSlot(
