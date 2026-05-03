@@ -193,6 +193,135 @@ export function extractUnitRefs(
   return pickDefaultUnits(extractRequirementGroups(structure))
 }
 
+/**
+ * Extract "choice containers" — parents whose sub-containers are
+ * specialisation-style alternatives (each sub roughly the size of the
+ * parent budget; sum of subs exceeds the parent). Each detected
+ * specialisation comes back as one entry, with its title, parent
+ * grouping, the unit codes it pins, and its credit-point budget.
+ *
+ * Detection rule: for a parent at depth ≥ 1 with credit_points > 0,
+ * each non-zero sub-container with `cp >= parent.cp / 2` AND a total
+ * subs CP exceeding parent CP signals a "pick one" choice — emit each
+ * such sub as a separate `EmbeddedSpecialisation`.
+ *
+ * Patterns this catches:
+ *  - F2010 Part C (60cp) → 5 studios at 48cp each → 5 specialisations
+ *  - C2001 Part D (12cp) → 5 tracks at 12cp each → 5 specialisations
+ * Patterns it correctly skips:
+ *  - B2029 Part B (72cp) → 6cp pools → not specialisations
+ *  - E3002 Engineering (144cp) → mandatory parts summing to 144 → not
+ *    specialisations
+ */
+export interface EmbeddedSpecialisation {
+  /** Sub-container title (e.g. "Communication design"). */
+  title: string
+  /** Parent container title (e.g. "Part C. Studio practices"). */
+  parentTitle: string
+  /** Slug suitable for synthesizing a stable AoS code. */
+  slug: string
+  /** Parent's slug — disambiguates same-name specs across parts. */
+  parentSlug: string
+  /** Credit-point budget for picking this specialisation. */
+  creditPoints: number
+  /** Per-grouping requirement structure inside this specialisation. */
+  requirements: RequirementGroup[]
+}
+
+export function extractEmbeddedSpecialisations(
+  structure: unknown
+): EmbeddedSpecialisation[] {
+  const out: EmbeddedSpecialisation[] = []
+
+  const walk = (
+    node: unknown,
+    parentTitle: string | null,
+    depth: number
+  ): void => {
+    if (Array.isArray(node)) {
+      for (const x of node) walk(x, parentTitle, depth)
+      return
+    }
+    if (!node || typeof node !== "object") return
+    const n = node as Record<string, unknown>
+
+    const title =
+      typeof n["title"] === "string"
+        ? (n["title"] as string)
+        : typeof n["name"] === "string"
+          ? (n["name"] as string)
+          : null
+
+    const subs = n["container"]
+    if (!Array.isArray(subs) || subs.length === 0) return
+
+    // Detection only kicks in at depth ≥ 1 — depth 0 is the root
+    // wrapper that has no credit-point budget of its own.
+    if (depth >= 1) {
+      const parentCp = numeric(n["credit_points"])
+      if (parentCp > 0) {
+        const contributing = subs.filter(
+          (s): s is Record<string, unknown> =>
+            !!s &&
+            typeof s === "object" &&
+            numeric((s as Record<string, unknown>)["credit_points"]) > 0
+        )
+        const totalContrib = contributing.reduce(
+          (acc, s) => acc + numeric(s["credit_points"]),
+          0
+        )
+        // Choice container: each contributor is at least half the parent
+        // budget and the contributors collectively exceed the budget
+        // (so they can't all be required simultaneously).
+        const isChoice =
+          contributing.length >= 2 &&
+          totalContrib > parentCp &&
+          contributing.every((s) => numeric(s["credit_points"]) >= parentCp / 2)
+        if (isChoice) {
+          const parentSlug = slugify(title ?? parentTitle ?? "")
+          for (const sub of contributing) {
+            const subTitle =
+              (typeof sub["title"] === "string"
+                ? (sub["title"] as string)
+                : null) ?? "(untitled specialisation)"
+            const subCp = numeric(sub["credit_points"])
+            // Build the requirements *inside* this specialisation by
+            // running the standard walker over its subtree. We inject
+            // a fresh `container` wrapper at depth 0 so the inner walker
+            // emits all leaves of this sub.
+            const reqs = extractRequirementGroups({ container: [sub] })
+            out.push({
+              title: subTitle,
+              parentTitle: title ?? parentTitle ?? "Course requirements",
+              slug: slugify(subTitle),
+              parentSlug,
+              creditPoints: subCp,
+              requirements: reqs,
+            })
+          }
+          // Don't descend into a choice container — the embedded
+          // specialisations *replace* the parent's normal extraction.
+          return
+        }
+      }
+    }
+    // Recurse into every child to find choice containers anywhere
+    // in the tree (including the root level).
+    for (const sub of subs) walk(sub, title ?? parentTitle, depth + 1)
+  }
+
+  walk(structure, null, 0)
+  return out
+}
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+}
+
 function isSubjectLeaf(node: unknown): node is Record<string, unknown> {
   if (!node || typeof node !== "object") return false
   const n = node as Record<string, unknown>

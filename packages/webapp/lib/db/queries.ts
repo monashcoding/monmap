@@ -12,8 +12,10 @@ import { and, eq, ilike, inArray, or, sql } from "drizzle-orm"
 
 import { getDb, HANDBOOK_YEAR } from "./client.ts"
 import {
+  extractEmbeddedSpecialisations,
   extractRequirementGroups,
   pickDefaultUnits,
+  type EmbeddedSpecialisation,
   type RequirementGroup,
 } from "./curriculum.ts"
 import { classifyTeachingPeriod } from "../planner/teaching-period.ts"
@@ -100,19 +102,42 @@ export async function fetchCourseWithAoS(
   // cross-year / dangling refs from both the group options and the
   // flat default-load list.
   const rawCourseGroups = extractRequirementGroups(course.curriculumStructure)
-  let courseRequirements: RequirementGroup[] = []
-  let courseUnits: { code: string; grouping: string }[] = []
-  if (rawCourseGroups.length > 0) {
-    const allCodes = new Set<string>()
-    for (const g of rawCourseGroups) for (const c of g.options) allCodes.add(c)
+  // Pull embedded specialisations from the same tree — these are
+  // "pick one of N" sub-containers (e.g. F2010 Part C studios, C2001
+  // Part D tracks) that don't appear in the course_areas_of_study
+  // table. They get surfaced to the AoS picker as virtual AoS so the
+  // student can choose one and have its units auto-load.
+  const embeddedSpecs = extractEmbeddedSpecialisations(
+    course.curriculumStructure
+  )
+
+  // Collect every code that needs a validity check in one round-trip.
+  const allCandidateCodes = new Set<string>()
+  for (const g of rawCourseGroups)
+    for (const c of g.options) allCandidateCodes.add(c)
+  for (const spec of embeddedSpecs)
+    for (const g of spec.requirements)
+      for (const c of g.options) allCandidateCodes.add(c)
+
+  let valid = new Set<string>()
+  if (allCandidateCodes.size > 0) {
     const validRows = await db
       .select({ code: units.code })
       .from(units)
-      .where(and(eq(units.year, year), inArray(units.code, [...allCodes])))
-    const valid = new Set(validRows.map((r) => r.code))
+      .where(
+        and(eq(units.year, year), inArray(units.code, [...allCandidateCodes]))
+      )
+    valid = new Set(validRows.map((r) => r.code))
+  }
+
+  let courseRequirements: RequirementGroup[] = []
+  let courseUnits: { code: string; grouping: string }[] = []
+  if (rawCourseGroups.length > 0) {
     courseRequirements = filterGroups(rawCourseGroups, valid)
     courseUnits = pickDefaultUnits(courseRequirements)
   }
+
+  const virtualAos = buildEmbeddedAos(course.code, embeddedSpecs, valid)
 
   const links = await db
     .select({
@@ -148,7 +173,7 @@ export async function fetchCourseWithAoS(
       aqfLevel: course.aqfLevel,
       type: course.type,
       overview: course.overview,
-      areasOfStudy: [],
+      areasOfStudy: virtualAos,
       courseUnits,
       courseRequirements,
     }
@@ -213,7 +238,11 @@ export async function fetchCourseWithAoS(
     })
   }
 
-  const orderedAos = [...byCode.values()].sort((a, b) => {
+  // Append virtual (curriculum-tree-embedded) AoS — they coexist with
+  // DB-linked AoS without conflict because real AoS use codes like
+  // CSCYBSEC01 while virtual ones are namespaced as "C2001:part-d:...".
+  const combined = [...byCode.values(), ...virtualAos]
+  const orderedAos = combined.sort((a, b) => {
     if (a.kind !== b.kind) return kindOrder(a.kind) - kindOrder(b.kind)
     return a.title.localeCompare(b.title)
   })
@@ -230,6 +259,45 @@ export async function fetchCourseWithAoS(
     courseUnits,
     courseRequirements,
   }
+}
+
+/**
+ * Convert curriculum-tree embedded specialisations into virtual
+ * `PlannerAreaOfStudy` records the planner UI can treat like any other
+ * AoS. The synthetic code shape — `${courseCode}:${parentSlug}:${slug}` —
+ * is stable across page loads so localStorage saves continue to work.
+ */
+function buildEmbeddedAos(
+  courseCode: string,
+  specs: readonly EmbeddedSpecialisation[],
+  validCodes: ReadonlySet<string>
+): PlannerAreaOfStudy[] {
+  const out: PlannerAreaOfStudy[] = []
+  for (const spec of specs) {
+    const requirements = filterGroups(spec.requirements, validCodes)
+    if (requirements.length === 0) continue
+    const allUnits: { code: string; grouping: string }[] = []
+    const seen = new Set<string>()
+    for (const g of requirements) {
+      for (const c of g.options) {
+        const key = `${c}|${g.grouping}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        allUnits.push({ code: c, grouping: g.grouping })
+      }
+    }
+    out.push({
+      code: `${courseCode}:${spec.parentSlug}:${spec.slug}`,
+      title: spec.title,
+      kind: "specialisation",
+      relationshipLabel: spec.parentTitle,
+      creditPoints: spec.creditPoints,
+      units: allUnits,
+      requiredUnits: pickDefaultUnits(requirements),
+      requirements,
+    })
+  }
+  return out
 }
 
 function filterGroups(

@@ -215,9 +215,11 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
             >
               {KIND_LABEL[aos.kind]}
             </span>
-            <span className="text-[10px] text-muted-foreground tabular-nums">
-              {aos.code}
-            </span>
+            {aos.code.includes(":") ? null : (
+              <span className="text-[10px] text-muted-foreground tabular-nums">
+                {aos.code}
+              </span>
+            )}
           </div>
           <div className="mt-0.5 truncate text-xs leading-snug font-medium">
             {aos.title}

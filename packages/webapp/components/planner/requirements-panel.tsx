@@ -166,7 +166,11 @@ function AoSBlock({
             <Badge variant="secondary" className="text-[9px] font-normal">
               {ROLE_LABEL[role]}
             </Badge>
-            <span className="text-[9px] text-muted-foreground">{aos.code}</span>
+            {aos.code.includes(":") ? null : (
+              <span className="text-[9px] text-muted-foreground">
+                {aos.code}
+              </span>
+            )}
           </div>
           <h3 className="mt-0.5 truncate text-xs font-semibold">{aos.title}</h3>
         </div>

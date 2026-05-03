@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "scrape": "pnpm --filter @monmap/scraper scrape",
-    "scrape:all": "pnpm --filter @monmap/scraper scrape -- --all-years",
+    "scrape:all": "pnpm --filter @monmap/scraper scrape --all-years",
     "ingest": "pnpm --filter @monmap/ingest start",
+    "ingest:all": "pnpm --filter @monmap/ingest start --all-years",
     "db:generate": "pnpm --filter @monmap/db generate",
     "db:migrate": "pnpm --filter @monmap/db migrate",
     "db:studio": "pnpm --filter @monmap/db studio",

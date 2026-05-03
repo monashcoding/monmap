@@ -1,23 +1,23 @@
-"use client";
+"use client"
 
-import { XIcon } from "lucide-react";
-import { useMemo } from "react";
+import { XIcon } from "lucide-react"
+import { useMemo } from "react"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
   PlannerState,
-} from "@/lib/planner/types";
+} from "@/lib/planner/types"
 
-import { usePlanner } from "./planner-context";
+import { usePlanner } from "./planner-context"
 
 /**
  * Sidebar-oriented AoS picker — one row per role, stacked. Roles hide
@@ -25,11 +25,11 @@ import { usePlanner } from "./planner-context";
  * specialisations but no majors).
  */
 export function AoSPicker() {
-  const { course, state, dispatch } = usePlanner();
-  if (!course) return null;
+  const { course, state, dispatch } = usePlanner()
+  if (!course) return null
 
-  const roles = computeRolesForCourse(course);
-  if (roles.length === 0) return null;
+  const roles = computeRolesForCourse(course)
+  if (roles.length === 0) return null
 
   return (
     <div className="flex flex-col gap-2 border-t pt-2">
@@ -39,45 +39,72 @@ export function AoSPicker() {
           label={role.label}
           options={role.options}
           current={state.selectedAos[role.role]}
-          onChange={(code) => dispatch({ type: "set_aos", role: role.role, code })}
+          onChange={(code) =>
+            dispatch({ type: "set_aos", role: role.role, code })
+          }
         />
       ))}
     </div>
-  );
+  )
 }
 
 interface RoleDefinition {
-  role: keyof PlannerState["selectedAos"];
-  label: string;
-  kind: PlannerAreaOfStudy["kind"];
-  options: PlannerAreaOfStudy[];
+  role: keyof PlannerState["selectedAos"]
+  label: string
+  kind: PlannerAreaOfStudy["kind"]
+  options: PlannerAreaOfStudy[]
 }
 
 function computeRolesForCourse(course: PlannerCourseWithAoS): RoleDefinition[] {
-  const byKind = new Map<PlannerAreaOfStudy["kind"], PlannerAreaOfStudy[]>();
+  const byKind = new Map<PlannerAreaOfStudy["kind"], PlannerAreaOfStudy[]>()
   for (const a of course.areasOfStudy) {
-    const list = byKind.get(a.kind) ?? [];
-    list.push(a);
-    byKind.set(a.kind, list);
+    const list = byKind.get(a.kind) ?? []
+    list.push(a)
+    byKind.set(a.kind, list)
   }
 
-  const roles: RoleDefinition[] = [];
+  const roles: RoleDefinition[] = []
   if ((byKind.get("major")?.length ?? 0) > 0) {
-    roles.push({ role: "major", label: "Major", kind: "major", options: byKind.get("major")! });
+    roles.push({
+      role: "major",
+      label: "Major",
+      kind: "major",
+      options: byKind.get("major")!,
+    })
   }
   if ((byKind.get("extended_major")?.length ?? 0) > 0) {
-    roles.push({ role: "extendedMajor", label: "Extended major", kind: "extended_major", options: byKind.get("extended_major")! });
+    roles.push({
+      role: "extendedMajor",
+      label: "Extended major",
+      kind: "extended_major",
+      options: byKind.get("extended_major")!,
+    })
   }
   if ((byKind.get("specialisation")?.length ?? 0) > 0) {
-    roles.push({ role: "specialisation", label: "Specialisation", kind: "specialisation", options: byKind.get("specialisation")! });
+    roles.push({
+      role: "specialisation",
+      label: "Specialisation",
+      kind: "specialisation",
+      options: byKind.get("specialisation")!,
+    })
   }
   if ((byKind.get("minor")?.length ?? 0) > 0) {
-    roles.push({ role: "minor", label: "Minor", kind: "minor", options: byKind.get("minor")! });
+    roles.push({
+      role: "minor",
+      label: "Minor",
+      kind: "minor",
+      options: byKind.get("minor")!,
+    })
   }
   if ((byKind.get("elective")?.length ?? 0) > 0) {
-    roles.push({ role: "elective", label: "Elective stream", kind: "elective", options: byKind.get("elective")! });
+    roles.push({
+      role: "elective",
+      label: "Elective stream",
+      kind: "elective",
+      options: byKind.get("elective")!,
+    })
   }
-  return roles;
+  return roles
 }
 
 function RoleSelect({
@@ -86,25 +113,27 @@ function RoleSelect({
   current,
   onChange,
 }: {
-  label: string;
-  options: PlannerAreaOfStudy[];
-  current: string | undefined;
-  onChange: (code: string | null) => void;
+  label: string
+  options: PlannerAreaOfStudy[]
+  current: string | undefined
+  onChange: (code: string | null) => void
 }) {
   const sorted = useMemo(
     () => [...options].sort((a, b) => a.title.localeCompare(b.title)),
-    [options],
-  );
+    [options]
+  )
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+      <label className="px-1 text-[10px] tracking-wide text-muted-foreground uppercase">
         {label}
       </label>
       <div className="flex items-center gap-1">
         <Select
           value={current ?? ""}
-          onValueChange={(v) => onChange(typeof v === "string" && v !== "" ? v : null)}
+          onValueChange={(v) =>
+            onChange(typeof v === "string" && v !== "" ? v : null)
+          }
         >
           <SelectTrigger className="min-w-0 flex-1 items-center py-2.5 text-xs [&>span]:flex [&>span]:flex-1 [&>span]:items-center [&>span]:gap-2">
             <SelectValue placeholder={`Choose a ${label.toLowerCase()}`} />
@@ -114,12 +143,14 @@ function RoleSelect({
               <SelectItem
                 key={a.code}
                 value={a.code}
-                className="items-center py-2.5 pl-3.5 pr-12"
+                className="items-center py-2.5 pr-12 pl-3.5"
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="shrink-0 text-[11px] text-muted-foreground">
-                    {a.code}
-                  </span>
+                  {a.code.includes(":") ? null : (
+                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                      {a.code}
+                    </span>
+                  )}
                   <span className="truncate">{a.title}</span>
                 </span>
               </SelectItem>
@@ -138,5 +169,5 @@ function RoleSelect({
         ) : null}
       </div>
     </div>
-  );
+  )
 }

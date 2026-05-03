@@ -130,9 +130,11 @@ export function plannerReducer(
       return {
         ...state,
         courseYear: action.year,
-        // AoS codes are year-scoped — clear them when switching years
-        // since the prior picks may not exist in the target handbook.
         selectedAos: {},
+        years: state.years.map((y) => ({
+          ...y,
+          slots: y.slots.map((s) => ({ ...s, unitCodes: [] })),
+        })),
       }
 
     case "set_aos": {
