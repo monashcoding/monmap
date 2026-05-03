@@ -179,9 +179,25 @@ export interface PlannerSlot {
 
 export const DEFAULT_SLOT_CAPACITY = 4
 export const MAX_SLOT_CAPACITY = 8
+export const STANDARD_CP = 6
 
 export function slotCapacity(slot: PlannerSlot): number {
   return slot.capacity ?? DEFAULT_SLOT_CAPACITY
+}
+
+/**
+ * Credit-weighted slots used in a slot. A 12 CP unit counts as 2,
+ * an 18 CP unit as 3, a 24 CP unit as 4 — treating 6 CP as the baseline 1.
+ * Unknown units (not yet loaded) default to 1.
+ */
+export function slotUsedWeight(
+  slot: PlannerSlot,
+  units: Map<string, { creditPoints: number }>
+): number {
+  return slot.unitCodes.reduce((sum, code) => {
+    const cp = units.get(code)?.creditPoints ?? STANDARD_CP
+    return sum + Math.max(1, Math.round(cp / STANDARD_CP))
+  }, 0)
 }
 
 /** Output of validating a single slot/unit pairing. */

@@ -5,7 +5,7 @@ import { PlusIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { slotCapacity } from "@/lib/planner/types"
+import { slotCapacity, slotUsedWeight, STANDARD_CP } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
@@ -28,7 +28,7 @@ export function SemesterSlot({
   yearIndex: number
   slotIndex: number
 }) {
-  const { state } = usePlanner()
+  const { state, units } = usePlanner()
   const [open, setOpen] = useState(false)
 
   const slot = state.years[yearIndex]?.slots[slotIndex]
@@ -45,7 +45,8 @@ export function SemesterSlot({
   if (!slot) return null
 
   const capacity = slotCapacity(slot)
-  const atCapacity = slot.unitCodes.length >= capacity
+  const usedWeight = slotUsedWeight(slot, units)
+  const atCapacity = usedWeight >= capacity
   const activeData = active?.data.current as
     | { kind: string; yearIndex: number; slotIndex: number; code?: string }
     | undefined
@@ -55,6 +56,16 @@ export function SemesterSlot({
     activeData.slotIndex === slotIndex
   const showDropTint = isOver && activeData?.kind === "unit" && !isFromSameSlot
 
+  // Per-unit column spans derived from credit points.
+  const unitSpans = slot.unitCodes.map((code) => {
+    const cp = units.get(code)?.creditPoints ?? STANDARD_CP
+    return Math.max(1, Math.round(cp / STANDARD_CP))
+  })
+  const placedSpan = unitSpans.reduce((sum, s) => sum + s, 0)
+  // Column count must fit all placed spans plus the add button (if visible),
+  // but never collapse below the declared capacity.
+  const totalColumns = Math.max(capacity, placedSpan + (atCapacity ? 0 : 1))
+
   return (
     <div
       ref={setNodeRef}
@@ -62,17 +73,12 @@ export function SemesterSlot({
         "grid min-w-0 items-stretch gap-2 p-2 transition-colors duration-150",
         showDropTint && "bg-primary/5"
       )}
-      style={{
-        gridTemplateColumns: `repeat(${capacity}, minmax(0, 1fr))`,
-      }}
+      style={{ gridTemplateColumns: `repeat(${totalColumns}, minmax(0, 1fr))` }}
     >
-      {slot.unitCodes.map((code) => (
-        <UnitCard
-          key={code}
-          code={code}
-          yearIndex={yearIndex}
-          slotIndex={slotIndex}
-        />
+      {slot.unitCodes.map((code, i) => (
+        <div key={code} style={{ gridColumn: `span ${unitSpans[i]}` }}>
+          <UnitCard code={code} yearIndex={yearIndex} slotIndex={slotIndex} />
+        </div>
       ))}
 
       {!atCapacity ? (

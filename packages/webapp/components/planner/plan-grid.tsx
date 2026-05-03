@@ -23,6 +23,7 @@ import {
 import {
   MAX_SLOT_CAPACITY,
   slotCapacity,
+  slotUsedWeight,
   type PlannerSlot,
 } from "@/lib/planner/types"
 import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
@@ -64,7 +65,7 @@ function yearGradient(index: number): string {
  * units already placed).
  */
 export function PlanGrid() {
-  const { state, course, dispatch, fullYearCodes } = usePlanner()
+  const { state, course, dispatch, fullYearCodes, units } = usePlanner()
   const startYear = Number(state.courseYear) || new Date().getFullYear()
   const [active, setActive] = useState<ActiveDrag | null>(null)
 
@@ -160,8 +161,8 @@ export function PlanGrid() {
         return
       }
       if (
-        s1.unitCodes.length >= slotCapacity(s1) ||
-        s2.unitCodes.length >= slotCapacity(s2)
+        slotUsedWeight(s1, units) >= slotCapacity(s1) ||
+        slotUsedWeight(s2, units) >= slotCapacity(s2)
       ) {
         toast.warning(
           `Not enough room in ${targetYear + 1} — both S1 and S2 need an open slot for a year-long unit.`
@@ -210,7 +211,7 @@ export function PlanGrid() {
       return
     }
     const target = state.years[overData.yearIndex]?.slots[overData.slotIndex]
-    if (target && target.unitCodes.length >= slotCapacity(target)) return
+    if (target && slotUsedWeight(target, units) >= slotCapacity(target)) return
     dispatch({
       type: "move_unit",
       fromYearIndex: a.yearIndex,
@@ -285,9 +286,10 @@ function SemesterRow({
   showYearHeader: boolean
   yearHeaderLabel: string
 }) {
-  const { dispatch } = usePlanner()
+  const { dispatch, units } = usePlanner()
   const capacity = slotCapacity(slot)
-  const canDecrease = capacity > Math.max(1, slot.unitCodes.length)
+  const usedWeight = slotUsedWeight(slot, units)
+  const canDecrease = capacity > Math.max(1, usedWeight)
   const canIncrease = capacity < MAX_SLOT_CAPACITY
 
   return (
@@ -318,7 +320,7 @@ function SemesterRow({
           <div className="leading-tight">
             <div>{yearLabel}</div>
             <div className="mt-0.5 text-[10px] text-muted-foreground/70 tabular-nums">
-              {slot.unitCodes.length} / {capacity} units
+              {usedWeight} / {capacity} units
             </div>
           </div>
           <DropdownMenu>
