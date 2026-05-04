@@ -100,7 +100,17 @@ export function extractRequirementGroups(
           String(leaf["academic_item_code"]).toUpperCase()
         )
         let required: number
-        if (containerCp <= 0 || containerCp >= leafTotalCp) {
+        if (containerCp <= 0 && leafTotalCp <= 0) {
+          // Zero-cp group (e.g. ENG0001/ENG0002 professional practice): the
+          // credit-point math is useless here. Fall back to parent_connector
+          // on the leaf items: if any leaf says OR, pick 1; otherwise all.
+          const hasOr = subjects.some(
+            (r) =>
+              (r["parent_connector"] as { value?: string } | undefined)
+                ?.value === "OR"
+          )
+          required = hasOr ? 1 : subjects.length
+        } else if (containerCp <= 0 || containerCp >= leafTotalCp) {
           required = subjects.length
         } else {
           // Walk subjects in order, count how many are needed to satisfy budget.
@@ -162,8 +172,8 @@ export function extractRequirementGroups(
 /**
  * Flatten requirement groups into the "default load" list — only groups
  * where every listed option is required (required === options.length).
- * Choice/elective groups ("pick 2 of 6") are skipped entirely so the
- * template never auto-places an arbitrary elective unit.
+ * Choice groups ("pick 1 of 2", elective pools, etc.) are skipped so the
+ * template never auto-places an optional unit.
  */
 export function pickDefaultUnits(
   groups: readonly RequirementGroup[]
