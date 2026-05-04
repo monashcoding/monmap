@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronDownIcon, ExternalLinkIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -103,7 +103,18 @@ export function CoursePicker() {
       {course ? (
         <div className="mt-2 flex items-center justify-between border-t px-1 pt-2 text-[11px] text-muted-foreground">
           <span>{course.aqfLevel ?? "—"}</span>
-          <span className="tabular-nums">{course.creditPoints}cp</span>
+          <div className="flex items-center gap-2">
+            <span className="tabular-nums">{course.creditPoints}cp</span>
+            <a
+              href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View in handbook"
+              className="hover:text-foreground"
+            >
+              <ExternalLinkIcon className="size-3" />
+            </a>
+          </div>
         </div>
       ) : null}
 

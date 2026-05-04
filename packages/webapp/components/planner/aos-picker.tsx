@@ -1,6 +1,6 @@
 "use client"
 
-import { XIcon } from "lucide-react"
+import { ExternalLinkIcon, XIcon } from "lucide-react"
 import { useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -39,6 +39,7 @@ export function AoSPicker() {
           label={role.label}
           options={role.options}
           current={state.selectedAos[role.role]}
+          year={course.year}
           onChange={(code) =>
             dispatch({ type: "set_aos", role: role.role, code })
           }
@@ -134,11 +135,13 @@ function RoleSelect({
   label,
   options,
   current,
+  year,
   onChange,
 }: {
   label: string
   options: PlannerAreaOfStudy[]
   current: string | undefined
+  year: string
   onChange: (code: string | null) => void
 }) {
   const sorted = useMemo(
@@ -181,14 +184,25 @@ function RoleSelect({
           </SelectContent>
         </Select>
         {current ? (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Clear ${label.toLowerCase()}`}
-            onClick={() => onChange(null)}
-          >
-            <XIcon />
-          </Button>
+          <>
+            <a
+              href={`https://handbook.monash.edu/${year}/aos/${current}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="View in handbook"
+            >
+              <ExternalLinkIcon className="size-3.5" />
+            </a>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Clear ${label.toLowerCase()}`}
+              onClick={() => onChange(null)}
+            >
+              <XIcon />
+            </Button>
+          </>
         ) : null}
       </div>
     </div>
