@@ -32,6 +32,7 @@ import {
   primaryKey,
   serial,
   text,
+  timestamp,
 } from "drizzle-orm/pg-core";
 import type {
   AosContent,
@@ -39,6 +40,7 @@ import type {
   CurriculumStructure,
   UnitContent,
 } from "@monmap/scraper/types";
+import type { PlannerState } from "./planner-state.ts";
 
 /* ------------------------------------------------------------------ *
  * Enums
@@ -324,4 +326,120 @@ export const areaOfStudyUnits = pgTable(
     index("aos_units_aos_idx").on(t.aosYear, t.aosCode),
     index("aos_units_unit_idx").on(t.unitCode),
   ],
+);
+
+/* ------------------------------------------------------------------ *
+ * Better Auth tables
+ *
+ * Mirrors `npx @better-auth/cli generate`'s pg output. Better Auth
+ * owns these table/column names and types — don't rename them or sign-
+ * in silently breaks. Regenerate after upgrading better-auth in case
+ * the upstream schema picks up new columns.
+ * ------------------------------------------------------------------ */
+
+export const user = pgTable("user", {
+  id: text().primaryKey(),
+  name: text().notNull(),
+  email: text().notNull().unique(),
+  emailVerified: boolean().notNull().default(false),
+  image: text(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp()
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const session = pgTable(
+  "session",
+  {
+    id: text().primaryKey(),
+    expiresAt: timestamp().notNull(),
+    token: text().notNull().unique(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp()
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    ipAddress: text(),
+    userAgent: text(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+  },
+  (t) => [index("session_user_id_idx").on(t.userId)],
+);
+
+export const account = pgTable(
+  "account",
+  {
+    id: text().primaryKey(),
+    accountId: text().notNull(),
+    providerId: text().notNull(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accessToken: text(),
+    refreshToken: text(),
+    idToken: text(),
+    accessTokenExpiresAt: timestamp(),
+    refreshTokenExpiresAt: timestamp(),
+    scope: text(),
+    password: text(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp()
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("account_user_id_idx").on(t.userId)],
+);
+
+export const verification = pgTable(
+  "verification",
+  {
+    id: text().primaryKey(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: timestamp().notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp()
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("verification_identifier_idx").on(t.identifier)],
+);
+
+/* ------------------------------------------------------------------ *
+ * Application tables (not Better Auth)
+ *
+ * Many plans per user, each named (e.g. "BIT — extended major in CS",
+ * "Backup plan with minor in maths"). The `state` JSONB is statically
+ * typed as `PlannerState` via `$type<PlannerState>()` so callers like
+ * the webapp's queries get a strongly-typed payload without a manual
+ * cast.
+ *
+ * Composite uniqueness on (userId, name) is intentionally NOT enforced
+ * — duplicate names are the user's call to make.
+ * ------------------------------------------------------------------ */
+
+export const userPlan = pgTable(
+  "user_plan",
+  {
+    id: text()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    state: jsonb().$type<PlannerState>().notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp()
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("user_plan_user_id_idx").on(t.userId)],
 );

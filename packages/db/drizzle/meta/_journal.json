@@ -8,6 +8,27 @@
       "when": 1776737210479,
       "tag": "0000_calm_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777873789916,
+      "tag": "0001_nebulous_khan",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777874819414,
+      "tag": "0002_curly_betty_brant",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777876450897,
+      "tag": "0003_dizzy_sleepwalker",
+      "breakpoints": true
     }
   ]
 }

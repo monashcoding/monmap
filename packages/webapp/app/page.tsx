@@ -1,21 +1,27 @@
 import { Planner } from "@/components/planner/planner"
+import { getCurrentUser } from "@/lib/auth-server"
 import { HANDBOOK_YEAR } from "@/lib/db/client"
 import {
   fetchCourseWithAoS,
+  getUserPlanById,
   hydratePlannerUnits,
   listAvailableYears,
   listCoursesForPicker,
+  listUserPlans,
 } from "@/lib/db/queries"
 
 /**
- * Server-component shell. We fetch the picker's course list and
- * pre-warm the default course (C2000 — BIT, the pedagogical default)
- * so the planner can render immediately with its AoS dropdowns and
- * requirements panel hydrated.
+ * Server-component shell. Fetches the picker list and pre-warms units
+ * so the planner renders fully populated.
  *
- * The selected handbook year comes from `?year=2022` (URL search param)
- * so it survives navigation; defaults to the most recent year that has
- * data in the DB.
+ * Year/course resolution order:
+ *   1. ?year=… search param — explicit override
+ *   2. signed-in user's saved plan — open it where they left off
+ *   3. most recent year in the DB, default course (C2000 — BIT)
+ *
+ * Prewarming the *saved* course (not the default) for signed-in users
+ * means a returning user lands on their plan with no client-side
+ * refetch needed.
  */
 export default async function Page({
   searchParams,
@@ -24,20 +30,44 @@ export default async function Page({
 }) {
   const DEFAULT_COURSE = "C2000"
 
-  const params = await searchParams
-  const availableYears = await listAvailableYears()
+  const [params, availableYears, currentUser] = await Promise.all([
+    searchParams,
+    listAvailableYears(),
+    getCurrentUser(),
+  ])
+
+  // Signed-in users: list their plans, pick the most-recently-updated
+  // as the active one. Anon users get an empty list and no active plan.
+  const userPlans = currentUser ? await listUserPlans(currentUser.id) : []
+  const activePlanId = userPlans[0]?.id ?? null
+  const activePlan =
+    currentUser && activePlanId
+      ? await getUserPlanById(activePlanId, currentUser.id)
+      : null
+  const initialPlanState = activePlan?.state ?? null
+
   // Most recent year wins as default; fall back to HANDBOOK_YEAR if
   // the DB is empty (fresh setup).
   const fallbackYear = availableYears.at(-1) ?? HANDBOOK_YEAR
   const requestedYear = params.year
-  const year =
+  const explicitYear =
     requestedYear && availableYears.includes(requestedYear)
       ? requestedYear
-      : fallbackYear
+      : null
+  const planYear =
+    initialPlanState?.courseYear &&
+    availableYears.includes(initialPlanState.courseYear)
+      ? initialPlanState.courseYear
+      : null
+  const year = explicitYear ?? planYear ?? fallbackYear
+
+  // Pick the course to prewarm: explicit URL beats saved plan beats default.
+  const courseCode =
+    (!explicitYear && initialPlanState?.courseCode) || DEFAULT_COURSE
 
   const [courses, defaultCourse] = await Promise.all([
     listCoursesForPicker(null, 300, year),
-    fetchCourseWithAoS(DEFAULT_COURSE, year),
+    fetchCourseWithAoS(courseCode, year),
   ])
 
   const prewarmCodes = defaultCourse
@@ -68,6 +98,19 @@ export default async function Page({
           offerings: Object.fromEntries(hydrated.offerings),
           requisites: Object.fromEntries(hydrated.requisites),
         }}
+        currentUser={
+          currentUser
+            ? {
+                id: currentUser.id,
+                name: currentUser.name,
+                email: currentUser.email,
+                image: currentUser.image ?? null,
+              }
+            : null
+        }
+        initialPlan={initialPlanState}
+        initialPlans={userPlans}
+        initialActivePlanId={activePlanId}
       />
     </main>
   )

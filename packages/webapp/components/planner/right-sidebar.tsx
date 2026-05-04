@@ -1,5 +1,6 @@
 "use client"
 
+import { AnonymousBanner } from "./anonymous-banner"
 import { AoSTemplates } from "./aos-templates"
 import { CoursePicker } from "./course-picker"
 import { RequirementsPanel } from "./requirements-panel"
@@ -9,10 +10,15 @@ import { RequirementsPanel } from "./requirements-panel"
  * panel. Course selection sits on top, AoS picker folds into the
  * course picker, and the progress-against-requirements tiles
  * occupy the rest of the rail.
+ *
+ * The anonymous-mode prompt sits above the guide so visitors see
+ * "your plan is local-only" before they look at progression info.
+ * It self-hides for signed-in users.
  */
 export function RightSidebar() {
   return (
     <aside className="flex flex-col gap-4 print:hidden">
+      <AnonymousBanner />
       <div className="relative overflow-hidden rounded-3xl border bg-[var(--monash-purple)] px-4 py-3 text-white shadow-card">
         <div
           aria-hidden

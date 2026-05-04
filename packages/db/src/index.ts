@@ -3,6 +3,7 @@ import postgres from "postgres";
 import * as schema from "./schema.ts";
 
 export * from "./schema.ts";
+export * from "./planner-state.ts";
 
 export type Database = ReturnType<typeof createDb>;
 

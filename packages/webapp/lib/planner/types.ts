@@ -5,7 +5,14 @@
  * traffic in. Full handbook types live in `@monmap/scraper/types`
  * and `@monmap/db`; we only pull across what the planner actually
  * needs, and in the shape it needs them.
+ *
+ * Persisted types (PlannerState, PlannerYear, PlannerSlot, PeriodKind)
+ * live in `@monmap/db` so Drizzle can `$type<PlannerState>()` the
+ * jsonb column. We re-export them here so existing imports continue
+ * to point at `@/lib/planner/types`.
  */
+import type { PeriodKind, PlannerSlot } from "@monmap/db"
+export type { PeriodKind, PlannerSlot, PlannerState, PlannerYear } from "@monmap/db"
 
 /** A unit as rendered by the planner. All references are by year+code. */
 export interface PlannerUnit {
@@ -17,16 +24,6 @@ export interface PlannerUnit {
   synopsis: string | null
   school: string | null
 }
-
-/** Canonical teaching-period classification we use for slots + validation. */
-export type PeriodKind =
-  | "S1"
-  | "S2"
-  | "SUMMER_A"
-  | "SUMMER_B"
-  | "WINTER"
-  | "FULL_YEAR"
-  | "OTHER"
 
 /** A single offering row as the planner needs it. */
 export interface PlannerOffering {
@@ -143,46 +140,6 @@ export interface PlannerCourseWithAoS extends PlannerCourse {
    * — drives the Requirements panel's Course block.
    */
   courseRequirements: RequirementGroup[]
-}
-
-/** Planner state lives client-side. This is the shape persisted/restored. */
-export interface PlannerState {
-  courseYear: string
-  courseCode: string | null
-  /**
-   * Picked AoS codes, one per `kind`. The shape matches what a BIT student
-   * actually picks: one major (+ optionally an elective major), one minor,
-   * a specialisation, etc. We store by role so requirement-progress can
-   * look up "the picked major" quickly.
-   */
-  selectedAos: {
-    major?: string
-    extendedMajor?: string
-    minor?: string
-    specialisation?: string
-    specialisation2?: string
-    elective?: string
-  }
-  years: PlannerYear[]
-}
-
-export interface PlannerYear {
-  /** Display label like "Year 1" — not the handbook year. */
-  label: string
-  slots: PlannerSlot[]
-}
-
-export interface PlannerSlot {
-  kind: PeriodKind
-  unitCodes: string[]
-  /**
-   * Target count of units in this slot. Defaults to 4 (24cp full-time
-   * load) when undefined. Bounded to [unitCodes.length, 8] in the UI.
-   * Persisted per-slot so a student can plan a deliberate 3-unit
-   * semester or a 5-unit intensive without those settings leaking
-   * across other slots.
-   */
-  capacity?: number
 }
 
 export const DEFAULT_SLOT_CAPACITY = 4

@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "pnpm --filter webapp dev",
+    "build": "pnpm --filter webapp build",
+    "start": "pnpm --filter webapp start",
     "scrape": "pnpm --filter @monmap/scraper scrape",
     "scrape:all": "pnpm --filter @monmap/scraper scrape --all-years",
     "ingest": "pnpm --filter @monmap/ingest start",

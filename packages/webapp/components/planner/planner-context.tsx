@@ -14,11 +14,18 @@ import {
 import { toast } from "sonner"
 
 import {
+  createMyPlanAction,
+  deleteMyPlanAction,
+  getMyPlanAction,
   hydrateUnitsAction,
   hydrateUnitsMultiYearAction,
   listCoursesAction,
+  listMyPlansAction,
   loadCourseAction,
+  renameMyPlanAction,
+  saveMyPlanAction,
 } from "@/app/actions"
+import type { PlanSummary } from "@/lib/db/queries"
 import { distribute } from "@/lib/planner/distribute"
 import { isFullYearUnit } from "@/lib/planner/full-year"
 import { plannedUnitCodes } from "@/lib/planner/progress"
@@ -39,6 +46,15 @@ import type {
 import { validatePlan } from "@/lib/planner/validation"
 
 const STORAGE_KEY = "monmap.plan.v1"
+/** ms to wait after the last edit before pushing a save to the server. */
+const SERVER_SAVE_DEBOUNCE = 800
+
+export interface PlannerCurrentUser {
+  id: string
+  name: string
+  email: string
+  image: string | null
+}
 
 interface Hydrated {
   units: Record<string, PlannerUnit>
@@ -49,6 +65,17 @@ interface Hydrated {
 export interface PlannerContextValue {
   state: PlannerState
   dispatch: (action: PlannerAction) => void
+
+  /** Authenticated user info, or null for anonymous visitors. */
+  currentUser: PlannerCurrentUser | null
+  /**
+   * Whether the current edit has been persisted yet:
+   *   - "saved"   → in sync with the persistence backend
+   *   - "saving"  → mutation in flight (signed-in only)
+   *   - "local"   → anonymous; held only in localStorage on this device
+   *   - "error"   → last server save failed; will retry on next change
+   */
+  saveStatus: "saved" | "saving" | "local" | "error"
 
   courses: PlannerCourse[]
   course: PlannerCourseWithAoS | null
@@ -99,6 +126,26 @@ export interface PlannerContextValue {
    */
   flashVersion: number
   flashErrors: () => void
+
+  /* ---------- Multi-plan (signed-in only; empty for anon) ---------- */
+  /** All plans the signed-in user owns, most recent first. */
+  plans: PlanSummary[]
+  /** Plan id whose state is currently in `state`. Null while anon, or
+   * while a brand-new signed-in user hasn't saved their first plan. */
+  activePlanId: string | null
+  /** Switch to a different saved plan, flushing any pending save first. */
+  switchPlan: (planId: string) => Promise<void>
+  /** Create a fresh plan and switch to it. `fromCurrent` copies the
+   * current planner state; otherwise the new plan starts empty. */
+  createPlan: (
+    name: string,
+    opts?: { fromCurrent?: boolean }
+  ) => Promise<void>
+  /** Rename one of the user's plans. */
+  renamePlan: (planId: string, name: string) => Promise<void>
+  /** Delete a plan. If it was the active one we switch to whatever
+   * plan is most recent, or fall back to a fresh empty plan. */
+  deletePlan: (planId: string) => Promise<void>
 }
 
 const PlannerCtx = createContext<PlannerContextValue | null>(null)
@@ -131,6 +178,10 @@ export function PlannerProvider({
   courses: initialCourses,
   defaultCourse,
   prewarmed,
+  currentUser,
+  initialPlan,
+  initialPlans,
+  initialActivePlanId,
 }: {
   children: React.ReactNode
   initialYear: string
@@ -138,10 +189,30 @@ export function PlannerProvider({
   courses: PlannerCourse[]
   defaultCourse: PlannerCourseWithAoS | null
   prewarmed: Hydrated
+  currentUser: PlannerCurrentUser | null
+  /**
+   * Pre-fetched plan state for signed-in users (the active one); null
+   * when anonymous or when the user has no saved plans yet.
+   */
+  initialPlan: PlannerState | null
+  /** Pre-fetched plan summaries for the user; empty for anon. */
+  initialPlans: PlanSummary[]
+  /** Pre-selected plan id (whose state is `initialPlan`); null when anon
+   * or signed-in-with-no-plans. */
+  initialActivePlanId: string | null
 }) {
   const [state, dispatch] = useReducer(
     plannerReducer,
     defaultState(initialYear, defaultCourse?.code ?? null, 3)
+  )
+
+  const [saveStatus, setSaveStatus] = useState<
+    "saved" | "saving" | "local" | "error"
+  >(currentUser ? "saved" : "local")
+
+  const [plans, setPlans] = useState<PlanSummary[]>(initialPlans)
+  const [activePlanId, setActivePlanId] = useState<string | null>(
+    initialActivePlanId
   )
 
   const [course, setCourse] = useState<PlannerCourseWithAoS | null>(
@@ -174,76 +245,220 @@ export function PlannerProvider({
     })
   }, [])
 
-  // Rehydrate from localStorage exactly once on mount. We do this in
-  // an effect (not initial reducer state) so SSR and the first client
-  // render agree — otherwise hydration diffs.
+  // Rehydrate the plan exactly once on mount. Source of truth depends
+  // on auth state:
+  //
+  //   signed-in + initialPlan present  → server (passed as prop)
+  //   signed-in + no server plan       → localStorage migration: if a
+  //                                      pre-auth plan exists locally,
+  //                                      hydrate from it AND push to
+  //                                      the server, then clear local
+  //   anonymous                        → localStorage as before
+  //
+  // The reason we run this in an effect (not as the initial reducer
+  // value) is to keep the SSR and the first client render byte-identical
+  // — hydrating mid-render would diff.
   const restoredRef = useRef(false)
   useEffect(() => {
     if (restoredRef.current) return
     restoredRef.current = true
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as PlannerState
-      if (!parsed || !Array.isArray(parsed.years)) return
 
-      // The saved year may not exist in the DB anymore (e.g. old data
-      // got trimmed). Fall back to the server-provided initial year.
-      const savedYear =
-        parsed.courseYear && availableYears.includes(parsed.courseYear)
-          ? parsed.courseYear
-          : initialYear
-      const merged: PlannerState = { ...parsed, courseYear: savedYear }
-      dispatch({ type: "hydrate", state: merged })
+    let plan: PlannerState | null = null
+    let didMigrateLocal = false
 
-      const yearChanged = savedYear !== initialYear
-      const codeChanged =
-        (parsed.courseCode ?? null) !== (defaultCourse?.code ?? null)
-      // If the saved year/course differs from what the server prewarmed,
-      // refetch everything against the saved year.
-      if (yearChanged || codeChanged) {
-        void (async () => {
-          if (yearChanged) {
-            const list = await listCoursesAction(null, savedYear)
-            setCourses(list)
-          }
-          const c = parsed.courseCode
-            ? await loadCourseAction(parsed.courseCode, savedYear)
-            : null
-          setCourse(c)
-          if (c) {
-            const codes = [
-              ...new Set([
-                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
-                ...c.courseUnits.map((u) => u.code),
-              ]),
-            ]
-            const res = await hydrateUnitsAction(codes, savedYear)
-            setUnitsMap(new Map(Object.entries(res.units)))
-            setOfferingsMap(new Map(Object.entries(res.offerings)))
-            setRequisitesMap(new Map(Object.entries(res.requisites)))
-          }
-        })()
+    if (currentUser) {
+      if (initialPlan) {
+        plan = initialPlan
+      } else {
+        const local = readLocalPlan()
+        if (local) {
+          plan = local
+          didMigrateLocal = true
+        }
       }
-    } catch {
-      // Ignore — corrupt localStorage is a user problem, not a crash.
+    } else {
+      plan = readLocalPlan()
     }
-  }, [defaultCourse?.code, initialYear, availableYears])
 
-  // Persist plan state on every change (minus the very first render,
-  // which would just round-trip the default).
+    if (!plan) return
+
+    // The saved year may not exist in the DB anymore (e.g. old data
+    // got trimmed). Fall back to the server-provided initial year.
+    const savedYear =
+      plan.courseYear && availableYears.includes(plan.courseYear)
+        ? plan.courseYear
+        : initialYear
+    const merged: PlannerState = { ...plan, courseYear: savedYear }
+    dispatch({ type: "hydrate", state: merged })
+
+    if (didMigrateLocal && currentUser) {
+      // Push the migrated plan to the server as a new named plan, then
+      // clear localStorage so future logouts don't surface a stale
+      // copy. The created plan becomes the active one.
+      void createMyPlanAction("My plan", merged).then((res) => {
+        if (res.ok) {
+          try {
+            localStorage.removeItem(STORAGE_KEY)
+          } catch {
+            /* ignore */
+          }
+          setActivePlanId(res.plan.id)
+          setPlans((prev) => [
+            { id: res.plan.id, name: res.plan.name, updatedAt: new Date() },
+            ...prev,
+          ])
+          toast.success("Your plan is now saved to your account")
+        }
+      })
+    }
+
+    const yearChanged = savedYear !== initialYear
+    const codeChanged =
+      (plan.courseCode ?? null) !== (defaultCourse?.code ?? null)
+    // If the saved year/course differs from what the server prewarmed,
+    // refetch everything against the saved year.
+    if (yearChanged || codeChanged) {
+      const planCourseCode = plan.courseCode
+      void (async () => {
+        if (yearChanged) {
+          const list = await listCoursesAction(null, savedYear)
+          setCourses(list)
+        }
+        const c = planCourseCode
+          ? await loadCourseAction(planCourseCode, savedYear)
+          : null
+        setCourse(c)
+        if (c) {
+          const codes = [
+            ...new Set([
+              ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
+              ...c.courseUnits.map((u) => u.code),
+            ]),
+          ]
+          const res = await hydrateUnitsAction(codes, savedYear)
+          setUnitsMap(new Map(Object.entries(res.units)))
+          setOfferingsMap(new Map(Object.entries(res.offerings)))
+          setRequisitesMap(new Map(Object.entries(res.requisites)))
+        }
+      })()
+    }
+  }, [
+    currentUser,
+    initialPlan,
+    defaultCourse?.code,
+    initialYear,
+    availableYears,
+  ])
+
+  // Persist plan state on every change. Skip the very first render
+  // (would just round-trip the default), then route based on auth:
+  //   signed-in & has activePlanId → debounced server save
+  //   signed-in & no activePlanId  → first edit creates "My plan",
+  //                                  promotes it to active
+  //   anonymous                     → localStorage write
+  //
+  // We mirror activePlanId and the latest snapshot into refs so that
+  // `switchPlan` can flush the in-flight save synchronously without
+  // tripping over stale closure state.
   const firstPersistRef = useRef(true)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const activePlanIdRef = useRef(activePlanId)
+  const lastSnapshotRef = useRef(state)
+  useEffect(() => {
+    activePlanIdRef.current = activePlanId
+  }, [activePlanId])
+  useEffect(() => {
+    lastSnapshotRef.current = state
+  }, [state])
+
   useEffect(() => {
     if (firstPersistRef.current) {
       firstPersistRef.current = false
       return
     }
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    } catch {
-      // Quota / private mode — silently drop.
+
+    if (currentUser) {
+      // Debounce: a drag emits many state updates; we only need to land
+      // the final one within ~1s of the user pausing.
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      setSaveStatus("saving")
+      const snapshot = state
+      saveTimerRef.current = setTimeout(() => {
+        const planId = activePlanIdRef.current
+        if (planId) {
+          void saveMyPlanAction(planId, snapshot).then((res) => {
+            handleSaveResult(res, snapshot)
+          })
+        } else {
+          // First edit by a signed-in user with no plan yet. Promote
+          // their work to a brand-new "My plan" record.
+          void createMyPlanAction("My plan", snapshot).then((res) => {
+            if (res.ok) {
+              setActivePlanId(res.plan.id)
+              setPlans((prev) => [
+                {
+                  id: res.plan.id,
+                  name: res.plan.name,
+                  updatedAt: new Date(),
+                },
+                ...prev,
+              ])
+              setSaveStatus("saved")
+            } else if (res.reason === "unauthenticated") {
+              fallbackToLocal(snapshot)
+            } else {
+              setSaveStatus("error")
+            }
+          })
+        }
+      }, SERVER_SAVE_DEBOUNCE)
+      return () => {
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      }
     }
-  }, [state])
+
+    // Anonymous: keep on this device.
+    fallbackToLocal(state, "local")
+  }, [state, currentUser])
+
+  function handleSaveResult(
+    res: Awaited<ReturnType<typeof saveMyPlanAction>>,
+    snapshot: PlannerState
+  ) {
+    if (res.ok) {
+      setSaveStatus("saved")
+      // Bump our local "most recently updated" snapshot for plan list
+      // ordering. Cheap; avoids a refetch.
+      const planId = activePlanIdRef.current
+      if (planId) {
+        setPlans((prev) =>
+          [
+            ...prev.map((p) =>
+              p.id === planId ? { ...p, updatedAt: new Date() } : p
+            ),
+          ].sort(
+            (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
+          )
+        )
+      }
+    } else if (res.reason === "unauthenticated") {
+      fallbackToLocal(snapshot)
+    } else {
+      setSaveStatus("error")
+    }
+  }
+
+  function fallbackToLocal(
+    snapshot: PlannerState,
+    finalStatus: "local" | "local" = "local"
+  ) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
+    } catch {
+      /* ignore */
+    }
+    setSaveStatus(finalStatus)
+  }
 
   // Keep unit data hydrated for every code placed in the plan.
   // Re-fetches codes that are missing OR cached from the wrong handbook
@@ -541,9 +756,207 @@ export function PlannerProvider({
     [state.courseYear, state.courseCode]
   )
 
+  /* ---------- Multi-plan operations ---------- */
+
+  /**
+   * Synchronously cancel any pending debounced save and fire it now,
+   * so the in-progress edit lands against the *current* activePlanId
+   * before we point activePlanId somewhere else.
+   */
+  const flushPendingSave = useCallback(async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+    const planId = activePlanIdRef.current
+    if (!currentUser || !planId) return
+    setSaveStatus("saving")
+    const snapshot = lastSnapshotRef.current
+    const res = await saveMyPlanAction(planId, snapshot)
+    setSaveStatus(res.ok ? "saved" : "error")
+  }, [currentUser])
+
+  /**
+   * Hydrate the planner with a fetched plan: dispatch its state and
+   * refetch course/year/unit data if the new plan disagrees with the
+   * currently-rendered course or year. Identical structure to the
+   * initial-mount hydration logic, factored out so plan-switching can
+   * reuse it.
+   */
+  const hydrateFetchedPlan = useCallback(
+    async (planState: PlannerState) => {
+      const targetYear =
+        planState.courseYear && availableYears.includes(planState.courseYear)
+          ? planState.courseYear
+          : initialYear
+      const merged: PlannerState = { ...planState, courseYear: targetYear }
+      dispatch({ type: "hydrate", state: merged })
+
+      // Pause the persist effect from auto-saving the hydrated state;
+      // the snapshot we just dispatched IS the canonical server state.
+      firstPersistRef.current = true
+
+      // Refetch course/picker/unit data tied to the new plan.
+      startTransition(async () => {
+        try {
+          const yearChanged = targetYear !== state.courseYear
+          if (yearChanged) {
+            const list = await listCoursesAction(null, targetYear)
+            setCourses(list)
+          }
+          const c = planState.courseCode
+            ? await loadCourseAction(planState.courseCode, targetYear)
+            : null
+          setCourse(c)
+          if (c) {
+            const codes = [
+              ...new Set([
+                ...c.areasOfStudy.flatMap((a) =>
+                  a.units.map((u) => u.code)
+                ),
+                ...c.courseUnits.map((u) => u.code),
+              ]),
+            ]
+            const res = await hydrateUnitsAction(codes, targetYear)
+            setUnitsMap(new Map(Object.entries(res.units)))
+            setOfferingsMap(new Map(Object.entries(res.offerings)))
+            setRequisitesMap(new Map(Object.entries(res.requisites)))
+          } else {
+            setUnitsMap(new Map())
+            setOfferingsMap(new Map())
+            setRequisitesMap(new Map())
+          }
+        } catch (err) {
+          toast.error("Couldn't load the plan", {
+            description:
+              err instanceof Error ? err.message : "Unknown error",
+          })
+        }
+      })
+    },
+    [availableYears, initialYear, state.courseYear]
+  )
+
+  const switchPlan = useCallback(
+    async (planId: string) => {
+      if (!currentUser || planId === activePlanId) return
+      await flushPendingSave()
+      const fetched = await getMyPlanAction(planId)
+      if (!fetched) {
+        toast.error("That plan no longer exists")
+        // Refresh the list so the missing plan disappears from the UI.
+        const fresh = await listMyPlansAction()
+        setPlans(fresh)
+        return
+      }
+      setActivePlanId(planId)
+      await hydrateFetchedPlan(fetched.state)
+      setSaveStatus("saved")
+    },
+    [currentUser, activePlanId, flushPendingSave, hydrateFetchedPlan]
+  )
+
+  const createPlan = useCallback(
+    async (name: string, opts?: { fromCurrent?: boolean }) => {
+      if (!currentUser) return
+      await flushPendingSave()
+      const seedState = opts?.fromCurrent
+        ? lastSnapshotRef.current
+        : defaultState(initialYear, defaultCourse?.code ?? null, 3)
+      const trimmed = name.trim() || "My plan"
+      const res = await createMyPlanAction(trimmed, seedState)
+      if (!res.ok) {
+        toast.error("Couldn't create plan")
+        return
+      }
+      setPlans((prev) => [
+        { id: res.plan.id, name: res.plan.name, updatedAt: new Date() },
+        ...prev,
+      ])
+      setActivePlanId(res.plan.id)
+      // Hydrate so the editor reflects the new plan's seed state.
+      await hydrateFetchedPlan(seedState)
+      setSaveStatus("saved")
+      toast.success(`Created “${res.plan.name}”`)
+    },
+    [
+      currentUser,
+      flushPendingSave,
+      hydrateFetchedPlan,
+      initialYear,
+      defaultCourse?.code,
+    ]
+  )
+
+  const renamePlan = useCallback(
+    async (planId: string, name: string) => {
+      if (!currentUser) return
+      const trimmed = name.trim()
+      if (!trimmed) return
+      const res = await renameMyPlanAction(planId, trimmed)
+      if (!res.ok) {
+        toast.error("Couldn't rename plan")
+        return
+      }
+      setPlans((prev) =>
+        prev.map((p) =>
+          p.id === planId ? { ...p, name: trimmed, updatedAt: new Date() } : p
+        )
+      )
+    },
+    [currentUser]
+  )
+
+  const deletePlan = useCallback(
+    async (planId: string) => {
+      if (!currentUser) return
+      const res = await deleteMyPlanAction(planId)
+      if (!res.ok) {
+        toast.error("Couldn't delete plan")
+        return
+      }
+      const remaining = plans.filter((p) => p.id !== planId)
+      setPlans(remaining)
+      if (planId === activePlanId) {
+        // Switch to the next-most-recent plan, or wipe to a fresh empty
+        // plan if there are none.
+        const next = remaining[0]
+        if (next) {
+          await switchPlan(next.id)
+        } else {
+          setActivePlanId(null)
+          dispatch({
+            type: "hydrate",
+            state: defaultState(
+              initialYear,
+              defaultCourse?.code ?? null,
+              3
+            ),
+          })
+        }
+      }
+    },
+    [
+      currentUser,
+      plans,
+      activePlanId,
+      switchPlan,
+      initialYear,
+      defaultCourse?.code,
+    ]
+  )
+
   const value: PlannerContextValue = {
     state,
     dispatch,
+    currentUser,
+    saveStatus,
+    plans,
+    activePlanId,
+    switchPlan,
+    createPlan,
+    renamePlan,
+    deletePlan,
     courses,
     course,
     availableYears,
@@ -566,4 +979,21 @@ export function PlannerProvider({
   }
 
   return <PlannerCtx.Provider value={value}>{children}</PlannerCtx.Provider>
+}
+
+/**
+ * Read a previously persisted plan from localStorage. Returns null on
+ * missing/corrupt data — corrupt local state is the user's problem, not
+ * something to surface as an error.
+ */
+function readLocalPlan(): PlannerState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as PlannerState
+    if (!parsed || !Array.isArray(parsed.years)) return null
+    return parsed
+  } catch {
+    return null
+  }
 }
