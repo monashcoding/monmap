@@ -137,10 +137,7 @@ export interface PlannerContextValue {
   switchPlan: (planId: string) => Promise<void>
   /** Create a fresh plan and switch to it. `fromCurrent` copies the
    * current planner state; otherwise the new plan starts empty. */
-  createPlan: (
-    name: string,
-    opts?: { fromCurrent?: boolean }
-  ) => Promise<void>
+  createPlan: (name: string, opts?: { fromCurrent?: boolean }) => Promise<void>
   /** Rename one of the user's plans. */
   renamePlan: (planId: string, name: string) => Promise<void>
   /** Delete a plan. If it was the active one we switch to whatever
@@ -436,9 +433,7 @@ export function PlannerProvider({
             ...prev.map((p) =>
               p.id === planId ? { ...p, updatedAt: new Date() } : p
             ),
-          ].sort(
-            (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
-          )
+          ].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
         )
       }
     } else if (res.reason === "unauthenticated") {
@@ -673,6 +668,10 @@ export function PlannerProvider({
           setCourse(c)
           dispatch({ type: "set_course", code })
           if (c) {
+            dispatch({
+              type: "set_year_count",
+              count: Math.max(1, Math.ceil(c.creditPoints / 48)),
+            })
             const codes = [
               ...new Set([
                 ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
@@ -811,9 +810,7 @@ export function PlannerProvider({
           if (c) {
             const codes = [
               ...new Set([
-                ...c.areasOfStudy.flatMap((a) =>
-                  a.units.map((u) => u.code)
-                ),
+                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
                 ...c.courseUnits.map((u) => u.code),
               ]),
             ]
@@ -828,8 +825,7 @@ export function PlannerProvider({
           }
         } catch (err) {
           toast.error("Couldn't load the plan", {
-            description:
-              err instanceof Error ? err.message : "Unknown error",
+            description: err instanceof Error ? err.message : "Unknown error",
           })
         }
       })
@@ -927,11 +923,7 @@ export function PlannerProvider({
           setActivePlanId(null)
           dispatch({
             type: "hydrate",
-            state: defaultState(
-              initialYear,
-              defaultCourse?.code ?? null,
-              3
-            ),
+            state: defaultState(initialYear, defaultCourse?.code ?? null, 3),
           })
         }
       }

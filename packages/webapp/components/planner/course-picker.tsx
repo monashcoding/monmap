@@ -26,6 +26,19 @@ export function CoursePicker() {
   const [open, setOpen] = useState(false)
 
   const groupedByFaculty = useMemo(() => {
+    const ORDER: Record<string, number> = {
+      "UG comprehensive": 0,
+      "UG specialist": 1,
+      "UG double": 2,
+      "Vertical double": 3,
+      "Honours - 1 yr": 4,
+      "PG Masters": 5,
+      "Masters by research": 6,
+      "UG diploma": 7,
+      "PG Grad Cert / Grad Dip": 8,
+    }
+    const rank = (key: string) => ORDER[key] ?? 99
+
     const m = new Map<string, typeof courses>()
     for (const c of courses) {
       const key = c.type ?? "Other"
@@ -33,7 +46,7 @@ export function CoursePicker() {
       list.push(c)
       m.set(key, list)
     }
-    return [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
+    return [...m.entries()].sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
   }, [courses])
 
   return (

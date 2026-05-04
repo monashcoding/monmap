@@ -99,6 +99,7 @@ export type PlannerAction =
     }
   | { type: "add_year" }
   | { type: "remove_year"; yearIndex: number }
+  | { type: "set_year_count"; count: number }
   | {
       type: "add_optional_slot"
       yearIndex: number
@@ -358,6 +359,19 @@ export function plannerReducer(
           .filter((_, i) => i !== action.yearIndex)
           .map((y, i) => ({ ...y, label: `Year ${i + 1}` })),
       }
+
+    case "set_year_count": {
+      const target = Math.max(1, action.count)
+      if (state.years.length === target) return state
+      if (state.years.length < target) {
+        const added = Array.from(
+          { length: target - state.years.length },
+          (_, i) => defaultYear(state.years.length + i + 1)
+        )
+        return { ...state, years: [...state.years, ...added] }
+      }
+      return { ...state, years: state.years.slice(0, target) }
+    }
 
     case "add_optional_slot": {
       const year = state.years[action.yearIndex]
