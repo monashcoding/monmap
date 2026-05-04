@@ -99,7 +99,12 @@ export type PlannerAction =
     }
   | { type: "add_year" }
   | { type: "remove_year"; yearIndex: number }
-  | { type: "add_optional_slot"; yearIndex: number; kind: PeriodKind }
+  | {
+      type: "add_optional_slot"
+      yearIndex: number
+      kind: PeriodKind
+      label?: string
+    }
   | { type: "remove_slot"; yearIndex: number; slotIndex: number }
   | {
       type: "set_slot_capacity"
@@ -107,6 +112,8 @@ export type PlannerAction =
       slotIndex: number
       capacity: number
     }
+  | { type: "clear_slot"; yearIndex: number; slotIndex: number }
+  | { type: "rename_slot"; yearIndex: number; slotIndex: number; label: string }
   | { type: "reset"; yearCount?: number }
   | { type: "hydrate"; state: PlannerState }
 
@@ -355,8 +362,17 @@ export function plannerReducer(
     case "add_optional_slot": {
       const year = state.years[action.yearIndex]
       if (!year) return state
-      if (year.slots.some((s) => s.kind === action.kind)) return state
-      const newSlot: PlannerSlot = { kind: action.kind, unitCodes: [] }
+      // OTHER kind is used for freeform "Untitled" sections — allow multiples.
+      if (
+        action.kind !== "OTHER" &&
+        year.slots.some((s) => s.kind === action.kind)
+      )
+        return state
+      const newSlot: PlannerSlot = {
+        kind: action.kind,
+        unitCodes: [],
+        label: action.label,
+      }
       return {
         ...state,
         years: state.years.map((y, i) =>
@@ -389,6 +405,19 @@ export function plannerReducer(
         )
         if (slotCapacity(slot) === next) return slot
         return { ...slot, capacity: next }
+      })
+
+    case "clear_slot":
+      return withSlot(state, action.yearIndex, action.slotIndex, (slot) => {
+        if (slot.unitCodes.length === 0) return slot
+        return { ...slot, unitCodes: [] }
+      })
+
+    case "rename_slot":
+      return withSlot(state, action.yearIndex, action.slotIndex, (slot) => {
+        const label = action.label.trim() || undefined
+        if (slot.label === label) return slot
+        return { ...slot, label }
       })
 
     case "reset":

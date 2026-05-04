@@ -31,6 +31,8 @@ export interface PlannerSlot {
    * load) when undefined. Bounded to [unitCodes.length, 8] in the UI.
    */
   capacity?: number
+  /** User-supplied display label; falls back to the computed period+year label when absent. */
+  label?: string
 }
 
 export interface PlannerYear {

@@ -9,8 +9,15 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
-import { MinusIcon, MoreVerticalIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import {
+  MinusIcon,
+  MoreVerticalIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  Trash2Icon,
+} from "lucide-react"
 import { useState } from "react"
+import type { PeriodKind } from "@/lib/planner/types"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -18,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -26,7 +34,10 @@ import {
   slotUsedWeight,
   type PlannerSlot,
 } from "@/lib/planner/types"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import {
+  OPTIONAL_SLOT_KINDS,
+  PERIOD_KIND_LABEL,
+} from "@/lib/planner/teaching-period"
 
 import { usePlanner } from "./planner-context"
 import { SemesterSlot } from "./semester-slot"
@@ -57,6 +68,14 @@ const YEAR_GRADIENTS: string[] = [
 function yearGradient(index: number): string {
   return YEAR_GRADIENTS[Math.min(index, YEAR_GRADIENTS.length - 1)]
 }
+
+const ADDABLE_SLOT_KINDS: PeriodKind[] = [
+  "S1",
+  "S2",
+  "SUMMER_A",
+  "SUMMER_B",
+  "WINTER",
+]
 
 /**
  * The main planner pane — one row per (year, slot). The left label
@@ -238,6 +257,8 @@ export function PlanGrid() {
               slotIndex={slotIndex}
               slot={slot}
               yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
+              calYear={startYear + yearIndex}
+              yearSlotKinds={year.slots.map((s) => s.kind)}
               removableYear={state.years.length > 1 && slotIndex === 0}
               onRemoveYear={() => dispatch({ type: "remove_year", yearIndex })}
               showYearHeader={slotIndex === 0}
@@ -272,6 +293,8 @@ function SemesterRow({
   slotIndex,
   slot,
   yearLabel,
+  calYear,
+  yearSlotKinds,
   removableYear,
   onRemoveYear,
   showYearHeader,
@@ -281,6 +304,8 @@ function SemesterRow({
   slotIndex: number
   slot: PlannerSlot
   yearLabel: string
+  calYear: number
+  yearSlotKinds: PeriodKind[]
   removableYear: boolean
   onRemoveYear: () => void
   showYearHeader: boolean
@@ -291,6 +316,21 @@ function SemesterRow({
   const usedWeight = slotUsedWeight(slot, units)
   const canDecrease = capacity > Math.max(1, usedWeight)
   const canIncrease = capacity < MAX_SLOT_CAPACITY
+  const isOptionalSlot = OPTIONAL_SLOT_KINDS.includes(slot.kind)
+
+  const [isEditingLabel, setIsEditingLabel] = useState(false)
+  const [labelDraft, setLabelDraft] = useState("")
+  const displayLabel = slot.label ?? yearLabel
+
+  function startLabelEdit() {
+    setLabelDraft(displayLabel)
+    setIsEditingLabel(true)
+  }
+
+  function commitLabelEdit() {
+    dispatch({ type: "rename_slot", yearIndex, slotIndex, label: labelDraft })
+    setIsEditingLabel(false)
+  }
 
   return (
     <>
@@ -302,23 +342,86 @@ function SemesterRow({
           <h3 className="text-xs font-semibold tracking-[0.12em] text-white uppercase">
             {yearHeaderLabel}
           </h3>
-          {removableYear ? (
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label={`Remove ${yearHeaderLabel}`}
-              onClick={onRemoveYear}
-              className="text-white/70 hover:bg-white/15 hover:text-white"
-            >
-              <Trash2Icon />
-            </Button>
-          ) : null}
+          <div className="flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="Add section"
+                    className="text-white/70 hover:bg-white/15 hover:text-white"
+                  />
+                }
+              >
+                <PlusIcon />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {ADDABLE_SLOT_KINDS.map((kind) => (
+                  <DropdownMenuItem
+                    key={kind}
+                    disabled={yearSlotKinds.includes(kind)}
+                    onClick={() =>
+                      dispatch({ type: "add_optional_slot", yearIndex, kind })
+                    }
+                  >
+                    {PERIOD_KIND_LABEL[kind]}, {calYear}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    dispatch({
+                      type: "add_optional_slot",
+                      yearIndex,
+                      kind: "OTHER",
+                      label: `Untitled, ${calYear}`,
+                    })
+                  }
+                >
+                  Untitled, {calYear}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {removableYear ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label={`Remove ${yearHeaderLabel}`}
+                onClick={onRemoveYear}
+                className="text-white/70 hover:bg-white/15 hover:text-white"
+              >
+                <Trash2Icon />
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       <div className="grid grid-cols-[180px_minmax(0,1fr)] items-stretch border-b last:border-b-0">
         <div className="flex items-center justify-between gap-1 border-r bg-muted/20 px-3 py-3 text-[11px] font-medium text-muted-foreground">
-          <div className="leading-tight">
-            <div>{yearLabel}</div>
+          <div className="min-w-0 flex-1 leading-tight">
+            {isEditingLabel ? (
+              <input
+                className="w-full bg-transparent text-[11px] font-medium text-muted-foreground outline-none"
+                value={labelDraft}
+                onChange={(e) => setLabelDraft(e.target.value)}
+                onBlur={commitLabelEdit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitLabelEdit()
+                  if (e.key === "Escape") setIsEditingLabel(false)
+                }}
+                autoFocus
+              />
+            ) : (
+              <button
+                type="button"
+                className="block text-left leading-tight hover:text-foreground"
+                onClick={startLabelEdit}
+                title="Click to rename"
+              >
+                {displayLabel}
+              </button>
+            )}
             <div className="mt-0.5 text-[10px] text-muted-foreground/70 tabular-nums">
               {usedWeight} / {capacity} units
             </div>
@@ -329,7 +432,7 @@ function SemesterRow({
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  aria-label={`${yearLabel} options`}
+                  aria-label={`${displayLabel} options`}
                   className="shrink-0"
                 />
               }
@@ -365,6 +468,29 @@ function SemesterRow({
                 <MinusIcon />
                 Remove a unit slot
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={slot.unitCodes.length === 0}
+                onClick={() =>
+                  dispatch({ type: "clear_slot", yearIndex, slotIndex })
+                }
+              >
+                <RotateCcwIcon />
+                Reset semester
+              </DropdownMenuItem>
+              {isOptionalSlot ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() =>
+                      dispatch({ type: "remove_slot", yearIndex, slotIndex })
+                    }
+                  >
+                    <Trash2Icon />
+                    Remove section
+                  </DropdownMenuItem>
+                </>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
