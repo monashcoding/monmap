@@ -42,3 +42,13 @@ pnpm db:migrate       # apply pending migrations to the database in DATABASE_URL
 Push bypasses the migration history — great for throwaway prototypes,
 disastrous for a shared dev/prod DB where you want an auditable log of
 every schema change. Always go through a reviewed migration file.
+
+## 3. Never start the Next.js dev server yourself
+
+The user runs `pnpm dev` themselves. Don't spawn it, don't background it,
+don't "just smoke-test it" — `next dev` holds a lockfile at
+`packages/webapp/.next/dev/lock`, and a second instance fights the
+user's instance over the port and the lock, leaves orphaned processes,
+and corrupts the build cache. If you need to verify a route, ask the
+user to hit it (or to share the response), or write a unit test. Same
+applies to `next start` and any other long-running server.

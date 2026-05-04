@@ -8,6 +8,13 @@
       "when": 1776737210479,
       "tag": "0000_calm_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777873789916,
+      "tag": "0001_nebulous_khan",
+      "breakpoints": true
     }
   ]
 }
