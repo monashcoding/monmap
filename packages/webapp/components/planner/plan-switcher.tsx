@@ -12,6 +12,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -57,15 +58,16 @@ export function PlanSwitcher() {
         <ChevronDownIcon className="size-3.5 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[260px]">
-        <DropdownMenuLabel className="text-[10px] tracking-wider text-muted-foreground uppercase">
-          Your plans
-        </DropdownMenuLabel>
-        {plans.length === 0 ? (
-          <div className="px-2 py-2 text-xs text-muted-foreground">
-            No plans yet — create one to start saving.
-          </div>
-        ) : (
-          plans.map((p) => (
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-[10px] tracking-wider text-muted-foreground uppercase">
+            Your plans
+          </DropdownMenuLabel>
+          {plans.length === 0 ? (
+            <div className="px-2 py-2 text-xs text-muted-foreground">
+              No plans yet — create one to start saving.
+            </div>
+          ) : (
+            plans.map((p) => (
             <DropdownMenuItem
               key={p.id}
               onClick={(e) => {
@@ -124,8 +126,9 @@ export function PlanSwitcher() {
                 <Trash2Icon className="size-3" />
               </button>
             </DropdownMenuItem>
-          ))
-        )}
+            ))
+          )}
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {
