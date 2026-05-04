@@ -1,10 +1,12 @@
 "use client"
 
 import { Toaster } from "@/components/ui/sonner"
+import type { PlanSummary } from "@/lib/db/queries"
 import type {
   PlannerCourse,
   PlannerCourseWithAoS,
   PlannerOffering,
+  PlannerState,
   PlannerUnit,
   RequisiteBlock,
 } from "@/lib/planner/types"
@@ -12,7 +14,7 @@ import type {
 import { Header } from "./header"
 import { LeftSidebar } from "./left-sidebar"
 import { PlanGrid } from "./plan-grid"
-import { PlannerProvider } from "./planner-context"
+import { PlannerProvider, type PlannerCurrentUser } from "./planner-context"
 import { RightSidebar } from "./right-sidebar"
 import { SummaryBar } from "./summary-bar"
 
@@ -26,6 +28,10 @@ interface PlannerProps {
     offerings: Record<string, PlannerOffering[]>
     requisites: Record<string, RequisiteBlock[]>
   }
+  currentUser: PlannerCurrentUser | null
+  initialPlan: PlannerState | null
+  initialPlans: PlanSummary[]
+  initialActivePlanId: string | null
 }
 
 /**
@@ -46,6 +52,10 @@ export function Planner(props: PlannerProps) {
       courses={props.courses}
       defaultCourse={props.defaultCourse}
       prewarmed={props.prewarmed}
+      currentUser={props.currentUser}
+      initialPlan={props.initialPlan}
+      initialPlans={props.initialPlans}
+      initialActivePlanId={props.initialActivePlanId}
     >
       <Header />
 

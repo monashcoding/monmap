@@ -40,6 +40,7 @@ import type {
   CurriculumStructure,
   UnitContent,
 } from "@monmap/scraper/types";
+import type { PlannerState } from "./planner-state.ts";
 
 /* ------------------------------------------------------------------ *
  * Enums
@@ -408,4 +409,37 @@ export const verification = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [index("verification_identifier_idx").on(t.identifier)],
+);
+
+/* ------------------------------------------------------------------ *
+ * Application tables (not Better Auth)
+ *
+ * Many plans per user, each named (e.g. "BIT — extended major in CS",
+ * "Backup plan with minor in maths"). The `state` JSONB is statically
+ * typed as `PlannerState` via `$type<PlannerState>()` so callers like
+ * the webapp's queries get a strongly-typed payload without a manual
+ * cast.
+ *
+ * Composite uniqueness on (userId, name) is intentionally NOT enforced
+ * — duplicate names are the user's call to make.
+ * ------------------------------------------------------------------ */
+
+export const userPlan = pgTable(
+  "user_plan",
+  {
+    id: text()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    state: jsonb().$type<PlannerState>().notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp()
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("user_plan_user_id_idx").on(t.userId)],
 );

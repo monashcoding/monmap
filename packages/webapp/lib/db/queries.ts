@@ -7,8 +7,9 @@ import {
   requisites,
   unitOfferings,
   units,
+  userPlan,
 } from "@monmap/db"
-import { and, eq, ilike, inArray, or, sql } from "drizzle-orm"
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 
 import { getDb, HANDBOOK_YEAR } from "./client.ts"
 import {
@@ -24,6 +25,7 @@ import type {
   PlannerCourse,
   PlannerCourseWithAoS,
   PlannerOffering,
+  PlannerState,
   PlannerUnit,
   RequisiteBlock,
   RequisiteRule,
@@ -628,4 +630,99 @@ export async function hydratePlannerUnitsMultiYear(
     offerings: offeringsMerged,
     requisites: requisitesMerged,
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * Per-user plan persistence
+ *
+ * Many plans per user, each named. All mutations are gated by
+ * (userId, planId) so a malicious client can't poke at someone else's
+ * plan even if they guess an id. Caller is expected to have validated
+ * `state` shape at the action boundary.
+ * ------------------------------------------------------------------ */
+
+export interface PlanSummary {
+  id: string
+  name: string
+  updatedAt: Date
+}
+
+export async function listUserPlans(userId: string): Promise<PlanSummary[]> {
+  const db = getDb()
+  return db
+    .select({
+      id: userPlan.id,
+      name: userPlan.name,
+      updatedAt: userPlan.updatedAt,
+    })
+    .from(userPlan)
+    .where(eq(userPlan.userId, userId))
+    .orderBy(desc(userPlan.updatedAt))
+}
+
+export async function getUserPlanById(
+  planId: string,
+  userId: string
+): Promise<{ id: string; name: string; state: PlannerState } | null> {
+  const db = getDb()
+  const [row] = await db
+    .select({ id: userPlan.id, name: userPlan.name, state: userPlan.state })
+    .from(userPlan)
+    .where(and(eq(userPlan.id, planId), eq(userPlan.userId, userId)))
+    .limit(1)
+  return row ?? null
+}
+
+export async function createUserPlan(
+  userId: string,
+  name: string,
+  state: PlannerState
+): Promise<{ id: string; name: string }> {
+  const db = getDb()
+  const [row] = await db
+    .insert(userPlan)
+    .values({ userId, name, state })
+    .returning({ id: userPlan.id, name: userPlan.name })
+  if (!row) throw new Error("createUserPlan: no row returned")
+  return row
+}
+
+export async function updateUserPlanState(
+  planId: string,
+  userId: string,
+  state: PlannerState
+): Promise<boolean> {
+  const db = getDb()
+  const rows = await db
+    .update(userPlan)
+    .set({ state, updatedAt: new Date() })
+    .where(and(eq(userPlan.id, planId), eq(userPlan.userId, userId)))
+    .returning({ id: userPlan.id })
+  return rows.length > 0
+}
+
+export async function renameUserPlan(
+  planId: string,
+  userId: string,
+  name: string
+): Promise<boolean> {
+  const db = getDb()
+  const rows = await db
+    .update(userPlan)
+    .set({ name, updatedAt: new Date() })
+    .where(and(eq(userPlan.id, planId), eq(userPlan.userId, userId)))
+    .returning({ id: userPlan.id })
+  return rows.length > 0
+}
+
+export async function deleteUserPlan(
+  planId: string,
+  userId: string
+): Promise<boolean> {
+  const db = getDb()
+  const rows = await db
+    .delete(userPlan)
+    .where(and(eq(userPlan.id, planId), eq(userPlan.userId, userId)))
+    .returning({ id: userPlan.id })
+  return rows.length > 0
 }
