@@ -19,6 +19,7 @@ const ROLE_LABEL: Record<keyof PlannerState["selectedAos"], string> = {
   extendedMajor: "Extended major",
   minor: "Minor",
   specialisation: "Specialisation",
+  specialisation2: "Specialisation",
   elective: "Elective",
 }
 

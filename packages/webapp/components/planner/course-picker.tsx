@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { ChevronDownIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ChevronDownIcon } from "lucide-react"
+import { useMemo, useState } from "react"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
@@ -11,34 +11,34 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from "@/components/ui/command"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover"
 
-import { AoSPicker } from "./aos-picker";
-import { usePlanner } from "./planner-context";
+import { AoSPicker } from "./aos-picker"
+import { usePlanner } from "./planner-context"
 
 export function CoursePicker() {
-  const { courses, course, switchCourse } = usePlanner();
-  const [open, setOpen] = useState(false);
+  const { courses, course, switchCourse } = usePlanner()
+  const [open, setOpen] = useState(false)
 
   const groupedByFaculty = useMemo(() => {
-    const m = new Map<string, typeof courses>();
+    const m = new Map<string, typeof courses>()
     for (const c of courses) {
-      const key = c.type ?? "Other";
-      const list = m.get(key) ?? [];
-      list.push(c);
-      m.set(key, list);
+      const key = c.type ?? "Other"
+      const list = m.get(key) ?? []
+      list.push(c)
+      m.set(key, list)
     }
-    return [...m.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [courses]);
+    return [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
+  }, [courses])
 
   return (
     <section className="rounded-3xl border bg-card p-3 shadow-card">
-      <label className="px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+      <label className="px-1 text-[10px] tracking-wide text-muted-foreground uppercase">
         Course
       </label>
       <Popover open={open} onOpenChange={setOpen}>
@@ -46,13 +46,13 @@ export function CoursePicker() {
           render={
             <Button
               variant="outline"
-              className="mt-1 h-auto w-full justify-between gap-2 whitespace-normal rounded-2xl px-3 py-2.5 text-left"
+              className="mt-1 h-auto w-full justify-between gap-2 rounded-2xl px-3 py-2.5 text-left whitespace-normal"
             >
               <div className="min-w-0">
-                <div className="text-[11px] tabular-nums text-muted-foreground">
+                <div className="text-[11px] text-muted-foreground tabular-nums">
                   {course?.code ?? "—"}
                 </div>
-                <div className="truncate text-sm font-semibold leading-tight">
+                <div className="truncate text-sm leading-tight font-semibold">
                   {course?.title ?? "Choose a course"}
                 </div>
               </div>
@@ -60,7 +60,10 @@ export function CoursePicker() {
             </Button>
           }
         />
-        <PopoverContent align="end" className="w-[min(520px,calc(100vw-2rem))] p-0">
+        <PopoverContent
+          align="end"
+          className="w-[min(520px,calc(100vw-2rem))] p-0"
+        >
           <Command loop>
             <CommandInput placeholder="Search by code or title…" />
             <CommandList className="max-h-[420px]">
@@ -72,16 +75,18 @@ export function CoursePicker() {
                       key={c.code}
                       value={`${c.code} ${c.title}`}
                       onSelect={() => {
-                        void switchCourse(c.code);
-                        setOpen(false);
+                        void switchCourse(c.code)
+                        setOpen(false)
                       }}
-                      className="flex items-center justify-between gap-3"
+                      className="flex items-baseline gap-2 py-1.5"
                     >
-                      <div className="flex min-w-0 items-baseline gap-2">
-                        <span className="text-xs tabular-nums text-muted-foreground shrink-0">
+                      <div className="flex min-w-0 flex-1 items-baseline gap-2">
+                        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                           {c.code}
                         </span>
-                        <span className="truncate">{c.title}</span>
+                        <span className="min-w-0 leading-snug whitespace-normal">
+                          {c.title}
+                        </span>
                       </div>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {c.creditPoints}cp
@@ -96,7 +101,7 @@ export function CoursePicker() {
       </Popover>
 
       {course ? (
-        <div className="mt-2 flex items-center justify-between border-t pt-2 px-1 text-[11px] text-muted-foreground">
+        <div className="mt-2 flex items-center justify-between border-t px-1 pt-2 text-[11px] text-muted-foreground">
           <span>{course.aqfLevel ?? "—"}</span>
           <span className="tabular-nums">{course.creditPoints}cp</span>
         </div>
@@ -108,5 +113,5 @@ export function CoursePicker() {
         </div>
       ) : null}
     </section>
-  );
+  )
 }

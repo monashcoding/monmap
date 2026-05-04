@@ -80,12 +80,35 @@ function computeRolesForCourse(course: PlannerCourseWithAoS): RoleDefinition[] {
       options: byKind.get("extended_major")!,
     })
   }
-  if ((byKind.get("specialisation")?.length ?? 0) > 0) {
-    roles.push({
-      role: "specialisation",
-      label: "Specialisation",
-      kind: "specialisation",
-      options: byKind.get("specialisation")!,
+  const specs = byKind.get("specialisation") ?? []
+  if (specs.length > 0) {
+    // For double degrees, specialisations may come from two distinct
+    // curriculum sections. Group by componentLabel (top-level container
+    // title, e.g. "Computer Science component") when available, falling
+    // back to relationshipLabel. Show a separate picker per group.
+    const groupKey = (a: PlannerAreaOfStudy) =>
+      a.componentLabel ?? a.relationshipLabel
+    const byGroup = new Map<string, PlannerAreaOfStudy[]>()
+    for (const a of specs) {
+      const key = groupKey(a)
+      const list = byGroup.get(key) ?? []
+      list.push(a)
+      byGroup.set(key, list)
+    }
+    const groups = [...byGroup.entries()]
+    const roleKeys = ["specialisation", "specialisation2"] as const
+    const multiGroup = groups.length > 1
+    groups.forEach(([groupTitle, options], i) => {
+      const role = roleKeys[i]
+      if (!role) return
+      // "Computer Science component" → "Computer Science specialisation"
+      const cleanedTitle = groupTitle.replace(/\s*component\s*$/i, "").trim()
+      roles.push({
+        role,
+        label: multiGroup ? `${cleanedTitle} specialisation` : "Specialisation",
+        kind: "specialisation",
+        options,
+      })
     })
   }
   if ((byKind.get("minor")?.length ?? 0) > 0) {
@@ -125,7 +148,7 @@ function RoleSelect({
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="px-1 text-[10px] tracking-wide text-muted-foreground uppercase">
+      <label className="px-1 text-[10px] leading-tight text-muted-foreground uppercase">
         {label}
       </label>
       <div className="flex items-center gap-1">
@@ -136,22 +159,22 @@ function RoleSelect({
           }
         >
           <SelectTrigger className="min-w-0 flex-1 items-center py-2.5 text-xs [&>span]:flex [&>span]:flex-1 [&>span]:items-center [&>span]:gap-2">
-            <SelectValue placeholder={`Choose a ${label.toLowerCase()}`} />
+            <SelectValue placeholder="Select…" />
           </SelectTrigger>
-          <SelectContent className="max-h-[320px] min-w-[320px]">
+          <SelectContent className="max-h-[320px] min-w-[360px]">
             {sorted.map((a) => (
               <SelectItem
                 key={a.code}
                 value={a.code}
-                className="items-center py-2.5 pr-12 pl-3.5"
+                className="items-start py-2.5 pr-12 pl-3.5"
               >
-                <span className="flex min-w-0 items-center gap-2">
+                <span className="flex min-w-0 items-start gap-2">
                   {a.code.includes(":") ? null : (
-                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                    <span className="shrink-0 pt-px text-[11px] text-muted-foreground">
                       {a.code}
                     </span>
                   )}
-                  <span className="truncate">{a.title}</span>
+                  <span className="whitespace-normal">{a.title}</span>
                 </span>
               </SelectItem>
             ))}

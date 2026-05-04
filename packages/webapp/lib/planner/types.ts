@@ -90,6 +90,13 @@ export interface PlannerAreaOfStudy {
     | "elective"
     | "other"
   relationshipLabel: string
+  /**
+   * For double degrees, the top-level component title from the curriculum
+   * tree (e.g. "Computer Science component", "Engineering component").
+   * Present only when the AoS is nested at least 2 levels deep under a
+   * named top-level section. Used to label per-degree specialisation pickers.
+   */
+  componentLabel?: string
   creditPoints: number | null
   /**
    * Every unit listed by the AoS, regardless of whether it's required
@@ -153,6 +160,7 @@ export interface PlannerState {
     extendedMajor?: string
     minor?: string
     specialisation?: string
+    specialisation2?: string
     elective?: string
   }
   years: PlannerYear[]

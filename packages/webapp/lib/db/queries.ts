@@ -209,6 +209,13 @@ export async function fetchCourseWithAoS(
     unitsByAos.set(u.aosCode, list)
   }
 
+  // Build aosCode → top-level component title for double-degree labelling.
+  const aosCodeSet = new Set(links.map((l) => l.aosCode))
+  const componentLabels = buildComponentLabels(
+    course.curriculumStructure,
+    aosCodeSet
+  )
+
   // De-duplicate course→AoS edges that share (code, kind) — first label wins
   const byCode = new Map<string, PlannerAreaOfStudy>()
   for (const l of links) {
@@ -231,6 +238,7 @@ export async function fetchCourseWithAoS(
       title: l.title ?? l.aosCode,
       kind: l.kind,
       relationshipLabel: l.relationshipLabel,
+      componentLabel: componentLabels.get(l.aosCode),
       creditPoints: l.creditPoints,
       units: allUnits,
       requiredUnits,
@@ -331,6 +339,48 @@ function groupsFromFlat(
     options,
     required: options.length,
   }))
+}
+
+/**
+ * Walk the top-level containers of a course's curriculumStructure and
+ * return a map of aosCode → the title of its depth-1 ancestor container.
+ * Used to label per-degree specialisation pickers in double degrees
+ * (e.g. "Computer Science component" or "Engineering component").
+ *
+ * Looks specifically for `academic_item_code` leaves (the same field the
+ * ingest walker uses) rather than any string value.
+ */
+function buildComponentLabels(
+  structure: unknown,
+  aosCodes: ReadonlySet<string>
+): Map<string, string> {
+  const out = new Map<string, string>()
+  if (!structure || typeof structure !== "object") return out
+  const root = structure as Record<string, unknown>
+  const containers = root["container"]
+  if (!Array.isArray(containers)) return out
+
+  const walk = (node: unknown, depth1Title: string): void => {
+    if (Array.isArray(node)) {
+      for (const x of node) walk(x, depth1Title)
+      return
+    }
+    if (!node || typeof node !== "object") return
+    const n = node as Record<string, unknown>
+    const code = n["academic_item_code"]
+    if (typeof code === "string") {
+      const upper = code.toUpperCase()
+      if (aosCodes.has(upper) && !out.has(upper)) out.set(upper, depth1Title)
+    }
+    for (const v of Object.values(n)) walk(v, depth1Title)
+  }
+
+  for (const c of containers) {
+    if (!c || typeof c !== "object") continue
+    const title = (c as Record<string, unknown>)["title"]
+    if (typeof title === "string" && title) walk(c, title)
+  }
+  return out
 }
 
 function kindOrder(k: PlannerAreaOfStudy["kind"]): number {
