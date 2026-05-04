@@ -23,6 +23,7 @@ import { classifyTeachingPeriod } from "../planner/teaching-period.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourse,
+  PlannerCourseComponent,
   PlannerCourseWithAoS,
   PlannerOffering,
   PlannerState,
@@ -178,6 +179,7 @@ export async function fetchCourseWithAoS(
       areasOfStudy: virtualAos,
       courseUnits,
       courseRequirements,
+      componentCourses: [],
     }
   }
 
@@ -257,6 +259,43 @@ export async function fetchCourseWithAoS(
     return a.title.localeCompare(b.title)
   })
 
+  // For double degrees, fetch core units for each referenced sub-course.
+  const subCourseRefs = extractSubCourseRefs(course.curriculumStructure)
+  const componentCourses: PlannerCourseComponent[] = []
+  if (subCourseRefs.length > 0) {
+    const subCourseCodes = subCourseRefs.map((r) => r.courseCode)
+    const subCourseRows = await db
+      .select()
+      .from(courses)
+      .where(and(eq(courses.year, year), inArray(courses.code, subCourseCodes)))
+
+    const subCourseMap = new Map(subCourseRows.map((r) => [r.code, r]))
+
+    for (const ref of subCourseRefs) {
+      const sub = subCourseMap.get(ref.courseCode)
+      if (!sub) continue
+      const rawGroups = extractRequirementGroups(sub.curriculumStructure)
+      if (rawGroups.length === 0) continue
+      const candidateCodes = new Set(rawGroups.flatMap((g) => g.options))
+      const validRows = await db
+        .select({ code: units.code })
+        .from(units)
+        .where(
+          and(eq(units.year, year), inArray(units.code, [...candidateCodes]))
+        )
+      const validSet = new Set(validRows.map((r) => r.code))
+      const requirements = filterGroups(rawGroups, validSet)
+      if (requirements.length === 0) continue
+      componentCourses.push({
+        componentTitle: ref.componentTitle,
+        courseCode: ref.courseCode,
+        courseTitle: sub.title,
+        courseUnits: pickDefaultUnits(requirements),
+        courseRequirements: requirements,
+      })
+    }
+  }
+
   return {
     year: course.year,
     code: course.code,
@@ -268,6 +307,7 @@ export async function fetchCourseWithAoS(
     areasOfStudy: orderedAos,
     courseUnits,
     courseRequirements,
+    componentCourses,
   }
 }
 
@@ -341,6 +381,44 @@ function groupsFromFlat(
     options,
     required: options.length,
   }))
+}
+
+/**
+ * Walk the top-level containers of a course's curriculumStructure and
+ * return any course references found in each container's direct
+ * `relationship` array. Used to detect double-degree sub-courses
+ * (e.g. E3010 → C2001 + E3001).
+ */
+function extractSubCourseRefs(
+  structure: unknown
+): Array<{ componentTitle: string; courseCode: string }> {
+  const out: Array<{ componentTitle: string; courseCode: string }> = []
+  if (!structure || typeof structure !== "object") return out
+  const root = structure as Record<string, unknown>
+  const containers = root["container"]
+  if (!Array.isArray(containers)) return out
+
+  for (const c of containers) {
+    if (!c || typeof c !== "object") continue
+    const container = c as Record<string, unknown>
+    const title =
+      typeof container["title"] === "string" ? container["title"] : null
+    if (!title) continue
+    const rels = container["relationship"]
+    if (!Array.isArray(rels)) continue
+    for (const rel of rels) {
+      if (!rel || typeof rel !== "object") continue
+      const r = rel as Record<string, unknown>
+      const typeRef = r["academic_item_type"] as { value?: string } | undefined
+      if (typeRef?.value !== "course") continue
+      const courseCode =
+        typeof r["academic_item_code"] === "string"
+          ? r["academic_item_code"]
+          : null
+      if (courseCode) out.push({ componentTitle: title, courseCode })
+    }
+  }
+  return out
 }
 
 /**

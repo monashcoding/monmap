@@ -52,7 +52,12 @@ export function AoSTemplates() {
     [course, selectedCodes]
   )
 
-  if (!course || (selectedAos.length === 0 && course.courseUnits.length === 0))
+  if (
+    !course ||
+    (selectedAos.length === 0 &&
+      course.courseUnits.length === 0 &&
+      course.componentCourses.length === 0)
+  )
     return null
 
   return (
@@ -68,7 +73,15 @@ export function AoSTemplates() {
         specialisations.
       </p>
       <div className="mt-2 flex flex-col gap-1.5">
-        {course.courseUnits.length > 0 ? (
+        {course.componentCourses.length > 0 ? (
+          course.componentCourses.map((comp) => (
+            <CourseUnitsCard
+              key={comp.courseCode}
+              label={comp.courseTitle}
+              courseUnits={comp.courseUnits}
+            />
+          ))
+        ) : course.courseUnits.length > 0 ? (
           <CourseUnitsCard courseUnits={course.courseUnits} />
         ) : null}
         {selectedAos.map((aos) => (
@@ -81,8 +94,10 @@ export function AoSTemplates() {
 
 function CourseUnitsCard({
   courseUnits,
+  label = "Course requirements",
 }: {
   courseUnits: { code: string; grouping: string }[]
+  label?: string
 }) {
   const { loadUnitsTemplate } = usePlanner()
   const [open, setOpen] = useState(false)
@@ -130,7 +145,7 @@ function CourseUnitsCard({
             </span>
           </div>
           <div className="mt-0.5 truncate text-xs leading-snug font-medium">
-            Course requirements
+            {label}
           </div>
           <div className="mt-0.5 text-[10px] text-muted-foreground">
             {allCodes.length} unit{allCodes.length === 1 ? "" : "s"}
@@ -141,9 +156,7 @@ function CourseUnitsCard({
           size="sm"
           variant="ghost"
           className="h-7 shrink-0 gap-1 px-2 text-[11px]"
-          onClick={() =>
-            loadUnitsTemplate(allCodes, { label: "Course requirements" })
-          }
+          onClick={() => loadUnitsTemplate(allCodes, { label })}
         >
           <DownloadIcon className="size-3" />
           Load all

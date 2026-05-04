@@ -12,7 +12,12 @@
  * to point at `@/lib/planner/types`.
  */
 import type { PeriodKind, PlannerSlot } from "@monmap/db"
-export type { PeriodKind, PlannerSlot, PlannerState, PlannerYear } from "@monmap/db"
+export type {
+  PeriodKind,
+  PlannerSlot,
+  PlannerState,
+  PlannerYear,
+} from "@monmap/db"
 
 /** A unit as rendered by the planner. All references are by year+code. */
 export interface PlannerUnit {
@@ -126,6 +131,18 @@ export interface PlannerCourse {
   overview: string | null
 }
 
+/** Core units for one degree inside a double degree. */
+export interface PlannerCourseComponent {
+  /** E.g. "Computer Science component" */
+  componentTitle: string
+  /** E.g. "C2001" */
+  courseCode: string
+  /** E.g. "Bachelor of Computer Science" */
+  courseTitle: string
+  courseUnits: { code: string; grouping: string }[]
+  courseRequirements: RequirementGroup[]
+}
+
 /** A course with its attached areas of study, used once a course is selected. */
 export interface PlannerCourseWithAoS extends PlannerCourse {
   areasOfStudy: PlannerAreaOfStudy[]
@@ -140,6 +157,12 @@ export interface PlannerCourseWithAoS extends PlannerCourse {
    * — drives the Requirements panel's Course block.
    */
   courseRequirements: RequirementGroup[]
+  /**
+   * For double degrees: one entry per component degree (e.g. BCompSci +
+   * BEng). Empty for single degrees. When non-empty, templates show one
+   * card per component instead of the single course card.
+   */
+  componentCourses: PlannerCourseComponent[]
 }
 
 export const DEFAULT_SLOT_CAPACITY = 4

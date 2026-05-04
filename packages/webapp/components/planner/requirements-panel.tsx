@@ -61,15 +61,66 @@ export function RequirementsPanel() {
       </div>
 
       <div className="flex flex-col divide-y">
-        {course && course.courseRequirements.length > 0 ? (
-          <CourseBlock
-            requirements={course.courseRequirements}
-            plannedCodes={plannedCodes}
-          />
-        ) : null}
-
-        {withProgress.length === 0 &&
-        (!course || course.courseRequirements.length === 0) ? (
+        {course && course.componentCourses.length > 0 ? (
+          <>
+            {course.componentCourses.map((comp) => {
+              const compAos = withProgress.filter(
+                ({ aos }) => aos.componentLabel === comp.componentTitle
+              )
+              return (
+                <div key={comp.courseCode} className="flex flex-col divide-y">
+                  <CourseBlock
+                    title={comp.courseTitle}
+                    requirements={comp.courseRequirements}
+                    plannedCodes={plannedCodes}
+                  />
+                  {compAos.map(({ role, aos, progress }) => (
+                    <AoSBlock
+                      key={`${role}:${aos.code}`}
+                      role={role}
+                      aos={aos}
+                      progress={progress}
+                      plannedCodes={plannedCodes}
+                    />
+                  ))}
+                </div>
+              )
+            })}
+            {/* AoS without a matching component (shouldn't happen for double degrees but just in case) */}
+            {withProgress
+              .filter(
+                ({ aos }) =>
+                  !course.componentCourses.some(
+                    (c) => c.componentTitle === aos.componentLabel
+                  )
+              )
+              .map(({ role, aos, progress }) => (
+                <AoSBlock
+                  key={`${role}:${aos.code}`}
+                  role={role}
+                  aos={aos}
+                  progress={progress}
+                  plannedCodes={plannedCodes}
+                />
+              ))}
+          </>
+        ) : course && course.courseRequirements.length > 0 ? (
+          <>
+            <CourseBlock
+              requirements={course.courseRequirements}
+              plannedCodes={plannedCodes}
+            />
+            {withProgress.map(({ role, aos, progress }) => (
+              <AoSBlock
+                key={`${role}:${aos.code}`}
+                role={role}
+                aos={aos}
+                progress={progress}
+                plannedCodes={plannedCodes}
+              />
+            ))}
+          </>
+        ) : withProgress.length === 0 ? (
           <div className="px-4 py-6 text-center text-[11px] text-muted-foreground">
             Pick a major, minor or specialisation to see listed units.
           </div>
@@ -97,9 +148,11 @@ interface PickedAoS {
 function CourseBlock({
   requirements,
   plannedCodes,
+  title = "Course requirements",
 }: {
   requirements: RequirementGroup[]
   plannedCodes: ReadonlySet<string>
+  title?: string
 }) {
   const totals = useMemo(
     () => computeTotals(requirements, plannedCodes),
@@ -118,9 +171,7 @@ function CourseBlock({
           >
             Degree
           </Badge>
-          <h3 className="mt-0.5 truncate text-xs font-semibold">
-            Course requirements
-          </h3>
+          <h3 className="mt-0.5 truncate text-xs font-semibold">{title}</h3>
         </div>
         <div className="text-right leading-tight">
           <div className="text-[11px] tabular-nums">

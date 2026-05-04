@@ -60,6 +60,7 @@ const bit: PlannerCourseWithAoS = {
   areasOfStudy: [],
   courseUnits: [],
   courseRequirements: [],
+  componentCourses: [],
 }
 
 test("summarizePlan: totals 0 for empty plan", () => {
