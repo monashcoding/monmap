@@ -3,6 +3,7 @@
 import {
   fetchCourseWithAoS,
   hydratePlannerUnits,
+  hydratePlannerUnitsMultiYear,
   listAvailableYears,
   listCoursesForPicker,
   searchUnits,
@@ -38,6 +39,27 @@ export async function listCoursesAction(
 
 export async function listAvailableYearsAction(): Promise<string[]> {
   return listAvailableYears()
+}
+
+/**
+ * Hydrate units across multiple handbook years in one server round-trip.
+ * codesByYear maps handbook year → unit codes to fetch from that year.
+ */
+export async function hydrateUnitsMultiYearAction(
+  codesByYear: Record<string, string[]>
+): Promise<{
+  units: Record<string, PlannerUnit>
+  offerings: Record<string, PlannerOffering[]>
+  requisites: Record<string, RequisiteBlock[]>
+}> {
+  const { units, offerings, requisites } = await hydratePlannerUnitsMultiYear(
+    new Map(Object.entries(codesByYear))
+  )
+  return {
+    units: Object.fromEntries(units),
+    offerings: Object.fromEntries(offerings),
+    requisites: Object.fromEntries(requisites),
+  }
 }
 
 /**

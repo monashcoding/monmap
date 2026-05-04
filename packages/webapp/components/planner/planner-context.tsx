@@ -15,6 +15,7 @@ import { toast } from "sonner"
 
 import {
   hydrateUnitsAction,
+  hydrateUnitsMultiYearAction,
   listCoursesAction,
   loadCourseAction,
 } from "@/app/actions"
@@ -101,6 +102,21 @@ export interface PlannerContextValue {
 }
 
 const PlannerCtx = createContext<PlannerContextValue | null>(null)
+
+/**
+ * Returns the correct handbook year for a given study year index.
+ * If the exact calendar year doesn't exist in the DB, falls back to
+ * the latest available year (so Year 4 in 2024 → 2027 missing → 2026).
+ */
+function handbookYearFor(
+  studyYearIndex: number,
+  courseYear: string,
+  availableYears: readonly string[]
+): string {
+  const target = String(Number(courseYear) + studyYearIndex)
+  if (availableYears.includes(target)) return target
+  return [...availableYears].sort().at(-1) ?? courseYear
+}
 
 export function usePlanner(): PlannerContextValue {
   const ctx = useContext(PlannerCtx)
@@ -230,17 +246,40 @@ export function PlannerProvider({
   }, [state])
 
   // Keep unit data hydrated for every code placed in the plan.
-  // Whenever a new code shows up, fetch the missing bundle in a transition.
+  // Re-fetches codes that are missing OR cached from the wrong handbook
+  // year (stale). Each code is processed at its first study-year occurrence.
   const plannedCodes = useMemo(() => plannedUnitCodes(state), [state])
   useEffect(() => {
-    const needed = [...plannedCodes].filter(
-      (c) => !unitsMap.has(c) || !offeringsMap.has(c) || !requisitesMap.has(c)
-    )
-    if (needed.length === 0) return
-    const yearForFetch = state.courseYear
+    const codesByYear = new Map<string, string[]>()
+    const seen = new Set<string>()
+
+    for (let yi = 0; yi < state.years.length; yi++) {
+      const hYear = handbookYearFor(yi, state.courseYear, availableYears)
+      for (const slot of state.years[yi]?.slots ?? []) {
+        for (const code of slot.unitCodes) {
+          if (seen.has(code)) continue
+          seen.add(code)
+          const cached = unitsMap.get(code)
+          const correct =
+            cached?.year === hYear &&
+            offeringsMap.has(code) &&
+            requisitesMap.has(code)
+          if (correct) continue
+          const list = codesByYear.get(hYear) ?? []
+          list.push(code)
+          codesByYear.set(hYear, list)
+        }
+      }
+    }
+
+    if (codesByYear.size === 0) return
+    const allNeeded = [...codesByYear.values()].flat()
+
     startTransition(async () => {
       try {
-        const res = await hydrateUnitsAction(needed, yearForFetch)
+        const res = await hydrateUnitsMultiYearAction(
+          Object.fromEntries(codesByYear)
+        )
         setUnitsMap((m) => {
           const next = new Map(m)
           for (const [k, v] of Object.entries(res.units)) next.set(k, v)
@@ -249,13 +288,13 @@ export function PlannerProvider({
         setOfferingsMap((m) => {
           const next = new Map(m)
           for (const [k, v] of Object.entries(res.offerings)) next.set(k, v)
-          for (const code of needed) if (!next.has(code)) next.set(code, [])
+          for (const code of allNeeded) if (!next.has(code)) next.set(code, [])
           return next
         })
         setRequisitesMap((m) => {
           const next = new Map(m)
           for (const [k, v] of Object.entries(res.requisites)) next.set(k, v)
-          for (const code of needed) if (!next.has(code)) next.set(code, [])
+          for (const code of allNeeded) if (!next.has(code)) next.set(code, [])
           return next
         })
       } catch (err) {
@@ -264,7 +303,14 @@ export function PlannerProvider({
         })
       }
     })
-  }, [plannedCodes, unitsMap, offeringsMap, requisitesMap, state.courseYear])
+  }, [
+    state.years,
+    state.courseYear,
+    unitsMap,
+    offeringsMap,
+    requisitesMap,
+    availableYears,
+  ])
 
   const validations = useMemo(
     () => validatePlan(state, unitsMap, offeringsMap, requisitesMap),

@@ -546,3 +546,36 @@ export async function hydratePlannerUnits(
   const unitsByCode = new Map(unitList.map((u) => [u.code, u]))
   return { units: unitsByCode, offerings, requisites: reqs }
 }
+
+/**
+ * Hydrate units across multiple handbook years simultaneously.
+ * Each entry in codesByYear maps a handbook year to the codes that
+ * should be fetched from that year. Results are merged into flat maps
+ * keyed by unit code.
+ */
+export async function hydratePlannerUnitsMultiYear(
+  codesByYear: Map<string, string[]>
+): Promise<{
+  units: Map<string, PlannerUnit>
+  offerings: Map<string, PlannerOffering[]>
+  requisites: Map<string, RequisiteBlock[]>
+}> {
+  const results = await Promise.all(
+    [...codesByYear.entries()].map(([year, codes]) =>
+      hydratePlannerUnits(codes, year)
+    )
+  )
+  const unitsMerged = new Map<string, PlannerUnit>()
+  const offeringsMerged = new Map<string, PlannerOffering[]>()
+  const requisitesMerged = new Map<string, RequisiteBlock[]>()
+  for (const res of results) {
+    for (const [k, v] of res.units) unitsMerged.set(k, v)
+    for (const [k, v] of res.offerings) offeringsMerged.set(k, v)
+    for (const [k, v] of res.requisites) requisitesMerged.set(k, v)
+  }
+  return {
+    units: unitsMerged,
+    offerings: offeringsMerged,
+    requisites: requisitesMerged,
+  }
+}

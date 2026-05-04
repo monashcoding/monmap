@@ -42,7 +42,8 @@ export function UnitSearchDialog({
   yearIndex: number
   slotIndex: number
 }) {
-  const { addUnit, state, course, mergeUnits, units } = usePlanner()
+  const { addUnit, state, course, mergeUnits, units, availableYears } =
+    usePlanner()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<PlannerUnit[]>([])
   const [loading, setLoading] = useState(false)
@@ -50,6 +51,14 @@ export function UnitSearchDialog({
 
   const debounced = useDebounced(query, 180)
   const slotKind = state.years[yearIndex]?.slots[slotIndex]?.kind
+
+  // Use the handbook year that corresponds to this study year, falling
+  // back to the latest available if the exact year isn't in the DB.
+  const handbookYear = useMemo(() => {
+    const target = String(Number(state.courseYear) + yearIndex)
+    if (availableYears.includes(target)) return target
+    return [...availableYears].sort().at(-1) ?? state.courseYear
+  }, [state.courseYear, yearIndex, availableYears])
 
   // Quick-suggest when the dialog opens with no query — offer units
   // from the course's AoS that the student hasn't placed yet. Much
@@ -82,7 +91,7 @@ export function UnitSearchDialog({
       return
     }
     setLoading(true)
-    searchUnitsAction(debounced, state.courseYear)
+    searchUnitsAction(debounced, handbookYear)
       .then((list) => {
         if (cancelled) return
         setResults(list)
@@ -97,7 +106,7 @@ export function UnitSearchDialog({
     return () => {
       cancelled = true
     }
-  }, [debounced, mergeUnits, state.courseYear])
+  }, [debounced, mergeUnits, handbookYear])
 
   useEffect(() => {
     if (!open) {
