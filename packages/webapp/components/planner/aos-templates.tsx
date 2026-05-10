@@ -1,6 +1,11 @@
 "use client"
 
-import { ChevronRightIcon, DownloadIcon, LayersIcon } from "lucide-react"
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  DownloadIcon,
+  LayersIcon,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -163,27 +168,15 @@ function CourseUnitsCard({
         </Button>
       </div>
       {open ? (
-        <div className="flex flex-col gap-1 border-t border-primary/20 px-2.5 py-2">
+        <div className="flex flex-col gap-0.5 border-t border-primary/20 px-2.5 py-2">
           {groupings.map((g) => (
-            <div
+            <GroupingRow
               key={g.name}
-              className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-[11px]">{g.name}</div>
-                <div className="text-[10px] text-muted-foreground">
-                  {g.codes.length} unit{g.codes.length === 1 ? "" : "s"}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 shrink-0 px-2 text-[10px]"
-                onClick={() => loadUnitsTemplate(g.codes, { label: g.name })}
-              >
-                Load
-              </Button>
-            </div>
+              name={g.name}
+              codes={g.codes}
+              onLoadAll={() => loadUnitsTemplate(g.codes, { label: g.name })}
+              onLoadOne={(code) => loadUnitsTemplate([code], { label: code })}
+            />
           ))}
         </div>
       ) : null}
@@ -253,35 +246,101 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
         </Button>
       </div>
       {open ? (
-        <div className="flex flex-col gap-1 border-t px-2.5 py-2">
+        <div className="flex flex-col gap-0.5 border-t px-2.5 py-2">
           {groupings.map((g) => (
-            <div
+            <GroupingRow
               key={g.name}
-              className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-[11px]">{g.name}</div>
-                <div className="text-[10px] text-muted-foreground">
-                  {g.codes.length} unit{g.codes.length === 1 ? "" : "s"}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 shrink-0 px-2 text-[10px]"
-                onClick={() =>
-                  loadUnitsTemplate(g.codes, {
-                    label: `${aos.title} · ${g.name}`,
-                  })
-                }
-              >
-                Load
-              </Button>
-            </div>
+              name={g.name}
+              codes={g.codes}
+              onLoadAll={() =>
+                loadUnitsTemplate(g.codes, {
+                  label: `${aos.title} · ${g.name}`,
+                })
+              }
+              onLoadOne={(code) => loadUnitsTemplate([code], { label: code })}
+            />
           ))}
         </div>
       ) : null}
     </div>
+  )
+}
+
+function GroupingRow({
+  name,
+  codes,
+  onLoadAll,
+  onLoadOne,
+}: {
+  name: string
+  codes: string[]
+  onLoadAll: () => void
+  onLoadOne: (code: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="rounded-md">
+      <div className="flex items-center gap-1.5 rounded-md px-1 py-1 hover:bg-muted/50">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+        >
+          <ChevronDownIcon
+            className={cn(
+              "size-3 shrink-0 text-muted-foreground transition-transform",
+              !open && "-rotate-90"
+            )}
+          />
+          <span className="min-w-0 flex-1 truncate text-[11px]">{name}</span>
+          <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+            {codes.length} unit{codes.length === 1 ? "" : "s"}
+          </span>
+        </button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-5 shrink-0 px-1.5 text-[9px]"
+          onClick={onLoadAll}
+        >
+          Load all
+        </Button>
+      </div>
+      {open ? (
+        <div className="px-1 pb-1.5">
+          <UnitChips codes={codes} onLoad={onLoadOne} />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function UnitChips({
+  codes,
+  onLoad,
+}: {
+  codes: string[]
+  onLoad: (code: string) => void
+}) {
+  return (
+    <ul className="mt-1 flex flex-wrap gap-1">
+      {[...codes]
+        .sort((a, b) => a.localeCompare(b))
+        .map((code) => (
+          <li key={code}>
+            <button
+              type="button"
+              onClick={() => onLoad(code)}
+              title={`Import ${code}`}
+              className="inline-flex items-center gap-0.5 rounded-md border border-border px-1 py-0.5 text-[9px] text-muted-foreground tabular-nums transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+            >
+              <DownloadIcon className="size-2.5 shrink-0" />
+              {code}
+            </button>
+          </li>
+        ))}
+    </ul>
   )
 }
 
