@@ -114,6 +114,7 @@ export type PlannerAction =
       capacity: number
     }
   | { type: "clear_slot"; yearIndex: number; slotIndex: number }
+  | { type: "clear_year"; yearIndex: number }
   | { type: "rename_slot"; yearIndex: number; slotIndex: number; label: string }
   | { type: "reset"; yearCount?: number }
   | { type: "hydrate"; state: PlannerState }
@@ -426,6 +427,19 @@ export function plannerReducer(
         if (slot.unitCodes.length === 0) return slot
         return { ...slot, unitCodes: [] }
       })
+
+    case "clear_year": {
+      const year = state.years[action.yearIndex]
+      if (!year) return state
+      return {
+        ...state,
+        years: state.years.map((y, i) =>
+          i !== action.yearIndex
+            ? y
+            : { ...y, slots: y.slots.map((s) => ({ ...s, unitCodes: [] })) }
+        ),
+      }
+    }
 
     case "rename_slot":
       return withSlot(state, action.yearIndex, action.slotIndex, (slot) => {

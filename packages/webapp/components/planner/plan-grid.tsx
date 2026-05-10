@@ -263,6 +263,7 @@ export function PlanGrid() {
               onRemoveYear={() => dispatch({ type: "remove_year", yearIndex })}
               showYearHeader={slotIndex === 0}
               yearHeaderLabel={year.label}
+              yearHasUnits={year.slots.some((s) => s.unitCodes.length > 0)}
             />
           ))
         )}
@@ -299,6 +300,7 @@ function SemesterRow({
   onRemoveYear,
   showYearHeader,
   yearHeaderLabel,
+  yearHasUnits,
 }: {
   yearIndex: number
   slotIndex: number
@@ -310,6 +312,7 @@ function SemesterRow({
   onRemoveYear: () => void
   showYearHeader: boolean
   yearHeaderLabel: string
+  yearHasUnits: boolean
 }) {
   const { dispatch, units } = usePlanner()
   const capacity = slotCapacity(slot)
@@ -343,6 +346,16 @@ function SemesterRow({
             {yearHeaderLabel}
           </h3>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`Reset ${yearHeaderLabel}`}
+              disabled={!yearHasUnits}
+              onClick={() => dispatch({ type: "clear_year", yearIndex })}
+              className="text-white/70 hover:bg-white/15 hover:text-white disabled:opacity-30"
+            >
+              <RotateCcwIcon />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
