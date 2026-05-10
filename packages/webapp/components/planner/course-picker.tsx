@@ -4,6 +4,7 @@ import { ChevronDownIcon, ExternalLinkIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
   Command,
   CommandEmpty,
@@ -21,7 +22,7 @@ import {
 import { AoSPicker } from "./aos-picker"
 import { usePlanner } from "./planner-context"
 
-export function CoursePicker() {
+export function CoursePicker({ className }: { className?: string }) {
   const { courses, course, switchCourse } = usePlanner()
   const [open, setOpen] = useState(false)
 
@@ -46,11 +47,15 @@ export function CoursePicker() {
       list.push(c)
       m.set(key, list)
     }
-    return [...m.entries()].sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+    return [...m.entries()].sort(
+      ([a], [b]) => rank(a) - rank(b) || a.localeCompare(b)
+    )
   }, [courses])
 
   return (
-    <section className="rounded-3xl border bg-card p-3 shadow-card">
+    <section
+      className={cn("rounded-3xl border bg-card p-3 shadow-card", className)}
+    >
       <label className="px-1 text-[10px] tracking-wide text-muted-foreground uppercase">
         Course
       </label>

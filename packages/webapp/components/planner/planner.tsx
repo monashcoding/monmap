@@ -59,10 +59,9 @@ export function Planner(props: PlannerProps) {
     >
       <Header />
 
-      <div className="grid flex-1 gap-5 lg:grid-cols-[72px_minmax(0,1fr)_340px]">
-        <LeftSidebar />
-
+      <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-5">
+          <LeftSidebar />
           <SummaryBar />
           <PlanGrid />
         </div>

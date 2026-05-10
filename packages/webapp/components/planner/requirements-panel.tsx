@@ -28,7 +28,7 @@ const ROLE_LABEL: Record<keyof PlannerState["selectedAos"], string> = {
  * progress card with inline unit chips that light up as the student
  * places matching codes in the plan.
  */
-export function RequirementsPanel() {
+export function RequirementsPanel({ className }: { className?: string }) {
   const { course, state, units, plannedCodes } = usePlanner()
 
   const pickedAos = useMemo((): PickedAoS[] => {
@@ -53,7 +53,9 @@ export function RequirementsPanel() {
   )
 
   return (
-    <section className="rounded-3xl border bg-card shadow-card">
+    <section
+      className={cn("rounded-3xl border bg-card shadow-card", className)}
+    >
       <div className="border-b px-4 py-2.5">
         <h2 className="text-xs font-semibold tracking-tight">
           Requirements progress

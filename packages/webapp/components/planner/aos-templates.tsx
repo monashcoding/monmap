@@ -38,7 +38,7 @@ const KIND_BADGE: Record<PlannerAreaOfStudy["kind"], string> = {
  * grouping at a time (e.g. "Core units" vs "Level 3 elective"). The
  * distribution algorithm slots units into S1/S2 by handbook level.
  */
-export function AoSTemplates() {
+export function AoSTemplates({ className }: { className?: string }) {
   const { course, state } = usePlanner()
 
   // Only show the AoS templates for the picks the student has actually
@@ -66,7 +66,9 @@ export function AoSTemplates() {
     return null
 
   return (
-    <section className="rounded-3xl border bg-card p-3 shadow-card">
+    <section
+      className={cn("rounded-3xl border bg-card p-3 shadow-card", className)}
+    >
       <div className="flex items-center gap-2 px-1">
         <LayersIcon className="size-4 text-muted-foreground" />
         <label className="text-[10px] tracking-wide text-muted-foreground uppercase">
