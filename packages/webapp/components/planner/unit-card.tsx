@@ -304,11 +304,33 @@ function unitIsCore(
   course: PlannerCourseWithAoS | null
 ): boolean {
   if (!course) return false
-  const grouping =
-    course.courseUnits.find((u) => u.code === code)?.grouping ??
-    course.areasOfStudy.flatMap((a) => a.units).find((u) => u.code === code)
-      ?.grouping
-  return grouping?.toLowerCase().includes("core") ?? false
+
+  // Any unit appearing in course-level requirements is "core" regardless of
+  // the grouping name — these are required by the degree itself, not an AoS.
+  const courseReqs = [
+    ...course.courseRequirements,
+    ...course.componentCourses.flatMap((c) => c.courseRequirements),
+  ]
+  if (courseReqs.some((g) => g.options.includes(code))) return true
+
+  // For AoS requirements, only mark core if the grouping name says so.
+  const aosReqs = course.areasOfStudy.flatMap((a) => a.requirements)
+  if (
+    aosReqs.some(
+      (g) =>
+        g.grouping.toLowerCase().includes("core") && g.options.includes(code)
+    )
+  )
+    return true
+
+  // Also check the flat area_of_study_units table (separate data source).
+  return (
+    course.areasOfStudy
+      .flatMap((a) => a.units)
+      .find((u) => u.code === code)
+      ?.grouping.toLowerCase()
+      .includes("core") ?? false
+  )
 }
 
 function CoreBadge() {
