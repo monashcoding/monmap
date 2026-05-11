@@ -52,6 +52,7 @@ export function UnitCard({
   const validation = validations.get(keyFor(yearIndex, slotIndex, code))
   const faculty = useMemo(() => facultyStyle(code), [code])
   const [menuOpen, setMenuOpen] = useState(false)
+  const [popoverOpen, setPopoverOpen] = useState(false)
 
   const dragId = unitDragId(yearIndex, slotIndex, code)
   const dragData = useMemo(
@@ -67,7 +68,7 @@ export function UnitCard({
   const draggable = useDraggable({
     id: dragId,
     data: dragData,
-    disabled: isDragOverlay,
+    disabled: isDragOverlay || popoverOpen,
   })
   const droppable = useDroppable({
     id: dragId,
@@ -153,6 +154,7 @@ export function UnitCard({
         code={code}
         yearIndex={yearIndex}
         slotIndex={slotIndex}
+        onOpenChange={setPopoverOpen}
       >
         <button
           className={cn(

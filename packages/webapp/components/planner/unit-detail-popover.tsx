@@ -34,11 +34,13 @@ export function UnitDetailPopover({
   yearIndex,
   slotIndex,
   children,
+  onOpenChange,
 }: {
   code: string
   yearIndex: number
   slotIndex: number
   children: React.ReactNode
+  onOpenChange?: (open: boolean) => void
 }) {
   const { units, offerings, requisites, validations, state, availableYears } =
     usePlanner()
@@ -57,7 +59,7 @@ export function UnitDetailPopover({
   })()
 
   return (
-    <Popover>
+    <Popover onOpenChange={onOpenChange}>
       <PopoverTrigger render={children as React.ReactElement} />
       <PopoverContent
         align="start"
