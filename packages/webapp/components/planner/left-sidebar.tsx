@@ -2,10 +2,13 @@
 
 import {
   BadgeCheckIcon,
+  CalculatorIcon,
   DownloadIcon,
   PlusCircleIcon,
   PrinterIcon,
   RotateCcwIcon,
+  SaveIcon,
+  TagIcon,
   UploadIcon,
 } from "lucide-react"
 import { useCallback, useMemo, useRef } from "react"
@@ -15,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import type { PlannerState } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
+import { useWam } from "./wam-context"
 
 /**
  * Vertical action rail, left side. Matches the MonPlan floating
@@ -24,6 +28,8 @@ import { usePlanner } from "./planner-context"
 export function LeftSidebar() {
   const { state, dispatch, validations, switchCourse, flashErrors } =
     usePlanner()
+  const { wamMode, showGrade, toggleWamMode, toggleShowGrade, saveGrades } =
+    useWam()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const errorCount = useMemo(() => {
@@ -118,6 +124,28 @@ export function LeftSidebar() {
 
       <ActionButton icon={<RotateCcwIcon />} label="Reset" onClick={onReset} />
 
+      <div className="mx-1 h-8 w-px bg-border" />
+
+      <ActionButton
+        icon={<CalculatorIcon />}
+        label="WAM"
+        tone={wamMode ? "active" : undefined}
+        onClick={toggleWamMode}
+      />
+      <ActionButton
+        icon={<TagIcon />}
+        label="Grades"
+        tone={showGrade ? "active" : undefined}
+        onClick={toggleShowGrade}
+      />
+      {wamMode ? (
+        <ActionButton
+          icon={<SaveIcon />}
+          label="Save grades"
+          onClick={saveGrades}
+        />
+      ) : null}
+
       <input
         ref={fileInputRef}
         type="file"
@@ -143,7 +171,7 @@ function ActionButton({
   icon: React.ReactNode
   label: string
   description?: string
-  tone?: "good" | "bad"
+  tone?: "good" | "bad" | "active"
   onClick: () => void
 }) {
   return (
@@ -158,12 +186,18 @@ function ActionButton({
             ? "text-emerald-600 dark:text-emerald-400"
             : tone === "bad"
               ? "text-destructive"
-              : "text-foreground"
+              : tone === "active"
+                ? "text-primary"
+                : "text-foreground"
         }
       >
         {icon}
       </span>
-      <span className="text-[10px] leading-none font-medium">{label}</span>
+      <span
+        className={`text-[10px] leading-none font-medium${tone === "active" ? "text-primary" : ""}`}
+      >
+        {label}
+      </span>
       {description ? (
         <span className="text-[9px] leading-none font-normal text-muted-foreground">
           {description}

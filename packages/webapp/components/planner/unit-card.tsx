@@ -11,12 +11,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { facultyStyle } from "@/lib/planner/faculty-color"
+import { GRADE_STYLES, markToGrade } from "@/lib/planner/grades"
 import type { PlannerCourseWithAoS } from "@/lib/planner/types"
 import { keyFor } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
 import { UnitDetailPopover } from "./unit-detail-popover"
+import { useWam } from "./wam-context"
 
 export function unitDragId(
   yearIndex: number,
@@ -48,6 +50,7 @@ export function UnitCard({
 }) {
   const { units, validations, removeUnit, isFullYear, flashVersion, course } =
     usePlanner()
+  const { wamMode, showGrade, grades, setGrade } = useWam()
   const isFY = isFullYear(code)
   const unit = units.get(code)
   const validation = validations.get(keyFor(yearIndex, slotIndex, code))
@@ -55,6 +58,8 @@ export function UnitCard({
   const isCore = useMemo(() => unitIsCore(code, course), [code, course])
   const [menuOpen, setMenuOpen] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const gradeEntry = grades.get(code)
+  const gradeLetter = gradeEntry !== undefined ? markToGrade(gradeEntry) : null
 
   const dragId = unitDragId(yearIndex, slotIndex, code)
   const dragData = useMemo(
@@ -196,8 +201,43 @@ export function UnitCard({
               <span className="text-muted-foreground italic">Loading…</span>
             )}
           </div>
-          <div className="mt-auto text-[10px] font-medium text-muted-foreground tabular-nums">
-            {unit ? `${unit.creditPoints} Credit Points` : ""}
+          <div className="mt-auto flex items-center gap-1.5">
+            {wamMode ? (
+              <>
+                <span className="text-[9px] text-muted-foreground">
+                  {unit ? `${unit.creditPoints}cp` : ""}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={gradeEntry ?? ""}
+                  placeholder="0–100"
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setGrade(
+                      code,
+                      v === "" ? null : Math.max(0, Math.min(100, Number(v)))
+                    )
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-5 w-18 rounded border border-border bg-background px-1.5 text-[10px] text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
+                />
+                {showGrade && gradeLetter ? (
+                  <GradeBadge grade={gradeLetter} />
+                ) : null}
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+                  {unit ? `${unit.creditPoints} Credit Points` : ""}
+                </span>
+                {showGrade && gradeLetter ? (
+                  <GradeBadge grade={gradeLetter} />
+                ) : null}
+              </>
+            )}
           </div>
         </button>
       </UnitDetailPopover>
@@ -295,4 +335,19 @@ function StatusIcon({ status }: { status: CardStatus }) {
       />
     )
   return null
+}
+
+function GradeBadge({ grade }: { grade: ReturnType<typeof markToGrade> }) {
+  const s = GRADE_STYLES[grade]
+  return (
+    <span
+      className={cn(
+        "rounded px-1 py-0.5 text-[9px] leading-none font-bold tabular-nums",
+        s.bg,
+        s.text
+      )}
+    >
+      {grade}
+    </span>
+  )
 }

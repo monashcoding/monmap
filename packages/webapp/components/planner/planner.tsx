@@ -17,6 +17,7 @@ import { PlanGrid } from "./plan-grid"
 import { PlannerProvider, type PlannerCurrentUser } from "./planner-context"
 import { RightSidebar } from "./right-sidebar"
 import { SummaryBar } from "./summary-bar"
+import { WamProvider } from "./wam-context"
 
 interface PlannerProps {
   initialYear: string
@@ -57,17 +58,19 @@ export function Planner(props: PlannerProps) {
       initialPlans={props.initialPlans}
       initialActivePlanId={props.initialActivePlanId}
     >
-      <Header />
+      <WamProvider>
+        <Header />
 
-      <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <LeftSidebar />
-          <SummaryBar />
-          <PlanGrid />
+        <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="flex min-w-0 flex-col gap-5">
+            <LeftSidebar />
+            <SummaryBar />
+            <PlanGrid />
+          </div>
+
+          <RightSidebar />
         </div>
-
-        <RightSidebar />
-      </div>
+      </WamProvider>
 
       <Toaster position="bottom-right" richColors closeButton />
     </PlannerProvider>

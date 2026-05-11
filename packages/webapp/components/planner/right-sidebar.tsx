@@ -11,6 +11,7 @@ import { CoursePicker } from "./course-picker"
 import { usePlanner } from "./planner-context"
 import { RequirementsPanel } from "./requirements-panel"
 import { UnitSearchPanel } from "./unit-search-panel"
+import { useWam } from "./wam-context"
 
 const FLAT = "rounded-none border-0 shadow-none"
 
@@ -58,6 +59,7 @@ export function RightSidebar() {
 
 function ProgressTab() {
   const { state, course, units, offerings } = usePlanner()
+  const { wam } = useWam()
 
   const summary = useMemo(
     () => summarizePlan(state, course, units, offerings),
@@ -85,6 +87,9 @@ function ProgressTab() {
             value={`${summary.totalCreditPoints} / ${summary.targetCreditPoints}`}
           />
           <GaugeStat label="Units" value={String(summary.uniqueUnitCount)} />
+          {wam !== null ? (
+            <GaugeStat label="WAM" value={wam.toFixed(3)} />
+          ) : null}
         </div>
       </div>
       <RequirementsPanel className={FLAT} />
