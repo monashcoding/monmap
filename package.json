@@ -15,10 +15,13 @@
     "db:migrate": "pnpm --filter @monmap/db migrate",
     "db:studio": "pnpm --filter @monmap/db studio",
     "typecheck": "pnpm -r typecheck",
-    "package": "tar -czf monmap-handbook-$(date +%Y%m%d).tar.gz -C packages/scraper/data raw manifest.json && ls -lh monmap-handbook-*.tar.gz"
+    "package": "tar -czf monmap-handbook-$(date +%Y%m%d).tar.gz -C packages/scraper/data raw manifest.json && ls -lh monmap-handbook-*.tar.gz",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
