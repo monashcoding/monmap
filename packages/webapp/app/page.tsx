@@ -26,12 +26,12 @@ import {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string }>
+  searchParams: Promise<{ year?: string; plan?: string }>
 }) {
   const DEFAULT_COURSE = "C2000"
 
   const [params, availableYears, currentUser] = await Promise.all([
-    searchParams,
+    searchParams as Promise<{ year?: string; plan?: string }>,
     listAvailableYears(),
     getCurrentUser(),
   ])
@@ -39,7 +39,12 @@ export default async function Page({
   // Signed-in users: list their plans, pick the most-recently-updated
   // as the active one. Anon users get an empty list and no active plan.
   const userPlans = currentUser ? await listUserPlans(currentUser.id) : []
-  const activePlanId = userPlans[0]?.id ?? null
+  // ?plan=<id> lets the plans page link directly to a specific plan.
+  const requestedPlanId = params.plan ?? null
+  const activePlanId =
+    requestedPlanId && userPlans.some((p) => p.id === requestedPlanId)
+      ? requestedPlanId
+      : (userPlans[0]?.id ?? null)
   const activePlan =
     currentUser && activePlanId
       ? await getUserPlanById(activePlanId, currentUser.id)

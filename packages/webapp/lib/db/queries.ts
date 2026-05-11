@@ -725,6 +725,80 @@ export interface PlanSummary {
   updatedAt: Date
 }
 
+export interface PlanWithState {
+  id: string
+  name: string
+  updatedAt: Date
+  state: PlannerState
+}
+
+export interface CourseMeta {
+  code: string
+  year: string
+  title: string
+  creditPoints: number
+  school: string | null
+}
+
+export async function listUserPlansWithState(
+  userId: string
+): Promise<PlanWithState[]> {
+  const db = getDb()
+  return db
+    .select({
+      id: userPlan.id,
+      name: userPlan.name,
+      updatedAt: userPlan.updatedAt,
+      state: userPlan.state,
+    })
+    .from(userPlan)
+    .where(eq(userPlan.userId, userId))
+    .orderBy(desc(userPlan.updatedAt))
+}
+
+export async function fetchCoursesMeta(
+  pairs: Array<{ code: string; year: string }>
+): Promise<CourseMeta[]> {
+  if (pairs.length === 0) return []
+  const db = getDb()
+  const rows = await db
+    .select({
+      code: courses.code,
+      year: courses.year,
+      title: courses.title,
+      creditPoints: courses.creditPoints,
+      school: courses.school,
+    })
+    .from(courses)
+    .where(
+      or(
+        ...pairs.map((p) =>
+          and(eq(courses.code, p.code), eq(courses.year, p.year))
+        )
+      )!
+    )
+  return rows.map((r) => ({
+    code: r.code,
+    year: r.year,
+    title: r.title,
+    creditPoints: r.creditPoints ?? 0,
+    school: r.school,
+  }))
+}
+
+export async function fetchUnitCreditPointsBatch(
+  codes: string[],
+  year: string
+): Promise<Record<string, number>> {
+  if (codes.length === 0) return {}
+  const db = getDb()
+  const rows = await db
+    .select({ code: units.code, creditPoints: units.creditPoints })
+    .from(units)
+    .where(and(eq(units.year, year), inArray(units.code, codes)))
+  return Object.fromEntries(rows.map((r) => [r.code, r.creditPoints ?? 6]))
+}
+
 export async function listUserPlans(userId: string): Promise<PlanSummary[]> {
   const db = getDb()
   return db

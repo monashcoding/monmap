@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   CalendarIcon,
   CheckIcon,
   CloudIcon,
   GraduationCapIcon,
+  LayoutListIcon,
   LogOutIcon,
   TriangleAlertIcon,
 } from "lucide-react"
@@ -115,6 +117,15 @@ export function Header() {
             <SaveStatusPill />
           )}
           <PlanSwitcher />
+          {currentUser ? (
+            <Link
+              href="/plans"
+              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm hover:bg-muted/60"
+            >
+              <LayoutListIcon className="size-3.5" />
+              My plans
+            </Link>
+          ) : null}
           <div className="flex items-center gap-2">
             <CalendarIcon className="size-3.5 text-muted-foreground" />
             <span className="text-[10px] tracking-wide text-muted-foreground uppercase">

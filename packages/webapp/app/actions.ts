@@ -16,6 +16,7 @@ import {
   searchUnits,
   updateUserPlanState,
 } from "@/lib/db/queries"
+export type { PlanSummary } from "@/lib/db/queries"
 import type {
   PlannerCourse,
   PlannerCourseWithAoS,
@@ -159,9 +160,7 @@ export async function renameMyPlanAction(
   return ok ? { ok: true } : { ok: false, reason: "not_found" }
 }
 
-export async function deleteMyPlanAction(
-  planId: string
-): Promise<SaveResult> {
+export async function deleteMyPlanAction(planId: string): Promise<SaveResult> {
   const u = await getCurrentUser()
   if (!u) return { ok: false, reason: "unauthenticated" }
   const ok = await deleteUserPlan(planId, u.id)
