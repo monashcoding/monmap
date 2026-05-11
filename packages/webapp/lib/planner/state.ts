@@ -116,6 +116,7 @@ export type PlannerAction =
   | { type: "clear_slot"; yearIndex: number; slotIndex: number }
   | { type: "clear_year"; yearIndex: number }
   | { type: "rename_slot"; yearIndex: number; slotIndex: number; label: string }
+  | { type: "toggle_slot_lock"; yearIndex: number; slotIndex: number }
   | { type: "reset"; yearCount?: number }
   | { type: "hydrate"; state: PlannerState }
 
@@ -447,6 +448,12 @@ export function plannerReducer(
         if (slot.label === label) return slot
         return { ...slot, label }
       })
+
+    case "toggle_slot_lock":
+      return withSlot(state, action.yearIndex, action.slotIndex, (slot) => ({
+        ...slot,
+        locked: !slot.locked,
+      }))
 
     case "reset":
       return defaultState(state.courseYear, null, action.yearCount ?? 3)

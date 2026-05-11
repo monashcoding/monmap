@@ -10,6 +10,8 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core"
 import {
+  LockIcon,
+  LockOpenIcon,
   MinusIcon,
   MoreVerticalIcon,
   PlusIcon,
@@ -19,6 +21,8 @@ import {
 import { useState } from "react"
 import type { PeriodKind } from "@/lib/planner/types"
 import { toast } from "sonner"
+
+import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -113,6 +117,11 @@ export function PlanGrid() {
       | { kind: "slot"; yearIndex: number; slotIndex: number }
       | undefined
     if (!a || !overData) return
+
+    // Block drags from or to locked slots.
+    const fromSlot = state.years[a.yearIndex]?.slots[a.slotIndex]
+    const toSlot = state.years[overData.yearIndex]?.slots[overData.slotIndex]
+    if (fromSlot?.locked || toSlot?.locked) return
 
     // ── Full-year unit drag rules ─────────────────────────────────
     // FY units occupy both S1[0..N-1] and S2[0..N-1] of their year.
@@ -411,7 +420,12 @@ function SemesterRow({
         </div>
       ) : null}
       <div className="grid grid-cols-[180px_minmax(0,1fr)] items-stretch border-b last:border-b-0">
-        <div className="flex items-center justify-between gap-1 border-r bg-muted/20 px-3 py-3 text-[11px] font-medium text-muted-foreground">
+        <div
+          className={cn(
+            "flex items-center justify-between gap-1 border-r px-3 py-3 text-[11px] font-medium text-muted-foreground",
+            slot.locked ? "bg-black/[0.08]" : "bg-muted/20"
+          )}
+        >
           <div className="min-w-0 flex-1 leading-tight">
             {isEditingLabel ? (
               <input
@@ -439,6 +453,21 @@ function SemesterRow({
               {usedWeight} / {capacity} units
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={slot.locked ? "Unlock semester" : "Lock semester"}
+            className="shrink-0"
+            onClick={() =>
+              dispatch({ type: "toggle_slot_lock", yearIndex, slotIndex })
+            }
+          >
+            {slot.locked ? (
+              <LockIcon className="text-foreground/70" />
+            ) : (
+              <LockOpenIcon />
+            )}
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={

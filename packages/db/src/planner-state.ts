@@ -33,6 +33,8 @@ export interface PlannerSlot {
   capacity?: number
   /** User-supplied display label; falls back to the computed period+year label when absent. */
   label?: string
+  /** When true, units in this slot cannot be moved in or out via drag-and-drop. */
+  locked?: boolean
 }
 
 export interface PlannerYear {

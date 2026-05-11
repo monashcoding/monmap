@@ -40,6 +40,7 @@ export function SemesterSlot({
   const { setNodeRef, isOver, active } = useDroppable({
     id: slotDropId(yearIndex, slotIndex),
     data: dropData,
+    disabled: !!slot.locked,
   })
 
   if (!slot) return null
@@ -71,7 +72,8 @@ export function SemesterSlot({
       ref={setNodeRef}
       className={cn(
         "grid min-w-0 items-stretch gap-2 p-2 transition-colors duration-150",
-        showDropTint && "bg-primary/5"
+        "min-h-[104px]",
+        slot.locked ? "bg-black/[0.05]" : showDropTint && "bg-primary/5"
       )}
       style={{ gridTemplateColumns: `repeat(${totalColumns}, minmax(0, 1fr))` }}
     >
@@ -81,7 +83,7 @@ export function SemesterSlot({
         </div>
       ))}
 
-      {!atCapacity ? (
+      {!atCapacity && !slot.locked ? (
         <Button
           variant="ghost"
           className="h-[88px] rounded-xl border border-dashed border-border/80 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"

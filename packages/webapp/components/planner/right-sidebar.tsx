@@ -88,7 +88,7 @@ function ProgressTab() {
           />
           <GaugeStat label="Units" value={String(summary.uniqueUnitCount)} />
           {wam !== null ? (
-            <GaugeStat label="WAM" value={wam.toFixed(3)} />
+            <GaugeStat label="WAM" value={wam.toFixed(2)} />
           ) : null}
         </div>
       </div>

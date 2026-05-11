@@ -48,8 +48,16 @@ export function UnitCard({
   slotIndex: number
   isDragOverlay?: boolean
 }) {
-  const { units, validations, removeUnit, isFullYear, flashVersion, course } =
-    usePlanner()
+  const {
+    state,
+    units,
+    validations,
+    removeUnit,
+    isFullYear,
+    flashVersion,
+    course,
+  } = usePlanner()
+  const slotLocked = !!state.years[yearIndex]?.slots[slotIndex]?.locked
   const { wamMode, showGrade, grades, setGrade } = useWam()
   const isFY = isFullYear(code)
   const unit = units.get(code)
@@ -75,12 +83,12 @@ export function UnitCard({
   const draggable = useDraggable({
     id: dragId,
     data: dragData,
-    disabled: isDragOverlay || popoverOpen,
+    disabled: isDragOverlay || popoverOpen || slotLocked,
   })
   const droppable = useDroppable({
     id: dragId,
     data: dragData,
-    disabled: isDragOverlay,
+    disabled: isDragOverlay || slotLocked,
   })
   const setRefs = useCallback(
     (node: HTMLElement | null) => {
