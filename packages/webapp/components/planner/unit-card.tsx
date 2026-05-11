@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { facultyStyle } from "@/lib/planner/faculty-color"
+import type { PlannerCourseWithAoS } from "@/lib/planner/types"
 import { keyFor } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
 
@@ -45,12 +46,13 @@ export function UnitCard({
   slotIndex: number
   isDragOverlay?: boolean
 }) {
-  const { units, validations, removeUnit, isFullYear, flashVersion } =
+  const { units, validations, removeUnit, isFullYear, flashVersion, course } =
     usePlanner()
   const isFY = isFullYear(code)
   const unit = units.get(code)
   const validation = validations.get(keyFor(yearIndex, slotIndex, code))
   const faculty = useMemo(() => facultyStyle(code), [code])
+  const isCore = useMemo(() => unitIsCore(code, course), [code, course])
   const [menuOpen, setMenuOpen] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
 
@@ -139,13 +141,21 @@ export function UnitCard({
     >
       <div
         aria-hidden
-        className={cn(
-          "flex w-6 shrink-0 items-center justify-center",
-          faculty.railClass,
-          faculty.railTextClass
-        )}
+        className="relative flex w-6 shrink-0 items-center justify-center"
       >
-        <span className="rotate-180 text-[10px] font-bold tracking-widest [writing-mode:vertical-rl]">
+        <div
+          className={cn(
+            "absolute inset-0",
+            faculty.railClass,
+            !isCore && "brightness-70"
+          )}
+        />
+        <span
+          className={cn(
+            "relative rotate-180 text-[10px] font-bold tracking-widest [writing-mode:vertical-rl]",
+            faculty.railTextClass
+          )}
+        >
           {faculty.label}
         </span>
       </div>
@@ -158,7 +168,7 @@ export function UnitCard({
       >
         <button
           className={cn(
-            "flex min-w-0 flex-1 flex-col items-stretch gap-0.5 px-3 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring",
+            "flex min-w-0 flex-1 flex-col items-stretch gap-0.5 py-2 pr-6 pl-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring",
             isDragOverlay
               ? "cursor-grabbing"
               : "cursor-grab active:cursor-grabbing"
@@ -169,11 +179,14 @@ export function UnitCard({
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tabular-nums">{code}</span>
             <StatusIcon status={status} />
-            {isFY ? (
-              <span className="ml-auto rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary uppercase">
-                Full year
-              </span>
-            ) : null}
+            <div className="ml-auto flex items-center gap-1">
+              {isCore ? <CoreBadge /> : null}
+              {isFY ? (
+                <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary uppercase">
+                  Full year
+                </span>
+              ) : null}
+            </div>
           </div>
           <div className="line-clamp-2 text-[11px] leading-snug text-foreground/90">
             {unit?.title ?? (
@@ -242,6 +255,26 @@ function UnitMenu({
 }
 
 type CardStatus = "ok" | "warn" | "error" | "loading"
+
+function unitIsCore(
+  code: string,
+  course: PlannerCourseWithAoS | null
+): boolean {
+  if (!course) return false
+  const grouping =
+    course.courseUnits.find((u) => u.code === code)?.grouping ??
+    course.areasOfStudy.flatMap((a) => a.units).find((u) => u.code === code)
+      ?.grouping
+  return grouping?.toLowerCase().includes("core") ?? false
+}
+
+function CoreBadge() {
+  return (
+    <span className="rounded bg-primary px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
+      Core
+    </span>
+  )
+}
 
 function StatusIcon({ status }: { status: CardStatus }) {
   if (status === "error")
