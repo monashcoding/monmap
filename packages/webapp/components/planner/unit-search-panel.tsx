@@ -128,21 +128,17 @@ export function UnitSearchPanel() {
         seen.add(u.code)
         const full = units.get(u.code)
         if (full) out.push(full)
-        if (out.length >= 16) break
+        if (out.length >= 8) break
       }
-      if (out.length >= 16) break
+      if (out.length >= 8) break
     }
     return out
   }, [course, state.years, units])
 
   useEffect(() => {
     let cancelled = false
-    if (!debounced.trim()) {
-      setResults([])
-      setLoading(false)
-      return
-    }
-    setLoading(true)
+    if (!debounced.trim()) return
+    const t = setTimeout(() => setLoading(true), 0)
     searchUnitsAction(debounced, handbookYear)
       .then((list) => {
         if (cancelled) return
@@ -157,6 +153,7 @@ export function UnitSearchPanel() {
       })
     return () => {
       cancelled = true
+      clearTimeout(t)
     }
   }, [debounced, mergeUnits, handbookYear])
 

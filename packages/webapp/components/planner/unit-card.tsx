@@ -107,9 +107,12 @@ export function UnitCard({
     if (flashVersion === lastFlashRef.current) return
     lastFlashRef.current = flashVersion
     if (flashVersion === 0 || status !== "error") return
-    setIsFlashing(true)
-    const t = setTimeout(() => setIsFlashing(false), 1700)
-    return () => clearTimeout(t)
+    const start = setTimeout(() => setIsFlashing(true), 0)
+    const stop = setTimeout(() => setIsFlashing(false), 1700)
+    return () => {
+      clearTimeout(start)
+      clearTimeout(stop)
+    }
   }, [flashVersion, status])
 
   return (
