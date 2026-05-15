@@ -301,7 +301,7 @@ function GroupList({
                     "rounded px-1 py-px text-[8px] font-medium tracking-wide uppercase",
                     satisfied
                       ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                      : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                      : "bg-primary/40 text-primary-foreground"
                   )}
                 >
                   Pick {g.required} of {g.options.length}
