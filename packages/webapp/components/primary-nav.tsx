@@ -9,8 +9,13 @@ const items = [
   { href: "/", label: "Mapper", match: (p: string) => p === "/" },
   {
     href: "/plans",
-    label: "My plans",
+    label: "My Course Maps",
     match: (p: string) => p.startsWith("/plans"),
+  },
+  {
+    href: "/tree",
+    label: "Unit Tree",
+    match: (p: string) => p.startsWith("/tree"),
   },
 ]
 
