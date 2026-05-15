@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { GraduationCapIcon, LogOutIcon, NotebookPenIcon } from "lucide-react"
+import { LogOutIcon, NotebookPenIcon } from "lucide-react"
 import { useState } from "react"
 
 import { AnonymousBadge } from "@/components/anonymous-badge"
@@ -31,7 +31,9 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         <Link href="/" className="flex items-center gap-3">
           <div className="relative">
             <div className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground ring-2 ring-[var(--monash-purple)]/15">
-              <GraduationCapIcon className="size-5" />
+              <span aria-hidden className="text-xl leading-none">
+                🎓
+              </span>
             </div>
             <span
               aria-hidden
