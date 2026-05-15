@@ -88,11 +88,6 @@ export function LeftSidebar() {
       <ActionButton
         icon={<BadgeCheckIcon />}
         label="Validate"
-        description={
-          errorCount === 0
-            ? "All good"
-            : `${errorCount} issue${errorCount === 1 ? "" : "s"}`
-        }
         tone={errorCount === 0 ? "good" : "bad"}
         onClick={() => {
           if (errorCount === 0) {
@@ -164,13 +159,11 @@ export function LeftSidebar() {
 function ActionButton({
   icon,
   label,
-  description,
   tone,
   onClick,
 }: {
   icon: React.ReactNode
   label: string
-  description?: string
   tone?: "good" | "bad" | "active"
   onClick: () => void
 }) {
@@ -198,11 +191,6 @@ function ActionButton({
       >
         {label}
       </span>
-      {description ? (
-        <span className="text-[9px] leading-none font-normal text-muted-foreground">
-          {description}
-        </span>
-      ) : null}
     </Button>
   )
 }
