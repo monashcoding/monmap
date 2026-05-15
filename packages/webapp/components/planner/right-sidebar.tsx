@@ -91,7 +91,7 @@ function MobileRightDrawer({
       </SheetTrigger>
       <SheetContent
         side="bottom"
-        className="h-[85svh] gap-0 p-0"
+        className="gap-0 p-0 data-[side=bottom]:h-[85svh]"
         showCloseButton={false}
       >
         <SheetHeader className="sr-only">
@@ -100,7 +100,8 @@ function MobileRightDrawer({
             Switch between progress summary and unit search.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex h-full flex-col">
+        <div className="flex h-full min-h-0 flex-col">
+          {/* Drag handle + title + close. Stays put while the body scrolls. */}
           <div className="relative flex shrink-0 items-center justify-center border-b bg-card px-4 pt-3 pb-2.5">
             <span
               aria-hidden
@@ -122,11 +123,24 @@ function MobileRightDrawer({
               <XIcon className="size-4" />
             </SheetClose>
           </div>
-          <RightPanel
-            tab={tab}
-            onTabChange={onTabChange}
-            className="flex-1 overflow-y-auto"
-          />
+          {/* Tab bar — also pinned, body scrolls beneath it. */}
+          <div className="flex shrink-0 border-b bg-card">
+            <TabButton
+              active={tab === "progress"}
+              onClick={() => onTabChange("progress")}
+              icon={<BookOpenTextIcon className="size-3.5" />}
+              label="Progress"
+            />
+            <TabButton
+              active={tab === "add"}
+              onClick={() => onTabChange("add")}
+              label="Add units"
+            />
+          </div>
+          {/* The single, unambiguous scroll container. */}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {tab === "progress" ? <ProgressTab /> : <AddUnitsTab />}
+          </div>
         </div>
       </SheetContent>
     </Sheet>

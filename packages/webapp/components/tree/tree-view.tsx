@@ -314,7 +314,7 @@ export function TreeView(props: TreeViewProps) {
       >
         <SheetContent
           side="bottom"
-          className="h-[85svh] gap-0 p-0"
+          className="gap-0 p-0 data-[side=bottom]:h-[85svh]"
           showCloseButton={false}
         >
           <SheetHeader className="sr-only">
