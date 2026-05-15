@@ -6,3 +6,4 @@ data/
 .claude
 *.tar.gz
 .env
+.mcp.json

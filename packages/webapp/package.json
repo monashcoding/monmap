@@ -10,13 +10,15 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "test": "node --test 'lib/planner/*.test.ts'",
+    "test": "node --test 'lib/planner/*.test.ts' 'lib/tree/*.test.ts'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@dagrejs/dagre": "^3.0.0",
     "@dnd-kit/core": "^6.3.1",
     "@monmap/db": "workspace:*",
+    "@xyflow/react": "^12.10.2",
     "better-auth": "^1.6.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

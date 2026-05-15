@@ -6,7 +6,10 @@ import {
   createUserPlan,
   deleteUserGrade,
   deleteUserPlan,
+  expandCourseClosure,
+  expandRequisiteGraph,
   fetchCourseWithAoS,
+  fetchEnrolmentRulesForCodes,
   getUserPlanById,
   hydratePlannerUnits,
   hydratePlannerUnitsMultiYear,
@@ -99,6 +102,72 @@ export async function hydrateUnitsAction(
     units: Object.fromEntries(units),
     offerings: Object.fromEntries(offerings),
     requisites: Object.fromEntries(requisites),
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Tree page
+ *
+ * One server action expands the graph for the current controls value
+ * and hydrates every unit + its offerings + structured rules +
+ * enrolment-rule prose. The page state is small enough that doing
+ * this in one round-trip is much cheaper than per-mutation patches.
+ * ------------------------------------------------------------------ */
+
+import type { TreeControlsValue, TreeGraphPayload } from "@/lib/tree/payload"
+export type { TreeControlsValue, TreeGraphPayload } from "@/lib/tree/payload"
+
+export async function fetchTreeDataAction(
+  controls: TreeControlsValue
+): Promise<TreeGraphPayload> {
+  const empty: TreeGraphPayload = {
+    graph: { seeds: [], nodes: [], edges: [] },
+    units: {},
+    offerings: {},
+    requisites: {},
+    enrolmentRules: {},
+  }
+
+  const depth = Math.max(1, Math.min(5, controls.depth))
+
+  const graph = await (async () => {
+    if (controls.mode === "course") {
+      if (!controls.courseCode) return empty.graph
+      return expandCourseClosure(
+        controls.courseCode,
+        controls.aosCode,
+        controls.year,
+        depth
+      )
+    }
+    if (!controls.unitCode) return empty.graph
+    return expandRequisiteGraph(
+      [controls.unitCode],
+      controls.year,
+      controls.direction,
+      depth
+    )
+  })()
+
+  if (graph.nodes.length === 0) return empty
+
+  // Hydrate metadata for every node so the renderer doesn't have to
+  // round-trip for badges / synopsis / etc.
+  const { units, offerings, requisites } = await hydratePlannerUnits(
+    graph.nodes,
+    controls.year
+  )
+  const enrolment = await fetchEnrolmentRulesForCodes(
+    graph.nodes,
+    controls.year
+  )
+
+  return {
+    graph,
+    units: Object.fromEntries(units),
+    offerings: Object.fromEntries(offerings),
+    requisites: Object.fromEntries(requisites),
+    enrolmentRules: Object.fromEntries(enrolment),
   }
 }
 

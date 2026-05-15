@@ -33,11 +33,7 @@ import type {
   RequisiteBlock,
   RequisiteRule,
 } from "../planner/types.ts"
-import type {
-  TreeDirection,
-  TreeEdge,
-  TreeGraphRaw,
-} from "../tree/types.ts"
+import type { TreeDirection, TreeEdge, TreeGraphRaw } from "../tree/types.ts"
 
 /**
  * All queries take a `year` parameter so a student can plan against a
@@ -331,7 +327,8 @@ async function _fetchCourseWithAoS(
       const sub = subCourseMap.get(ref.courseCode)
       if (!sub) continue
       const rawGroups =
-        sub.requirementGroups ?? extractRequirementGroups(sub.curriculumStructure)
+        sub.requirementGroups ??
+        extractRequirementGroups(sub.curriculumStructure)
       if (rawGroups.length === 0) continue
       const candidateCodes = new Set(rawGroups.flatMap((g) => g.options))
       const validRows = await db
@@ -909,7 +906,9 @@ export async function fetchCoursesMeta(
   pairs: Array<{ code: string; year: string }>
 ): Promise<CourseMeta[]> {
   const normalised = [...pairs].sort((a, b) =>
-    a.year === b.year ? a.code.localeCompare(b.code) : a.year.localeCompare(b.year)
+    a.year === b.year
+      ? a.code.localeCompare(b.code)
+      : a.year.localeCompare(b.year)
   )
   return _fetchCoursesMetaCached(normalised)
 }
@@ -1105,43 +1104,70 @@ async function _expandRequisiteGraph(
   }
   const db = getDb()
 
-  // Recursive CTE: walk forward (upstream = follow prereqs), backward
-  // (downstream = follow what requires it), or both. We always include
-  // coreqs in the closure (they're a real dependency type) and we
-  // include prohibitions for *seed* units only (so the side panel can
-  // surface equivalents), not transitively (would explode the graph).
+  // Two independent walks: upstream (prereqs of seeds) and downstream
+  // (units that require seeds). Critically, we don't mix them — once a
+  // downstream walk lands on a level-3 capstone, we DON'T then walk its
+  // prereqs (which would pull in dozens of unrelated level-1 units). In
+  // 'both' mode we union the two walks; the result is still bounded by
+  // the seed's actual neighbourhood.
   const seedArr = [...new Set(seeds)]
   const noise = [...TREE_NOISE_COREQ_CODES]
 
   const goUp = direction === "upstream" || direction === "both"
   const goDown = direction === "downstream" || direction === "both"
 
-  // We build the closure twice — one nodes-set walk, one edges fetch —
-  // to keep the recursive CTE simple. Performance: with maxDepth ≤ 5
-  // and the index on (year, unit_code), this is single-digit ms.
+  // Postgres-js/drizzle doesn't auto-convert JS string arrays to TEXT[]
+  // for use with `ANY(...)`. Build a `VALUES (...), (...)`-based set
+  // membership instead — bind each code as its own parameter, safe and
+  // index-friendly.
+  const valuesClause = (codes: readonly string[]) =>
+    sql.join(
+      codes.map((c) => sql`(${c})`),
+      sql`, `
+    )
+
   const nodesRows = await db.execute(sql`
-    WITH RECURSIVE walk(node, depth) AS (
-      SELECT unnest(${sql.raw(`ARRAY[${seedArr.map((s) => `'${s.replace(/'/g, "''")}'`).join(",")}]::text[]`)}) AS node, 0
+    WITH RECURSIVE seeds(code) AS (
+      VALUES ${valuesClause(seedArr)}
+    ),
+    noise(code) AS (
+      VALUES ${valuesClause(noise)}
+    ),
+    up(node, depth) AS (
+      SELECT code, 0 FROM seeds WHERE ${sql.raw(goUp ? "TRUE" : "FALSE")}
       UNION
-      SELECT
-        CASE
-          WHEN ${sql.raw(goUp ? "TRUE" : "FALSE")} AND r.unit_code = w.node THEN r.requires_unit_code
-          WHEN ${sql.raw(goDown ? "TRUE" : "FALSE")} AND r.requires_unit_code = w.node THEN r.unit_code
-        END,
-        w.depth + 1
-      FROM walk w
+      SELECT r.requires_unit_code, u.depth + 1
+      FROM up u
       JOIN requisite_refs r
         ON r.year = ${year}
         AND r.requisite_type IN ('prerequisite', 'corequisite')
+        AND r.unit_code = u.node
         AND r.unit_code <> r.requires_unit_code
-        AND NOT (r.requisite_type = 'corequisite' AND r.requires_unit_code = ANY(${noise}))
-        AND (
-          (${sql.raw(goUp ? "TRUE" : "FALSE")} AND r.unit_code = w.node)
-          OR (${sql.raw(goDown ? "TRUE" : "FALSE")} AND r.requires_unit_code = w.node)
+        AND NOT (
+          r.requisite_type = 'corequisite'
+          AND r.requires_unit_code IN (SELECT code FROM noise)
         )
-      WHERE w.depth < ${maxDepth}
+      WHERE u.depth < ${maxDepth}
+    ),
+    down(node, depth) AS (
+      SELECT code, 0 FROM seeds WHERE ${sql.raw(goDown ? "TRUE" : "FALSE")}
+      UNION
+      SELECT r.unit_code, d.depth + 1
+      FROM down d
+      JOIN requisite_refs r
+        ON r.year = ${year}
+        AND r.requisite_type IN ('prerequisite', 'corequisite')
+        AND r.requires_unit_code = d.node
+        AND r.unit_code <> r.requires_unit_code
+        AND NOT (
+          r.requisite_type = 'corequisite'
+          AND r.requires_unit_code IN (SELECT code FROM noise)
+        )
+      WHERE d.depth < ${maxDepth}
     )
-    SELECT DISTINCT node FROM walk WHERE node IS NOT NULL
+    SELECT node FROM up
+    UNION
+    SELECT node FROM down
   `)
   const nodes = (nodesRows as unknown as Array<{ node: string }>).map(
     (r) => r.node
@@ -1156,13 +1182,18 @@ async function _expandRequisiteGraph(
   // useful for showing equivalent-unit clusters without expanding into
   // them.
   const edgeRows = await db.execute(sql`
+    WITH nset(code) AS (VALUES ${valuesClause(nodes)}),
+         noise(code) AS (VALUES ${valuesClause(noise)})
     SELECT unit_code AS "from", requires_unit_code AS "to", requisite_type AS "type"
     FROM requisite_refs
     WHERE year = ${year}
       AND unit_code <> requires_unit_code
-      AND unit_code = ANY(${nodes})
-      AND requires_unit_code = ANY(${nodes})
-      AND NOT (requisite_type = 'corequisite' AND requires_unit_code = ANY(${noise}))
+      AND unit_code IN (SELECT code FROM nset)
+      AND requires_unit_code IN (SELECT code FROM nset)
+      AND NOT (
+        requisite_type = 'corequisite'
+        AND requires_unit_code IN (SELECT code FROM noise)
+      )
   `)
   const edges = (
     edgeRows as unknown as Array<{

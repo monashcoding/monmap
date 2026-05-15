@@ -1,6 +1,6 @@
 "use client"
 
-import { ExternalLinkIcon, InfoIcon } from "lucide-react"
+import { ExternalLinkIcon, InfoIcon, Share2Icon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import {
@@ -79,10 +79,17 @@ export function UnitDetailPopover({
               </span>
             ) : null}
             <a
+              href={`/tree?unit=${code}&year=${handbookYear}`}
+              className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Share2Icon className="size-3" />
+              Tree
+            </a>
+            <a
               href={`https://handbook.monash.edu/${handbookYear}/units/${code}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <ExternalLinkIcon className="size-3" />
               Handbook
