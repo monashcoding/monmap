@@ -36,6 +36,20 @@
       "when": 1778815638742,
       "tag": "0004_slimy_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778818709694,
+      "tag": "0005_stormy_hydra",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778818974464,
+      "tag": "0006_smooth_living_lightning",
+      "breakpoints": true
     }
   ]
 }

@@ -15,6 +15,16 @@ import type {
   UnitContent,
   UnitOffering,
 } from "@monmap/scraper/types";
+import {
+  extractRequirementGroups,
+  extractEmbeddedSpecialisations,
+  extractSubCourseRefs,
+  extractComponentLabels,
+  type ComponentLabelMap,
+  type EmbeddedSpecialisation,
+  type RequirementGroup,
+  type SubCourseRef,
+} from "@monmap/db";
 
 /* ------------------------------------------------------------------ *
  * Small helpers
@@ -320,11 +330,20 @@ export interface CourseRows {
     fullTime: boolean | null;
     partTime: boolean | null;
     curriculumStructure: CurriculumStructure | null;
+    requirementGroups: RequirementGroup[] | null;
+    embeddedSpecialisations: EmbeddedSpecialisation[] | null;
+    subCourseRefs: SubCourseRef[] | null;
+    componentLabels: ComponentLabelMap | null;
     raw: CourseContent;
   };
 }
 
 export function parseCourse(year: string, raw: CourseContent): CourseRows {
+  const structure = raw.curriculumStructure ?? null;
+  // Precompute curriculum-tree extractions once at ingest so the planner
+  // never has to re-walk the tree at request time. See
+  // packages/db/src/curriculum.ts for the walker implementations.
+  const hasStructure = structure !== null;
   return {
     course: {
       year,
@@ -342,7 +361,13 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
       online: toBool(raw["online"]),
       fullTime: toBool(raw["full_time"]),
       partTime: toBool(raw["part_time"]),
-      curriculumStructure: raw.curriculumStructure ?? null,
+      curriculumStructure: structure,
+      requirementGroups: hasStructure ? extractRequirementGroups(structure) : null,
+      embeddedSpecialisations: hasStructure
+        ? extractEmbeddedSpecialisations(structure)
+        : null,
+      subCourseRefs: hasStructure ? extractSubCourseRefs(structure) : null,
+      componentLabels: hasStructure ? extractComponentLabels(structure) : null,
       raw,
     },
   };

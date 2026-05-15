@@ -24,7 +24,12 @@ function parseArgs(argv: readonly string[]): { year: string; allYears: boolean; 
 }
 
 const args = parseArgs(process.argv.slice(2));
-const db = createDb(DATABASE_URL);
+// Ingest is a long-running CLI doing bulk inserts — opt out of the
+// serverless-tuned defaults from `createDb` and use a larger pool with
+// no idle reaping.
+const db = createDb(DATABASE_URL, {
+  pool: { max: 4, idle_timeout: 0, prepare: false },
+});
 
 const years = args.allYears
   ? (await readdir(join(args.dataDir, "raw"))).filter((d) => /^\d{4}$/.test(d)).sort()

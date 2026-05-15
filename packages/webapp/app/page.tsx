@@ -1,14 +1,16 @@
-import { Planner } from "@/components/planner/planner"
+import { Suspense } from "react"
+
+import { PlannerSkeleton } from "@/components/planner/planner-skeleton"
+import { PlannerStreaming } from "@/components/planner/planner-streaming"
 import { getCurrentUser } from "@/lib/auth-server"
 import { HANDBOOK_YEAR } from "@/lib/db/client"
 import {
   fetchCourseWithAoS,
-  getUserPlanById,
   hydratePlannerUnits,
   listAvailableYears,
   listCoursesForPicker,
   listUserGrades,
-  listUserPlans,
+  listUserPlansWithState,
 } from "@/lib/db/queries"
 
 /**
@@ -37,25 +39,29 @@ export default async function Page({
     getCurrentUser(),
   ])
 
-  // Signed-in users: list their plans, pick the most-recently-updated
-  // as the active one. Anon users get an empty list and no active plan.
-  const [userPlans, initialGrades] = currentUser
+  // Signed-in users: list their plans (with state) in one round-trip,
+  // pick the most-recently-updated as the active one. Anon users get an
+  // empty list and no active plan.
+  const [fullPlans, initialGrades] = currentUser
     ? await Promise.all([
-        listUserPlans(currentUser.id),
+        listUserPlansWithState(currentUser.id),
         listUserGrades(currentUser.id),
       ])
     : [[], null]
+  // Client only needs metadata; strip state before serialising the list.
+  const userPlans = fullPlans.map((p) => ({
+    id: p.id,
+    name: p.name,
+    updatedAt: p.updatedAt,
+  }))
   // ?plan=<id> lets the plans page link directly to a specific plan.
   const requestedPlanId = params.plan ?? null
   const activePlanId =
-    requestedPlanId && userPlans.some((p) => p.id === requestedPlanId)
+    requestedPlanId && fullPlans.some((p) => p.id === requestedPlanId)
       ? requestedPlanId
-      : (userPlans[0]?.id ?? null)
-  const activePlan =
-    currentUser && activePlanId
-      ? await getUserPlanById(activePlanId, currentUser.id)
-      : null
-  const initialPlanState = activePlan?.state ?? null
+      : (fullPlans[0]?.id ?? null)
+  const initialPlanState =
+    fullPlans.find((p) => p.id === activePlanId)?.state ?? null
 
   // Most recent year wins as default; fall back to HANDBOOK_YEAR if
   // the DB is empty (fresh setup).
@@ -92,38 +98,43 @@ export default async function Page({
       ]
     : []
 
-  // Eagerly load unit data for every unit referenced by the default
-  // course's AoS. Cheap (~100 codes × 3 queries) and means the UI has
-  // fully-resolved unit chips the instant you click "add unit".
-  const hydrated = await hydratePlannerUnits(prewarmCodes, year)
+  // Build (don't await) the unit-hydration payload so React streams the
+  // page shell first. The promise is consumed inside PlannerStreaming
+  // via React 19 `use()`; the surrounding <Suspense> renders the
+  // skeleton until it resolves.
+  const prewarmedPromise = hydratePlannerUnits(prewarmCodes, year).then(
+    (h) => ({
+      units: Object.fromEntries(h.units),
+      offerings: Object.fromEntries(h.offerings),
+      requisites: Object.fromEntries(h.requisites),
+    })
+  )
 
   return (
     <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
-      <Planner
-        initialYear={year}
-        availableYears={availableYears.length > 0 ? availableYears : [year]}
-        courses={courses}
-        defaultCourse={defaultCourse}
-        prewarmed={{
-          units: Object.fromEntries(hydrated.units),
-          offerings: Object.fromEntries(hydrated.offerings),
-          requisites: Object.fromEntries(hydrated.requisites),
-        }}
-        currentUser={
-          currentUser
-            ? {
-                id: currentUser.id,
-                name: currentUser.name,
-                email: currentUser.email,
-                image: currentUser.image ?? null,
-              }
-            : null
-        }
-        initialPlan={initialPlanState}
-        initialPlans={userPlans}
-        initialActivePlanId={activePlanId}
-        initialGrades={initialGrades}
-      />
+      <Suspense fallback={<PlannerSkeleton />}>
+        <PlannerStreaming
+          initialYear={year}
+          availableYears={availableYears.length > 0 ? availableYears : [year]}
+          courses={courses}
+          defaultCourse={defaultCourse}
+          prewarmedPromise={prewarmedPromise}
+          currentUser={
+            currentUser
+              ? {
+                  id: currentUser.id,
+                  name: currentUser.name,
+                  email: currentUser.email,
+                  image: currentUser.image ?? null,
+                }
+              : null
+          }
+          initialPlan={initialPlanState}
+          initialPlans={userPlans}
+          initialActivePlanId={activePlanId}
+          initialGrades={initialGrades}
+        />
+      </Suspense>
     </main>
   )
 }

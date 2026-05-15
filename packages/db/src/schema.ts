@@ -22,6 +22,7 @@
  *      units) and we accept that.
  */
 
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -41,6 +42,12 @@ import type {
   UnitContent,
 } from "@monmap/scraper/types";
 import type { PlannerState } from "./planner-state.ts";
+import type {
+  ComponentLabelMap,
+  EmbeddedSpecialisation,
+  RequirementGroup,
+  SubCourseRef,
+} from "./curriculum.ts";
 
 /* ------------------------------------------------------------------ *
  * Enums
@@ -102,6 +109,10 @@ export const units = pgTable(
     primaryKey({ columns: [t.year, t.code] }),
     index("units_title_idx").on(t.title),
     index("units_school_idx").on(t.school),
+    // Trigram GIN indexes power the unit-search `ILIKE '%q%'` queries.
+    // Requires the pg_trgm extension (see migration 0005).
+    index("units_title_trgm_idx").using("gin", sql`title gin_trgm_ops`),
+    index("units_code_trgm_idx").using("gin", sql`code gin_trgm_ops`),
   ],
 );
 
@@ -128,11 +139,23 @@ export const courses = pgTable(
     partTime: boolean(),
     /** Requirement tree rendered on the course structure page. */
     curriculumStructure: jsonb().$type<CurriculumStructure>(),
+    /**
+     * Precomputed by ingest from `curriculumStructure` — saves the
+     * planner from re-walking the tree on every page load. Nullable
+     * because rows ingested before migration 0006 have no value; the
+     * webapp falls back to extracting on the fly when null.
+     */
+    requirementGroups: jsonb().$type<RequirementGroup[]>(),
+    embeddedSpecialisations: jsonb().$type<EmbeddedSpecialisation[]>(),
+    subCourseRefs: jsonb().$type<SubCourseRef[]>(),
+    componentLabels: jsonb().$type<ComponentLabelMap>(),
     raw: jsonb().$type<CourseContent>().notNull(),
   },
   (t) => [
     primaryKey({ columns: [t.year, t.code] }),
     index("courses_title_idx").on(t.title),
+    index("courses_title_trgm_idx").using("gin", sql`title gin_trgm_ops`),
+    index("courses_code_trgm_idx").using("gin", sql`code gin_trgm_ops`),
   ],
 );
 

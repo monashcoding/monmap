@@ -11,6 +11,7 @@
     "scrape:all": "pnpm --filter @monmap/scraper scrape --all-years",
     "ingest": "pnpm --filter @monmap/ingest start",
     "ingest:all": "pnpm --filter @monmap/ingest start --all-years",
+    "backfill:curriculum": "pnpm --filter @monmap/ingest backfill:curriculum",
     "db:generate": "pnpm --filter @monmap/db generate",
     "db:migrate": "pnpm --filter @monmap/db migrate",
     "db:studio": "pnpm --filter @monmap/db studio",

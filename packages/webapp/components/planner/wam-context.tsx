@@ -188,19 +188,18 @@ export function WamProvider({
     return totalWeight / totalCp
   }, [grades, plannedCodes, units])
 
-  return (
-    <WamCtx.Provider
-      value={{
-        wamMode,
-        showGrade,
-        grades,
-        toggleWamMode,
-        toggleShowGrade,
-        setGrade,
-        wam,
-      }}
-    >
-      {children}
-    </WamCtx.Provider>
+  const value = useMemo<WamContextValue>(
+    () => ({
+      wamMode,
+      showGrade,
+      grades,
+      toggleWamMode,
+      toggleShowGrade,
+      setGrade,
+      wam,
+    }),
+    [wamMode, showGrade, grades, toggleWamMode, toggleShowGrade, setGrade, wam]
   )
+
+  return <WamCtx.Provider value={value}>{children}</WamCtx.Provider>
 }

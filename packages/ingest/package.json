@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
+    "backfill:curriculum": "tsx src/backfill-curriculum.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

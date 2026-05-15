@@ -11,6 +11,7 @@ import {
   userPlan,
 } from "@monmap/db"
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
+import { unstable_cache } from "next/cache"
 
 import { getDb, HANDBOOK_YEAR } from "./client.ts"
 import {
@@ -32,6 +33,11 @@ import type {
   RequisiteBlock,
   RequisiteRule,
 } from "../planner/types.ts"
+import type {
+  TreeDirection,
+  TreeEdge,
+  TreeGraphRaw,
+} from "../tree/types.ts"
 
 /**
  * All queries take a `year` parameter so a student can plan against a
@@ -41,13 +47,38 @@ import type {
  * — start year drives everything, matching MonPlan's pragmatic model.
  */
 
-export async function listAvailableYears(): Promise<string[]> {
+/**
+ * Handbook data is static between ingest runs — wrap reads in the
+ * Next data cache. Revalidate daily as a safety net; `revalidateTag`
+ * on the `handbook` tag (e.g. from the ingest CLI hitting an API route)
+ * busts everything atomically. Note: results must be JSON-serializable,
+ * so functions that build `Map` returns cache their row-array form and
+ * rebuild the Map in the outer (uncached) function.
+ */
+const HANDBOOK_TAG = "handbook"
+const HANDBOOK_REVALIDATE = 60 * 60 * 24
+
+function cacheHandbook<Args extends readonly unknown[], R>(
+  fn: (...args: Args) => Promise<R>,
+  key: string
+): (...args: Args) => Promise<R> {
+  return unstable_cache(fn, [key], {
+    tags: [HANDBOOK_TAG],
+    revalidate: HANDBOOK_REVALIDATE,
+  })
+}
+
+async function _listAvailableYears(): Promise<string[]> {
   const db = getDb()
   const rows = await db.selectDistinct({ year: courses.year }).from(courses)
   return rows.map((r) => r.year).sort()
 }
+export const listAvailableYears = cacheHandbook(
+  _listAvailableYears,
+  "listAvailableYears"
+)
 
-export async function listCoursesForPicker(
+async function _listCoursesForPicker(
   search: string | null,
   limit = 50,
   year: string = HANDBOOK_YEAR
@@ -83,37 +114,53 @@ export async function listCoursesForPicker(
     overview: r.overview,
   }))
 }
+export const listCoursesForPicker = cacheHandbook(
+  _listCoursesForPicker,
+  "listCoursesForPicker"
+)
 
 /**
  * Load a course plus the AoS it offers. Groups edges by (year, code)
  * so each AoS appears once even if it's listed under multiple
  * relationshipLabels (rare but possible).
  */
-export async function fetchCourseWithAoS(
+async function _fetchCourseWithAoS(
   code: string,
   year: string = HANDBOOK_YEAR
 ): Promise<PlannerCourseWithAoS | null> {
   const db = getDb()
   const [course] = await db
-    .select()
+    .select({
+      year: courses.year,
+      code: courses.code,
+      title: courses.title,
+      creditPoints: courses.creditPoints,
+      aqfLevel: courses.aqfLevel,
+      type: courses.type,
+      overview: courses.overview,
+      // Pre-baked curriculum extractions populated by ingest. Fall back
+      // to walking `curriculumStructure` only when the row was ingested
+      // before migration 0006 added these columns.
+      requirementGroups: courses.requirementGroups,
+      embeddedSpecialisations: courses.embeddedSpecialisations,
+      subCourseRefs: courses.subCourseRefs,
+      componentLabels: courses.componentLabels,
+      curriculumStructure: courses.curriculumStructure,
+    })
     .from(courses)
     .where(and(eq(courses.year, year), eq(courses.code, code)))
     .limit(1)
   if (!course) return null
 
-  // Extract degree-level requirements from the course's
-  // curriculumStructure. Intersect against the units table to drop
-  // cross-year / dangling refs from both the group options and the
-  // flat default-load list.
-  const rawCourseGroups = extractRequirementGroups(course.curriculumStructure)
-  // Pull embedded specialisations from the same tree — these are
-  // "pick one of N" sub-containers (e.g. F2010 Part C studios, C2001
-  // Part D tracks) that don't appear in the course_areas_of_study
-  // table. They get surfaced to the AoS picker as virtual AoS so the
-  // student can choose one and have its units auto-load.
-  const embeddedSpecs = extractEmbeddedSpecialisations(
-    course.curriculumStructure
-  )
+  const rawCourseGroups =
+    course.requirementGroups ??
+    extractRequirementGroups(course.curriculumStructure)
+  // Embedded specialisations are "pick one of N" sub-containers (e.g.
+  // F2010 Part C studios, C2001 Part D tracks) that don't appear in the
+  // course_areas_of_study table — surfaced as virtual AoS.
+  const embeddedSpecs =
+    course.embeddedSpecialisations ??
+    extractEmbeddedSpecialisations(course.curriculumStructure)
 
   // Collect every code that needs a validity check in one round-trip.
   const allCandidateCodes = new Set<string>()
@@ -214,12 +261,14 @@ export async function fetchCourseWithAoS(
     unitsByAos.set(u.aosCode, list)
   }
 
-  // Build aosCode → top-level component title for double-degree labelling.
-  const aosCodeSet = new Set(links.map((l) => l.aosCode))
-  const componentLabels = buildComponentLabels(
-    course.curriculumStructure,
-    aosCodeSet
-  )
+  // Pre-baked map of aosCode → depth-1 ancestor title (double-degree
+  // component labels). Old rows fall back to walking the tree.
+  const componentLabels: ReadonlyMap<string, string> = course.componentLabels
+    ? new Map(Object.entries(course.componentLabels))
+    : buildComponentLabels(
+        course.curriculumStructure,
+        new Set(links.map((l) => l.aosCode))
+      )
 
   // De-duplicate course→AoS edges that share (code, kind) — first label wins
   const byCode = new Map<string, PlannerAreaOfStudy>()
@@ -261,12 +310,18 @@ export async function fetchCourseWithAoS(
   })
 
   // For double degrees, fetch core units for each referenced sub-course.
-  const subCourseRefs = extractSubCourseRefs(course.curriculumStructure)
+  const subCourseRefs =
+    course.subCourseRefs ?? extractSubCourseRefs(course.curriculumStructure)
   const componentCourses: PlannerCourseComponent[] = []
   if (subCourseRefs.length > 0) {
     const subCourseCodes = subCourseRefs.map((r) => r.courseCode)
     const subCourseRows = await db
-      .select()
+      .select({
+        code: courses.code,
+        title: courses.title,
+        requirementGroups: courses.requirementGroups,
+        curriculumStructure: courses.curriculumStructure,
+      })
       .from(courses)
       .where(and(eq(courses.year, year), inArray(courses.code, subCourseCodes)))
 
@@ -275,7 +330,8 @@ export async function fetchCourseWithAoS(
     for (const ref of subCourseRefs) {
       const sub = subCourseMap.get(ref.courseCode)
       if (!sub) continue
-      const rawGroups = extractRequirementGroups(sub.curriculumStructure)
+      const rawGroups =
+        sub.requirementGroups ?? extractRequirementGroups(sub.curriculumStructure)
       if (rawGroups.length === 0) continue
       const candidateCodes = new Set(rawGroups.flatMap((g) => g.options))
       const validRows = await db
@@ -311,6 +367,10 @@ export async function fetchCourseWithAoS(
     componentCourses,
   }
 }
+export const fetchCourseWithAoS = cacheHandbook(
+  _fetchCourseWithAoS,
+  "fetchCourseWithAoS"
+)
 
 /**
  * Convert curriculum-tree embedded specialisations into virtual
@@ -484,8 +544,9 @@ function kindOrder(k: PlannerAreaOfStudy["kind"]): number {
 /**
  * Fetch full unit records for the given codes. Missing codes are
  * silently dropped — the caller can diff against the input list.
+ * Sorts codes so different call orderings hit the same cache entry.
  */
-export async function fetchUnitsByCode(
+async function _fetchUnitsByCode(
   codes: readonly string[],
   year: string = HANDBOOK_YEAR
 ): Promise<PlannerUnit[]> {
@@ -514,8 +575,18 @@ export async function fetchUnitsByCode(
     school: r.school,
   }))
 }
+export async function fetchUnitsByCode(
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
+): Promise<PlannerUnit[]> {
+  return _fetchUnitsByCodeCached([...codes].sort(), year)
+}
+const _fetchUnitsByCodeCached = cacheHandbook(
+  _fetchUnitsByCode,
+  "fetchUnitsByCode"
+)
 
-export async function searchUnits(
+async function _searchUnits(
   query: string,
   limit = 25,
   year: string = HANDBOOK_YEAR
@@ -552,14 +623,18 @@ export async function searchUnits(
     school: r.school,
   }))
 }
+export const searchUnits = cacheHandbook(_searchUnits, "searchUnits")
 
-export async function fetchOfferingsForCodes(
+/**
+ * Inner row fetchers return JSON-serializable arrays so they fit
+ * inside the Next data cache. The outer functions rebuild the Map for
+ * callers that prefer it.
+ */
+async function _fetchOfferingsRows(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
-): Promise<Map<string, PlannerOffering[]>> {
-  const out = new Map<string, PlannerOffering[]>()
-  if (codes.length === 0) return out
-
+  year: string
+): Promise<PlannerOffering[]> {
+  if (codes.length === 0) return []
   const db = getDb()
   const rows = await db
     .select({
@@ -576,28 +651,38 @@ export async function fetchOfferingsForCodes(
         inArray(unitOfferings.unitCode, [...codes])
       )
     )
-
+  return rows.map((r) => ({
+    unitCode: r.unitCode,
+    teachingPeriod: r.teachingPeriod ?? "",
+    location: r.location,
+    attendanceModeCode: r.attendanceModeCode,
+    periodKind: classifyTeachingPeriod(r.teachingPeriod),
+  }))
+}
+const _fetchOfferingsRowsCached = cacheHandbook(
+  _fetchOfferingsRows,
+  "fetchOfferingsRows"
+)
+export async function fetchOfferingsForCodes(
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
+): Promise<Map<string, PlannerOffering[]>> {
+  const out = new Map<string, PlannerOffering[]>()
+  if (codes.length === 0) return out
+  const rows = await _fetchOfferingsRowsCached([...codes].sort(), year)
   for (const r of rows) {
     const list = out.get(r.unitCode) ?? []
-    list.push({
-      unitCode: r.unitCode,
-      teachingPeriod: r.teachingPeriod ?? "",
-      location: r.location,
-      attendanceModeCode: r.attendanceModeCode,
-      periodKind: classifyTeachingPeriod(r.teachingPeriod),
-    })
+    list.push(r)
     out.set(r.unitCode, list)
   }
   return out
 }
 
-export async function fetchRequisitesForCodes(
+async function _fetchRequisitesRows(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
-): Promise<Map<string, RequisiteBlock[]>> {
-  const out = new Map<string, RequisiteBlock[]>()
-  if (codes.length === 0) return out
-
+  year: string
+): Promise<Array<{ unitCode: string; block: RequisiteBlock }>> {
+  if (codes.length === 0) return []
   const db = getDb()
   const rows = await db
     .select({
@@ -609,32 +694,46 @@ export async function fetchRequisitesForCodes(
     .where(
       and(eq(requisites.year, year), inArray(requisites.unitCode, [...codes]))
     )
-
-  for (const r of rows) {
-    const list = out.get(r.unitCode) ?? []
-    list.push({
+  return rows.map((r) => ({
+    unitCode: r.unitCode,
+    block: {
       requisiteType: r.requisiteType,
       rule: (r.rule as RequisiteRule | null) ?? null,
-    })
+    },
+  }))
+}
+const _fetchRequisitesRowsCached = cacheHandbook(
+  _fetchRequisitesRows,
+  "fetchRequisitesRows"
+)
+export async function fetchRequisitesForCodes(
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
+): Promise<Map<string, RequisiteBlock[]>> {
+  const out = new Map<string, RequisiteBlock[]>()
+  if (codes.length === 0) return out
+  const rows = await _fetchRequisitesRowsCached([...codes].sort(), year)
+  for (const r of rows) {
+    const list = out.get(r.unitCode) ?? []
+    list.push(r.block)
     out.set(r.unitCode, list)
   }
   return out
 }
 
-export async function fetchEnrolmentRulesForCodes(
+async function _fetchEnrolmentRulesRows(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<
-  Map<string, { ruleType: string | null; description: string | null }[]>
+  Array<{
+    unitCode: string
+    ruleType: string | null
+    description: string | null
+  }>
 > {
-  const out = new Map<
-    string,
-    { ruleType: string | null; description: string | null }[]
-  >()
-  if (codes.length === 0) return out
-
+  if (codes.length === 0) return []
   const db = getDb()
-  const rows = await db
+  return db
     .select({
       unitCode: enrolmentRules.unitCode,
       ruleType: enrolmentRules.ruleType,
@@ -647,7 +746,23 @@ export async function fetchEnrolmentRulesForCodes(
         inArray(enrolmentRules.unitCode, [...codes])
       )
     )
-
+}
+const _fetchEnrolmentRulesRowsCached = cacheHandbook(
+  _fetchEnrolmentRulesRows,
+  "fetchEnrolmentRulesRows"
+)
+export async function fetchEnrolmentRulesForCodes(
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
+): Promise<
+  Map<string, { ruleType: string | null; description: string | null }[]>
+> {
+  const out = new Map<
+    string,
+    { ruleType: string | null; description: string | null }[]
+  >()
+  if (codes.length === 0) return out
+  const rows = await _fetchEnrolmentRulesRowsCached([...codes].sort(), year)
   for (const r of rows) {
     const list = out.get(r.unitCode) ?? []
     list.push({ ruleType: r.ruleType, description: r.description })
@@ -757,7 +872,7 @@ export async function listUserPlansWithState(
     .orderBy(desc(userPlan.updatedAt))
 }
 
-export async function fetchCoursesMeta(
+async function _fetchCoursesMeta(
   pairs: Array<{ code: string; year: string }>
 ): Promise<CourseMeta[]> {
   if (pairs.length === 0) return []
@@ -786,8 +901,20 @@ export async function fetchCoursesMeta(
     school: r.school,
   }))
 }
+const _fetchCoursesMetaCached = cacheHandbook(
+  _fetchCoursesMeta,
+  "fetchCoursesMeta"
+)
+export async function fetchCoursesMeta(
+  pairs: Array<{ code: string; year: string }>
+): Promise<CourseMeta[]> {
+  const normalised = [...pairs].sort((a, b) =>
+    a.year === b.year ? a.code.localeCompare(b.code) : a.year.localeCompare(b.year)
+  )
+  return _fetchCoursesMetaCached(normalised)
+}
 
-export async function fetchUnitCreditPointsBatch(
+async function _fetchUnitCreditPointsBatch(
   codes: string[],
   year: string
 ): Promise<Record<string, number>> {
@@ -798,6 +925,16 @@ export async function fetchUnitCreditPointsBatch(
     .from(units)
     .where(and(eq(units.year, year), inArray(units.code, codes)))
   return Object.fromEntries(rows.map((r) => [r.code, r.creditPoints ?? 6]))
+}
+const _fetchUnitCreditPointsBatchCached = cacheHandbook(
+  _fetchUnitCreditPointsBatch,
+  "fetchUnitCreditPointsBatch"
+)
+export async function fetchUnitCreditPointsBatch(
+  codes: string[],
+  year: string
+): Promise<Record<string, number>> {
+  return _fetchUnitCreditPointsBatchCached([...codes].sort(), year)
 }
 
 export async function listUserPlans(userId: string): Promise<PlanSummary[]> {
@@ -940,3 +1077,177 @@ export async function bulkUpsertUserGrades(
       },
     })
 }
+
+/* ------------------------------------------------------------------ *
+ * Tree page — requisite graph expansion
+ *
+ * Walks `requisite_refs` outward from a seed set. The data has a few
+ * structural quirks we strip at query time rather than leave for every
+ * caller to remember:
+ *   - OHS1000 ("occupational H&S") is a mandatory coreq on 200 lab
+ *     units in 2026, ~41% of all coreq edges. It's noise for a
+ *     curriculum visualisation; drop it.
+ *   - Two prohibition self-loops exist (ATS2095, BPS1042); drop.
+ *   - We DON'T filter cross-year refs — ~88% of leaves point at older
+ *     handbook URLs but match by code is the contract.
+ * ------------------------------------------------------------------ */
+
+const TREE_NOISE_COREQ_CODES = ["OHS1000"] as const
+
+async function _expandRequisiteGraph(
+  seeds: readonly string[],
+  year: string,
+  direction: TreeDirection,
+  maxDepth: number
+): Promise<TreeGraphRaw> {
+  if (seeds.length === 0) {
+    return { seeds: [], nodes: [], edges: [] }
+  }
+  const db = getDb()
+
+  // Recursive CTE: walk forward (upstream = follow prereqs), backward
+  // (downstream = follow what requires it), or both. We always include
+  // coreqs in the closure (they're a real dependency type) and we
+  // include prohibitions for *seed* units only (so the side panel can
+  // surface equivalents), not transitively (would explode the graph).
+  const seedArr = [...new Set(seeds)]
+  const noise = [...TREE_NOISE_COREQ_CODES]
+
+  const goUp = direction === "upstream" || direction === "both"
+  const goDown = direction === "downstream" || direction === "both"
+
+  // We build the closure twice — one nodes-set walk, one edges fetch —
+  // to keep the recursive CTE simple. Performance: with maxDepth ≤ 5
+  // and the index on (year, unit_code), this is single-digit ms.
+  const nodesRows = await db.execute(sql`
+    WITH RECURSIVE walk(node, depth) AS (
+      SELECT unnest(${sql.raw(`ARRAY[${seedArr.map((s) => `'${s.replace(/'/g, "''")}'`).join(",")}]::text[]`)}) AS node, 0
+      UNION
+      SELECT
+        CASE
+          WHEN ${sql.raw(goUp ? "TRUE" : "FALSE")} AND r.unit_code = w.node THEN r.requires_unit_code
+          WHEN ${sql.raw(goDown ? "TRUE" : "FALSE")} AND r.requires_unit_code = w.node THEN r.unit_code
+        END,
+        w.depth + 1
+      FROM walk w
+      JOIN requisite_refs r
+        ON r.year = ${year}
+        AND r.requisite_type IN ('prerequisite', 'corequisite')
+        AND r.unit_code <> r.requires_unit_code
+        AND NOT (r.requisite_type = 'corequisite' AND r.requires_unit_code = ANY(${noise}))
+        AND (
+          (${sql.raw(goUp ? "TRUE" : "FALSE")} AND r.unit_code = w.node)
+          OR (${sql.raw(goDown ? "TRUE" : "FALSE")} AND r.requires_unit_code = w.node)
+        )
+      WHERE w.depth < ${maxDepth}
+    )
+    SELECT DISTINCT node FROM walk WHERE node IS NOT NULL
+  `)
+  const nodes = (nodesRows as unknown as Array<{ node: string }>).map(
+    (r) => r.node
+  )
+
+  if (nodes.length === 0) {
+    return { seeds: seedArr, nodes: seedArr, edges: [] }
+  }
+
+  // Now fetch all edges within the node set (in either direction). This
+  // also surfaces prohibitions between nodes we've already pulled in —
+  // useful for showing equivalent-unit clusters without expanding into
+  // them.
+  const edgeRows = await db.execute(sql`
+    SELECT unit_code AS "from", requires_unit_code AS "to", requisite_type AS "type"
+    FROM requisite_refs
+    WHERE year = ${year}
+      AND unit_code <> requires_unit_code
+      AND unit_code = ANY(${nodes})
+      AND requires_unit_code = ANY(${nodes})
+      AND NOT (requisite_type = 'corequisite' AND requires_unit_code = ANY(${noise}))
+  `)
+  const edges = (
+    edgeRows as unknown as Array<{
+      from: string
+      to: string
+      type: TreeEdge["type"]
+    }>
+  ).map(({ from, to, type }) => ({ from, to, type }))
+
+  return { seeds: seedArr, nodes, edges }
+}
+
+/**
+ * Walk the prerequisite/corequisite graph around `seeds`.
+ *
+ * - `upstream`: include every unit `seed` (transitively) requires.
+ * - `downstream`: include every unit that (transitively) requires `seed`.
+ * - `both`: union, ego-graph style.
+ *
+ * `maxDepth` caps the walk; coreqs and prereqs are walked alongside
+ * each other (both are "things you depend on" for the closure). Edges
+ * returned include prohibitions when both endpoints are in the
+ * closure, so a UI can render equivalent-unit hints without expanding
+ * the closure across prohibitions.
+ */
+export const expandRequisiteGraph = cacheHandbook(
+  _expandRequisiteGraph,
+  "expandRequisiteGraph"
+)
+
+/**
+ * Build the seed unit set for a course (+ optional AoS), then expand
+ * upstream so the Tree page shows the closure of "what you'd take in
+ * this major and what it depends on".
+ *
+ * Seeds = Part A specified-studies codes (from `courses.curriculum_structure`)
+ *       + AoS unit codes (from `area_of_study_units`).
+ * Closure direction is always upstream — the value is "show me the
+ * prereqs leading into this major", not "everything downstream of a
+ * major".
+ */
+async function _expandCourseClosure(
+  courseCode: string,
+  aosCode: string | null,
+  year: string,
+  maxDepth: number
+): Promise<TreeGraphRaw> {
+  const db = getDb()
+
+  // 1. Pull every academic_item_code in Part A of the course's curriculum.
+  const partARows = await db.execute(sql`
+    SELECT DISTINCT jsonb_path_query(c, '$.**.academic_item_code') #>> '{}' AS code
+    FROM (
+      SELECT jsonb_array_elements(curriculum_structure->'container') AS c
+      FROM courses
+      WHERE year = ${year} AND code = ${courseCode}
+    ) parts
+    WHERE c->>'title' ILIKE 'Part A%'
+  `)
+  const partACodes = (partARows as unknown as Array<{ code: string | null }>)
+    .map((r) => r.code)
+    .filter((c): c is string => !!c && /^[A-Z]{3}\d{4}$/.test(c))
+
+  // 2. AoS unit codes (if a major is chosen).
+  let aosCodes: string[] = []
+  if (aosCode) {
+    const rows = await db
+      .select({ code: areaOfStudyUnits.unitCode })
+      .from(areaOfStudyUnits)
+      .where(
+        and(
+          eq(areaOfStudyUnits.aosYear, year),
+          eq(areaOfStudyUnits.aosCode, aosCode)
+        )
+      )
+    aosCodes = rows.map((r) => r.code)
+  }
+
+  const seeds = [...new Set([...partACodes, ...aosCodes])]
+  if (seeds.length === 0) return { seeds: [], nodes: [], edges: [] }
+
+  return _expandRequisiteGraph(seeds, year, "upstream", maxDepth)
+}
+
+export const expandCourseClosure = cacheHandbook(
+  _expandCourseClosure,
+  "expandCourseClosure"
+)
