@@ -2,9 +2,11 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { GraduationCapIcon, LogOutIcon } from "lucide-react"
+import { GraduationCapIcon, LogOutIcon, NotebookPenIcon } from "lucide-react"
+import { useState } from "react"
 
 import { AnonymousBadge } from "@/components/anonymous-badge"
+import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { PrimaryNav } from "@/components/primary-nav"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -56,6 +58,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
 function UserMenu() {
   const { data, isPending } = useSession()
   const router = useRouter()
+  const [gradesOpen, setGradesOpen] = useState(false)
 
   if (isPending) {
     return <div className="size-8 animate-pulse rounded-full bg-muted" />
@@ -75,35 +78,44 @@ function UserMenu() {
     .toUpperCase()
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <Avatar size="sm">
-          {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
-          <AvatarFallback>{initials || "?"}</AvatarFallback>
-        </Avatar>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-auto">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="font-normal text-foreground">
-            <div className="flex flex-col">
-              <span className="text-sm font-medium whitespace-nowrap">
-                {user.name}
-              </span>
-              <span className="text-[11px]">{user.email}</span>
-            </div>
-          </DropdownMenuLabel>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={async () => {
-            await signOut()
-            router.refresh()
-          }}
-        >
-          <LogOutIcon className="size-3.5" />
-          Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Avatar size="sm">
+            {user.image ? (
+              <AvatarImage src={user.image} alt={user.name} />
+            ) : null}
+            <AvatarFallback>{initials || "?"}</AvatarFallback>
+          </Avatar>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-auto">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="font-normal text-foreground">
+              <div className="flex flex-col">
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {user.name}
+                </span>
+                <span className="text-[11px]">{user.email}</span>
+              </div>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setGradesOpen(true)}>
+            <NotebookPenIcon className="size-3.5" />
+            My grades
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={async () => {
+              await signOut()
+              router.refresh()
+            }}
+          >
+            <LogOutIcon className="size-3.5" />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <MyGradesDialog open={gradesOpen} onOpenChange={setGradesOpen} />
+    </>
   )
 }

@@ -1033,6 +1033,54 @@ export async function listUserGrades(
   return out
 }
 
+export interface UserGradeWithTitle {
+  unitCode: string
+  unitTitle: string | null
+  mark: number
+}
+
+/**
+ * User grades joined with the unit title. Grades are not year-scoped
+ * (a mark is a fact about the student, not a handbook revision), so we
+ * pick the most recent year's title per code via DISTINCT ON. Codes
+ * with no matching unit row (eg. ingested before being scraped, or
+ * historical units no longer in the corpus) come back with a null
+ * title and the UI renders just the code.
+ */
+export async function listUserGradesWithTitles(
+  userId: string
+): Promise<UserGradeWithTitle[]> {
+  const db = getDb()
+  const rows = await db.execute<{
+    unit_code: string
+    title: string | null
+    mark: number
+  }>(sql`
+    SELECT g.unit_code, t.title, g.mark
+    FROM user_grade g
+    LEFT JOIN LATERAL (
+      SELECT title
+      FROM units u
+      WHERE u.code = g.unit_code
+      ORDER BY u.year DESC
+      LIMIT 1
+    ) t ON TRUE
+    WHERE g.user_id = ${userId}
+    ORDER BY g.unit_code
+  `)
+  return (
+    rows as unknown as Array<{
+      unit_code: string
+      title: string | null
+      mark: number
+    }>
+  ).map((r) => ({
+    unitCode: r.unit_code,
+    unitTitle: r.title,
+    mark: r.mark,
+  }))
+}
+
 export async function upsertUserGrade(
   userId: string,
   unitCode: string,

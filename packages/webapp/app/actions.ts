@@ -16,14 +16,16 @@ import {
   listAvailableYears,
   listCoursesForPicker,
   listUserGrades,
+  listUserGradesWithTitles,
   listUserPlans,
   type PlanSummary,
+  type UserGradeWithTitle,
   renameUserPlan,
   searchUnits,
   updateUserPlanState,
   upsertUserGrade,
 } from "@/lib/db/queries"
-export type { PlanSummary } from "@/lib/db/queries"
+export type { PlanSummary, UserGradeWithTitle } from "@/lib/db/queries"
 import type {
   PlannerCourse,
   PlannerCourseWithAoS,
@@ -265,6 +267,14 @@ export async function listMyGradesAction(): Promise<Record<string, number>> {
   const u = await getCurrentUser()
   if (!u) return {}
   return listUserGrades(u.id)
+}
+
+export async function listMyGradesWithTitlesAction(): Promise<
+  UserGradeWithTitle[]
+> {
+  const u = await getCurrentUser()
+  if (!u) return []
+  return listUserGradesWithTitles(u.id)
 }
 
 export async function setMyGradeAction(
