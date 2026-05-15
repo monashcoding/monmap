@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { GraduationCapIcon, LogOutIcon } from "lucide-react"
 
-import { GoogleSignInButton } from "@/components/google-sign-in-button"
+import { AnonymousBadge } from "@/components/anonymous-badge"
 import { PrimaryNav } from "@/components/primary-nav"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -63,7 +63,7 @@ function UserMenu() {
 
   const user = data?.user
   if (!user) {
-    return <GoogleSignInButton size="sm" className="h-8 px-3 text-xs" />
+    return <AnonymousBadge />
   }
 
   const initials = user.name

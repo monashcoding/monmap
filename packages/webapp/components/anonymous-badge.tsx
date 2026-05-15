@@ -9,21 +9,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-
-import { usePlanner } from "./planner-context"
+import { useSession } from "@/lib/auth-client"
 
 /**
  * Renders only when the visitor isn't signed in. Painted in Monash
- * brand yellow (`--monash-yellow` / `--monash-yellow-ink`) so it sits
- * naturally above the (purple) Course Progression Guide.
+ * brand yellow (`--monash-yellow` / `--monash-yellow-ink`) so it can
+ * sit beside the avatar slot in `<AppHeader>` and replace the
+ * standalone "Sign in with Google" button there.
  *
  * The `selection:` overrides flip the global ::selection rule (which
  * tints selections in yellow) so highlighted text remains readable
  * on top of a yellow surface.
  */
-export function AnonymousBanner() {
-  const { currentUser } = usePlanner()
-  if (currentUser) return null
+export function AnonymousBadge() {
+  const { data, isPending } = useSession()
+  if (isPending || data?.user) return null
 
   return (
     <div
