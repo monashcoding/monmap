@@ -194,6 +194,9 @@ export function UnitCard({
         >
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tabular-nums">{code}</span>
+            {showGrade && gradeLetter ? (
+              <GradeBadge grade={gradeLetter} />
+            ) : null}
             <StatusIcon status={status} />
             <div className="ml-auto flex items-center gap-1">
               {isCore ? <CoreBadge /> : null}
@@ -209,18 +212,22 @@ export function UnitCard({
               <span className="text-muted-foreground italic">Loading…</span>
             )}
           </div>
-          <div className="mt-auto flex items-center gap-1.5">
+          <div className="mt-auto flex h-4 items-center gap-1.5">
+            <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
+              {unit
+                ? wamMode
+                  ? `${unit.creditPoints}cp`
+                  : `${unit.creditPoints} Credit Points`
+                : ""}
+            </span>
             {wamMode ? (
-              <>
-                <span className="text-[9px] text-muted-foreground">
-                  {unit ? `${unit.creditPoints}cp` : ""}
-                </span>
+              <div className="ml-auto flex items-center gap-1">
                 <input
                   type="number"
                   min={0}
                   max={100}
                   value={gradeEntry ?? ""}
-                  placeholder="0–100"
+                  placeholder="—"
                   onChange={(e) => {
                     const v = e.target.value
                     setGrade(
@@ -230,22 +237,13 @@ export function UnitCard({
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-5 w-18 rounded border border-border bg-background px-1.5 text-[10px] text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
+                  className="h-4 w-10 rounded border border-border bg-background px-1 py-0 text-center text-[10px] font-semibold leading-none text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
                 />
-                {showGrade && gradeLetter ? (
-                  <GradeBadge grade={gradeLetter} />
-                ) : null}
-              </>
-            ) : (
-              <>
-                <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
-                  {unit ? `${unit.creditPoints} Credit Points` : ""}
+                <span className="text-[9px] leading-none text-muted-foreground">
+                  /100
                 </span>
-                {showGrade && gradeLetter ? (
-                  <GradeBadge grade={gradeLetter} />
-                ) : null}
-              </>
-            )}
+              </div>
+            ) : null}
           </div>
         </button>
       </UnitDetailPopover>

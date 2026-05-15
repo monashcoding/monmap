@@ -13,7 +13,7 @@ import type {
 
 import { Header } from "./header"
 import { LeftSidebar } from "./left-sidebar"
-import { PlanGrid } from "./plan-grid"
+import { PlanGrid, PlannerDnd } from "./plan-grid"
 import { PlannerProvider, type PlannerCurrentUser } from "./planner-context"
 import { RightSidebar } from "./right-sidebar"
 import { SummaryBar } from "./summary-bar"
@@ -33,6 +33,7 @@ interface PlannerProps {
   initialPlan: PlannerState | null
   initialPlans: PlanSummary[]
   initialActivePlanId: string | null
+  initialGrades: Record<string, number> | null
 }
 
 /**
@@ -58,18 +59,23 @@ export function Planner(props: PlannerProps) {
       initialPlans={props.initialPlans}
       initialActivePlanId={props.initialActivePlanId}
     >
-      <WamProvider>
+      <WamProvider
+        signedIn={props.currentUser !== null}
+        initialGrades={props.initialGrades}
+      >
         <Header />
 
-        <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="flex min-w-0 flex-col gap-5">
-            <LeftSidebar />
-            <SummaryBar />
-            <PlanGrid />
-          </div>
+        <PlannerDnd>
+          <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="flex min-w-0 flex-col gap-5">
+              <LeftSidebar />
+              <SummaryBar />
+              <PlanGrid />
+            </div>
 
-          <RightSidebar />
-        </div>
+            <RightSidebar />
+          </div>
+        </PlannerDnd>
       </WamProvider>
 
       <Toaster position="bottom-right" richColors closeButton />

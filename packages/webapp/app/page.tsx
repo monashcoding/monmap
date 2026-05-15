@@ -7,6 +7,7 @@ import {
   hydratePlannerUnits,
   listAvailableYears,
   listCoursesForPicker,
+  listUserGrades,
   listUserPlans,
 } from "@/lib/db/queries"
 
@@ -38,7 +39,12 @@ export default async function Page({
 
   // Signed-in users: list their plans, pick the most-recently-updated
   // as the active one. Anon users get an empty list and no active plan.
-  const userPlans = currentUser ? await listUserPlans(currentUser.id) : []
+  const [userPlans, initialGrades] = currentUser
+    ? await Promise.all([
+        listUserPlans(currentUser.id),
+        listUserGrades(currentUser.id),
+      ])
+    : [[], null]
   // ?plan=<id> lets the plans page link directly to a specific plan.
   const requestedPlanId = params.plan ?? null
   const activePlanId =
@@ -116,6 +122,7 @@ export default async function Page({
         initialPlan={initialPlanState}
         initialPlans={userPlans}
         initialActivePlanId={activePlanId}
+        initialGrades={initialGrades}
       />
     </main>
   )

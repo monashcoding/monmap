@@ -4,16 +4,23 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
-import { toast } from "sonner"
+
+import { migrateMyGradesAction, setMyGradeAction } from "@/app/actions"
 
 import { usePlanner } from "./planner-context"
 
 const WAM_STORAGE_KEY = "monmap.grades.v1"
+/** ms to wait after the last edit on a given code before pushing it. */
+const SERVER_SAVE_DEBOUNCE = 600
 
-function loadGradesFromStorage(): Map<string, number> {
+type GradeMap = Map<string, number>
+
+function loadGradesFromStorage(): GradeMap {
   if (typeof window === "undefined") return new Map()
   try {
     const raw = localStorage.getItem(WAM_STORAGE_KEY)
@@ -25,16 +32,32 @@ function loadGradesFromStorage(): Map<string, number> {
   }
 }
 
+function writeLocalStorage(grades: GradeMap) {
+  try {
+    localStorage.setItem(
+      WAM_STORAGE_KEY,
+      JSON.stringify(Object.fromEntries(grades))
+    )
+  } catch {
+    /* storage full or disabled — keep in-memory edits, drop persistence */
+  }
+}
+
+function clearLocalStorage() {
+  try {
+    localStorage.removeItem(WAM_STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 export interface WamContextValue {
   wamMode: boolean
   showGrade: boolean
-  /** Live in-memory grades — what the inputs show while editing. */
-  grades: Map<string, number>
+  grades: GradeMap
   toggleWamMode: () => void
   toggleShowGrade: () => void
   setGrade: (code: string, mark: number | null) => void
-  saveGrades: () => void
-  /** WAM computed from saved grades only — doesn't update until Save is clicked. */
   wam: number | null
 }
 
@@ -46,50 +69,107 @@ export function useWam(): WamContextValue {
   return ctx
 }
 
-export function WamProvider({ children }: { children: React.ReactNode }) {
+export function WamProvider({
+  children,
+  signedIn,
+  initialGrades,
+}: {
+  children: React.ReactNode
+  /** True when a user is logged in — drives server vs localStorage. */
+  signedIn: boolean
+  /**
+   * Server-side grade snapshot for signed-in users; null/undefined for
+   * anon visitors (we read localStorage on mount instead).
+   */
+  initialGrades: Record<string, number> | null
+}) {
   const { units, plannedCodes } = usePlanner()
   const [wamMode, setWamMode] = useState(false)
   const [showGrade, setShowGrade] = useState(false)
 
-  // grades: what the user is currently editing (shown in inputs)
-  const [grades, setGrades] = useState<Map<string, number>>(
-    loadGradesFromStorage
-  )
+  // Initial state is auth-aware:
+  //   signed-in            → server-provided snapshot (empty if first time)
+  //   anonymous            → localStorage
+  // The localStorage → server migration runs in the effect below so we
+  // don't fire server actions during render.
+  const [grades, setGrades] = useState<GradeMap>(() => {
+    if (signedIn) {
+      return new Map(Object.entries(initialGrades ?? {}))
+    }
+    return loadGradesFromStorage()
+  })
 
-  // savedGrades: last persisted snapshot — WAM is computed from this only
-  const [savedGrades, setSavedGrades] = useState<Map<string, number>>(
-    loadGradesFromStorage
-  )
+  // On first mount as a signed-in user with empty server grades but a
+  // populated localStorage bucket: push the local marks up, then clear
+  // them so a future logout doesn't surface a stale shadow copy.
+  const migrationDoneRef = useRef(false)
+  useEffect(() => {
+    if (!signedIn || migrationDoneRef.current) return
+    migrationDoneRef.current = true
+    if (initialGrades && Object.keys(initialGrades).length > 0) return
+    const local = loadGradesFromStorage()
+    if (local.size === 0) return
+    const obj = Object.fromEntries(local)
+    void migrateMyGradesAction(obj).then((res) => {
+      if (!res.ok) return
+      setGrades((prev) => {
+        // Prefer anything the user already typed since mount; backfill
+        // the rest from the migrated bucket.
+        const next = new Map(prev)
+        for (const [k, v] of local) if (!next.has(k)) next.set(k, v)
+        return next
+      })
+      clearLocalStorage()
+    })
+  }, [signedIn, initialGrades])
 
   const toggleWamMode = useCallback(() => setWamMode((v) => !v), [])
   const toggleShowGrade = useCallback(() => setShowGrade((v) => !v), [])
 
-  const setGrade = useCallback((code: string, mark: number | null) => {
-    setGrades((prev) => {
-      const next = new Map(prev)
-      if (mark === null) next.delete(code)
-      else next.set(code, mark)
-      return next
-    })
+  // Per-code debounce timers so rapid keystrokes coalesce into a single
+  // server write per unit. Map persists for the provider's lifetime.
+  const saveTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  )
+  useEffect(() => {
+    const timers = saveTimersRef.current
+    return () => {
+      for (const t of timers.values()) clearTimeout(t)
+      timers.clear()
+    }
   }, [])
 
-  const saveGrades = useCallback(() => {
-    try {
-      const obj = Object.fromEntries(grades)
-      localStorage.setItem(WAM_STORAGE_KEY, JSON.stringify(obj))
-      setSavedGrades(new Map(grades))
-      setWamMode(false)
-      toast.success("Grades saved")
-    } catch {
-      toast.error("Couldn't save grades")
-    }
-  }, [grades])
+  const setGrade = useCallback(
+    (code: string, mark: number | null) => {
+      setGrades((prev) => {
+        const next = new Map(prev)
+        if (mark === null) next.delete(code)
+        else next.set(code, mark)
+        if (!signedIn) writeLocalStorage(next)
+        return next
+      })
+
+      if (!signedIn) return
+
+      const timers = saveTimersRef.current
+      const existing = timers.get(code)
+      if (existing) clearTimeout(existing)
+      timers.set(
+        code,
+        setTimeout(() => {
+          timers.delete(code)
+          void setMyGradeAction(code, mark)
+        }, SERVER_SAVE_DEBOUNCE)
+      )
+    },
+    [signedIn]
+  )
 
   const wam = useMemo(() => {
     let totalWeight = 0
     let totalCp = 0
     for (const code of plannedCodes) {
-      const mark = savedGrades.get(code)
+      const mark = grades.get(code)
       if (mark === undefined) continue
       const cp = units.get(code)?.creditPoints ?? 6
       totalWeight += mark * cp
@@ -97,7 +177,7 @@ export function WamProvider({ children }: { children: React.ReactNode }) {
     }
     if (totalCp === 0) return null
     return totalWeight / totalCp
-  }, [savedGrades, plannedCodes, units])
+  }, [grades, plannedCodes, units])
 
   return (
     <WamCtx.Provider
@@ -108,7 +188,6 @@ export function WamProvider({ children }: { children: React.ReactNode }) {
         toggleWamMode,
         toggleShowGrade,
         setGrade,
-        saveGrades,
         wam,
       }}
     >

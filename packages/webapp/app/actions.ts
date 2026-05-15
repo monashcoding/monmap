@@ -2,7 +2,9 @@
 
 import { getCurrentUser } from "@/lib/auth-server"
 import {
+  bulkUpsertUserGrades,
   createUserPlan,
+  deleteUserGrade,
   deleteUserPlan,
   fetchCourseWithAoS,
   getUserPlanById,
@@ -10,11 +12,13 @@ import {
   hydratePlannerUnitsMultiYear,
   listAvailableYears,
   listCoursesForPicker,
+  listUserGrades,
   listUserPlans,
   type PlanSummary,
   renameUserPlan,
   searchUnits,
   updateUserPlanState,
+  upsertUserGrade,
 } from "@/lib/db/queries"
 export type { PlanSummary } from "@/lib/db/queries"
 import type {
@@ -172,6 +176,62 @@ export async function deleteMyPlanAction(planId: string): Promise<SaveResult> {
  * arbitrary JSON into a plan row. Anything that survives this is
  * trusted; the validator/reducer on read tolerates stray fields.
  */
+/* ------------------------------------------------------------------ *
+ * Per-user grades (account-global)
+ * ------------------------------------------------------------------ */
+
+export async function listMyGradesAction(): Promise<Record<string, number>> {
+  const u = await getCurrentUser()
+  if (!u) return {}
+  return listUserGrades(u.id)
+}
+
+export async function setMyGradeAction(
+  unitCode: string,
+  mark: number | null
+): Promise<SaveResult> {
+  const u = await getCurrentUser()
+  if (!u) return { ok: false, reason: "unauthenticated" }
+  if (!isUnitCode(unitCode)) return { ok: false, reason: "invalid" }
+  if (mark === null) {
+    await deleteUserGrade(u.id, unitCode)
+  } else {
+    if (!Number.isFinite(mark) || mark < 0 || mark > 100) {
+      return { ok: false, reason: "invalid" }
+    }
+    await upsertUserGrade(u.id, unitCode, Math.round(mark))
+  }
+  return { ok: true }
+}
+
+/**
+ * Used during the localStorage → server migration on first sign-in.
+ * Anything already on the server wins (no clobber); only codes the user
+ * doesn't have a server-side grade for get inserted.
+ */
+export async function migrateMyGradesAction(
+  grades: Record<string, number>
+): Promise<{ ok: boolean }> {
+  const u = await getCurrentUser()
+  if (!u) return { ok: false }
+  const existing = await listUserGrades(u.id)
+  const toInsert: Record<string, number> = {}
+  for (const [code, mark] of Object.entries(grades)) {
+    if (!isUnitCode(code)) continue
+    if (!Number.isFinite(mark) || mark < 0 || mark > 100) continue
+    if (existing[code] !== undefined) continue
+    toInsert[code] = Math.round(mark)
+  }
+  if (Object.keys(toInsert).length > 0) {
+    await bulkUpsertUserGrades(u.id, toInsert)
+  }
+  return { ok: true }
+}
+
+function isUnitCode(s: unknown): s is string {
+  return typeof s === "string" && s.length > 0 && s.length <= 16
+}
+
 function isPlannerStateLike(v: unknown): v is PlannerState {
   if (!v || typeof v !== "object") return false
   const s = v as Record<string, unknown>

@@ -7,6 +7,7 @@ import {
   requisites,
   unitOfferings,
   units,
+  userGrade,
   userPlan,
 } from "@monmap/db"
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
@@ -877,4 +878,65 @@ export async function deleteUserPlan(
     .where(and(eq(userPlan.id, planId), eq(userPlan.userId, userId)))
     .returning({ id: userPlan.id })
   return rows.length > 0
+}
+
+/* ------------------------------------------------------------------ *
+ * Per-user grades (account-global, not plan-scoped)
+ * ------------------------------------------------------------------ */
+
+export async function listUserGrades(
+  userId: string
+): Promise<Record<string, number>> {
+  const db = getDb()
+  const rows = await db
+    .select({ unitCode: userGrade.unitCode, mark: userGrade.mark })
+    .from(userGrade)
+    .where(eq(userGrade.userId, userId))
+  const out: Record<string, number> = {}
+  for (const r of rows) out[r.unitCode] = r.mark
+  return out
+}
+
+export async function upsertUserGrade(
+  userId: string,
+  unitCode: string,
+  mark: number
+): Promise<void> {
+  const db = getDb()
+  await db
+    .insert(userGrade)
+    .values({ userId, unitCode, mark })
+    .onConflictDoUpdate({
+      target: [userGrade.userId, userGrade.unitCode],
+      set: { mark, updatedAt: new Date() },
+    })
+}
+
+export async function deleteUserGrade(
+  userId: string,
+  unitCode: string
+): Promise<void> {
+  const db = getDb()
+  await db
+    .delete(userGrade)
+    .where(and(eq(userGrade.userId, userId), eq(userGrade.unitCode, unitCode)))
+}
+
+export async function bulkUpsertUserGrades(
+  userId: string,
+  grades: Record<string, number>
+): Promise<void> {
+  const entries = Object.entries(grades)
+  if (entries.length === 0) return
+  const db = getDb()
+  await db
+    .insert(userGrade)
+    .values(entries.map(([unitCode, mark]) => ({ userId, unitCode, mark })))
+    .onConflictDoUpdate({
+      target: [userGrade.userId, userGrade.unitCode],
+      set: {
+        mark: sql`EXCLUDED.mark`,
+        updatedAt: new Date(),
+      },
+    })
 }

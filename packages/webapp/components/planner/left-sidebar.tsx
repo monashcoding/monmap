@@ -7,7 +7,6 @@ import {
   PlusCircleIcon,
   PrinterIcon,
   RotateCcwIcon,
-  SaveIcon,
   TagIcon,
   UploadIcon,
 } from "lucide-react"
@@ -28,8 +27,7 @@ import { useWam } from "./wam-context"
 export function LeftSidebar() {
   const { state, dispatch, validations, switchCourse, flashErrors } =
     usePlanner()
-  const { wamMode, showGrade, toggleWamMode, toggleShowGrade, saveGrades } =
-    useWam()
+  const { wamMode, showGrade, toggleWamMode, toggleShowGrade } = useWam()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const errorCount = useMemo(() => {
@@ -129,17 +127,10 @@ export function LeftSidebar() {
       />
       <ActionButton
         icon={<TagIcon />}
-        label="Grades"
+        label="Show Grades"
         tone={showGrade ? "active" : undefined}
         onClick={toggleShowGrade}
       />
-      {wamMode ? (
-        <ActionButton
-          icon={<SaveIcon />}
-          label="Save grades"
-          onClick={saveGrades}
-        />
-      ) : null}
 
       <input
         ref={fileInputRef}

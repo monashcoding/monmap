@@ -443,3 +443,32 @@ export const userPlan = pgTable(
   },
   (t) => [index("user_plan_user_id_idx").on(t.userId)],
 );
+
+/**
+ * Per-user grades, keyed by unit code. Account-global on purpose:
+ * a real mark is a fact about the student, not a hypothesis about a
+ * particular plan, so the same FIT1045 grade shows up consistently
+ * across every plan they own. WAM is computed per-plan by intersecting
+ * this map with that plan's plannedCodes.
+ *
+ * `mark` is the raw 0-100 score; the HD/D/C/P/N letter is derived in
+ * the UI via markToGrade().
+ */
+export const userGrade = pgTable(
+  "user_grade",
+  {
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    unitCode: text().notNull(),
+    mark: integer().notNull(),
+    updatedAt: timestamp()
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.unitCode] }),
+    index("user_grade_user_id_idx").on(t.userId),
+  ],
+);

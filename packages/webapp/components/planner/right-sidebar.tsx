@@ -1,5 +1,6 @@
 "use client"
 
+import { EyeIcon, EyeOffIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { summarizePlan } from "@/lib/planner/progress"
@@ -85,7 +86,7 @@ function ProgressTab() {
           />
           <GaugeStat label="Units" value={String(summary.uniqueUnitCount)} />
           {wam !== null ? (
-            <GaugeStat label="WAM" value={wam.toFixed(2)} />
+            <GaugeStat label="WAM" value={wam.toFixed(2)} hidable />
           ) : null}
         </div>
       </div>
@@ -103,13 +104,46 @@ function AddUnitsTab() {
   )
 }
 
-function GaugeStat({ label, value }: { label: string; value: string }) {
+function GaugeStat({
+  label,
+  value,
+  hidable = false,
+}: {
+  label: string
+  value: string
+  /** When true, render an inline eye toggle that masks the value. */
+  hidable?: boolean
+}) {
+  const [hidden, setHidden] = useState(false)
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[9px] tracking-wide text-muted-foreground uppercase">
-        {label}
+      <div className="flex items-center gap-1">
+        <span className="text-[9px] tracking-wide text-muted-foreground uppercase">
+          {label}
+        </span>
+        {hidable ? (
+          <button
+            type="button"
+            onClick={() => setHidden((v) => !v)}
+            aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
+            className="rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-ring"
+          >
+            {hidden ? (
+              <EyeOffIcon className="size-3" />
+            ) : (
+              <EyeIcon className="size-3" />
+            )}
+          </button>
+        ) : null}
+      </div>
+      <span
+        className={cn(
+          "text-sm font-semibold tabular-nums",
+          hidden && "select-none tracking-widest"
+        )}
+      >
+        {hidden ? "••••" : value}
       </span>
-      <span className="text-sm font-semibold tabular-nums">{value}</span>
     </div>
   )
 }
