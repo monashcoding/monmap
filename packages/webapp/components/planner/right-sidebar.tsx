@@ -5,7 +5,6 @@ import { useMemo, useState } from "react"
 import { summarizePlan } from "@/lib/planner/progress"
 import { cn } from "@/lib/utils"
 
-import { AnonymousBanner } from "./anonymous-banner"
 import { AoSTemplates } from "./aos-templates"
 import { CoursePicker } from "./course-picker"
 import { usePlanner } from "./planner-context"
@@ -20,8 +19,6 @@ export function RightSidebar() {
 
   return (
     <aside className="flex flex-col gap-4 print:hidden">
-      <AnonymousBanner />
-
       <div className="overflow-hidden rounded-3xl border bg-card shadow-card">
         {/* Tab bar */}
         <div className="flex border-b">
