@@ -1,15 +1,28 @@
-import Link from "next/link"
-import { GraduationCapIcon } from "lucide-react"
+"use client"
 
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { GraduationCapIcon, LogOutIcon } from "lucide-react"
+
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { PrimaryNav } from "@/components/primary-nav"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { signOut, useSession } from "@/lib/auth-client"
 
 /**
- * Site-wide page header: brand block + page nav + a free right slot
- * for page-specific actions (save status, user menu, "New plan", …).
- * The card chrome, brand, tagline, and nav live here so every page
- * inherits them by simply rendering <AppHeader rightSlot={…} />.
+ * Site-wide page header: brand block, page nav, and the avatar/sign-in
+ * control. Self-contained — no per-page wiring required.
  */
-export function AppHeader({ rightSlot }: { rightSlot?: React.ReactNode }) {
+export function AppHeader({ children }: { children?: React.ReactNode }) {
   return (
     <header className="relative flex items-center justify-between overflow-hidden rounded-3xl border bg-card px-5 py-3 shadow-card print:border-none print:bg-transparent print:shadow-none">
       <div className="flex items-center gap-6">
@@ -32,9 +45,65 @@ export function AppHeader({ rightSlot }: { rightSlot?: React.ReactNode }) {
         </Link>
         <PrimaryNav />
       </div>
-      {rightSlot ? (
-        <div className="flex items-center gap-3">{rightSlot}</div>
-      ) : null}
+      <div className="flex items-center gap-3">
+        {children}
+        <UserMenu />
+      </div>
     </header>
+  )
+}
+
+function UserMenu() {
+  const { data, isPending } = useSession()
+  const router = useRouter()
+
+  if (isPending) {
+    return <div className="size-8 animate-pulse rounded-full bg-muted" />
+  }
+
+  const user = data?.user
+  if (!user) {
+    return <GoogleSignInButton size="sm" className="h-8 px-3 text-xs" />
+  }
+
+  const initials = user.name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Avatar size="sm">
+          {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
+          <AvatarFallback>{initials || "?"}</AvatarFallback>
+        </Avatar>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-auto">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="font-normal text-foreground">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium whitespace-nowrap">
+                {user.name}
+              </span>
+              <span className="text-[11px]">{user.email}</span>
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={async () => {
+            await signOut()
+            router.refresh()
+          }}
+        >
+          <LogOutIcon className="size-3.5" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

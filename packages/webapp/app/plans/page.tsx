@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import { GraduationCapIcon, PlusIcon } from "lucide-react"
 
@@ -86,30 +85,12 @@ export default async function PlansPage() {
 
   return (
     <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
-      <AppHeader
-        rightSlot={
-          <form action={createBlankPlanAction}>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--monash-purple)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--monash-purple-deep)]"
-            >
-              <PlusIcon className="size-3.5" />
-              New plan
-            </button>
-          </form>
-        }
-      />
+      <AppHeader />
 
       {plans.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border bg-card py-20 text-center shadow-card">
           <GraduationCapIcon className="size-10 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">No plans saved yet.</p>
-          <Link
-            href="/"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Start planning
-          </Link>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -118,6 +99,16 @@ export default async function PlansPage() {
           ))}
         </div>
       )}
+
+      <form action={createBlankPlanAction} className="flex justify-center">
+        <button
+          type="submit"
+          className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--monash-purple)]/40 bg-[var(--monash-purple-soft)] px-5 py-3 text-sm font-semibold text-[var(--monash-purple-deep)] transition-colors hover:border-[var(--monash-purple)] hover:bg-[var(--monash-purple)]/10"
+        >
+          <PlusIcon className="size-4" />
+          New plan
+        </button>
+      </form>
     </main>
   )
 }

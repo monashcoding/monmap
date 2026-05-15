@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import type { PlannerState } from "@/lib/planner/types"
 
+import { AnonymousBanner } from "./anonymous-banner"
 import { usePlanner } from "./planner-context"
 import { useWam } from "./wam-context"
 
@@ -137,6 +138,13 @@ export function LeftSidebar() {
               {activePlan.name}
             </button>
           )}
+          <div className="mx-1 h-8 w-px bg-border" />
+        </>
+      ) : !currentUser ? (
+        <>
+          <div className="px-2 py-1">
+            <AnonymousBanner />
+          </div>
           <div className="mx-1 h-8 w-px bg-border" />
         </>
       ) : null}

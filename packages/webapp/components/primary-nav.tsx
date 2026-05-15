@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 
@@ -21,6 +21,7 @@ const items = [
  */
 export function PrimaryNav() {
   const pathname = usePathname() ?? "/"
+  const router = useRouter()
   return (
     <nav className="flex items-center gap-5 text-sm">
       {items.map(({ href, label, match }) => {
@@ -29,6 +30,10 @@ export function PrimaryNav() {
           <Link
             key={href}
             href={href}
+            prefetch
+            onMouseEnter={() => router.prefetch(href)}
+            onFocus={() => router.prefetch(href)}
+            onTouchStart={() => router.prefetch(href)}
             className={cn(
               "relative py-1 transition-colors",
               active

@@ -11,7 +11,9 @@ import type {
   RequisiteBlock,
 } from "@/lib/planner/types"
 
-import { Header } from "./header"
+import { AppHeader } from "@/components/app-header"
+
+import { SaveStatusBadge } from "./save-status-badge"
 import { LeftSidebar } from "./left-sidebar"
 import { PlanGrid, PlannerDnd } from "./plan-grid"
 import { PlannerProvider, type PlannerCurrentUser } from "./planner-context"
@@ -63,7 +65,9 @@ export function Planner(props: PlannerProps) {
         signedIn={props.currentUser !== null}
         initialGrades={props.initialGrades}
       >
-        <Header />
+        <AppHeader>
+          <SaveStatusBadge />
+        </AppHeader>
 
         <PlannerDnd>
           <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
