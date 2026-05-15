@@ -386,7 +386,16 @@ export function PlanGrid() {
         <div className="px-6 py-10 text-center text-xs text-muted-foreground">
           Pick a course on the right to get started.
         </div>
-      ) : null}
+      ) : (
+        <button
+          type="button"
+          onClick={() => dispatch({ type: "add_year" })}
+          className="flex items-center justify-center gap-1.5 border-t border-dashed bg-muted/20 px-4 py-3 text-[11px] font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:bg-muted/40 hover:text-foreground"
+        >
+          <PlusIcon className="size-3.5" />
+          Add year
+        </button>
+      )}
     </div>
   )
 }

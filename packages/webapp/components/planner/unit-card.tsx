@@ -194,18 +194,16 @@ export function UnitCard({
         >
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tabular-nums">{code}</span>
+            {isCore ? <CoreBadge /> : null}
             {showGrade && gradeLetter ? (
               <GradeBadge grade={gradeLetter} />
             ) : null}
             <StatusIcon status={status} />
-            <div className="ml-auto flex items-center gap-1">
-              {isCore ? <CoreBadge /> : null}
-              {isFY ? (
-                <span className="rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
-                  Full year
-                </span>
-              ) : null}
-            </div>
+            {isFY ? (
+              <span className="ml-auto rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
+                Full year
+              </span>
+            ) : null}
           </div>
           <div className="line-clamp-2 text-[11px] leading-snug text-foreground/90">
             {unit?.title ?? (
@@ -213,7 +211,7 @@ export function UnitCard({
             )}
           </div>
           <div className="mt-auto flex h-4 items-center gap-1.5">
-            <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
+            <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
               {unit
                 ? wamMode
                   ? `${unit.creditPoints}cp`
@@ -237,7 +235,7 @@ export function UnitCard({
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-4 w-10 rounded border border-border bg-background px-1 py-0 text-center text-[10px] font-semibold leading-none text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
+                  className="h-4 w-10 rounded border border-border bg-background px-1 py-0 text-center text-[10px] leading-none font-semibold text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
                 />
                 <span className="text-[9px] leading-none text-muted-foreground">
                   /100
