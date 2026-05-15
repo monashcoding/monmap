@@ -166,14 +166,23 @@ export function WamProvider({
   )
 
   const wam = useMemo(() => {
+    // Monash WAM: first-year units are weighted 0.5, later years 1.0.
+    // Failed/repeated units are included. Computed to 3dp downstream.
+    //   WAM = Σ(mark · cp · w) / Σ(cp · w)
+    // where w = 0.5 for level 1, 1.0 otherwise (level missing → treat as
+    // later year so we don't silently halve weight when handbook data
+    // lacks a level string).
     let totalWeight = 0
     let totalCp = 0
     for (const code of plannedCodes) {
       const mark = grades.get(code)
       if (mark === undefined) continue
-      const cp = units.get(code)?.creditPoints ?? 6
-      totalWeight += mark * cp
-      totalCp += cp
+      const unit = units.get(code)
+      const cp = unit?.creditPoints ?? 6
+      const levelNum = unit?.level?.match(/\d+/)?.[0]
+      const levelWeight = levelNum === "1" ? 0.5 : 1
+      totalWeight += mark * cp * levelWeight
+      totalCp += cp * levelWeight
     }
     if (totalCp === 0) return null
     return totalWeight / totalCp
