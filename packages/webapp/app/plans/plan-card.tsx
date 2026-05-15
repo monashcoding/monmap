@@ -80,7 +80,7 @@ function PlanPreview({ state }: { state: PlannerState }) {
                       return (
                         <div
                           key={i}
-                          className="shrink-0 rounded border border-dashed border-border/40"
+                          className="shrink-0 rounded border border-dashed border-border bg-muted/40"
                           style={{ width: CELL_W, height: 26 }}
                         />
                       )

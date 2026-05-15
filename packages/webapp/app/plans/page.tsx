@@ -1,7 +1,9 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { GraduationCapIcon } from "lucide-react"
+import { GraduationCapIcon, PlusIcon } from "lucide-react"
 
+import { AppHeader } from "@/components/app-header"
+import { createBlankPlanAction } from "@/app/actions"
 import { getCurrentUser } from "@/lib/auth-server"
 import {
   fetchCoursesMeta,
@@ -83,32 +85,20 @@ export default async function PlansPage() {
   })
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1100px] flex-col gap-6 px-5 pt-6 pb-16">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground ring-2 ring-primary/15"
-          >
-            <GraduationCapIcon className="size-5" />
-          </Link>
-          <div>
-            <h1 className="text-base leading-tight font-semibold">
-              monmap{" "}
-              <span className="font-normal text-primary">/ my plans</span>
-            </h1>
-            <p className="text-[11px] text-muted-foreground">
-              {plans.length} {plans.length === 1 ? "plan" : "plans"} saved
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/"
-          className="rounded-lg border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm hover:bg-muted/60"
-        >
-          Back to planner
-        </Link>
-      </header>
+    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
+      <AppHeader
+        rightSlot={
+          <form action={createBlankPlanAction}>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--monash-purple)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--monash-purple-deep)]"
+            >
+              <PlusIcon className="size-3.5" />
+              New plan
+            </button>
+          </form>
+        }
+      />
 
       {plans.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border bg-card py-20 text-center shadow-card">

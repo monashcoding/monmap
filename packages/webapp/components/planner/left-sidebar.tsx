@@ -10,7 +10,7 @@ import {
   TagIcon,
   UploadIcon,
 } from "lucide-react"
-import { useCallback, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -25,8 +25,38 @@ import { useWam } from "./wam-context"
  * text labels. State-only operations (no server round-trip).
  */
 export function LeftSidebar() {
-  const { state, dispatch, validations, switchCourse, flashErrors } =
-    usePlanner()
+  const {
+    state,
+    dispatch,
+    validations,
+    switchCourse,
+    flashErrors,
+    plans,
+    activePlanId,
+    currentUser,
+    renamePlan,
+  } = usePlanner()
+  const activePlan = plans.find((p) => p.id === activePlanId)
+
+  const [editingName, setEditingName] = useState(false)
+  const [nameDraft, setNameDraft] = useState(activePlan?.name ?? "")
+
+  useEffect(() => {
+    if (!editingName) setNameDraft(activePlan?.name ?? "")
+  }, [activePlan?.name, editingName])
+
+  const commitNameEdit = useCallback(() => {
+    if (!activePlan) return
+    const trimmed = nameDraft.trim()
+    setEditingName(false)
+    if (!trimmed || trimmed === activePlan.name) return
+    void renamePlan(activePlan.id, trimmed)
+  }, [activePlan, nameDraft, renamePlan])
+
+  const cancelNameEdit = useCallback(() => {
+    setNameDraft(activePlan?.name ?? "")
+    setEditingName(false)
+  }, [activePlan?.name])
   const { wamMode, showGrade, toggleWamMode, toggleShowGrade } = useWam()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -83,6 +113,34 @@ export function LeftSidebar() {
 
   return (
     <aside className="flex flex-row flex-wrap items-center gap-1 self-start rounded-3xl border bg-card p-2 shadow-card print:hidden">
+      {currentUser && activePlan ? (
+        <>
+          {editingName ? (
+            <input
+              autoFocus
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={commitNameEdit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitNameEdit()
+                if (e.key === "Escape") cancelNameEdit()
+              }}
+              className="max-w-[220px] rounded px-3 py-2 text-xs font-semibold ring-1 ring-primary outline-none focus:ring-2"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditingName(true)}
+              title={`Rename "${activePlan.name}"`}
+              className="max-w-[220px] cursor-text truncate rounded px-3 py-2 text-xs font-semibold hover:bg-muted/60"
+            >
+              {activePlan.name}
+            </button>
+          )}
+          <div className="mx-1 h-8 w-px bg-border" />
+        </>
+      ) : null}
+
       <ActionButton
         icon={<BadgeCheckIcon />}
         label="Validate"

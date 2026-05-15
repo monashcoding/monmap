@@ -29,6 +29,9 @@ import type {
   PlannerUnit,
   RequisiteBlock,
 } from "@/lib/planner/types"
+import { defaultState } from "@/lib/planner/state"
+import { HANDBOOK_YEAR } from "@/lib/db/client"
+import { redirect } from "next/navigation"
 
 export async function loadCourseAction(
   code: string,
@@ -150,6 +153,15 @@ export async function createMyPlanAction(
   const trimmed = name.trim().slice(0, 80) || "My plan"
   const plan = await createUserPlan(u.id, trimmed, state)
   return { ok: true, plan }
+}
+
+export async function createBlankPlanAction(): Promise<never> {
+  const u = await getCurrentUser()
+  if (!u) redirect("/sign-in")
+  const year = (await listAvailableYears()).at(-1) ?? HANDBOOK_YEAR
+  const state = defaultState(year, null, 3)
+  const plan = await createUserPlan(u.id, "Default plan", state)
+  redirect(`/?plan=${plan.id}`)
 }
 
 export async function renameMyPlanAction(
