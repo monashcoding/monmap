@@ -169,7 +169,7 @@ function CourseBlock({
         <div className="min-w-0">
           <Badge
             variant="default"
-            className="bg-primary/15 text-[9px] font-normal text-primary hover:bg-primary/20"
+            className="bg-primary/40 text-[9px] font-normal text-primary-foreground hover:bg-primary/55"
           >
             Degree
           </Badge>

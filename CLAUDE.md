@@ -52,3 +52,12 @@ user's instance over the port and the lock, leaves orphaned processes,
 and corrupts the build cache. If you need to verify a route, ask the
 user to hit it (or to share the response), or write a unit test. Same
 applies to `next start` and any other long-running server.
+
+## 4. Yellow surfaces pair with `text-primary-foreground`, never `text-primary`
+
+`--primary` is Monash yellow (`#ffe330`). Yellow text on a yellow tint
+(`bg-primary/15 text-primary` and friends) is unreadable. The brand
+defines `--primary-foreground` as `#1d1300` ("yellow ink") for exactly
+this pairing — use it on any yellow-tinted chip, badge, or pill, and
+bump the tint (≈`/40`) so the surface still reads as yellow rather
+than gray.

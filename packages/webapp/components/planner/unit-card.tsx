@@ -198,7 +198,7 @@ export function UnitCard({
             <div className="ml-auto flex items-center gap-1">
               {isCore ? <CoreBadge /> : null}
               {isFY ? (
-                <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary uppercase">
+                <span className="rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
                   Full year
                 </span>
               ) : null}

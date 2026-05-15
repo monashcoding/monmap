@@ -60,24 +60,44 @@ export function CoursePicker({ className }: { className?: string }) {
         Course
       </label>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="outline"
-              className="mt-1 h-auto w-full justify-between gap-2 rounded-2xl px-3 py-2.5 text-left whitespace-normal"
+        <div className="relative mt-1">
+          <PopoverTrigger
+            render={
+              <Button
+                variant="outline"
+                className="h-auto w-full justify-between gap-2 rounded-2xl px-3 py-2.5 text-left whitespace-normal"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] text-muted-foreground tabular-nums">
+                    {course?.code ?? "—"}
+                  </div>
+                  <div className="truncate text-sm leading-tight font-semibold">
+                    {course?.title ?? "Choose a course"}
+                  </div>
+                  {course ? (
+                    <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2 text-[11px] text-muted-foreground">
+                      <span className="min-w-0 truncate">{course.aqfLevel ?? "—"}</span>
+                      <span className="tabular-nums shrink-0">{course.creditPoints}cp</span>
+                    </div>
+                  ) : null}
+                </div>
+                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+              </Button>
+            }
+          />
+          {course ? (
+            <a
+              href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View in handbook"
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-2 bottom-2 z-10 text-muted-foreground hover:text-foreground"
             >
-              <div className="min-w-0">
-                <div className="text-[11px] text-muted-foreground tabular-nums">
-                  {course?.code ?? "—"}
-                </div>
-                <div className="truncate text-sm leading-tight font-semibold">
-                  {course?.title ?? "Choose a course"}
-                </div>
-              </div>
-              <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
-            </Button>
-          }
-        />
+              <ExternalLinkIcon className="size-3" />
+            </a>
+          ) : null}
+        </div>
         <PopoverContent
           align="end"
           className="w-[min(520px,calc(100vw-2rem))] p-0"

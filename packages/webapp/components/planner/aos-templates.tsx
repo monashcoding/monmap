@@ -24,8 +24,8 @@ const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
 }
 
 const KIND_BADGE: Record<PlannerAreaOfStudy["kind"], string> = {
-  major: "bg-primary/15 text-primary",
-  extended_major: "bg-primary/15 text-primary",
+  major: "bg-primary/40 text-primary-foreground",
+  extended_major: "bg-primary/40 text-primary-foreground",
   specialisation: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
   minor: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   elective: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
@@ -147,7 +147,7 @@ function CourseUnitsCard({
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary uppercase">
+            <span className="rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
               Degree
             </span>
           </div>
