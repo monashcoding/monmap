@@ -11,13 +11,33 @@ const poppins = Poppins({
   variable: "--font-sans",
 })
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.BETTER_AUTH_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ??
+  "http://localhost:3000"
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     template: "%s · monmap",
     default: "monmap — Monash course planner",
   },
   description:
     "Plan your Monash degree visually: drag units into semesters, check prereqs, and track WAM.",
+  openGraph: {
+    title: "monmap — Monash course planner",
+    description:
+      "Plan your Monash degree visually: drag units into semesters, check prereqs, and track WAM.",
+    siteName: "monmap",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "monmap — Monash course planner",
+    description:
+      "Plan your Monash degree visually: drag units into semesters, check prereqs, and track WAM.",
+  },
 }
 
 export default function RootLayout({
