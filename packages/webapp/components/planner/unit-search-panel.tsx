@@ -2,6 +2,7 @@
 
 import {
   CheckIcon,
+  ChevronDownIcon,
   FilterIcon,
   ListOrderedIcon,
   SearchIcon,
@@ -531,6 +532,7 @@ export function UnitSearchPanel() {
         <ResultSection
           title="Suggested from your course"
           count={suggestions.length}
+          collapsible
         >
           {suggestions.length === 0 ? (
             <EmptyState
@@ -571,25 +573,50 @@ function FilterSection({
 function ResultSection({
   title,
   count,
+  collapsible,
   children,
 }: {
   title: string
   count: number | null
+  collapsible?: boolean
   children: React.ReactNode
 }) {
+  const [collapsed, setCollapsed] = useState(false)
+  const showToggle = collapsible === true
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between px-1">
-        <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-          {title}
-        </p>
-        {count !== null && (
-          <span className="text-[10px] text-muted-foreground tabular-nums">
-            {count}
-          </span>
-        )}
-      </div>
-      <div className="flex flex-col gap-0.5">{children}</div>
+      {showToggle ? (
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-expanded={!collapsed}
+          className="-mx-1 flex items-center justify-between rounded-md px-1 py-0.5 text-left transition-colors hover:bg-muted/40"
+        >
+          <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            {title}
+          </p>
+          <ChevronDownIcon
+            className={cn(
+              "size-3.5 text-muted-foreground transition-transform",
+              collapsed && "-rotate-90",
+            )}
+          />
+        </button>
+      ) : (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+            {title}
+          </p>
+          {count !== null && (
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {count}
+            </span>
+          )}
+        </div>
+      )}
+      {!(showToggle && collapsed) && (
+        <div className="flex flex-col gap-0.5">{children}</div>
+      )}
     </div>
   )
 }

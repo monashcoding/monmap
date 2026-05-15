@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -330,7 +330,11 @@ export function PlanCard({ data }: { data: PlanPageData }) {
                 href={handbookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                className={buttonVariants({
+                  variant: "ghost",
+                  size: "sm",
+                  className: "h-7 gap-1.5 text-[11px]",
+                })}
               >
                 <BookOpenIcon className="size-3.5" />
                 Handbook
