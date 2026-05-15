@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { LogOutIcon, MenuIcon, NotebookPenIcon } from "lucide-react"
@@ -43,27 +44,36 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
     <header className="relative flex flex-wrap items-center justify-between gap-2 overflow-hidden rounded-2xl border bg-card px-3 py-2.5 shadow-card sm:gap-3 sm:rounded-3xl sm:px-5 sm:py-3 print:border-none print:bg-transparent print:shadow-none">
       <div className="flex min-w-0 items-center gap-3 md:gap-6">
         <MobileNavTrigger />
-        <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-          <div className="relative shrink-0">
-            <div className="flex size-9 items-center justify-center rounded-2xl bg-primary text-primary-foreground ring-2 ring-[var(--monash-purple)]/15 sm:size-10">
-              <span aria-hidden className="text-lg leading-none sm:text-xl">
-                🎓
-              </span>
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <Link href="/" aria-label="monmap home" className="relative shrink-0">
+            <div className="flex size-9 items-center justify-center overflow-hidden rounded-2xl bg-primary ring-2 ring-[var(--monash-purple)] sm:size-10">
+              <Image
+                src="/brand-logo.png"
+                alt="Monash Association of Coding"
+                width={40}
+                height={40}
+                priority
+                className="size-full object-cover"
+              />
             </div>
-            <span
-              aria-hidden
-              className="absolute -right-0.5 -bottom-0.5 block size-3 rounded-full bg-[var(--monash-purple)] ring-2 ring-card"
-            />
-          </div>
+          </Link>
           <div className="min-w-0">
             <h1 className="truncate text-base leading-tight font-semibold">
               monmap
             </h1>
             <p className="hidden truncate text-[11px] text-muted-foreground sm:block">
-              A course mapper by Monash Association of Coding (MAC)
+              A course mapper by{" "}
+              <a
+                href="https://monashcoding.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Monash Association of Coding (MAC)
+              </a>
             </p>
           </div>
-        </Link>
+        </div>
         <PrimaryNav className="hidden md:flex" />
       </div>
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
