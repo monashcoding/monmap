@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation"
 import { GraduationCapIcon, PlusIcon } from "lucide-react"
 
 import { AppHeader } from "@/components/app-header"
+import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { createBlankPlanAction } from "@/app/actions"
 import { getCurrentUser } from "@/lib/auth-server"
 import {
@@ -33,7 +33,25 @@ export interface PlanPageData {
 
 export default async function PlansPage() {
   const user = await getCurrentUser()
-  if (!user) redirect("/sign-in")
+  if (!user) {
+    return (
+      <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
+        <AppHeader />
+        <div className="flex flex-col items-center gap-4 rounded-3xl border bg-card py-20 text-center shadow-card">
+          <GraduationCapIcon className="size-10 text-muted-foreground/40" />
+          <div className="flex flex-col gap-1">
+            <p className="text-base font-semibold">
+              Sign in to view your course maps
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Save your plan to your account so it follows you across devices.
+            </p>
+          </div>
+          <GoogleSignInButton callbackURL="/plans" />
+        </div>
+      </main>
+    )
+  }
 
   const plans = await listUserPlansWithState(user.id)
 
