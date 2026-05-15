@@ -111,7 +111,7 @@ export default async function Page({
   )
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
+    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-24 sm:gap-5 sm:px-5 sm:pt-5 sm:pb-12">
       <Suspense fallback={<PlannerSkeleton />}>
         <PlannerStreaming
           initialYear={year}

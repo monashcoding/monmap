@@ -13,14 +13,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   listMyGradesWithTitlesAction,
   setMyGradeAction,
   type UserGradeWithTitle,
@@ -30,6 +22,12 @@ import { cn } from "@/lib/utils"
 
 const SAVE_DEBOUNCE_MS = 600
 
+/**
+ * Editable list of every grade the student has recorded. Each row is
+ * a comfy-height card with the unit code, title and mark editor — works
+ * the same way on phone and desktop without forcing a table layout to
+ * shrink awkwardly.
+ */
 export function MyGradesDialog({
   open,
   onOpenChange,
@@ -103,15 +101,15 @@ export function MyGradesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-h-[92svh] gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className="border-b p-4 sm:p-6">
           <DialogTitle>My grades</DialogTitle>
           <DialogDescription>
             Marks you&apos;ve recorded for units. Edits save automatically.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="-mx-2 max-h-[60vh] overflow-y-auto px-2">
+        <div className="max-h-[70svh] overflow-y-auto p-3 sm:p-4">
           {!hasLoaded ? (
             <div className="py-10 text-center text-sm text-muted-foreground">
               Loading…
@@ -121,73 +119,73 @@ export function MyGradesDialog({
               No grades yet. Add marks from the planner&apos;s WAM mode.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-28">Unit</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead className="w-32 text-right">Mark</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => {
-                  const letter = markToGrade(row.mark)
-                  const style = GRADE_STYLES[letter]
-                  return (
-                    <TableRow key={row.unitCode}>
-                      <TableCell className="font-bold tabular-nums">
-                        {row.unitCode}
-                      </TableCell>
-                      <TableCell className="max-w-0 truncate text-foreground/90">
-                        {row.unitTitle ?? (
-                          <span className="text-muted-foreground italic">
-                            Unknown unit
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-2">
-                          <span
-                            className={cn(
-                              "rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
-                              style.bg,
-                              style.text
-                            )}
-                          >
-                            {letter}
-                          </span>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            defaultValue={row.mark}
-                            onChange={(e) =>
-                              updateMark(row.unitCode, e.target.value)
-                            }
-                            className="h-8 w-16 px-2 text-right text-sm tabular-nums"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Delete grade for ${row.unitCode}`}
-                          onClick={() => removeRow(row.unitCode)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2Icon className="size-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+            <ul className="flex flex-col gap-2">
+              {rows.map((row) => (
+                <GradeRow
+                  key={row.unitCode}
+                  row={row}
+                  onMarkChange={(v) => updateMark(row.unitCode, v)}
+                  onRemove={() => removeRow(row.unitCode)}
+                />
+              ))}
+            </ul>
           )}
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function GradeRow({
+  row,
+  onMarkChange,
+  onRemove,
+}: {
+  row: UserGradeWithTitle
+  onMarkChange: (value: string) => void
+  onRemove: () => void
+}) {
+  const letter = markToGrade(row.mark)
+  const style = GRADE_STYLES[letter]
+  return (
+    <li className="flex items-center gap-3 rounded-xl border bg-background px-3 py-2.5 shadow-sm">
+      <span
+        className={cn(
+          "shrink-0 rounded px-1.5 py-1 text-[11px] font-bold tabular-nums",
+          style.bg,
+          style.text
+        )}
+      >
+        {letter}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold tabular-nums">
+          {row.unitCode}
+        </div>
+        <div className="truncate text-[11px] text-muted-foreground">
+          {row.unitTitle ?? <span className="italic">Unknown unit</span>}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <Input
+          type="number"
+          min={0}
+          max={100}
+          defaultValue={row.mark}
+          onChange={(e) => onMarkChange(e.target.value)}
+          aria-label={`Mark for ${row.unitCode}`}
+          className="h-9 w-16 px-2 text-right text-sm tabular-nums"
+        />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Delete grade for ${row.unitCode}`}
+          onClick={onRemove}
+          className="text-muted-foreground hover:text-destructive"
+        >
+          <Trash2Icon className="size-4" />
+        </Button>
+      </div>
+    </li>
   )
 }

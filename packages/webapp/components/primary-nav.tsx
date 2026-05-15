@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 
-const items = [
+export const PRIMARY_NAV_ITEMS = [
   { href: "/", label: "Mapper", match: (p: string) => p === "/" },
   {
     href: "/plans",
@@ -17,19 +17,22 @@ const items = [
     label: "Unit Tree",
     match: (p: string) => p.startsWith("/tree"),
   },
-]
+] as const
 
 /**
  * Inline horizontal nav, à la Bootstrap / BBC / Facebook. Sits next to
  * the brand inside the page header. Active item is bolded with a purple
  * underline; inactive items are muted with hover-to-foreground.
+ *
+ * On mobile the inline form is hidden — see the Sheet menu in
+ * `<AppHeader>` which renders the same destinations as touch-sized rows.
  */
-export function PrimaryNav() {
+export function PrimaryNav({ className }: { className?: string }) {
   const pathname = usePathname() ?? "/"
   const router = useRouter()
   return (
-    <nav className="flex items-center gap-5 text-sm">
-      {items.map(({ href, label, match }) => {
+    <nav className={cn("flex items-center gap-5 text-sm", className)}>
+      {PRIMARY_NAV_ITEMS.map(({ href, label, match }) => {
         const active = match(pathname)
         return (
           <Link

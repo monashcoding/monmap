@@ -4,6 +4,7 @@ import { useDroppable } from "@dnd-kit/core"
 import { PlusIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { slotCapacity, slotUsedWeight, STANDARD_CP } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
@@ -20,6 +21,11 @@ export function slotDropId(yearIndex: number, slotIndex: number): string {
  * Row of unit cards for a single (year, slot). The "Add unit"
  * affordance only shows when the slot has room — capacity per slot
  * is editable from the slot's three-dot menu in the left rail.
+ *
+ * Layout:
+ *  - mobile (<md): one card per row, stacked vertically
+ *  - desktop:      grid sized to slot capacity, with multi-cp units
+ *                  spanning multiple columns
  */
 export function SemesterSlot({
   yearIndex,
@@ -30,6 +36,7 @@ export function SemesterSlot({
 }) {
   const { state, units } = usePlanner()
   const [open, setOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   const slot = state.years[yearIndex]?.slots[slotIndex]
 
@@ -71,14 +78,24 @@ export function SemesterSlot({
     <div
       ref={setNodeRef}
       className={cn(
-        "grid min-w-0 items-stretch gap-2 p-2 transition-colors duration-150",
+        "min-w-0 items-stretch gap-2 p-2 transition-colors duration-150",
         "min-h-[104px]",
+        // Mobile: vertical stack so each card has comfortable width.
+        // Desktop: capacity-sized grid (one card per column).
+        isMobile ? "flex flex-col" : "grid",
         slot.locked ? "bg-black/[0.05]" : showDropTint && "bg-primary/5"
       )}
-      style={{ gridTemplateColumns: `repeat(${totalColumns}, minmax(0, 1fr))` }}
+      style={
+        isMobile
+          ? undefined
+          : { gridTemplateColumns: `repeat(${totalColumns}, minmax(0, 1fr))` }
+      }
     >
       {slot.unitCodes.map((code, i) => (
-        <div key={code} style={{ gridColumn: `span ${unitSpans[i]}` }}>
+        <div
+          key={code}
+          style={isMobile ? undefined : { gridColumn: `span ${unitSpans[i]}` }}
+        >
           <UnitCard code={code} yearIndex={yearIndex} slotIndex={slotIndex} />
         </div>
       ))}
@@ -86,10 +103,13 @@ export function SemesterSlot({
       {!atCapacity && !slot.locked ? (
         <Button
           variant="ghost"
-          className="h-[88px] rounded-xl border border-dashed border-border/80 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+          className={cn(
+            "rounded-xl border border-dashed border-border/80 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+            isMobile ? "h-12 w-full" : "h-[88px]"
+          )}
           onClick={() => setOpen(true)}
         >
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex items-center gap-1.5 sm:flex-col sm:gap-0.5">
             <PlusIcon className="size-4" />
             <span className="text-[10px] tracking-wide uppercase">
               Add unit

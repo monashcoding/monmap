@@ -1,9 +1,20 @@
 "use client"
 
+import { SlidersHorizontalIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import { fetchTreeDataAction, loadCourseAction } from "@/app/actions"
 import { AppHeader } from "@/components/app-header"
+import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { PERIOD_KIND_SHORT } from "@/lib/planner/teaching-period"
 import type {
   PeriodKind,
@@ -52,6 +63,9 @@ export interface TreeViewProps {
 }
 
 export function TreeView(props: TreeViewProps) {
+  const isMobile = useIsMobile()
+  const [controlsOpen, setControlsOpen] = useState(false)
+
   const [controls, setControls] = useState<TreeControlsValue>(
     props.initial.controls
   )
@@ -215,20 +229,56 @@ export function TreeView(props: TreeViewProps) {
     planCompleted,
   ])
 
+  const controlsNode = (
+    <TreeControls
+      value={controls}
+      onChange={(v) => {
+        setControls(v)
+        if (isMobile) setControlsOpen(false)
+      }}
+      availableYears={props.availableYears}
+      courses={props.courses}
+      aosOptions={course?.areasOfStudy ?? []}
+      canUsePlan={props.signedIn && props.activePlan != null}
+      loading={loading}
+    />
+  )
+
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
-      <AppHeader />
-      <div className="grid flex-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <TreeControls
-          value={controls}
-          onChange={setControls}
-          availableYears={props.availableYears}
-          courses={props.courses}
-          aosOptions={course?.areasOfStudy ?? []}
-          canUsePlan={props.signedIn && props.activePlan != null}
-          loading={loading}
-        />
-        <div className="relative h-[calc(100svh-7rem)] min-h-[520px] w-full min-w-0">
+    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-6 sm:gap-5 sm:px-5 sm:pt-5 sm:pb-12">
+      <AppHeader>
+        <Sheet open={controlsOpen} onOpenChange={setControlsOpen}>
+          <SheetTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                className="md:hidden"
+                aria-label="Open tree controls"
+              />
+            }
+          >
+            <SlidersHorizontalIcon className="size-3.5" />
+            Filters
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            className="w-[min(360px,90vw)] gap-0 overflow-y-auto p-3"
+          >
+            <SheetHeader className="sr-only">
+              <SheetTitle>Tree controls</SheetTitle>
+              <SheetDescription>
+                Mode, course, unit, year and depth filters.
+              </SheetDescription>
+            </SheetHeader>
+            {controlsNode}
+          </SheetContent>
+        </Sheet>
+      </AppHeader>
+
+      <div className="grid flex-1 gap-3 sm:gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="hidden lg:block">{controlsNode}</div>
+        <div className="relative h-[calc(100svh-9rem)] min-h-[400px] w-full min-w-0 sm:h-[calc(100svh-7rem)] sm:min-h-[520px]">
           {treeNodes.length === 0 ? (
             <EmptyState mode={controls.mode} controls={controls} />
           ) : (
@@ -240,10 +290,10 @@ export function TreeView(props: TreeViewProps) {
               onFocus={setFocused}
             />
           )}
-          {/* Detail floats over the canvas — click a node to open, X
-              or click empty pane to dismiss. Keeps the canvas full-width
-              when no node is focused. */}
-          {focusedDetail ? (
+          {/* Desktop: detail floats over the canvas — click a node to
+              open, X or click empty pane to dismiss. Mobile: lift into
+              a bottom Sheet for full-width legibility. */}
+          {focusedDetail && !isMobile ? (
             <div className="pointer-events-none absolute inset-y-3 right-3 z-20 flex w-[min(380px,calc(100%-1.5rem))] flex-col">
               <div className="pointer-events-auto h-full">
                 <TreeSidePanel
@@ -256,6 +306,35 @@ export function TreeView(props: TreeViewProps) {
           ) : null}
         </div>
       </div>
+      <Sheet
+        open={isMobile && focusedDetail != null}
+        onOpenChange={(v) => {
+          if (!v) setFocused(null)
+        }}
+      >
+        <SheetContent
+          side="bottom"
+          className="h-[85svh] gap-0 p-0"
+          showCloseButton={false}
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Unit detail</SheetTitle>
+            <SheetDescription>
+              Prereqs, offerings and enrolment rules for the focused unit.
+            </SheetDescription>
+          </SheetHeader>
+          {focusedDetail ? (
+            <div className="h-full overflow-hidden">
+              <TreeSidePanel
+                detail={focusedDetail}
+                year={controls.year}
+                onClose={() => setFocused(null)}
+                variant="flush"
+              />
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </main>
   )
 }

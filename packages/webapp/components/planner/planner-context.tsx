@@ -18,7 +18,6 @@ import {
   deleteMyPlanAction,
   getMyPlanAction,
   hydrateUnitsAction,
-  hydrateUnitsMultiYearAction,
   listCoursesAction,
   listMyPlansAction,
   loadCourseAction,
@@ -28,6 +27,11 @@ import {
 import type { PlanSummary } from "@/lib/db/queries"
 import { distribute } from "@/lib/planner/distribute"
 import { isFullYearUnit } from "@/lib/planner/full-year"
+import {
+  clearLocalPlan,
+  readLocalPlan,
+  writeLocalPlan,
+} from "@/lib/planner/local-storage"
 import { plannedUnitCodes } from "@/lib/planner/progress"
 import {
   defaultState,
@@ -45,7 +49,9 @@ import type {
 } from "@/lib/planner/types"
 import { validatePlan } from "@/lib/planner/validation"
 
-const STORAGE_KEY = "monmap.plan.v1"
+import { useFullYearSelfHeal } from "./hooks/use-full-year-self-heal"
+import { useUnitDataHydration } from "./hooks/use-unit-data-hydration"
+
 /** ms to wait after the last edit before pushing a save to the server. */
 const SERVER_SAVE_DEBOUNCE = 800
 
@@ -147,21 +153,6 @@ export interface PlannerContextValue {
 
 const PlannerCtx = createContext<PlannerContextValue | null>(null)
 
-/**
- * Returns the correct handbook year for a given study year index.
- * If the exact calendar year doesn't exist in the DB, falls back to
- * the latest available year (so Year 4 in 2024 → 2027 missing → 2026).
- */
-function handbookYearFor(
-  studyYearIndex: number,
-  courseYear: string,
-  availableYears: readonly string[]
-): string {
-  const target = String(Number(courseYear) + studyYearIndex)
-  if (availableYears.includes(target)) return target
-  return [...availableYears].sort().at(-1) ?? courseYear
-}
-
 export function usePlanner(): PlannerContextValue {
   const ctx = useContext(PlannerCtx)
   if (!ctx) throw new Error("usePlanner must be used inside <PlannerProvider>")
@@ -227,7 +218,7 @@ export function PlannerProvider({
     Map<string, RequisiteBlock[]>
   >(() => new Map(Object.entries(prewarmed.requisites)))
 
-  const [isSyncing, startTransition] = useTransition()
+  const [, startCourseTransition] = useTransition()
 
   const [flashVersion, setFlashVersion] = useState(0)
   const flashErrors = useCallback(() => {
@@ -294,11 +285,7 @@ export function PlannerProvider({
       // copy. The created plan becomes the active one.
       void createMyPlanAction("My plan", merged).then((res) => {
         if (res.ok) {
-          try {
-            localStorage.removeItem(STORAGE_KEY)
-          } catch {
-            /* ignore */
-          }
+          clearLocalPlan()
           setActivePlanId(res.plan.id)
           setPlans((prev) => [
             { id: res.plan.id, name: res.plan.name, updatedAt: new Date() },
@@ -368,6 +355,42 @@ export function PlannerProvider({
     lastSnapshotRef.current = state
   }, [state])
 
+  const fallbackToLocal = useCallback(
+    (snapshot: PlannerState, finalStatus: "local" = "local") => {
+      writeLocalPlan(snapshot)
+      setSaveStatus(finalStatus)
+    },
+    []
+  )
+
+  const handleSaveResult = useCallback(
+    (
+      res: Awaited<ReturnType<typeof saveMyPlanAction>>,
+      snapshot: PlannerState
+    ) => {
+      if (res.ok) {
+        setSaveStatus("saved")
+        // Bump our local "most recently updated" snapshot for plan list
+        // ordering. Cheap; avoids a refetch.
+        const planId = activePlanIdRef.current
+        if (planId) {
+          setPlans((prev) =>
+            [
+              ...prev.map((p) =>
+                p.id === planId ? { ...p, updatedAt: new Date() } : p
+              ),
+            ].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+          )
+        }
+      } else if (res.reason === "unauthenticated") {
+        fallbackToLocal(snapshot)
+      } else {
+        setSaveStatus("error")
+      }
+    },
+    [fallbackToLocal]
+  )
+
   useEffect(() => {
     if (firstPersistRef.current) {
       firstPersistRef.current = false
@@ -376,8 +399,12 @@ export function PlannerProvider({
 
     if (currentUser) {
       // Debounce: a drag emits many state updates; we only need to land
-      // the final one within ~1s of the user pausing.
+      // the final one within ~1s of the user pausing. Setting state in
+      // the effect body is deliberate — every state change kicks off a
+      // new persistence cycle and the user needs to see "saving…"
+      // immediately, before the debounced server call fires.
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSaveStatus("saving")
       const snapshot = state
       saveTimerRef.current = setTimeout(() => {
@@ -416,151 +443,32 @@ export function PlannerProvider({
 
     // Anonymous: keep on this device.
     fallbackToLocal(state, "local")
-  }, [state, currentUser])
+  }, [state, currentUser, fallbackToLocal, handleSaveResult])
 
-  function handleSaveResult(
-    res: Awaited<ReturnType<typeof saveMyPlanAction>>,
-    snapshot: PlannerState
-  ) {
-    if (res.ok) {
-      setSaveStatus("saved")
-      // Bump our local "most recently updated" snapshot for plan list
-      // ordering. Cheap; avoids a refetch.
-      const planId = activePlanIdRef.current
-      if (planId) {
-        setPlans((prev) =>
-          [
-            ...prev.map((p) =>
-              p.id === planId ? { ...p, updatedAt: new Date() } : p
-            ),
-          ].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-        )
-      }
-    } else if (res.reason === "unauthenticated") {
-      fallbackToLocal(snapshot)
-    } else {
-      setSaveStatus("error")
-    }
-  }
-
-  function fallbackToLocal(
-    snapshot: PlannerState,
-    finalStatus: "local" | "local" = "local"
-  ) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-    } catch {
-      /* ignore */
-    }
-    setSaveStatus(finalStatus)
-  }
-
-  // Keep unit data hydrated for every code placed in the plan.
-  // Re-fetches codes that are missing OR cached from the wrong handbook
-  // year (stale). Each code is processed at its first study-year occurrence.
-  const plannedCodes = useMemo(() => plannedUnitCodes(state), [state])
-  useEffect(() => {
-    const codesByYear = new Map<string, string[]>()
-    const seen = new Set<string>()
-
-    for (let yi = 0; yi < state.years.length; yi++) {
-      const hYear = handbookYearFor(yi, state.courseYear, availableYears)
-      for (const slot of state.years[yi]?.slots ?? []) {
-        for (const code of slot.unitCodes) {
-          if (seen.has(code)) continue
-          seen.add(code)
-          const cached = unitsMap.get(code)
-          const correct =
-            cached?.year === hYear &&
-            offeringsMap.has(code) &&
-            requisitesMap.has(code)
-          if (correct) continue
-          const list = codesByYear.get(hYear) ?? []
-          list.push(code)
-          codesByYear.set(hYear, list)
-        }
-      }
-    }
-
-    if (codesByYear.size === 0) return
-    const allNeeded = [...codesByYear.values()].flat()
-
-    startTransition(async () => {
-      try {
-        const res = await hydrateUnitsMultiYearAction(
-          Object.fromEntries(codesByYear)
-        )
-        setUnitsMap((m) => {
-          const next = new Map(m)
-          for (const [k, v] of Object.entries(res.units)) next.set(k, v)
-          return next
-        })
-        setOfferingsMap((m) => {
-          const next = new Map(m)
-          for (const [k, v] of Object.entries(res.offerings)) next.set(k, v)
-          for (const code of allNeeded) if (!next.has(code)) next.set(code, [])
-          return next
-        })
-        setRequisitesMap((m) => {
-          const next = new Map(m)
-          for (const [k, v] of Object.entries(res.requisites)) next.set(k, v)
-          for (const code of allNeeded) if (!next.has(code)) next.set(code, [])
-          return next
-        })
-      } catch (err) {
-        toast.error("Couldn't load unit details", {
-          description: err instanceof Error ? err.message : "Unknown error",
-        })
-      }
-    })
-  }, [
-    state.years,
-    state.courseYear,
+  const { isSyncing } = useUnitDataHydration({
+    state,
+    availableYears,
     unitsMap,
     offeringsMap,
     requisitesMap,
-    availableYears,
-  ])
+    setUnits: setUnitsMap,
+    setOfferings: setOfferingsMap,
+    setRequisites: setRequisitesMap,
+  })
+
+  const plannedCodes = useMemo(() => plannedUnitCodes(state), [state])
 
   const validations = useMemo(
     () => validatePlan(state, unitsMap, offeringsMap, requisitesMap),
     [state, unitsMap, offeringsMap, requisitesMap]
   )
 
-  // Self-heal: when offerings catch up after a unit was added (search
-  // results don't pre-load offerings, so FY detection fires *after*
-  // placement), promote half-placed FY units to twinned placement.
-  useEffect(() => {
-    for (let yi = 0; yi < state.years.length; yi++) {
-      const year = state.years[yi]
-      if (!year) continue
-      const s1 = year.slots.find((s) => s.kind === "S1")
-      const s2 = year.slots.find((s) => s.kind === "S2")
-      if (!s1 || !s2) continue
-      const seen = new Set<string>()
-      for (const code of [...s1.unitCodes, ...s2.unitCodes]) {
-        if (seen.has(code)) continue
-        seen.add(code)
-        if (!isFullYearUnit(code, offeringsMap)) continue
-        const inS1 = s1.unitCodes.includes(code)
-        const inS2 = s2.unitCodes.includes(code)
-        if (inS1 && inS2) continue
-        // Half-placed FY unit — strip and re-add as proper twin.
-        dispatch({ type: "remove_full_year_unit", code })
-        // Compute fullYearCodes excluding the unit we just stripped.
-        const others: string[] = []
-        for (const c of plannedCodes)
-          if (c !== code && isFullYearUnit(c, offeringsMap)) others.push(c)
-        dispatch({
-          type: "add_full_year_unit",
-          yearIndex: yi,
-          code,
-          fullYearCodes: others,
-        })
-        return
-      }
-    }
-  }, [state.years, offeringsMap, plannedCodes])
+  useFullYearSelfHeal({
+    state,
+    offeringsMap,
+    plannedCodes,
+    dispatch,
+  })
 
   const mergeUnits = useCallback((list: PlannerUnit[]) => {
     setUnitsMap((m) => {
@@ -621,7 +529,7 @@ export function PlannerProvider({
         toast.info(`No units to load from ${label}.`)
         return
       }
-      startTransition(async () => {
+      startCourseTransition(async () => {
         try {
           const res = await hydrateUnitsAction(unique, state.courseYear)
           const nextUnits = new Map(unitsMap)
@@ -662,7 +570,7 @@ export function PlannerProvider({
   const switchCourse = useCallback(
     async (code: string) => {
       const yearForFetch = state.courseYear
-      startTransition(async () => {
+      startCourseTransition(async () => {
         try {
           const c = await loadCourseAction(code, yearForFetch)
           setCourse(c)
@@ -709,7 +617,7 @@ export function PlannerProvider({
   const switchYear = useCallback(
     async (year: string) => {
       if (year === state.courseYear) return
-      startTransition(async () => {
+      startCourseTransition(async () => {
         try {
           dispatch({ type: "set_year", year })
           // Refetch the courses list so the picker reflects the year.
@@ -796,7 +704,7 @@ export function PlannerProvider({
       firstPersistRef.current = true
 
       // Refetch course/picker/unit data tied to the new plan.
-      startTransition(async () => {
+      startCourseTransition(async () => {
         try {
           const yearChanged = targetYear !== state.courseYear
           if (yearChanged) {
@@ -1008,21 +916,4 @@ export function PlannerProvider({
   )
 
   return <PlannerCtx.Provider value={value}>{children}</PlannerCtx.Provider>
-}
-
-/**
- * Read a previously persisted plan from localStorage. Returns null on
- * missing/corrupt data — corrupt local state is the user's problem, not
- * something to surface as an error.
- */
-function readLocalPlan(): PlannerState | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as PlannerState
-    if (!parsed || !Array.isArray(parsed.years)) return null
-    return parsed
-  } catch {
-    return null
-  }
 }

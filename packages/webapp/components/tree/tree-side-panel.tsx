@@ -43,10 +43,14 @@ export function TreeSidePanel({
   detail,
   year,
   onClose,
+  variant = "floating",
 }: {
   detail: FocusedUnitDetail | null
   year: string
   onClose: () => void
+  /** "floating": styled as a card (desktop side panel). "flush": no
+   *  card chrome, fills its container (mobile bottom sheet). */
+  variant?: "floating" | "flush"
 }) {
   if (!detail) return null
   const { node, variants, offerings, requisites, enrolmentRules, completed } =
@@ -55,7 +59,13 @@ export function TreeSidePanel({
   const filteredRules = requisites.filter((r) => r.rule && r.rule.length > 0)
 
   return (
-    <aside className="flex h-full flex-col overflow-y-auto rounded-3xl border bg-card shadow-2xl ring-1 ring-border/60">
+    <aside
+      className={
+        variant === "floating"
+          ? "flex h-full flex-col overflow-y-auto rounded-3xl border bg-card shadow-2xl ring-1 ring-border/60"
+          : "flex h-full flex-col overflow-y-auto bg-card"
+      }
+    >
       <header className="sticky top-0 z-10 flex flex-col gap-1 border-b bg-card px-4 pt-4 pb-3">
         <div className="flex items-baseline gap-2">
           <span className="text-base font-bold tabular-nums">{node.code}</span>

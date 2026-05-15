@@ -9,54 +9,17 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
-import {
-  CalendarIcon,
-  LockIcon,
-  LockOpenIcon,
-  MinusIcon,
-  MoreVerticalIcon,
-  PlusIcon,
-  RotateCcwIcon,
-  Trash2Icon,
-} from "lucide-react"
+import { PlusIcon } from "lucide-react"
 import { useState } from "react"
-import type { PeriodKind } from "@/lib/planner/types"
 import { toast } from "sonner"
 
-import { cn } from "@/lib/utils"
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  MAX_SLOT_CAPACITY,
-  slotCapacity,
-  slotUsedWeight,
-  type PlannerSlot,
-} from "@/lib/planner/types"
-import {
-  OPTIONAL_SLOT_KINDS,
-  PERIOD_KIND_LABEL,
-} from "@/lib/planner/teaching-period"
+import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
+import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
 
 import { usePlanner } from "./planner-context"
-import { SemesterSlot } from "./semester-slot"
+import { SemesterRow } from "./semester-row"
 import { UnitCard } from "./unit-card"
+import { YearHeader } from "./year-header"
 
 type ActiveDrag =
   | {
@@ -72,39 +35,6 @@ type ActiveDrag =
       isFullYear?: boolean
     }
 
-/**
- * Per-year accent gradients. All sit in Monash purple so the strips
- * read as chapter dividers rather than decoration; each year drops a
- * step darker to reinforce "later in the degree = deeper". White
- * text + yellow accent dot gives the strip a badge-like feel without
- * competing with the coloured unit cards below.
- */
-const YEAR_GRADIENTS: string[] = [
-  "linear-gradient(90deg, #5b2d90 0%, #7b4ab5 100%)",
-  "linear-gradient(90deg, #4a248a 0%, #5b2d90 100%)",
-  "linear-gradient(90deg, #3a1a63 0%, #4a248a 100%)",
-  "linear-gradient(90deg, #2a104f 0%, #3a1a63 100%)",
-  "linear-gradient(90deg, #1c0836 0%, #2a104f 100%)",
-]
-
-function yearGradient(index: number): string {
-  return YEAR_GRADIENTS[Math.min(index, YEAR_GRADIENTS.length - 1)]
-}
-
-const ADDABLE_SLOT_KINDS: PeriodKind[] = [
-  "S1",
-  "S2",
-  "SUMMER_A",
-  "SUMMER_B",
-  "WINTER",
-]
-
-/**
- * The main planner pane — one row per (year, slot). The left label
- * column carries a three-dot menu that lets a student grow or shrink
- * the slot's unit capacity (1..MAX_SLOT_CAPACITY, never below the
- * units already placed).
- */
 /**
  * Wraps any children in a single dnd-kit context, so drags from the
  * sidebar (Add units / Templates) can drop onto grid slots in the
@@ -357,30 +287,41 @@ function NewUnitDragOverlay({ code }: { code: string }) {
   )
 }
 
+/**
+ * The main planner pane — one row per (year, slot), grouped by year
+ * header. Renders the structural shell; per-row logic lives in
+ * `SemesterRow`, per-year strip in `YearHeader`.
+ *
+ * On mobile (<md) the row reflows to a vertical stack (label on top,
+ * unit slot below). On desktop, the label sits in a 180px left column.
+ */
 export function PlanGrid() {
   const { state, course, dispatch } = usePlanner()
   const startYear = Number(state.courseYear) || new Date().getFullYear()
 
   return (
-    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-3xl border bg-card shadow-card">
-      {state.years.map((year, yearIndex) =>
-        year.slots.map((slot, slotIndex) => (
-          <SemesterRow
-            key={`${yearIndex}:${slotIndex}:${slot.kind}`}
+    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-2xl border bg-card shadow-card sm:rounded-3xl">
+      {state.years.map((year, yearIndex) => (
+        <div key={yearIndex} className="flex flex-col">
+          <YearHeader
             yearIndex={yearIndex}
-            slotIndex={slotIndex}
-            slot={slot}
-            yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
             calYear={startYear + yearIndex}
+            yearLabel={year.label}
             yearSlotKinds={year.slots.map((s) => s.kind)}
-            removableYear={state.years.length > 1 && slotIndex === 0}
-            onRemoveYear={() => dispatch({ type: "remove_year", yearIndex })}
-            showYearHeader={slotIndex === 0}
-            yearHeaderLabel={year.label}
+            removableYear={state.years.length > 1}
             yearHasUnits={year.slots.some((s) => s.unitCodes.length > 0)}
           />
-        ))
-      )}
+          {year.slots.map((slot, slotIndex) => (
+            <SemesterRow
+              key={`${yearIndex}:${slotIndex}:${slot.kind}`}
+              yearIndex={yearIndex}
+              slotIndex={slotIndex}
+              slot={slot}
+              yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
+            />
+          ))}
+        </div>
+      ))}
 
       {!course ? (
         <div className="px-6 py-10 text-center text-xs text-muted-foreground">
@@ -397,318 +338,5 @@ export function PlanGrid() {
         </button>
       )}
     </div>
-  )
-}
-
-function SemesterRow({
-  yearIndex,
-  slotIndex,
-  slot,
-  yearLabel,
-  calYear,
-  yearSlotKinds,
-  removableYear,
-  onRemoveYear,
-  showYearHeader,
-  yearHeaderLabel,
-  yearHasUnits,
-}: {
-  yearIndex: number
-  slotIndex: number
-  slot: PlannerSlot
-  yearLabel: string
-  calYear: number
-  yearSlotKinds: PeriodKind[]
-  removableYear: boolean
-  onRemoveYear: () => void
-  showYearHeader: boolean
-  yearHeaderLabel: string
-  yearHasUnits: boolean
-}) {
-  const { dispatch, units } = usePlanner()
-  const capacity = slotCapacity(slot)
-  const usedWeight = slotUsedWeight(slot, units)
-  const canDecrease = capacity > Math.max(1, usedWeight)
-  const canIncrease = capacity < MAX_SLOT_CAPACITY
-  const isOptionalSlot = OPTIONAL_SLOT_KINDS.includes(slot.kind)
-
-  const [isEditingLabel, setIsEditingLabel] = useState(false)
-  const [labelDraft, setLabelDraft] = useState("")
-  const displayLabel = slot.label ?? yearLabel
-
-  function startLabelEdit() {
-    setLabelDraft(displayLabel)
-    setIsEditingLabel(true)
-  }
-
-  function commitLabelEdit() {
-    dispatch({ type: "rename_slot", yearIndex, slotIndex, label: labelDraft })
-    setIsEditingLabel(false)
-  }
-
-  return (
-    <>
-      {showYearHeader ? (
-        <div
-          className="relative flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-white"
-          style={{ backgroundImage: yearGradient(yearIndex) }}
-        >
-          <h3 className="text-xs font-semibold tracking-[0.12em] text-white uppercase">
-            {yearHeaderLabel}
-            <span className="ml-1.5">({calYear})</span>
-          </h3>
-          <div className="flex items-center gap-1">
-            {yearIndex === 0 ? <StartingYearPicker /> : null}
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label={`Reset ${yearHeaderLabel}`}
-              disabled={!yearHasUnits}
-              onClick={() => dispatch({ type: "clear_year", yearIndex })}
-              className="text-white/70 hover:bg-white/15 hover:text-white disabled:opacity-30"
-            >
-              <RotateCcwIcon />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    aria-label="Add section"
-                    className="text-white/70 hover:bg-white/15 hover:text-white"
-                  />
-                }
-              >
-                <PlusIcon />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {ADDABLE_SLOT_KINDS.map((kind) => (
-                  <DropdownMenuItem
-                    key={kind}
-                    disabled={yearSlotKinds.includes(kind)}
-                    onClick={() =>
-                      dispatch({ type: "add_optional_slot", yearIndex, kind })
-                    }
-                  >
-                    {PERIOD_KIND_LABEL[kind]}, {calYear}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() =>
-                    dispatch({
-                      type: "add_optional_slot",
-                      yearIndex,
-                      kind: "OTHER",
-                      label: `Untitled, ${calYear}`,
-                    })
-                  }
-                >
-                  Untitled, {calYear}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {removableYear ? (
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                aria-label={`Remove ${yearHeaderLabel}`}
-                onClick={onRemoveYear}
-                className="text-white/70 hover:bg-white/15 hover:text-white"
-              >
-                <Trash2Icon />
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-      <div className="grid grid-cols-[180px_minmax(0,1fr)] items-stretch border-b last:border-b-0">
-        <div
-          className={cn(
-            "flex items-center justify-between gap-1 border-r px-3 py-3 text-[11px] font-medium text-muted-foreground",
-            slot.locked ? "bg-black/[0.08]" : "bg-muted/20"
-          )}
-        >
-          <div className="min-w-0 flex-1 leading-tight">
-            {isEditingLabel ? (
-              <input
-                className="w-full bg-transparent text-[11px] font-medium text-muted-foreground outline-none"
-                value={labelDraft}
-                onChange={(e) => setLabelDraft(e.target.value)}
-                onBlur={commitLabelEdit}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitLabelEdit()
-                  if (e.key === "Escape") setIsEditingLabel(false)
-                }}
-                autoFocus
-              />
-            ) : (
-              <button
-                type="button"
-                className="block text-left leading-tight hover:text-foreground"
-                onClick={startLabelEdit}
-                title="Click to rename"
-              >
-                {displayLabel}
-              </button>
-            )}
-            <div className="mt-0.5 text-[10px] text-muted-foreground/70 tabular-nums">
-              {usedWeight} / {capacity} units
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={slot.locked ? "Unlock semester" : "Lock semester"}
-            className="shrink-0"
-            onClick={() =>
-              dispatch({ type: "toggle_slot_lock", yearIndex, slotIndex })
-            }
-          >
-            {slot.locked ? (
-              <LockIcon className="text-foreground/70" />
-            ) : (
-              <LockOpenIcon />
-            )}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label={`${displayLabel} options`}
-                  className="shrink-0"
-                />
-              }
-            >
-              <MoreVerticalIcon />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="right" sideOffset={6}>
-              <DropdownMenuItem
-                disabled={!canIncrease}
-                onClick={() =>
-                  dispatch({
-                    type: "set_slot_capacity",
-                    yearIndex,
-                    slotIndex,
-                    capacity: capacity + 1,
-                  })
-                }
-              >
-                <PlusIcon />
-                Add a unit slot
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canDecrease}
-                onClick={() =>
-                  dispatch({
-                    type: "set_slot_capacity",
-                    yearIndex,
-                    slotIndex,
-                    capacity: capacity - 1,
-                  })
-                }
-              >
-                <MinusIcon />
-                Remove a unit slot
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={slot.unitCodes.length === 0}
-                onClick={() =>
-                  dispatch({ type: "clear_slot", yearIndex, slotIndex })
-                }
-              >
-                <RotateCcwIcon />
-                Reset semester
-              </DropdownMenuItem>
-              {isOptionalSlot ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() =>
-                      dispatch({ type: "remove_slot", yearIndex, slotIndex })
-                    }
-                  >
-                    <Trash2Icon />
-                    Remove section
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <SemesterSlot yearIndex={yearIndex} slotIndex={slotIndex} />
-      </div>
-    </>
-  )
-}
-
-function StartingYearPicker() {
-  const { state, availableYears, switchYear } = usePlanner()
-  const [pendingYear, setPendingYear] = useState<string | null>(null)
-
-  function handleChange(v: unknown) {
-    if (typeof v !== "string" || !v || v === state.courseYear) return
-    setPendingYear(v)
-  }
-
-  function confirmSwitch() {
-    if (pendingYear) void switchYear(pendingYear)
-    setPendingYear(null)
-  }
-
-  return (
-    <>
-      <AlertDialog
-        open={pendingYear !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingYear(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Switch to {pendingYear}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Switching the handbook year will clear all units from your
-              planner. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSwitch}>
-              Switch year
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 gap-1.5 rounded-full bg-white px-2.5 text-[10px] font-semibold tracking-wide text-foreground uppercase hover:bg-white/90 hover:text-foreground"
-            />
-          }
-        >
-          <CalendarIcon className="size-3" />
-          Change starting year
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {availableYears.map((y) => (
-            <DropdownMenuItem
-              key={y}
-              disabled={y === state.courseYear}
-              onClick={() => handleChange(y)}
-            >
-              {y}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
   )
 }

@@ -70,8 +70,8 @@ export function Planner(props: PlannerProps) {
         </AppHeader>
 
         <PlannerDnd>
-          <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="flex min-w-0 flex-col gap-5">
+          <div className="grid flex-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="flex min-w-0 flex-col gap-3 sm:gap-5">
               <LeftSidebar />
               <SummaryBar />
               <PlanGrid />

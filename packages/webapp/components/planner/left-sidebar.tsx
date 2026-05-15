@@ -42,6 +42,10 @@ export function LeftSidebar() {
   const [nameDraft, setNameDraft] = useState(activePlan?.name ?? "")
 
   useEffect(() => {
+    // Sync the draft from the source-of-truth plan name whenever the
+    // plan changes underneath us (switch plan, rename from elsewhere).
+    // Skip while the user is actively editing — their keystrokes win.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!editingName) setNameDraft(activePlan?.name ?? "")
   }, [activePlan?.name, editingName])
 
@@ -112,7 +116,7 @@ export function LeftSidebar() {
   }, [])
 
   return (
-    <aside className="flex flex-row flex-wrap items-center gap-1 self-start rounded-3xl border bg-card p-2 shadow-card print:hidden">
+    <aside className="flex flex-col gap-1 self-start rounded-2xl border bg-card p-1.5 shadow-card sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 sm:rounded-3xl sm:p-2 print:hidden">
       {currentUser && activePlan ? (
         <>
           {editingName ? (
@@ -125,70 +129,80 @@ export function LeftSidebar() {
                 if (e.key === "Enter") commitNameEdit()
                 if (e.key === "Escape") cancelNameEdit()
               }}
-              className="max-w-[220px] rounded px-3 py-2 text-xs font-semibold ring-1 ring-primary outline-none focus:ring-2"
+              className="w-full max-w-full rounded px-3 py-2 text-xs font-semibold ring-1 ring-primary outline-none focus:ring-2 sm:w-auto sm:max-w-[220px]"
             />
           ) : (
             <button
               type="button"
               onClick={() => setEditingName(true)}
               title={`Rename "${activePlan.name}"`}
-              className="max-w-[220px] cursor-text truncate rounded px-3 py-2 text-xs font-semibold hover:bg-muted/60"
+              className="w-full max-w-full cursor-text truncate rounded px-3 py-2 text-left text-xs font-semibold hover:bg-muted/60 sm:w-auto sm:max-w-[220px]"
             >
               {activePlan.name}
             </button>
           )}
-          <div className="mx-1 h-8 w-px bg-border" />
+          <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
         </>
       ) : null}
 
-      <ActionButton
-        icon={<BadgeCheckIcon />}
-        label="Validate"
-        tone={errorCount === 0 ? "good" : "bad"}
-        onClick={() => {
-          if (errorCount === 0) {
-            toast.success("Plan validates cleanly", {
-              description:
-                "Every unit meets its prereqs and is offered in its slot.",
-            })
-            return
-          }
-          flashErrors()
-        }}
-      />
+      <div className="flex flex-wrap items-center gap-0.5 sm:gap-1">
+        <ActionButton
+          icon={<BadgeCheckIcon />}
+          label="Validate"
+          tone={errorCount === 0 ? "good" : "bad"}
+          onClick={() => {
+            if (errorCount === 0) {
+              toast.success("Plan validates cleanly", {
+                description:
+                  "Every unit meets its prereqs and is offered in its slot.",
+              })
+              return
+            }
+            flashErrors()
+          }}
+        />
 
-      <ActionButton
-        icon={<PlusCircleIcon />}
-        label="Add year"
-        onClick={() => dispatch({ type: "add_year" })}
-      />
+        <ActionButton
+          icon={<PlusCircleIcon />}
+          label="Add year"
+          onClick={() => dispatch({ type: "add_year" })}
+        />
 
-      <ActionButton icon={<DownloadIcon />} label="Export" onClick={onExport} />
+        <ActionButton
+          icon={<DownloadIcon />}
+          label="Export"
+          onClick={onExport}
+        />
 
-      <ActionButton
-        icon={<UploadIcon />}
-        label="Import"
-        onClick={() => fileInputRef.current?.click()}
-      />
+        <ActionButton
+          icon={<UploadIcon />}
+          label="Import"
+          onClick={() => fileInputRef.current?.click()}
+        />
 
-      <ActionButton icon={<PrinterIcon />} label="Print" onClick={onPrint} />
+        <ActionButton icon={<PrinterIcon />} label="Print" onClick={onPrint} />
 
-      <ActionButton icon={<RotateCcwIcon />} label="Reset" onClick={onReset} />
+        <ActionButton
+          icon={<RotateCcwIcon />}
+          label="Reset"
+          onClick={onReset}
+        />
 
-      <div className="mx-1 h-8 w-px bg-border" />
+        <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
 
-      <ActionButton
-        icon={<CalculatorIcon />}
-        label="WAM"
-        tone={wamMode ? "active" : undefined}
-        onClick={toggleWamMode}
-      />
-      <ActionButton
-        icon={<TagIcon />}
-        label="Show Grades"
-        tone={showGrade ? "active" : undefined}
-        onClick={toggleShowGrade}
-      />
+        <ActionButton
+          icon={<CalculatorIcon />}
+          label="WAM"
+          tone={wamMode ? "active" : undefined}
+          onClick={toggleWamMode}
+        />
+        <ActionButton
+          icon={<TagIcon />}
+          label="Show Grades"
+          tone={showGrade ? "active" : undefined}
+          onClick={toggleShowGrade}
+        />
+      </div>
 
       <input
         ref={fileInputRef}

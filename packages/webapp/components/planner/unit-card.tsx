@@ -10,6 +10,12 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { GRADE_STYLES, markToGrade } from "@/lib/planner/grades"
 import type { PlannerCourseWithAoS } from "@/lib/planner/types"
@@ -268,35 +274,32 @@ function UnitMenu({
 }) {
   return (
     <div className="absolute top-0 right-0 flex items-start p-0.5">
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        onClick={() => onOpenChange(!open)}
-        aria-label="Unit options"
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <MoreVerticalIcon className="size-3.5" />
-      </Button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute top-6 right-1 z-10 flex w-max flex-col rounded-xl border bg-popover p-1 shadow-lg"
-          onMouseLeave={() => onOpenChange(false)}
+      <DropdownMenu open={open} onOpenChange={onOpenChange}>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Unit options"
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          }
         >
-          <button
-            role="menuitem"
+          <MoreVerticalIcon className="size-3.5" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={4}>
+          <DropdownMenuItem
             onClick={() => {
               onOpenChange(false)
               onRemove()
             }}
-            className="flex items-center gap-2 rounded-md px-2 py-1 text-xs whitespace-nowrap text-destructive hover:bg-destructive/10"
+            className="text-destructive focus:text-destructive"
           >
             <XIcon className="size-3" />
             Remove unit
-          </button>
-        </div>
-      ) : null}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }

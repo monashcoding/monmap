@@ -1,8 +1,25 @@
 "use client"
 
-import { EyeIcon, EyeOffIcon } from "lucide-react"
+import {
+  BookOpenTextIcon,
+  EyeIcon,
+  EyeOffIcon,
+  PanelRightOpenIcon,
+  XIcon,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { summarizePlan } from "@/lib/planner/progress"
 import { cn } from "@/lib/utils"
 
@@ -15,43 +32,167 @@ import { useWam } from "./wam-context"
 
 const FLAT = "rounded-none border-0 shadow-none"
 
+type RightTab = "progress" | "add"
+
+/**
+ * Right column carrying the course picker, progress gauge, requirements
+ * panel and the "Add units" search/templates. On mobile the column is
+ * hidden and a floating button opens this content in a bottom Sheet.
+ */
 export function RightSidebar() {
-  const [tab, setTab] = useState<"progress" | "add">("progress")
+  const isMobile = useIsMobile()
+  const [tab, setTab] = useState<RightTab>("progress")
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  if (isMobile) {
+    return (
+      <MobileRightDrawer
+        tab={tab}
+        onTabChange={setTab}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
+    )
+  }
 
   return (
     <aside className="flex flex-col gap-4 print:hidden">
-      <div className="overflow-hidden rounded-3xl border bg-card shadow-card">
-        {/* Tab bar */}
-        <div className="flex border-b">
-          <button
-            type="button"
-            onClick={() => setTab("progress")}
-            className={cn(
-              "-mb-px flex-1 border-b-[3px] px-4 pt-2.5 pb-2.5 text-sm font-medium transition-colors",
-              tab === "progress"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Progress
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("add")}
-            className={cn(
-              "-mb-px flex-1 border-b-[3px] px-4 pt-2.5 pb-2.5 text-sm font-medium transition-colors",
-              tab === "add"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Add units
-          </button>
-        </div>
-
-        {tab === "progress" ? <ProgressTab /> : <AddUnitsTab />}
-      </div>
+      <RightPanel tab={tab} onTabChange={setTab} />
     </aside>
+  )
+}
+
+function MobileRightDrawer({
+  tab,
+  onTabChange,
+  open,
+  onOpenChange,
+}: {
+  tab: RightTab
+  onTabChange: (t: RightTab) => void
+  open: boolean
+  onOpenChange: (v: boolean) => void
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetTrigger
+        render={
+          <Button
+            variant="default"
+            className="fixed right-4 bottom-4 z-30 flex h-12 items-center gap-2 rounded-full px-4 shadow-xl md:hidden print:hidden"
+            aria-label="Open course & progress panel"
+          />
+        }
+      >
+        <PanelRightOpenIcon className="size-4" />
+        <span className="text-sm font-semibold">
+          {tab === "progress" ? "Progress" : "Add units"}
+        </span>
+      </SheetTrigger>
+      <SheetContent
+        side="bottom"
+        className="h-[85svh] gap-0 p-0"
+        showCloseButton={false}
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Course progress &amp; add units</SheetTitle>
+          <SheetDescription>
+            Switch between progress summary and unit search.
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex h-full flex-col">
+          <div className="relative flex shrink-0 items-center justify-center border-b bg-card px-4 pt-3 pb-2.5">
+            <span
+              aria-hidden
+              className="absolute top-1.5 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-muted-foreground/30"
+            />
+            <h2 className="text-sm font-semibold">
+              {tab === "progress" ? "Progress" : "Add units"}
+            </h2>
+            <SheetClose
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Close panel"
+                  className="absolute top-1/2 right-3 -translate-y-1/2"
+                />
+              }
+            >
+              <XIcon className="size-4" />
+            </SheetClose>
+          </div>
+          <RightPanel
+            tab={tab}
+            onTabChange={onTabChange}
+            className="flex-1 overflow-y-auto"
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+function RightPanel({
+  tab,
+  onTabChange,
+  className,
+}: {
+  tab: RightTab
+  onTabChange: (t: RightTab) => void
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "overflow-hidden border bg-card md:rounded-3xl md:shadow-card",
+        className
+      )}
+    >
+      {/* Tab bar */}
+      <div className="sticky top-0 z-10 flex border-b bg-card">
+        <TabButton
+          active={tab === "progress"}
+          onClick={() => onTabChange("progress")}
+          icon={<BookOpenTextIcon className="size-3.5" />}
+          label="Progress"
+        />
+        <TabButton
+          active={tab === "add"}
+          onClick={() => onTabChange("add")}
+          label="Add units"
+        />
+      </div>
+      {tab === "progress" ? <ProgressTab /> : <AddUnitsTab />}
+    </div>
+  )
+}
+
+function TabButton({
+  active,
+  onClick,
+  label,
+  icon,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  icon?: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "-mb-px flex flex-1 items-center justify-center gap-1.5 border-b-[3px] px-4 pt-2.5 pb-2.5 text-sm font-medium transition-colors",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-transparent text-muted-foreground hover:text-foreground"
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   )
 }
 
@@ -79,7 +220,7 @@ function ProgressTab() {
       <CoursePicker className={FLAT} />
       <div className="flex flex-col items-center gap-3 px-4 py-5">
         <CircularGauge pct={pct} />
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
           <GaugeStat
             label="Credit points"
             value={`${summary.totalCreditPoints} / ${summary.targetCreditPoints}`}
@@ -139,7 +280,7 @@ function GaugeStat({
       <span
         className={cn(
           "text-sm font-semibold tabular-nums",
-          hidden && "select-none tracking-widest"
+          hidden && "tracking-widest select-none"
         )}
       >
         {hidden ? "••••" : value}

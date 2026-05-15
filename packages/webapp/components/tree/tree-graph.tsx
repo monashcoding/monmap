@@ -178,7 +178,7 @@ function TreeGraphInner({
               ? "var(--monash-purple)"
               : "var(--color-foreground)"
           }
-          className="!rounded-xl !border !bg-card/90 !shadow-card"
+          className="!hidden !rounded-xl !border !bg-card/90 !shadow-card sm:!block"
         />
       </ReactFlow>
     </div>

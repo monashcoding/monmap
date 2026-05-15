@@ -35,7 +35,7 @@ export default async function PlansPage() {
   const user = await getCurrentUser()
   if (!user) {
     return (
-      <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
+      <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
         <AppHeader />
         <div className="flex flex-col items-center gap-4 rounded-3xl border bg-card py-20 text-center shadow-card">
           <GraduationCapIcon className="size-10 text-muted-foreground/40" />
@@ -102,7 +102,7 @@ export default async function PlansPage() {
   })
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-5 px-5 pt-5 pb-12">
+    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
       <AppHeader />
 
       {plans.length === 0 ? (
