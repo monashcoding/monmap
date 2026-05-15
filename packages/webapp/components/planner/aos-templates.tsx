@@ -1,17 +1,13 @@
 "use client"
 
-import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  DownloadIcon,
-  LayersIcon,
-} from "lucide-react"
+import { ChevronDownIcon, ChevronRightIcon, DownloadIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
+import { DraggableUnitRow } from "./draggable-unit-row"
 import { usePlanner } from "./planner-context"
 
 const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
@@ -26,9 +22,9 @@ const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
 const KIND_BADGE: Record<PlannerAreaOfStudy["kind"], string> = {
   major: "bg-primary/40 text-primary-foreground",
   extended_major: "bg-primary/40 text-primary-foreground",
-  specialisation: "bg-blue-500/25 text-blue-900 dark:text-blue-200",
-  minor: "bg-amber-500/30 text-amber-900 dark:text-amber-200",
-  elective: "bg-emerald-500/25 text-emerald-900 dark:text-emerald-200",
+  specialisation: "bg-blue-500/40 text-black",
+  minor: "bg-amber-500/40 text-black",
+  elective: "bg-emerald-500/40 text-black",
   other: "bg-muted text-muted-foreground",
 }
 
@@ -69,12 +65,9 @@ export function AoSTemplates({ className }: { className?: string }) {
     <section
       className={cn("rounded-3xl border bg-card p-3 shadow-card", className)}
     >
-      <div className="flex items-center gap-2 px-1">
-        <LayersIcon className="size-4 text-muted-foreground" />
-        <label className="text-[10px] tracking-wide text-muted-foreground uppercase">
-          Templates
-        </label>
-      </div>
+      <p className="px-1 pb-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+        Templates
+      </p>
       <p className="mt-1 px-1 text-[11px] leading-snug text-muted-foreground">
         Auto-fill the planner with the degree's core units or your chosen
         specialisations.
@@ -107,7 +100,7 @@ function CourseUnitsCard({
   label?: string
 }) {
   const { loadUnitsTemplate } = usePlanner()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
 
   const groupings = useMemo(() => {
     const m = new Map<string, Set<string>>()
@@ -172,13 +165,7 @@ function CourseUnitsCard({
       {open ? (
         <div className="flex flex-col gap-0.5 border-t border-primary/20 px-2.5 py-2">
           {groupings.map((g) => (
-            <GroupingRow
-              key={g.name}
-              name={g.name}
-              codes={g.codes}
-              onLoadAll={() => loadUnitsTemplate(g.codes, { label: g.name })}
-              onLoadOne={(code) => loadUnitsTemplate([code], { label: code })}
-            />
+            <GroupingRow key={g.name} name={g.name} codes={g.codes} />
           ))}
         </div>
       ) : null}
@@ -188,7 +175,7 @@ function CourseUnitsCard({
 
 function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
   const { loadUnitsTemplate } = usePlanner()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
 
   const groupings = useMemo(
     () => groupByGrouping(aos.requiredUnits),
@@ -250,17 +237,7 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
       {open ? (
         <div className="flex flex-col gap-0.5 border-t px-2.5 py-2">
           {groupings.map((g) => (
-            <GroupingRow
-              key={g.name}
-              name={g.name}
-              codes={g.codes}
-              onLoadAll={() =>
-                loadUnitsTemplate(g.codes, {
-                  label: `${aos.title} · ${g.name}`,
-                })
-              }
-              onLoadOne={(code) => loadUnitsTemplate([code], { label: code })}
-            />
+            <GroupingRow key={g.name} name={g.name} codes={g.codes} />
           ))}
         </div>
       ) : null}
@@ -268,81 +245,39 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
   )
 }
 
-function GroupingRow({
-  name,
-  codes,
-  onLoadAll,
-  onLoadOne,
-}: {
-  name: string
-  codes: string[]
-  onLoadAll: () => void
-  onLoadOne: (code: string) => void
-}) {
-  const [open, setOpen] = useState(false)
+function GroupingRow({ name, codes }: { name: string; codes: string[] }) {
+  const [open, setOpen] = useState(true)
+  const sorted = useMemo(
+    () => [...codes].sort((a, b) => a.localeCompare(b)),
+    [codes]
+  )
 
   return (
     <div className="rounded-md">
-      <div className="flex items-center gap-1.5 rounded-md px-1 py-1 hover:bg-muted/50">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-        >
-          <ChevronDownIcon
-            className={cn(
-              "size-3 shrink-0 text-muted-foreground transition-transform",
-              !open && "-rotate-90"
-            )}
-          />
-          <span className="min-w-0 flex-1 truncate text-[11px]">{name}</span>
-          <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
-            {codes.length} unit{codes.length === 1 ? "" : "s"}
-          </span>
-        </button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-5 shrink-0 px-1.5 text-[9px]"
-          onClick={onLoadAll}
-        >
-          Load all
-        </Button>
-      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left hover:bg-muted/50"
+      >
+        <ChevronDownIcon
+          className={cn(
+            "size-3 shrink-0 text-muted-foreground transition-transform",
+            !open && "-rotate-90"
+          )}
+        />
+        <span className="min-w-0 flex-1 truncate text-[11px]">{name}</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+          {sorted.length} unit{sorted.length === 1 ? "" : "s"}
+        </span>
+      </button>
       {open ? (
-        <div className="px-1 pb-1.5">
-          <UnitChips codes={codes} onLoad={onLoadOne} />
+        <div className="flex flex-col gap-0.5 px-1 pb-1.5">
+          {sorted.map((code) => (
+            <DraggableUnitRow key={code} code={code} />
+          ))}
         </div>
       ) : null}
     </div>
-  )
-}
-
-function UnitChips({
-  codes,
-  onLoad,
-}: {
-  codes: string[]
-  onLoad: (code: string) => void
-}) {
-  return (
-    <ul className="mt-1 flex flex-wrap gap-1">
-      {[...codes]
-        .sort((a, b) => a.localeCompare(b))
-        .map((code) => (
-          <li key={code}>
-            <button
-              type="button"
-              onClick={() => onLoad(code)}
-              title={`Import ${code}`}
-              className="inline-flex items-center gap-0.5 rounded-md border border-border px-1 py-0.5 text-[9px] text-muted-foreground tabular-nums transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
-            >
-              <DownloadIcon className="size-2.5 shrink-0" />
-              {code}
-            </button>
-          </li>
-        ))}
-    </ul>
   )
 }
 

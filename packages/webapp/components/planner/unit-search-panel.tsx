@@ -4,7 +4,6 @@ import {
   CheckIcon,
   FilterIcon,
   ListOrderedIcon,
-  PlusIcon,
   SearchIcon,
   XIcon,
 } from "lucide-react"
@@ -17,18 +16,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-  PERIOD_KIND_LABEL,
-  PERIOD_KIND_SHORT,
-} from "@/lib/planner/teaching-period"
-import type { PeriodKind } from "@/lib/planner/types"
-import {
-  slotCapacity,
-  slotUsedWeight,
-  type PlannerUnit,
-} from "@/lib/planner/types"
+import { PERIOD_KIND_SHORT } from "@/lib/planner/teaching-period"
+import type { PeriodKind, PlannerUnit } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
+import { DraggableUnitRow } from "./draggable-unit-row"
 import { usePlanner } from "./planner-context"
 
 function useDebounced<T>(value: T, delayMs: number): T {
@@ -84,15 +76,8 @@ const CHIP_IDLE =
   "border-transparent bg-muted text-foreground hover:border-primary/60 hover:bg-primary/40"
 
 export function UnitSearchPanel() {
-  const {
-    state,
-    course,
-    units,
-    offerings,
-    availableYears,
-    mergeUnits,
-    plannedCodes,
-  } = usePlanner()
+  const { state, course, units, offerings, availableYears, mergeUnits } =
+    usePlanner()
 
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<PlannerUnit[]>([])
@@ -481,13 +466,7 @@ export function UnitSearchPanel() {
                 : `No matches for "${debounced}"`}
             </p>
           ) : (
-            items.map((u) => (
-              <UnitSearchRow
-                key={u.code}
-                unit={u}
-                placed={plannedCodes.has(u.code)}
-              />
-            ))
+            items.map((u) => <DraggableUnitRow key={u.code} code={u.code} />)
           )}
         </div>
       ) : suggestions.length > 0 ? (
@@ -500,13 +479,7 @@ export function UnitSearchPanel() {
               No suggestions match your filters
             </p>
           ) : (
-            items.map((u) => (
-              <UnitSearchRow
-                key={u.code}
-                unit={u}
-                placed={plannedCodes.has(u.code)}
-              />
-            ))
+            items.map((u) => <DraggableUnitRow key={u.code} code={u.code} />)
           )}
         </div>
       ) : null}
@@ -514,92 +487,3 @@ export function UnitSearchPanel() {
   )
 }
 
-function UnitSearchRow({
-  unit,
-  placed,
-}: {
-  unit: PlannerUnit
-  placed: boolean
-}) {
-  const { state, units: unitMap, addUnit } = usePlanner()
-  const [open, setOpen] = useState(false)
-  const startYear = Number(state.courseYear) || new Date().getFullYear()
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 rounded-xl px-2 py-2",
-        placed ? "opacity-50" : "hover:bg-muted/50"
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold tabular-nums">
-            {unit.code}
-          </span>
-          <span className="text-[9px] text-muted-foreground">
-            {unit.creditPoints}cp
-          </span>
-        </div>
-        <p className="truncate text-[11px] text-muted-foreground">
-          {unit.title}
-        </p>
-      </div>
-
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={placed}
-              aria-label={`Add ${unit.code}`}
-              className="size-6 shrink-0 rounded-lg p-0"
-            >
-              <PlusIcon className="size-3.5" />
-            </Button>
-          }
-        />
-        <PopoverContent align="end" sideOffset={4} className="w-52 p-0">
-          <div className="border-b px-3 py-2.5">
-            <p className="text-xs font-semibold text-muted-foreground">
-              Add to…
-            </p>
-          </div>
-          <div className="p-1.5">
-            {state.years.map((year, yi) =>
-              year.slots.map((slot, si) => {
-                const cap = slotCapacity(slot)
-                const used = slotUsedWeight(slot, unitMap)
-                const full = used >= cap
-                const label =
-                  slot.label ??
-                  `${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yi}`
-                return (
-                  <button
-                    key={`${yi}:${si}`}
-                    type="button"
-                    disabled={full}
-                    onClick={() => {
-                      addUnit(yi, si, unit.code)
-                      setOpen(false)
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                      full ? "cursor-not-allowed opacity-40" : "hover:bg-muted"
-                    )}
-                  >
-                    <span className="truncate">{label}</span>
-                    <span className="ml-2 shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                      {used}/{cap}
-                    </span>
-                  </button>
-                )
-              })
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  )
-}

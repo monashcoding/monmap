@@ -58,12 +58,19 @@ import { usePlanner } from "./planner-context"
 import { SemesterSlot } from "./semester-slot"
 import { UnitCard } from "./unit-card"
 
-interface ActiveDrag {
-  yearIndex: number
-  slotIndex: number
-  code: string
-  isFullYear?: boolean
-}
+type ActiveDrag =
+  | {
+      kind: "unit"
+      yearIndex: number
+      slotIndex: number
+      code: string
+      isFullYear?: boolean
+    }
+  | {
+      kind: "new-unit"
+      code: string
+      isFullYear?: boolean
+    }
 
 /**
  * Per-year accent gradients. All sit in Monash purple so the strips
@@ -98,9 +105,14 @@ const ADDABLE_SLOT_KINDS: PeriodKind[] = [
  * the slot's unit capacity (1..MAX_SLOT_CAPACITY, never below the
  * units already placed).
  */
-export function PlanGrid() {
-  const { state, course, dispatch, fullYearCodes, units } = usePlanner()
-  const startYear = Number(state.courseYear) || new Date().getFullYear()
+/**
+ * Wraps any children in a single dnd-kit context, so drags from the
+ * sidebar (Add units / Templates) can drop onto grid slots in the
+ * same context as in-grid moves and swaps.
+ */
+export function PlannerDnd({ children }: { children: React.ReactNode }) {
+  const { state, dispatch, fullYearCodes, units, addUnit, plannedCodes } =
+    usePlanner()
   const [active, setActive] = useState<ActiveDrag | null>(null)
 
   // 6px activation distance lets the unit-detail popover button still
@@ -128,6 +140,44 @@ export function PlanGrid() {
       | { kind: "slot"; yearIndex: number; slotIndex: number }
       | undefined
     if (!a || !overData) return
+
+    // ── Drag from sidebar (new-unit) ───────────────────────────────
+    if (a.kind === "new-unit") {
+      if (plannedCodes.has(a.code)) return
+      const targetYearIdx = overData.yearIndex
+      const targetSlotIdx = overData.slotIndex
+      const target = state.years[targetYearIdx]?.slots[targetSlotIdx]
+      if (!target || target.locked) return
+      if (a.isFullYear) {
+        // FY needs S1+S2 of one year with both halves free.
+        const yr = state.years[targetYearIdx]
+        const s1 = yr?.slots.find((s) => s.kind === "S1")
+        const s2 = yr?.slots.find((s) => s.kind === "S2")
+        if (!s1 || !s2) {
+          toast.info(
+            "Year-long units need both S1 and S2 — that year is missing one."
+          )
+          return
+        }
+        if (
+          slotUsedWeight(s1, units) >= slotCapacity(s1) ||
+          slotUsedWeight(s2, units) >= slotCapacity(s2)
+        ) {
+          toast.warning(
+            "Not enough room — S1 and S2 both need an open slot for a year-long unit."
+          )
+          return
+        }
+        addUnit(targetYearIdx, targetSlotIdx, a.code)
+        return
+      }
+      if (slotUsedWeight(target, units) >= slotCapacity(target)) {
+        toast.warning("That slot is full.")
+        return
+      }
+      addUnit(targetYearIdx, targetSlotIdx, a.code)
+      return
+    }
 
     // Block drags from or to locked slots.
     const fromSlot = state.years[a.yearIndex]?.slots[a.slotIndex]
@@ -268,44 +318,76 @@ export function PlanGrid() {
       onDragEnd={onDragEnd}
       onDragCancel={() => setActive(null)}
     >
-      <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-3xl border bg-card shadow-card">
-        {state.years.map((year, yearIndex) =>
-          year.slots.map((slot, slotIndex) => (
-            <SemesterRow
-              key={`${yearIndex}:${slotIndex}:${slot.kind}`}
-              yearIndex={yearIndex}
-              slotIndex={slotIndex}
-              slot={slot}
-              yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
-              calYear={startYear + yearIndex}
-              yearSlotKinds={year.slots.map((s) => s.kind)}
-              removableYear={state.years.length > 1 && slotIndex === 0}
-              onRemoveYear={() => dispatch({ type: "remove_year", yearIndex })}
-              showYearHeader={slotIndex === 0}
-              yearHeaderLabel={year.label}
-              yearHasUnits={year.slots.some((s) => s.unitCodes.length > 0)}
-            />
-          ))
-        )}
-
-        {!course ? (
-          <div className="px-6 py-10 text-center text-xs text-muted-foreground">
-            Pick a course on the right to get started.
-          </div>
-        ) : null}
-      </div>
-
+      {children}
       <DragOverlay dropAnimation={null}>
         {active ? (
-          <UnitCard
-            code={active.code}
-            yearIndex={active.yearIndex}
-            slotIndex={active.slotIndex}
-            isDragOverlay
-          />
+          active.kind === "new-unit" ? (
+            <NewUnitDragOverlay code={active.code} />
+          ) : (
+            <UnitCard
+              code={active.code}
+              yearIndex={active.yearIndex}
+              slotIndex={active.slotIndex}
+              isDragOverlay
+            />
+          )
         ) : null}
       </DragOverlay>
     </DndContext>
+  )
+}
+
+function NewUnitDragOverlay({ code }: { code: string }) {
+  const { units } = usePlanner()
+  const unit = units.get(code)
+  return (
+    <div className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2 shadow-2xl ring-2 ring-primary/40">
+      <span className="text-xs font-semibold tabular-nums">{code}</span>
+      {unit ? (
+        <span className="text-[9px] text-muted-foreground">
+          {unit.creditPoints}cp
+        </span>
+      ) : null}
+      {unit ? (
+        <span className="max-w-[160px] truncate text-[11px] text-muted-foreground">
+          {unit.title}
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+export function PlanGrid() {
+  const { state, course, dispatch } = usePlanner()
+  const startYear = Number(state.courseYear) || new Date().getFullYear()
+
+  return (
+    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-3xl border bg-card shadow-card">
+      {state.years.map((year, yearIndex) =>
+        year.slots.map((slot, slotIndex) => (
+          <SemesterRow
+            key={`${yearIndex}:${slotIndex}:${slot.kind}`}
+            yearIndex={yearIndex}
+            slotIndex={slotIndex}
+            slot={slot}
+            yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
+            calYear={startYear + yearIndex}
+            yearSlotKinds={year.slots.map((s) => s.kind)}
+            removableYear={state.years.length > 1 && slotIndex === 0}
+            onRemoveYear={() => dispatch({ type: "remove_year", yearIndex })}
+            showYearHeader={slotIndex === 0}
+            yearHeaderLabel={year.label}
+            yearHasUnits={year.slots.some((s) => s.unitCodes.length > 0)}
+          />
+        ))
+      )}
+
+      {!course ? (
+        <div className="px-6 py-10 text-center text-xs text-muted-foreground">
+          Pick a course on the right to get started.
+        </div>
+      ) : null}
+    </div>
   )
 }
 
