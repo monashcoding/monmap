@@ -16,7 +16,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { PERIOD_KIND_SHORT } from "@/lib/planner/teaching-period"
+import {
+  PERIOD_KIND_LABEL,
+  PERIOD_KIND_SHORT,
+} from "@/lib/planner/teaching-period"
 import type { PeriodKind, PlannerUnit } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
@@ -60,11 +63,11 @@ const MODE_OPTIONS = [
   { code: "ONLINE", label: "Online" },
 ]
 const SORT_OPTIONS = [
-  { key: "relevance", label: "Relevance" },
-  { key: "level-asc", label: "Level (1→4)" },
-  { key: "level-desc", label: "Level (4→1)" },
-  { key: "credit", label: "Credit points" },
-  { key: "code", label: "Unit code (A→Z)" },
+  { key: "relevance", label: "Relevance", short: "Relevance" },
+  { key: "level-asc", label: "Level (low → high)", short: "Level ↑" },
+  { key: "level-desc", label: "Level (high → low)", short: "Level ↓" },
+  { key: "credit", label: "Credit points (low → high)", short: "Credits ↑" },
+  { key: "code", label: "Unit code (A → Z)", short: "Code A–Z" },
 ] as const
 type SortKey = (typeof SORT_OPTIONS)[number]["key"]
 
@@ -143,7 +146,6 @@ export function UnitSearchPanel() {
   }, [debounced, mergeUnits, handbookYear])
 
   const hasQuery = !!debounced.trim()
-  const rawItems = hasQuery ? results : suggestions
 
   const hasActiveFilters =
     levelFilter.size > 0 ||
@@ -159,60 +161,65 @@ export function UnitSearchPanel() {
     campusFilter.size +
     modeFilter.size
 
-  const items = useMemo(() => {
-    let list = [...rawItems]
+  const applyFiltersAndSort = useMemo(() => {
+    return (input: PlannerUnit[]): PlannerUnit[] => {
+      let list = [...input]
 
-    if (levelFilter.size > 0) {
-      list = list.filter((u) => {
-        const n = extractLevelNum(u.level)
-        return n !== null && levelFilter.has(n)
-      })
-    }
-
-    if (cpFilter.size > 0) {
-      list = list.filter((u) => cpFilter.has(u.creditPoints))
-    }
-
-    if (periodFilter.size > 0 || campusFilter.size > 0 || modeFilter.size > 0) {
-      list = list.filter((u) => {
-        const offs = offerings.get(u.code)
-        if (!offs || offs.length === 0) return true
-        return offs.some((o) => {
-          if (periodFilter.size > 0 && !periodFilter.has(o.periodKind))
-            return false
-          if (campusFilter.size > 0 && !campusFilter.has(o.location ?? ""))
-            return false
-          if (
-            modeFilter.size > 0 &&
-            !modeFilter.has(o.attendanceModeCode ?? "")
-          )
-            return false
-          return true
+      if (levelFilter.size > 0) {
+        list = list.filter((u) => {
+          const n = extractLevelNum(u.level)
+          return n !== null && levelFilter.has(n)
         })
-      })
-    }
+      }
 
-    if (sortBy === "level-asc") {
-      list.sort((a, b) => {
-        const la = extractLevelNum(a.level) ?? 99
-        const lb = extractLevelNum(b.level) ?? 99
-        return la - lb
-      })
-    } else if (sortBy === "level-desc") {
-      list.sort((a, b) => {
-        const la = extractLevelNum(a.level) ?? -1
-        const lb = extractLevelNum(b.level) ?? -1
-        return lb - la
-      })
-    } else if (sortBy === "credit") {
-      list.sort((a, b) => a.creditPoints - b.creditPoints)
-    } else if (sortBy === "code") {
-      list.sort((a, b) => a.code.localeCompare(b.code))
-    }
+      if (cpFilter.size > 0) {
+        list = list.filter((u) => cpFilter.has(u.creditPoints))
+      }
 
-    return list
+      if (
+        periodFilter.size > 0 ||
+        campusFilter.size > 0 ||
+        modeFilter.size > 0
+      ) {
+        list = list.filter((u) => {
+          const offs = offerings.get(u.code)
+          if (!offs || offs.length === 0) return true
+          return offs.some((o) => {
+            if (periodFilter.size > 0 && !periodFilter.has(o.periodKind))
+              return false
+            if (campusFilter.size > 0 && !campusFilter.has(o.location ?? ""))
+              return false
+            if (
+              modeFilter.size > 0 &&
+              !modeFilter.has(o.attendanceModeCode ?? "")
+            )
+              return false
+            return true
+          })
+        })
+      }
+
+      if (sortBy === "level-asc") {
+        list.sort((a, b) => {
+          const la = extractLevelNum(a.level) ?? 99
+          const lb = extractLevelNum(b.level) ?? 99
+          return la - lb
+        })
+      } else if (sortBy === "level-desc") {
+        list.sort((a, b) => {
+          const la = extractLevelNum(a.level) ?? -1
+          const lb = extractLevelNum(b.level) ?? -1
+          return lb - la
+        })
+      } else if (sortBy === "credit") {
+        list.sort((a, b) => a.creditPoints - b.creditPoints)
+      } else if (sortBy === "code") {
+        list.sort((a, b) => a.code.localeCompare(b.code))
+      }
+
+      return list
+    }
   }, [
-    rawItems,
     levelFilter,
     cpFilter,
     periodFilter,
@@ -222,6 +229,11 @@ export function UnitSearchPanel() {
     offerings,
   ])
 
+  const searchItems = useMemo(
+    () => applyFiltersAndSort(results),
+    [results, applyFiltersAndSort]
+  )
+
   function clearFilters() {
     setLevelFilter(new Set())
     setCpFilter(new Set())
@@ -230,8 +242,49 @@ export function UnitSearchPanel() {
     setModeFilter(new Set())
   }
 
+  const activeChips: Array<{ key: string; label: string; remove: () => void }> =
+    []
+  for (const lvl of levelFilter) {
+    activeChips.push({
+      key: `lvl-${lvl}`,
+      label: `Level ${lvl}`,
+      remove: () => setLevelFilter((s) => toggle(s, lvl)),
+    })
+  }
+  for (const cp of cpFilter) {
+    activeChips.push({
+      key: `cp-${cp}`,
+      label: `${cp}cp`,
+      remove: () => setCpFilter((s) => toggle(s, cp)),
+    })
+  }
+  for (const p of periodFilter) {
+    activeChips.push({
+      key: `p-${p}`,
+      label: PERIOD_KIND_LABEL[p],
+      remove: () => setPeriodFilter((s) => toggle(s, p)),
+    })
+  }
+  for (const c of campusFilter) {
+    activeChips.push({
+      key: `c-${c}`,
+      label: c,
+      remove: () => setCampusFilter((s) => toggle(s, c)),
+    })
+  }
+  for (const m of modeFilter) {
+    const opt = MODE_OPTIONS.find((o) => o.code === m)
+    activeChips.push({
+      key: `m-${m}`,
+      label: opt?.label ?? m,
+      remove: () => setModeFilter((s) => toggle(s, m)),
+    })
+  }
+
+  const sortOption = SORT_OPTIONS.find((o) => o.key === sortBy)
+
   return (
-    <div className="flex flex-col gap-2.5 p-3">
+    <div className="flex flex-col gap-3 p-3">
       {/* Search bar */}
       <div className="flex items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2">
         <SearchIcon className="size-3.5 shrink-0 text-muted-foreground" />
@@ -245,6 +298,7 @@ export function UnitSearchPanel() {
           <button
             type="button"
             onClick={() => setQuery("")}
+            aria-label="Clear search"
             className="text-muted-foreground hover:text-foreground"
           >
             <XIcon className="size-3.5" />
@@ -254,7 +308,6 @@ export function UnitSearchPanel() {
 
       {/* Filter / Sort row */}
       <div className="flex items-center gap-2">
-        {/* Filters popover */}
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
           <PopoverTrigger
             render={
@@ -274,7 +327,6 @@ export function UnitSearchPanel() {
             }
           />
           <PopoverContent align="start" sideOffset={6} className="w-64 p-0">
-            {/* Header */}
             <div className="flex items-center justify-between border-b px-4 py-2">
               <p className="text-sm font-semibold">Filters</p>
               {hasActiveFilters && (
@@ -288,127 +340,95 @@ export function UnitSearchPanel() {
               )}
             </div>
 
-            {/* Sections */}
             <div className="flex flex-col gap-4 px-4 pt-2.5 pb-4">
-              {/* Level */}
-              <div className="flex flex-col gap-2">
-                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Level
-                </p>
-                <div className="flex gap-1.5">
-                  {LEVEL_OPTIONS.map((lvl) => (
-                    <button
-                      key={lvl}
-                      type="button"
-                      onClick={() => setLevelFilter((s) => toggle(s, lvl))}
-                      className={cn(
-                        CHIP_BASE,
-                        "h-8 w-10",
-                        levelFilter.has(lvl) ? CHIP_ACTIVE : CHIP_IDLE
-                      )}
-                    >
-                      {lvl}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterSection label="Level">
+                {LEVEL_OPTIONS.map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setLevelFilter((s) => toggle(s, lvl))}
+                    className={cn(
+                      CHIP_BASE,
+                      "h-8 w-10",
+                      levelFilter.has(lvl) ? CHIP_ACTIVE : CHIP_IDLE
+                    )}
+                  >
+                    {lvl}
+                  </button>
+                ))}
+              </FilterSection>
 
-              {/* Credit points */}
-              <div className="flex flex-col gap-2">
-                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Credit points
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {CP_OPTIONS.map((cp) => (
-                    <button
-                      key={cp}
-                      type="button"
-                      onClick={() => setCpFilter((s) => toggle(s, cp))}
-                      className={cn(
-                        CHIP_BASE,
-                        "h-8 px-3",
-                        cpFilter.has(cp) ? CHIP_ACTIVE : CHIP_IDLE
-                      )}
-                    >
-                      {cp}cp
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterSection label="Credit points">
+                {CP_OPTIONS.map((cp) => (
+                  <button
+                    key={cp}
+                    type="button"
+                    onClick={() => setCpFilter((s) => toggle(s, cp))}
+                    className={cn(
+                      CHIP_BASE,
+                      "h-8 px-3",
+                      cpFilter.has(cp) ? CHIP_ACTIVE : CHIP_IDLE
+                    )}
+                  >
+                    {cp}cp
+                  </button>
+                ))}
+              </FilterSection>
 
-              {/* Teaching period */}
-              <div className="flex flex-col gap-2">
-                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Teaching period
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {PERIOD_OPTIONS.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPeriodFilter((s) => toggle(s, p))}
-                      className={cn(
-                        CHIP_BASE,
-                        "h-8 px-3",
-                        periodFilter.has(p) ? CHIP_ACTIVE : CHIP_IDLE
-                      )}
-                    >
-                      {PERIOD_KIND_SHORT[p]}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterSection label="Offered in">
+                {PERIOD_OPTIONS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPeriodFilter((s) => toggle(s, p))}
+                    className={cn(
+                      CHIP_BASE,
+                      "h-8 px-3",
+                      periodFilter.has(p) ? CHIP_ACTIVE : CHIP_IDLE
+                    )}
+                  >
+                    {PERIOD_KIND_SHORT[p]}
+                  </button>
+                ))}
+              </FilterSection>
 
-              {/* Campus */}
-              <div className="flex flex-col gap-2">
-                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Campus
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {CAMPUS_OPTIONS.map((campus) => (
-                    <button
-                      key={campus}
-                      type="button"
-                      onClick={() => setCampusFilter((s) => toggle(s, campus))}
-                      className={cn(
-                        CHIP_BASE,
-                        "h-8 px-3",
-                        campusFilter.has(campus) ? CHIP_ACTIVE : CHIP_IDLE
-                      )}
-                    >
-                      {campus}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterSection label="Campus">
+                {CAMPUS_OPTIONS.map((campus) => (
+                  <button
+                    key={campus}
+                    type="button"
+                    onClick={() => setCampusFilter((s) => toggle(s, campus))}
+                    className={cn(
+                      CHIP_BASE,
+                      "h-8 px-3",
+                      campusFilter.has(campus) ? CHIP_ACTIVE : CHIP_IDLE
+                    )}
+                  >
+                    {campus}
+                  </button>
+                ))}
+              </FilterSection>
 
-              {/* Mode */}
-              <div className="flex flex-col gap-2">
-                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Mode
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {MODE_OPTIONS.map(({ code, label }) => (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => setModeFilter((s) => toggle(s, code))}
-                      className={cn(
-                        CHIP_BASE,
-                        "h-8 px-3",
-                        modeFilter.has(code) ? CHIP_ACTIVE : CHIP_IDLE
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterSection label="Mode">
+                {MODE_OPTIONS.map(({ code, label }) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setModeFilter((s) => toggle(s, code))}
+                    className={cn(
+                      CHIP_BASE,
+                      "h-8 px-3",
+                      modeFilter.has(code) ? CHIP_ACTIVE : CHIP_IDLE
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </FilterSection>
             </div>
           </PopoverContent>
         </Popover>
 
-        {/* Sort popover */}
         <Popover open={sortOpen} onOpenChange={setSortOpen}>
           <PopoverTrigger
             render={
@@ -418,9 +438,7 @@ export function UnitSearchPanel() {
                 className="h-7 gap-1.5 rounded-lg px-2.5 text-xs"
               >
                 <ListOrderedIcon className="size-3" />
-                {sortBy === "relevance"
-                  ? "Sort"
-                  : SORT_OPTIONS.find((o) => o.key === sortBy)?.label}
+                {sortBy === "relevance" ? "Sort" : sortOption?.short}
               </Button>
             }
           />
@@ -452,38 +470,149 @@ export function UnitSearchPanel() {
         </Popover>
       </div>
 
-      {/* Results */}
-      {hasQuery ? (
-        <div className="flex flex-col gap-0.5">
+      {/* Active filter chips */}
+      {activeChips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {activeChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={chip.remove}
+              className="inline-flex items-center gap-1 rounded-full bg-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/60"
+              aria-label={`Remove filter: ${chip.label}`}
+            >
+              {chip.label}
+              <XIcon className="size-3 opacity-70" />
+            </button>
+          ))}
+          {activeChips.length > 1 && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Search results */}
+      {hasQuery && (
+        <ResultSection
+          title="Search results"
+          count={loading ? null : searchItems.length}
+        >
           {loading ? (
-            <p className="py-8 text-center text-xs text-muted-foreground">
-              Searching…
-            </p>
-          ) : items.length === 0 ? (
-            <p className="py-8 text-center text-xs text-muted-foreground">
-              {hasActiveFilters
-                ? "No results match your filters"
-                : `No matches for "${debounced}"`}
-            </p>
+            <EmptyState message="Searching…" />
+          ) : searchItems.length === 0 ? (
+            results.length === 0 ? (
+              <EmptyState message={`No matches for "${debounced}"`} />
+            ) : (
+              <EmptyState
+                message="No results match your filters"
+                action={
+                  hasActiveFilters
+                    ? { label: "Clear filters", onClick: clearFilters }
+                    : undefined
+                }
+              />
+            )
           ) : (
-            items.map((u) => <DraggableUnitRow key={u.code} code={u.code} />)
+            searchItems.map((u) => (
+              <DraggableUnitRow key={u.code} code={u.code} />
+            ))
           )}
-        </div>
-      ) : suggestions.length > 0 ? (
-        <div className="flex flex-col gap-0.5">
-          <p className="px-1 pb-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-            Suggested from your course
-          </p>
-          {items.length === 0 && hasActiveFilters ? (
-            <p className="py-8 text-center text-xs text-muted-foreground">
-              No suggestions match your filters
-            </p>
+        </ResultSection>
+      )}
+
+      {/* Suggested from course — always rendered, ignores filters/sort */}
+      <div className="-mx-3 border-t px-3 pt-3">
+        <ResultSection
+          title="Suggested from your course"
+          count={suggestions.length}
+        >
+          {suggestions.length === 0 ? (
+            <EmptyState
+              message={
+                course
+                  ? "All your course units are already placed"
+                  : "Pick a course to see suggestions"
+              }
+            />
           ) : (
-            items.map((u) => <DraggableUnitRow key={u.code} code={u.code} />)
+            suggestions.map((u) => (
+              <DraggableUnitRow key={u.code} code={u.code} />
+            ))
           )}
-        </div>
-      ) : null}
+        </ResultSection>
+      </div>
     </div>
   )
 }
 
+function FilterSection({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  )
+}
+
+function ResultSection({
+  title,
+  count,
+  children,
+}: {
+  title: string
+  count: number | null
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between px-1">
+        <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+          {title}
+        </p>
+        {count !== null && (
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {count}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-0.5">{children}</div>
+    </div>
+  )
+}
+
+function EmptyState({
+  message,
+  action,
+}: {
+  message: string
+  action?: { label: string; onClick: () => void }
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-muted/20 px-4 py-6 text-center">
+      <p className="text-xs text-muted-foreground">{message}</p>
+      {action && (
+        <button
+          type="button"
+          onClick={action.onClick}
+          className="text-[11px] font-medium text-primary-foreground rounded-full bg-primary/40 px-2.5 py-0.5 transition-colors hover:bg-primary/60"
+        >
+          {action.label}
+        </button>
+      )}
+    </div>
+  )
+}
