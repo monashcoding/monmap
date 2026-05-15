@@ -29,9 +29,9 @@ export function RightSidebar() {
             type="button"
             onClick={() => setTab("progress")}
             className={cn(
-              "-mb-px flex-1 border-b-2 px-4 pt-2.5 pb-2.5 text-sm font-medium transition-colors",
+              "-mb-px flex-1 border-b-[3px] px-4 pt-2.5 pb-2.5 text-sm font-medium transition-colors",
               tab === "progress"
-                ? "border-primary text-foreground"
+                ? "border-primary bg-primary text-primary-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
@@ -41,9 +41,9 @@ export function RightSidebar() {
             type="button"
             onClick={() => setTab("add")}
             className={cn(
-              "-mb-px flex-1 border-b-2 px-4 pt-2.5 pb-2.5 text-sm font-medium transition-colors",
+              "-mb-px flex-1 border-b-[3px] px-4 pt-2.5 pb-2.5 text-sm font-medium transition-colors",
               tab === "add"
-                ? "border-primary text-foreground"
+                ? "border-primary bg-primary text-primary-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >

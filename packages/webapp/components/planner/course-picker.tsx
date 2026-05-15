@@ -56,7 +56,7 @@ export function CoursePicker({ className }: { className?: string }) {
     <section
       className={cn("rounded-3xl border bg-card p-3 shadow-card", className)}
     >
-      <label className="px-1 text-[10px] tracking-wide text-muted-foreground uppercase">
+      <label className="px-1 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
         Course
       </label>
       <Popover open={open} onOpenChange={setOpen}>
@@ -71,17 +71,17 @@ export function CoursePicker({ className }: { className?: string }) {
                   <div className="text-[11px] text-muted-foreground tabular-nums">
                     {course?.code ?? "—"}
                   </div>
-                  <div className="truncate text-sm leading-tight font-semibold">
+                  <div className="text-sm leading-tight font-semibold whitespace-normal break-words">
                     {course?.title ?? "Choose a course"}
                   </div>
                   {course ? (
                     <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2 text-[11px] text-muted-foreground">
-                      <span className="min-w-0 truncate">{course.aqfLevel ?? "—"}</span>
+                      <span className="min-w-0 break-words whitespace-normal">{course.aqfLevel ?? "—"}</span>
                       <span className="tabular-nums shrink-0">{course.creditPoints}cp</span>
                     </div>
                   ) : null}
                 </div>
-                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                <ChevronDownIcon className="size-4 shrink-0 self-center text-muted-foreground" />
               </Button>
             }
           />
@@ -92,7 +92,7 @@ export function CoursePicker({ className }: { className?: string }) {
               rel="noopener noreferrer"
               aria-label="View in handbook"
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-2 bottom-2 z-10 text-muted-foreground hover:text-foreground"
+              className="absolute right-9 top-2.5 z-10 text-muted-foreground hover:text-foreground"
             >
               <ExternalLinkIcon className="size-3" />
             </a>
@@ -137,24 +137,6 @@ export function CoursePicker({ className }: { className?: string }) {
           </Command>
         </PopoverContent>
       </Popover>
-
-      {course ? (
-        <div className="mt-2 flex items-center justify-between border-t px-1 pt-2 text-[11px] text-muted-foreground">
-          <span>{course.aqfLevel ?? "—"}</span>
-          <div className="flex items-center gap-2">
-            <span className="tabular-nums">{course.creditPoints}cp</span>
-            <a
-              href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="View in handbook"
-              className="hover:text-foreground"
-            >
-              <ExternalLinkIcon className="size-3" />
-            </a>
-          </div>
-        </div>
-      ) : null}
 
       {course ? (
         <div className="mt-2">

@@ -151,7 +151,7 @@ function RoleSelect({
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="px-1 text-[10px] leading-tight text-muted-foreground uppercase">
+      <label className="px-1 text-[10px] leading-tight font-semibold text-muted-foreground uppercase">
         {label}
       </label>
       <div className="flex items-center gap-1">
@@ -161,19 +161,36 @@ function RoleSelect({
             onChange(typeof v === "string" && v !== "" ? v : null)
           }
         >
-          <SelectTrigger className="min-w-0 flex-1 items-center py-2.5 text-xs [&>span]:flex [&>span]:flex-1 [&>span]:items-center [&>span]:gap-2">
-            <SelectValue placeholder="Select…" />
+          <SelectTrigger className="min-w-0 flex-1 items-center py-2.5 text-xs [&>span]:flex [&>span]:min-w-0 [&>span]:flex-1 [&>span]:items-baseline [&>span]:gap-2 [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:truncate">
+            <SelectValue placeholder="Select…">
+              {current
+                ? (() => {
+                    const sel = sorted.find((a) => a.code === current)
+                    if (!sel) return null
+                    return (
+                      <>
+                        {sel.code.includes(":") ? null : (
+                          <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                            {sel.code}
+                          </span>
+                        )}
+                        <span className="min-w-0 flex-1 truncate">{sel.title}</span>
+                      </>
+                    )
+                  })()
+                : null}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-[320px] min-w-[360px]">
             {sorted.map((a) => (
               <SelectItem
                 key={a.code}
                 value={a.code}
-                className="items-start py-2.5 pr-12 pl-3.5"
+                className="items-baseline py-2.5 pr-12 pl-3.5"
               >
-                <span className="flex min-w-0 items-start gap-2">
+                <span className="flex min-w-0 items-baseline gap-2">
                   {a.code.includes(":") ? null : (
-                    <span className="shrink-0 pt-px text-[11px] text-muted-foreground">
+                    <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
                       {a.code}
                     </span>
                   )}

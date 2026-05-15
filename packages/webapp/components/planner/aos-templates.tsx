@@ -26,9 +26,9 @@ const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
 const KIND_BADGE: Record<PlannerAreaOfStudy["kind"], string> = {
   major: "bg-primary/40 text-primary-foreground",
   extended_major: "bg-primary/40 text-primary-foreground",
-  specialisation: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  minor: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  elective: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  specialisation: "bg-blue-500/25 text-blue-900 dark:text-blue-200",
+  minor: "bg-amber-500/30 text-amber-900 dark:text-amber-200",
+  elective: "bg-emerald-500/25 text-emerald-900 dark:text-emerald-200",
   other: "bg-muted text-muted-foreground",
 }
 
