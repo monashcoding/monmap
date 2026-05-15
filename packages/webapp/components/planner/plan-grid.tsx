@@ -10,6 +10,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core"
 import {
+  CalendarIcon,
   LockIcon,
   LockOpenIcon,
   MinusIcon,
@@ -24,6 +25,16 @@ import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -353,8 +364,10 @@ function SemesterRow({
         >
           <h3 className="text-xs font-semibold tracking-[0.12em] text-white uppercase">
             {yearHeaderLabel}
+            <span className="ml-1.5">({calYear})</span>
           </h3>
           <div className="flex items-center gap-1">
+            {yearIndex === 0 ? <StartingYearPicker /> : null}
             <Button
               variant="ghost"
               size="icon-xs"
@@ -538,6 +551,73 @@ function SemesterRow({
         </div>
         <SemesterSlot yearIndex={yearIndex} slotIndex={slotIndex} />
       </div>
+    </>
+  )
+}
+
+function StartingYearPicker() {
+  const { state, availableYears, switchYear } = usePlanner()
+  const [pendingYear, setPendingYear] = useState<string | null>(null)
+
+  function handleChange(v: unknown) {
+    if (typeof v !== "string" || !v || v === state.courseYear) return
+    setPendingYear(v)
+  }
+
+  function confirmSwitch() {
+    if (pendingYear) void switchYear(pendingYear)
+    setPendingYear(null)
+  }
+
+  return (
+    <>
+      <AlertDialog
+        open={pendingYear !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingYear(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Switch to {pendingYear}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Switching the handbook year will clear all units from your
+              planner. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSwitch}>
+              Switch year
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1.5 rounded-full bg-white px-2.5 text-[10px] font-semibold tracking-wide text-foreground uppercase hover:bg-white/90 hover:text-foreground"
+            />
+          }
+        >
+          <CalendarIcon className="size-3" />
+          Change starting year
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {availableYears.map((y) => (
+            <DropdownMenuItem
+              key={y}
+              disabled={y === state.courseYear}
+              onClick={() => handleChange(y)}
+            >
+              {y}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   )
 }

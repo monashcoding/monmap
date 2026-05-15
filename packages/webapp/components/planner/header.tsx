@@ -1,10 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  CalendarIcon,
   CheckIcon,
   CloudIcon,
   GraduationCapIcon,
@@ -23,68 +21,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { signOut } from "@/lib/auth-client"
 
+import { AnonymousBanner } from "./anonymous-banner"
 import { PlanSwitcher } from "./plan-switcher"
 import { usePlanner } from "./planner-context"
 
 export function Header() {
-  const { isSyncing, state, availableYears, switchYear, currentUser } =
-    usePlanner()
-  const [pendingYear, setPendingYear] = useState<string | null>(null)
-
-  function handleYearChange(v: unknown) {
-    if (typeof v !== "string" || !v || v === state.courseYear) return
-    setPendingYear(v)
-  }
-
-  function confirmSwitch() {
-    if (pendingYear) void switchYear(pendingYear)
-    setPendingYear(null)
-  }
+  const { isSyncing, currentUser } = usePlanner()
 
   return (
     <>
-      <AlertDialog
-        open={pendingYear !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingYear(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Switch to {pendingYear}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Switching the handbook year will clear all units from your
-              planner. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSwitch}>
-              Switch year
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <header className="relative flex items-center justify-between overflow-hidden rounded-3xl border bg-card px-5 py-3 shadow-card print:border-none print:bg-transparent print:shadow-none">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -126,25 +73,7 @@ export function Header() {
               My plans
             </Link>
           ) : null}
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="size-3.5 text-muted-foreground" />
-            <span className="text-[10px] tracking-wide text-muted-foreground uppercase">
-              Starting year
-            </span>
-            <Select value={state.courseYear} onValueChange={handleYearChange}>
-              <SelectTrigger className="h-8 min-w-[88px] text-xs">
-                <SelectValue placeholder={state.courseYear} />
-              </SelectTrigger>
-              <SelectContent alignItemWithTrigger={false}>
-                {availableYears.map((y) => (
-                  <SelectItem key={y} value={y} className="text-xs">
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {currentUser ? <UserMenu /> : null}
+          {currentUser ? <UserMenu /> : <AnonymousBanner />}
         </div>
       </header>
     </>
