@@ -5,15 +5,25 @@ import { distribute } from "./distribute.ts"
 import { defaultState } from "./state.ts"
 import type { PlannerOffering, PlannerUnit, RequisiteBlock } from "./types.ts"
 
-function unit(code: string, level = "Level 1"): PlannerUnit {
+function unit(code: string, level = "Level 1", creditPoints = 6): PlannerUnit {
   return {
     year: "2026",
     code,
     title: code,
-    creditPoints: 6,
+    creditPoints,
     level,
     synopsis: null,
     school: null,
+  }
+}
+
+function termOffering(code: string, period = "Term 2"): PlannerOffering {
+  return {
+    unitCode: code,
+    teachingPeriod: period,
+    location: "Clayton",
+    attendanceModeCode: "IMMERSIVE",
+    periodKind: "OTHER",
   }
 }
 
@@ -127,6 +137,142 @@ test("prereq already on the plan still constrains new placements", () => {
   assert.equal(placements[0]!.code, "FIT1008")
   assert.equal(placements[0]!.yearIndex, 1, "must move to year 2")
   assert.equal(placements[0]!.slotIndex, 0, "year 2 S1")
+})
+
+/**
+ * IBL placement edge case: FIT3045 is 18 CP, offered only "Term 2"
+ * (which collapses to `OTHER` periodKind). Before the IBL handling
+ * it would silently land in S1 or S2 of one semester. Distribute now
+ * books it across both halves of the same year — the realistic
+ * "student is on full-time placement" outcome.
+ */
+test("term-only 18 CP IBL placement books both S1 and S2 of one year", () => {
+  const state = defaultState("2026", "C2001", 3)
+  const units = new Map<string, PlannerUnit>([
+    ["FIT3045", unit("FIT3045", "Level 3", 18)],
+  ])
+  const offerings = new Map<string, PlannerOffering[]>([
+    [
+      "FIT3045",
+      [termOffering("FIT3045", "Term 2"), termOffering("FIT3045", "Term 4")],
+    ],
+  ])
+
+  const { placements } = distribute({
+    codes: ["FIT3045"],
+    units,
+    offerings,
+    state,
+  })
+
+  // Two placements: same year, both S1 and S2 slots.
+  assert.equal(placements.length, 2)
+  const years = new Set(placements.map((p) => p.yearIndex))
+  const slots = new Set(placements.map((p) => p.slotIndex))
+  assert.equal(years.size, 1, "IBL placement occupies a single year")
+  assert.deepEqual([...slots].sort(), [0, 1], "spans S1 and S2 of that year")
+})
+
+/**
+ * 0 CP IBL onboarding (FIT3201) shouldn't burn a slot. Before the
+ * weight-aware fill, four 0-CP companions would exhaust the cap-of-4
+ * just by sitting on the plan. Now they contribute zero load.
+ */
+test("0 CP IBL companions don't consume slot capacity", () => {
+  const state = defaultState("2026", "C2001", 3)
+  state.years[0].slots[0].capacity = 4
+  // Pre-place four 0 CP companions in Year 1 S1 — they'd hit cap-4
+  // if counted, but with weight-aware fill they sum to 0.
+  state.years[0].slots[0].unitCodes = [
+    "FIT2108",
+    "FIT3201",
+    "FIT3202",
+    "FIT2110",
+  ]
+
+  const units = new Map<string, PlannerUnit>([
+    ["FIT2108", unit("FIT2108", "Level 2", 0)],
+    ["FIT3201", unit("FIT3201", "Level 3", 0)],
+    ["FIT3202", unit("FIT3202", "Level 3", 0)],
+    ["FIT2110", unit("FIT2110", "Level 2", 0)],
+    ["FIT1045", unit("FIT1045", "Level 1", 6)],
+  ])
+  const offerings = new Map<string, PlannerOffering[]>([
+    [
+      "FIT2108",
+      [
+        {
+          unitCode: "FIT2108",
+          teachingPeriod: "First semester",
+          location: null,
+          attendanceModeCode: "ONLINE",
+          periodKind: "S1",
+        },
+      ],
+    ],
+    ["FIT3201", [termOffering("FIT3201", "Term 1")]],
+    ["FIT3202", [termOffering("FIT3202", "Term 1")]],
+    ["FIT2110", [termOffering("FIT2110", "Term 1")]],
+    ["FIT1045", s1s2("FIT1045")],
+  ])
+
+  const { placements } = distribute({
+    codes: ["FIT1045"],
+    units,
+    offerings,
+    state,
+  })
+
+  // FIT1045 still fits into Year 1 S1 — the 0-CP companions don't
+  // block it.
+  assert.equal(placements.length, 1)
+  assert.equal(placements[0]!.yearIndex, 0)
+  assert.equal(placements[0]!.slotIndex, 0)
+})
+
+/**
+ * 18 CP IBL placement plus four 6 CP cores in the same year shouldn't
+ * all land in Year 1: the placement consumes most of the year's load,
+ * leaving room for only the onboarding companion. The cores spill to
+ * Year 2.
+ */
+test("18 CP IBL placement crowds 6 CP units out of its year", () => {
+  const state = defaultState("2026", "C2001", 3)
+  const units = new Map<string, PlannerUnit>([
+    ["FIT3045", unit("FIT3045", "Level 3", 18)],
+    ["FIT1045", unit("FIT1045", "Level 1", 6)],
+    ["FIT1047", unit("FIT1047", "Level 1", 6)],
+    ["FIT1058", unit("FIT1058", "Level 1", 6)],
+    ["FIT1008", unit("FIT1008", "Level 1", 6)],
+  ])
+  const offerings = new Map<string, PlannerOffering[]>([
+    ["FIT3045", [termOffering("FIT3045", "Term 2")]],
+    ["FIT1045", s1s2("FIT1045")],
+    ["FIT1047", s1s2("FIT1047")],
+    ["FIT1058", s1s2("FIT1058")],
+    ["FIT1008", s1s2("FIT1008")],
+  ])
+
+  const { placements } = distribute({
+    codes: ["FIT3045", "FIT1045", "FIT1047", "FIT1058", "FIT1008"],
+    units,
+    offerings,
+    state,
+  })
+
+  const where = new Map(placements.map((p) => [p.code, p]))
+  // Level 1s land in Year 1 (yi=0).
+  for (const c of ["FIT1045", "FIT1047", "FIT1058", "FIT1008"]) {
+    assert.equal(where.get(c)?.yearIndex, 0, `${c} in year 1`)
+  }
+  // FIT3045 (Level 3) lands in Year 3 (yi=2), occupying both halves —
+  // *not* Year 1 alongside the cores, *not* in a single semester.
+  const fit3045s = placements.filter((p) => p.code === "FIT3045")
+  assert.equal(fit3045s.length, 2, "IBL placement occupies both halves")
+  assert.ok(
+    fit3045s.every((p) => p.yearIndex === fit3045s[0]!.yearIndex),
+    "IBL placement halves share a year"
+  )
 })
 
 test("no requisites map → preserves the level-only ordering", () => {
