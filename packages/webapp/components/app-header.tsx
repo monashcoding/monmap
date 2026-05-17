@@ -3,7 +3,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LogOutIcon, MenuIcon, NotebookPenIcon } from "lucide-react"
+import {
+  ExternalLinkIcon,
+  LogOutIcon,
+  MenuIcon,
+  NotebookPenIcon,
+} from "lucide-react"
 import { useState } from "react"
 
 import { AnonymousBadge } from "@/components/anonymous-badge"
@@ -111,7 +116,28 @@ function MobileNavTrigger() {
           <SheetDescription>Monash course planner</SheetDescription>
         </SheetHeader>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-          {PRIMARY_NAV_ITEMS.map(({ href, label, match }) => {
+          {PRIMARY_NAV_ITEMS.map(({ href, label, match, external }) => {
+            if (external) {
+              return (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setOpen(false)}
+                  className="flex h-12 items-center gap-3 rounded-xl px-3 text-base text-foreground/80 transition-colors hover:bg-muted/50"
+                >
+                  <span
+                    aria-hidden
+                    className="size-1.5 rounded-full bg-muted-foreground/40"
+                  />
+                  <span className="flex flex-1 items-center gap-1.5">
+                    {label}
+                    <ExternalLinkIcon className="size-3.5" aria-hidden />
+                  </span>
+                </a>
+              )
+            }
             const active = match(pathname)
             return (
               <Link
