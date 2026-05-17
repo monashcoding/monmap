@@ -64,12 +64,12 @@ test("validateUnitInSlot: flags 'not offered' when period has no offering", () =
 })
 
 test("validateUnitInSlot: future-year 'not offered' is a warning, not an error", () => {
-  // Same slot mismatch as above, but now in a future calendar year —
-  // 2027 / 2028 / etc. We've only loaded handbook data for 2026, so
-  // the period mismatch could be a stale-data artefact rather than a
-  // real blocker. Downgrade to amber.
+  // Same slot mismatch as above, but the slot represents 2027 while
+  // the unit data we loaded is from the 2026 handbook (the latest
+  // published). Period mismatch is a stale-data forecast, not a hard
+  // fact — downgrade to amber and surface the year gap in the message.
   const v = validateUnitInSlot({
-    unit: unit("FIT1045"),
+    unit: unit("FIT1045", { year: "2026" }),
     slotKind: "SUMMER_A",
     yearIndex: 0,
     slotIndex: 0,
@@ -79,12 +79,34 @@ test("validateUnitInSlot: future-year 'not offered' is a warning, not an error",
     offerings: [offering("FIT1045", "S1")],
     requisites: [],
     slotCreditLoad: 6,
-    dataIsReliable: false,
+    expectedHandbookYear: "2027",
   })
   assert.equal(v.errors.length, 0)
   assert.equal(v.warnings.length, 1)
   assert.equal(v.warnings[0].kind, "not_offered_in_period")
-  assert.match(v.warnings[0].message, /future-year offerings may differ/)
+  assert.match(v.warnings[0].message, /2026 handbook/)
+  assert.match(v.warnings[0].message, /2027 offerings may differ/)
+})
+
+test("validateUnitInSlot: matching expectedHandbookYear keeps not-offered as a hard error", () => {
+  // Slot represents 2026 and we loaded the 2026 handbook for it — no
+  // stale-data excuse, so a period mismatch is a real blocker (red).
+  const v = validateUnitInSlot({
+    unit: unit("FIT1045", { year: "2026" }),
+    slotKind: "SUMMER_A",
+    yearIndex: 0,
+    slotIndex: 0,
+    completedBefore: new Set(),
+    concurrentWith: new Set(),
+    allPlannedCodes: new Set(),
+    offerings: [offering("FIT1045", "S1")],
+    requisites: [],
+    slotCreditLoad: 6,
+    expectedHandbookYear: "2026",
+  })
+  assert.equal(v.errors.length, 1)
+  assert.equal(v.errors[0].kind, "not_offered_in_period")
+  assert.equal(v.warnings.length, 0)
 })
 
 test("validateUnitInSlot: term-only schedule is always a warning, never an error", () => {
@@ -105,7 +127,6 @@ test("validateUnitInSlot: term-only schedule is always a warning, never an error
     ],
     requisites: [],
     slotCreditLoad: 0,
-    dataIsReliable: true,
   })
   assert.equal(v.errors.length, 0)
   assert.equal(v.warnings.length, 1)
@@ -313,6 +334,81 @@ test("validatePlan: prereq fails when dependent unit is in same slot (not before
   const fit2004 = out.get(keyFor(0, 0, "FIT2004"))
   assert.ok(fit2004)
   assert.ok(fit2004.errors.some((e) => e.kind === "prereq_unmet"))
+})
+
+test("validatePlan: not-offered severity tracks loaded-vs-slot year per study year", () => {
+  // courseYear 2024 → slot calendar years 2024 / 2025 / 2026 / 2027.
+  // Hydration fetches per-year handbook data; this test stubs the
+  // result: Y1 has 2024 data, Y2 has 2025 data, Y3 has 2026 data, Y4
+  // also got 2026 (handbookYearFor falls back to the latest available
+  // when 2027 isn't published). FIT1045 doesn't offer in S1 in any of
+  // them. Y1–Y3 should be red (data matches the slot year); only Y4
+  // should be amber (slot year 2027 ≠ loaded year 2026).
+  const state: PlannerState = {
+    courseYear: "2024",
+    courseCode: "C2000",
+    selectedAos: {},
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
+      { label: "Year 2", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
+      { label: "Year 3", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
+      { label: "Year 4", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
+    ],
+  }
+
+  // Per-slot unit data mimics what use-unit-data-hydration produces:
+  // each study-year's slot gets a unit whose `year` is the handbook
+  // year that was actually fetched. validatePlan currently looks units
+  // up by code, so we model this by varying which year wins on lookup
+  // per call — instead we use a Map per slot via a custom resolver.
+  // Simpler: assert via separate validatePlan calls, one per "loaded"
+  // year, since validatePlan keys offerings/units by code globally.
+
+  // Y4 case: unit loaded from 2026 fallback, slot represents 2027.
+  const y4State: PlannerState = {
+    ...state,
+    years: [state.years[3]],
+  }
+  const out4 = validatePlan(
+    { ...y4State, courseYear: "2027" }, // year 0 = calendar 2027
+    new Map([["FIT1045", unit("FIT1045", { year: "2026" })]]),
+    new Map([["FIT1045", [offering("FIT1045", "S2")]]]),
+    new Map()
+  )
+  const v4 = out4.get(keyFor(0, 0, "FIT1045"))
+  assert.ok(v4)
+  assert.equal(v4.errors.length, 0, "stale-year slot should be amber")
+  assert.equal(v4.warnings.length, 1)
+  assert.equal(v4.warnings[0].kind, "not_offered_in_period")
+  assert.match(v4.warnings[0].message, /2026 handbook/)
+  assert.match(v4.warnings[0].message, /2027 offerings may differ/)
+
+  // Y2 case: unit loaded from 2025, slot represents 2025 (courseYear
+  // 2024 + study year 1). Data matches → red error.
+  const y2State: PlannerState = {
+    courseYear: "2024",
+    courseCode: "C2000",
+    selectedAos: {},
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: [] }] },
+      { label: "Year 2", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
+    ],
+  }
+  const out2 = validatePlan(
+    y2State,
+    new Map([["FIT1045", unit("FIT1045", { year: "2025" })]]),
+    new Map([["FIT1045", [offering("FIT1045", "S2")]]]),
+    new Map()
+  )
+  const v2 = out2.get(keyFor(1, 0, "FIT1045"))
+  assert.ok(v2)
+  assert.equal(
+    v2.errors.length,
+    1,
+    "year-N slot with matching loaded year should stay red"
+  )
+  assert.equal(v2.errors[0].kind, "not_offered_in_period")
+  assert.equal(v2.warnings.length, 0)
 })
 
 test("validatePlan: unknown unit yields an unknown_unit error", () => {

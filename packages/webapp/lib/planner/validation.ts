@@ -41,19 +41,25 @@ export interface ValidationInput {
   requisites: RequisiteBlock[]
   slotCreditLoad: number
   /**
-   * False when this slot lives in a calendar year *after* the handbook
-   * year whose offerings/requisites the planner has loaded — i.e. the
-   * slot's "is offered in S1?" question is being answered with stale
-   * data. Defaults true. When false, `not_offered_in_period` is
-   * downgraded to a warning since Monash routinely rotates units in
-   * and out of semesters year-on-year and we can't say with certainty.
+   * Calendar year this slot represents (courseYear + studyYearIndex).
+   * When it matches `unit.year` the loaded handbook *is* the right one
+   * for this slot and a period mismatch is a hard error. When it
+   * differs, we're forecasting against a different handbook year — the
+   * hydration layer either fell back to the latest available year or
+   * the slot is past the latest published handbook — so we downgrade
+   * `not_offered_in_period` to a warning, since Monash routinely
+   * rotates units between semesters year-on-year. Defaults to
+   * `unit.year` (treats data as authoritative for the slot).
    */
-  dataIsReliable?: boolean
+  expectedHandbookYear?: string
 }
 
 export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
   const errors: ValidationIssue[] = []
   const warnings: ValidationIssue[] = []
+
+  const expectedYear = input.expectedHandbookYear ?? input.unit.year
+  const dataIsReliable = input.unit.year === expectedYear
 
   if (!isOfferedInPeriod(input.offerings, input.slotKind)) {
     // Term-only units (IBL placements / onboarding, trimester field
@@ -65,14 +71,13 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     const termOnly =
       input.offerings.length > 0 &&
       input.offerings.every((o) => o.periodKind === "OTHER")
-    const dataIsReliable = input.dataIsReliable ?? true
     const issue: ValidationIssue = {
       kind: "not_offered_in_period",
       message: termOnly
         ? `${input.unit.code} runs on a non-standard schedule (${formatPeriodList(input.offerings)}); verify it overlaps ${periodLabel(input.slotKind)}.`
         : dataIsReliable
           ? `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} for ${input.unit.year}.`
-          : `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} in the ${input.unit.year} handbook — future-year offerings may differ.`,
+          : `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} in the ${input.unit.year} handbook — ${expectedYear} offerings may differ.`,
     }
     if (termOnly || !dataIsReliable) warnings.push(issue)
     else errors.push(issue)
@@ -208,8 +213,19 @@ export function validatePlan(
 
   const completed = new Set<string>()
 
+  // Used to derive the expected handbook year per study-year so the
+  // validator can compare against the actually-loaded `unit.year`.
+  // If courseYear isn't a parseable number (shouldn't happen, but be
+  // defensive), every slot falls back to treating its data as
+  // authoritative — same behaviour as not passing expectedHandbookYear.
+  const courseYearNum = Number(state.courseYear)
+  const courseYearIsNumeric = Number.isFinite(courseYearNum)
+
   for (let y = 0; y < state.years.length; y++) {
     const year = state.years[y]
+    const expectedHandbookYear = courseYearIsNumeric
+      ? String(courseYearNum + y)
+      : undefined
     for (let s = 0; s < year.slots.length; s++) {
       const slot = year.slots[s]
       const concurrent = new Set(slot.unitCodes)
@@ -249,9 +265,13 @@ export function validatePlan(
           offerings: offeringsByCode.get(code) ?? [],
           requisites: requisitesByCode.get(code) ?? [],
           slotCreditLoad,
-          // Year 1 of the plan = the handbook year the data was loaded
-          // for; everything beyond is a forecast against stale data.
-          dataIsReliable: y === 0,
+          // The hydration layer fetches a year-N slot's unit data from
+          // handbook year (courseYear + N) when available, falling back
+          // to the latest published year when it isn't. If that fallback
+          // kicked in (loaded year ≠ slot year), the period mismatch is
+          // a stale-data forecast, not a hard fact, and downgrades to
+          // amber. See use-unit-data-hydration.ts / handbookYearFor.
+          expectedHandbookYear,
         })
         out.set(keyFor(y, s, code), v)
       }
