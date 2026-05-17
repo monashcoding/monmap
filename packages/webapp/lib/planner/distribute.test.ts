@@ -58,6 +58,18 @@ function prereqBlock(codes: string[]): RequisiteBlock {
   }
 }
 
+function coreqBlock(codes: string[]): RequisiteBlock {
+  return {
+    requisiteType: "corequisite",
+    rule: [
+      {
+        parent_connector: { value: "AND", label: "AND" },
+        relationships: codes.map((c) => ({ academic_item_code: c })),
+      },
+    ],
+  }
+}
+
 /**
  * Real-world repro: comp sci 2026 "Load all" pulls four Level-1 cores,
  * with FIT1045 a prereq of FIT1008. Pre-fix, the level-only sort plus
@@ -315,6 +327,61 @@ test("term-only prereq stays in same year as its IBL dependent", () => {
     fit3045s[0]!.yearIndex,
     fit3202.yearIndex,
     "IBL placement and its term-only onboarding share a year"
+  )
+})
+
+/**
+ * Honours thesis chain: FIT4441 → FIT4442 → FIT4443 → FIT4444 are
+ * linked by *corequisites* in the handbook, not prerequisites. The
+ * load-balancer used to drop coreq edges, putting part 3 in S1 ahead
+ * of part 2 in S2 — the exact bug surfaced in the screenshot.
+ *
+ * With coreq same-or-later semantics, every part must land in the
+ * same slot as or after the previous one in the chain.
+ */
+test("honours thesis coreq chain stays in semester order", () => {
+  // Six years of slots so a 4-deep chain has room to spread even when
+  // each placement gets bumped to S2 / next year.
+  const state = defaultState("2026", "C2000", 6)
+  const units = new Map<string, PlannerUnit>([
+    ["FIT4441", unit("FIT4441", "Level 4", 6)],
+    ["FIT4442", unit("FIT4442", "Level 4", 6)],
+    ["FIT4443", unit("FIT4443", "Level 4", 6)],
+    ["FIT4444", unit("FIT4444", "Level 4", 6)],
+  ])
+  const offerings = new Map<string, PlannerOffering[]>([
+    ["FIT4441", s1s2("FIT4441")],
+    ["FIT4442", s1s2("FIT4442")],
+    ["FIT4443", s1s2("FIT4443")],
+    ["FIT4444", s1s2("FIT4444")],
+  ])
+  const requisites = new Map<string, RequisiteBlock[]>([
+    ["FIT4442", [coreqBlock(["FIT4441"])]],
+    ["FIT4443", [coreqBlock(["FIT4442"])]],
+    ["FIT4444", [coreqBlock(["FIT4443"])]],
+  ])
+
+  const { placements } = distribute({
+    codes: ["FIT4441", "FIT4442", "FIT4443", "FIT4444"],
+    units,
+    offerings,
+    state,
+    requisites,
+  })
+
+  const where = new Map(placements.map((p) => [p.code, p]))
+  const rank = (code: string) => {
+    const p = where.get(code)!
+    return p.yearIndex * 10 + p.slotIndex
+  }
+  // Same-or-later for every consecutive pair — never strictly earlier.
+  assert.ok(rank("FIT4442") >= rank("FIT4441"), "part 2 ≥ part 1")
+  assert.ok(rank("FIT4443") >= rank("FIT4442"), "part 3 ≥ part 2")
+  assert.ok(rank("FIT4444") >= rank("FIT4443"), "final ≥ part 3")
+  // The original bug: part 3 in S1 alongside part 1, before part 2 in S2.
+  assert.ok(
+    rank("FIT4443") > rank("FIT4441"),
+    "part 3 must follow part 1, not sit alongside it"
   )
 })
 

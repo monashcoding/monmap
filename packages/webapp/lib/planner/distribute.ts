@@ -65,20 +65,24 @@ export function distribute(args: {
     else queueSet.add(c)
   }
 
-  // Prereq subgraph restricted to (queue ∪ already-planned). Already-
-  // planned codes act as "depth-0 anchors" — we never re-order them,
-  // but their existing slot positions still constrain where new codes
-  // can land.
-  const prereqEdges = buildPrereqEdges(
+  // Ordering subgraph restricted to (queue ∪ already-planned).
+  // Already-planned codes act as "depth-0 anchors" — we never re-order
+  // them, but their existing slot positions still constrain where new
+  // codes can land. Each edge carries its kind so the placement loop
+  // can apply strict-later (prereq) vs same-or-later (coreq) semantics.
+  const orderingEdges = buildOrderingEdges(
     requisites,
     new Set([...queueSet, ...planned])
   )
 
-  // Order the queue by (level band, then prereq depth, then code). The
-  // depth tiebreak is what fixes the FIT1008-before-FIT1045 bug:
+  // Order the queue by (level band, then ordering depth, then code).
+  // The depth tiebreak is what fixes the FIT1008-before-FIT1045 bug:
   // FIT1008's depth is 1 (depends on FIT1045 which is in the queue),
   // so it sorts after FIT1045 even though both are Level 1.
-  const depth = computeDepths([...queueSet], prereqEdges)
+  // Corequisite edges count toward depth too — FIT4441 → FIT4442 →
+  // FIT4443 → FIT4444 (honours thesis chain, all corequisites in the
+  // handbook) gets a strict topological order that way.
+  const depth = computeDepths([...queueSet], orderingEdges)
   const queue = [...queueSet].sort((a, b) => {
     const la = levelOf(units.get(a)?.level)
     const lb = levelOf(units.get(b)?.level)
@@ -159,37 +163,59 @@ export function distribute(args: {
       (offersFY && !offersS1 && !offersS2) || (offersOnlyOther && cp >= 12)
 
     // Earliest (year, slot-rank) this code may occupy, derived from
-    // prereqs already placed. slot-rank: 0=S1, 1=S2.
-    // A prereq in S1 yi=Y → this can land yi=Y S2 at earliest.
-    // A prereq in S2 yi=Y → this can land yi=Y+1 S1 at earliest.
-    // A prereq FULL_YEAR in yi=Y → this can land yi=Y+1 S1 at earliest.
-    // A term-only prereq (offerings all classify as OTHER) is "year-
-    // locked" but not "half-of-year locked" — its actual term might be
-    // T1 (before S1) or T3 (after S2). On the S1/S2 grid we can't tell,
-    // so we treat same-year placement as satisfying the edge rather
-    // than bumping the dependent to the next year. Important for the
-    // IBL chain: FIT3202 (T1 onboarding) → FIT3045 (T2 placement) both
-    // happen in the same calendar year in reality.
+    // ordering edges to already-placed units. slot-rank: 0=S1, 1=S2.
+    //
+    // Prereq edges are strict-later within the year:
+    //   prereq in S1 yi=Y → dependent at yi=Y S2 at earliest
+    //   prereq in S2 yi=Y → dependent at yi=Y+1 S1 at earliest
+    //
+    // Coreq edges are same-or-later within the year:
+    //   coreq in S1 yi=Y → dependent at yi=Y S1 at earliest (same OK)
+    //   coreq in S2 yi=Y → dependent at yi=Y S2 at earliest (same OK)
+    // This is what stops the honours thesis chain (FIT4441→4442→4443
+    // →4444, all corequisites) from placing part 3 in S1 ahead of
+    // part 2 in S2.
+    //
+    // Either kind: FULL_YEAR prereq/coreq in yi=Y → dependent at yi=Y+1
+    // S1 at earliest, since the dependent can't run concurrently with
+    // a year-blocking unit.
+    //
+    // Term-only prereqs (offerings all classify as OTHER) are "year-
+    // locked" but not "half-of-year locked" — their actual term might
+    // be T1 (before S1) or T3 (after S2). On the S1/S2 grid we can't
+    // tell, so we treat same-year placement as satisfying the edge
+    // rather than bumping the dependent to the next year. Important
+    // for the IBL chain: FIT3202 (T1 onboarding) → FIT3045 (T2
+    // placement) both happen in the same calendar year in reality.
     let minYear = baseYear
     let minRank = 0
-    for (const pre of prereqEdges.get(code) ?? []) {
+    for (const [pre, kind] of orderingEdges.get(code) ?? []) {
       const p = placedAt.get(pre)
       if (!p) continue
       const preOffers = offerings.get(pre) ?? []
       const preTermOnly =
         preOffers.length > 0 && preOffers.every((o) => o.periodKind === "OTHER")
-      let needYear = p.yearIndex
-      let needRank = 1
+      let needYear: number
+      let needRank: number
       if (p.kind === "FULL_YEAR") {
         needYear = p.yearIndex + 1
         needRank = 0
       } else if (preTermOnly) {
-        // Same year, no within-year ordering — see comment above.
         needYear = p.yearIndex
         needRank = 0
-      } else if (p.kind === "S2") {
-        needYear = p.yearIndex + 1
-        needRank = 0
+      } else if (kind === "coreq") {
+        // Same-or-later: dependent may sit in the same slot as the coreq.
+        needYear = p.yearIndex
+        needRank = p.kind === "S2" ? 1 : 0
+      } else {
+        // Prereq: strict-later within the year.
+        if (p.kind === "S2") {
+          needYear = p.yearIndex + 1
+          needRank = 0
+        } else {
+          needYear = p.yearIndex
+          needRank = 1
+        }
       }
       if (needYear > minYear || (needYear === minYear && needRank > minRank)) {
         minYear = needYear
@@ -356,13 +382,26 @@ function isAcrossYear(yi: number, code: string, state: PlannerState): boolean {
   return count >= 2
 }
 
+type EdgeKind = "prereq" | "coreq"
+
 /**
- * For each code with a `prerequisite` rule, collect the prerequisite
- * unit codes referenced anywhere in the rule tree — but only keep
- * edges that point to codes inside `known` (the queue plus already-
- * planned codes). Edges to codes we have no information about (e.g.
- * a prereq the student is expected to have completed before this
- * planner instance) are dropped: they're not actionable for ordering.
+ * For each code with prerequisite OR corequisite rules, collect the
+ * referenced unit codes — but only keep edges that point to codes
+ * inside `known` (the queue plus already-planned codes). Edges to
+ * codes we have no information about (e.g. a prereq the student is
+ * expected to have completed before this planner instance) are
+ * dropped: they're not actionable for ordering.
+ *
+ * Each edge carries its kind. The placement loop reads the kind to
+ * decide whether the dependent must be strictly later than the
+ * dependency (prereq) or merely same-or-later (coreq). The honours
+ * thesis chain (FIT4441→4442→4443→4444) is the canonical coreq case:
+ * Monash codes those as corequisites rather than prerequisites, so
+ * dropping coreq edges silently lets the load-balancer place part 3
+ * ahead of part 2.
+ *
+ * If the same pair is recorded as both a prereq and a coreq, the
+ * prereq wins — strict-later is the stronger constraint.
  *
  * OR groups: a unit listing "(FIT1045 OR FIT1053) AND ..." has both
  * FIT1045 and FIT1053 in `requisite_refs`. Treating *every* referenced
@@ -370,20 +409,27 @@ function isAcrossYear(yi: number, code: string, state: PlannerState): boolean {
  * being loaded together that's a data-quality issue upstream; if only
  * one is in the queue, only that edge exists, which is exactly right.
  */
-function buildPrereqEdges(
+function buildOrderingEdges(
   requisites: ReadonlyMap<string, RequisiteBlock[]> | undefined,
   known: ReadonlySet<string>
-): Map<string, Set<string>> {
-  const out = new Map<string, Set<string>>()
+): Map<string, Map<string, EdgeKind>> {
+  const out = new Map<string, Map<string, EdgeKind>>()
   if (!requisites) return out
   for (const code of known) {
     const blocks = requisites.get(code)
     if (!blocks) continue
-    const edges = new Set<string>()
+    const edges = new Map<string, EdgeKind>()
     for (const block of blocks) {
-      if (block.requisiteType !== "prerequisite" || !block.rule) continue
+      if (!block.rule) continue
+      let kind: EdgeKind
+      if (block.requisiteType === "prerequisite") kind = "prereq"
+      else if (block.requisiteType === "corequisite") kind = "coreq"
+      else continue
       for (const ref of collectRuleCodes(block.rule)) {
-        if (ref !== code && known.has(ref)) edges.add(ref)
+        if (ref === code || !known.has(ref)) continue
+        // Prereq beats coreq when both appear for the same pair.
+        if (edges.get(ref) === "prereq") continue
+        edges.set(ref, kind)
       }
     }
     if (edges.size > 0) out.set(code, edges)
@@ -418,15 +464,17 @@ function collectRuleCodes(rule: RequisiteRule): Set<string> {
 }
 
 /**
- * Longest path from each node to any sink in the prereq DAG, with cycle
- * protection — the depth is what feeds the queue tiebreak. Cycles in
- * handbook data are rare but real (e.g. mutual prohibitions occasionally
- * mis-classified upstream); the seen-set degrades them to depth 0 rather
- * than crashing.
+ * Longest path from each node to any sink in the ordering DAG, with
+ * cycle protection — the depth is what feeds the queue tiebreak.
+ * Cycles in handbook data are rare but real (e.g. mutual prohibitions
+ * occasionally mis-classified upstream); the seen-set degrades them
+ * to depth 0 rather than crashing. Edge kinds (prereq vs coreq) don't
+ * affect depth — both impose ordering, just with different floors at
+ * placement time.
  */
 function computeDepths(
   nodes: readonly string[],
-  edges: ReadonlyMap<string, ReadonlySet<string>>
+  edges: ReadonlyMap<string, ReadonlyMap<string, EdgeKind>>
 ): Map<string, number> {
   const memo = new Map<string, number>()
   const visit = (n: string, stack: Set<string>): number => {
@@ -435,7 +483,7 @@ function computeDepths(
     if (stack.has(n)) return 0
     stack.add(n)
     let best = 0
-    for (const p of edges.get(n) ?? []) {
+    for (const p of edges.get(n)?.keys() ?? []) {
       best = Math.max(best, visit(p, stack) + 1)
     }
     stack.delete(n)
