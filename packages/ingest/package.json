@@ -6,7 +6,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "backfill:curriculum": "tsx src/backfill-curriculum.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'src/*.test.ts'"
   },
   "dependencies": {
     "@monmap/db": "workspace:*",

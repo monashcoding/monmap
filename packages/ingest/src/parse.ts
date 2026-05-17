@@ -375,9 +375,22 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
 
 /**
  * Walk a course's curriculumStructure and return every AoS code it
- * references, paired with the nearest ancestor container title (e.g.
- * "Part B. Major studies", "Discipline elective studies") and a
- * normalised `kind` classification.
+ * references, paired with the **most-classifying** ancestor title and
+ * its normalised `kind`.
+ *
+ * Monash sometimes nests campus splits ("Clayton", "Malaysia") inside
+ * discipline-named Part containers ("Parts C, D and E. Engineering
+ * specialisation…"). The nearest ancestor of an AoS reference is then
+ * the campus name, which doesn't keyword-match any kind and gets
+ * demoted to `"other"`. To fix that, we track every container title
+ * on the path from root to leaf and pick the deepest one whose
+ * `classifyAosRelationship` returns a non-"other" kind. If every
+ * ancestor is opaque (rare), we fall back to the deepest title.
+ *
+ * Why the deepest *classifying* ancestor rather than depth-1: a Part
+ * may contain *multiple* sub-categories that classify differently
+ * (e.g. a part titled "Part C. Studies" containing "Specialist
+ * studies" and "Elective units"). We want the most specific match.
  *
  * Uses string-matching against the known AoS code set rather than
  * `academic_item_type` because courses reference AoSes via freeform
@@ -408,9 +421,9 @@ export function extractCourseAosRefs(
       relationshipLabel: string;
     }
   >();
-  const walk = (node: unknown, ancestor: string): void => {
+  const walk = (node: unknown, ancestors: readonly string[]): void => {
     if (Array.isArray(node)) {
-      for (const x of node) walk(x, ancestor);
+      for (const x of node) walk(x, ancestors);
       return;
     }
     if (!node || typeof node !== "object") return;
@@ -421,12 +434,12 @@ export function extractCourseAosRefs(
         : typeof n["name"] === "string"
           ? (n["name"] as string)
           : null;
-    const childAncestor = title || ancestor;
+    const childAncestors = title ? [...ancestors, title] : ancestors;
     for (const [, v] of Object.entries(n)) {
       if (typeof v === "string") {
         const upper = v.toUpperCase();
         if (aosCodes.has(upper)) {
-          const label = childAncestor || "referenced";
+          const { kind, label } = chooseClassifyingAncestor(childAncestors);
           const key = `${upper}|${label}`;
           if (!out.has(key)) {
             out.set(key, {
@@ -434,18 +447,35 @@ export function extractCourseAosRefs(
               courseCode,
               aosYear: courseYear,
               aosCode: upper,
-              kind: classifyAosRelationship(label),
+              kind,
               relationshipLabel: label,
             });
           }
         }
       } else {
-        walk(v, childAncestor);
+        walk(v, childAncestors);
       }
     }
   };
-  walk(curriculumStructure, "");
+  walk(curriculumStructure, []);
   return [...out.values()];
+}
+
+/**
+ * Pick the deepest ancestor title whose `classifyAosRelationship`
+ * returns a non-"other" kind. If every ancestor is opaque, fall back
+ * to the deepest title (or "referenced" if the path is empty).
+ */
+function chooseClassifyingAncestor(
+  ancestors: readonly string[],
+): { kind: AosKind; label: string } {
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    const label = ancestors[i]!;
+    const kind = classifyAosRelationship(label);
+    if (kind !== "other") return { kind, label };
+  }
+  const fallback = ancestors.at(-1) ?? "referenced";
+  return { kind: "other", label: fallback };
 }
 
 /* ------------------------------------------------------------------ *

@@ -12,7 +12,8 @@
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "studio": "drizzle-kit studio",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'src/*.test.ts'"
   },
   "dependencies": {
     "@monmap/scraper": "workspace:*",

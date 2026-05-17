@@ -211,9 +211,19 @@ export function extractUnitRefs(
  * grouping, the unit codes it pins, and its credit-point budget.
  *
  * Detection rule: for a parent at depth ≥ 1 with credit_points > 0,
- * each non-zero sub-container with `cp >= parent.cp / 2` AND a total
- * subs CP exceeding parent CP signals a "pick one" choice — emit each
- * such sub as a separate `EmbeddedSpecialisation`.
+ * if ≥ 3 non-zero sub-containers each have `cp ≥ parent.cp / 2` AND
+ * the total subs CP exceeds parent CP, treat the parent as a "pick
+ * one" choice and emit each sub as a separate `EmbeddedSpecialisation`.
+ *
+ * Why ≥ 3, not ≥ 2: when only two sub-containers each equal the
+ * parent's CP, the math is ambiguous — the handbook could mean "pick
+ * one" or "do both" depending on whether the author put the parent
+ * budget at the per-component value or the total. We've observed both
+ * patterns (E3001 2022/2023 Part A is the false-positive case;
+ * masters specialisations are the true-choice case). When in doubt,
+ * fall through to the standard requirement-group walker, which treats
+ * them as mandatory — the user sees both, which beats silently hiding
+ * one.
  *
  * Patterns this catches:
  *  - F2010 Part C (60cp) → 5 studios at 48cp each → 5 specialisations
@@ -222,6 +232,8 @@ export function extractUnitRefs(
  *  - B2029 Part B (72cp) → 6cp pools → not specialisations
  *  - E3002 Engineering (144cp) → mandatory parts summing to 144 → not
  *    specialisations
+ *  - E3001 (2022/2023) Part A (12cp) → 2 mandatory 12cp sub-pairs →
+ *    treated as mandatory, not as alternatives.
  */
 export interface EmbeddedSpecialisation {
   /** Sub-container title (e.g. "Communication design"). */
@@ -280,11 +292,12 @@ export function extractEmbeddedSpecialisations(
           (acc, s) => acc + numeric(s["credit_points"]),
           0
         )
-        // Choice container: each contributor is at least half the parent
-        // budget and the contributors collectively exceed the budget
-        // (so they can't all be required simultaneously).
+        // Choice container: at least three contributors, each at
+        // least half the parent budget, collectively exceeding it (so
+        // they can't all be required simultaneously). See header
+        // comment for why we require ≥ 3 rather than ≥ 2.
         const isChoice =
-          contributing.length >= 2 &&
+          contributing.length >= 3 &&
           totalContrib > parentCp &&
           contributing.every((s) => numeric(s["credit_points"]) >= parentCp / 2)
         if (isChoice) {
@@ -357,10 +370,15 @@ function byOrder(
 }
 
 /**
- * Walk the top-level containers of a course's curriculumStructure and
- * return any course references found in each container's direct
- * `relationship` array. Used to detect double-degree sub-courses
- * (e.g. E3010 → C2001 + E3001).
+ * Walk the full curriculumStructure tree and return every course
+ * reference (`academic_item_type.value === "course"`) found in any
+ * `relationship[]` array. Each ref is paired with the nearest
+ * ancestor container title to disambiguate double-degree components
+ * (e.g. E3010 → C2001 + E3001) from deeply-nested course-pointer
+ * requirements (M6041 Public Health, A6039 etc.).
+ *
+ * Previously this only inspected depth-1 `container[*].relationship[*]`,
+ * which silently dropped 22 courses whose course refs nest deeper.
  */
 export interface SubCourseRef {
   componentTitle: string
@@ -369,31 +387,48 @@ export interface SubCourseRef {
 
 export function extractSubCourseRefs(structure: unknown): SubCourseRef[] {
   const out: SubCourseRef[] = []
-  if (!structure || typeof structure !== "object") return out
-  const root = structure as Record<string, unknown>
-  const containers = root["container"]
-  if (!Array.isArray(containers)) return out
+  const seen = new Set<string>()
 
-  for (const c of containers) {
-    if (!c || typeof c !== "object") continue
-    const container = c as Record<string, unknown>
-    const title =
-      typeof container["title"] === "string" ? container["title"] : null
-    if (!title) continue
-    const rels = container["relationship"]
-    if (!Array.isArray(rels)) continue
-    for (const rel of rels) {
-      if (!rel || typeof rel !== "object") continue
-      const r = rel as Record<string, unknown>
-      const typeRef = r["academic_item_type"] as { value?: string } | undefined
-      if (typeRef?.value !== "course") continue
-      const courseCode =
-        typeof r["academic_item_code"] === "string"
-          ? r["academic_item_code"]
-          : null
-      if (courseCode) out.push({ componentTitle: title, courseCode })
+  const walk = (node: unknown, ancestor: string): void => {
+    if (Array.isArray(node)) {
+      for (const x of node) walk(x, ancestor)
+      return
     }
+    if (!node || typeof node !== "object") return
+    const n = node as Record<string, unknown>
+    const title =
+      typeof n["title"] === "string"
+        ? (n["title"] as string)
+        : typeof n["name"] === "string"
+          ? (n["name"] as string)
+          : null
+    const childAncestor = title || ancestor
+
+    const rels = n["relationship"]
+    if (Array.isArray(rels)) {
+      for (const rel of rels) {
+        if (!rel || typeof rel !== "object") continue
+        const r = rel as Record<string, unknown>
+        const typeRef = r["academic_item_type"] as
+          | { value?: string }
+          | undefined
+        if (typeRef?.value !== "course") continue
+        const code =
+          typeof r["academic_item_code"] === "string"
+            ? (r["academic_item_code"] as string)
+            : null
+        if (!code) continue
+        const componentTitle = childAncestor || "Course requirements"
+        const key = `${componentTitle}|${code}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push({ componentTitle, courseCode: code })
+      }
+    }
+    for (const v of Object.values(n)) walk(v, childAncestor)
   }
+
+  walk(structure, "")
   return out
 }
 

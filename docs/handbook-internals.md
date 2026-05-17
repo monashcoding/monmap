@@ -123,8 +123,13 @@ programming" rows grouped by AND/OR without joining back.
   actually want is `areas_of_study.study_level` (extracted from
   `undergrad_postgrad`): "Undergraduate", "Postgraduate", "Honours",
   "Research".
-- `courses.structure` — always empty `{}`. The real field is
-  `curriculum_structure` (different spelling, different casing).
+- `courses.structure` — **prose, not data.** Despite the name, this
+  is an HTML narrative ("This course is structured in four parts:
+  Part A. Core studies…") populated for all 501 of 2026's courses,
+  not the empty `{}` an earlier audit claimed. We ignore it on
+  ingest — `curriculum_structure` (different spelling, different
+  casing) holds the structured tree the planner actually consumes.
+  Surface `structure` only as a fallback overview, never as data.
 - `courses.majors_minors`, `courses.specialisations` — always empty
   arrays in 2026. The real mapping lives inside curriculum_structure;
   use `course_areas_of_study` which already extracts it.
@@ -138,8 +143,8 @@ programming" rows grouped by AND/OR without joining back.
 
 `unit_offerings.attendance_mode` is verbose prose. Every value has a
 parenthetical canonical code at the end, extracted into
-`attendance_mode_code`. 24 distinct codes observed in 2026; the six
-most common:
+`attendance_mode_code`. 28 distinct codes observed across the full
+corpus (was 24 in earlier years); the six most common:
 
 | code | example source string |
 |---|---|
@@ -156,9 +161,9 @@ for both.
 
 ## AoS `kind` classification
 
-`course_areas_of_study.kind` is derived from `relationship_label`
-(the nearest ancestor container title) via case-insensitive keyword
-matching, in this order:
+`course_areas_of_study.kind` is derived by classifying every
+container title on the path from root to the AoS-code leaf via
+case-insensitive keyword matching, in this priority order:
 
 | keyword | kind |
 |---|---|
@@ -170,13 +175,24 @@ matching, in this order:
 | _(no match)_ | `other` |
 
 Order matters — `extended major` is checked before plain `major`.
-The 113 `other` rows in 2026 are genuinely structural containers
-that aren't a degree component — honours research streams, location
-splits ("Malaysia offerings"), generic "Course requirements" buckets.
-Not misclassifications.
 
-The original label is kept in `relationship_label` for display
-fidelity.
+**Which ancestor wins:** we pick the *deepest* ancestor whose label
+matches a keyword. This used to be "the nearest ancestor", but
+Monash sometimes nests campus splits ("Clayton", "Malaysia") inside
+discipline-named Parts ("Parts C, D and E. Engineering
+specialisation…"). When that happens, the nearest ancestor is the
+opaque campus name and would demote real specialisations to `other`.
+The current rule prefers `specialisation` (from the Part title) over
+`other` (from "Clayton"), while still letting a more-specific
+disciplinary container override an outer one.
+
+`relationship_label` stores the title that the classifier matched on
+(so display can show "Parts C, D and E. Engineering specialisation"
+rather than the campus name).
+
+`other` rows are genuinely structural containers — honours research
+streams, generic "Course requirements" buckets, or AoS references
+sitting under un-keyworded prose. They are not specialisations.
 
 ## HTML content
 
@@ -194,19 +210,22 @@ content is displayed in a security-sensitive context — handbook
 content is first-party so direct render is defensible). Do not try
 to strip tags; some fields rely on them for line breaks.
 
-## Corpus shape (2026)
+## Corpus shape (2026, pre-reingest of A4/A7/A10 fixes)
 
 | table | rows |
 |---|---|
-| `units` | 5,217 |
+| `units` | 5,218 |
 | `courses` | 501 |
 | `areas_of_study` | 410 |
 | `unit_offerings` | 10,189 |
 | `requisites` | 3,310 |
-| `requisite_refs` | 7,341 |
-| `enrolment_rules` | 4,455 |
+| `requisite_refs` | 7,339 |
+| `enrolment_rules` | 4,456 |
 | `course_areas_of_study` | 719 |
 | `area_of_study_units` | 6,773 |
 
 Requisite type split: 1,612 prohibition · 1,317 prerequisite · 381 corequisite.
 AoS kind split: 195 major · 162 specialisation · 113 other · 107 minor · 80 elective · 62 extended_major.
+
+After the A10 fix, expect `other` to shrink (campus-shadowed real
+specialisations move to `specialisation`).
