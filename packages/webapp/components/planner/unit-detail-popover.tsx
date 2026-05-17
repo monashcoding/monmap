@@ -191,7 +191,7 @@ export function UnitDetailPopover({
         collisionPadding={16}
         initialFocus={false}
         finalFocus={false}
-        className="max-h-[min(70svh,520px)] w-[min(520px,calc(100vw-2rem))] overflow-y-auto p-4"
+        className="max-h-[min(70svh,520px)] w-[min(520px,calc(100vw-2rem))] overflow-y-auto overscroll-none p-4 shadow-2xl ring-foreground/15 dark:ring-foreground/20"
       >
         <header className="flex flex-col gap-1 border-b pb-3">
           <div className="flex items-baseline gap-2">
