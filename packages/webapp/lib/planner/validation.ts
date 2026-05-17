@@ -40,6 +40,15 @@ export interface ValidationInput {
   offerings: PlannerOffering[]
   requisites: RequisiteBlock[]
   slotCreditLoad: number
+  /**
+   * False when this slot lives in a calendar year *after* the handbook
+   * year whose offerings/requisites the planner has loaded — i.e. the
+   * slot's "is offered in S1?" question is being answered with stale
+   * data. Defaults true. When false, `not_offered_in_period` is
+   * downgraded to a warning since Monash routinely rotates units in
+   * and out of semesters year-on-year and we can't say with certainty.
+   */
+  dataIsReliable?: boolean
 }
 
 export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
@@ -47,10 +56,26 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
   const warnings: ValidationIssue[] = []
 
   if (!isOfferedInPeriod(input.offerings, input.slotKind)) {
-    errors.push({
+    // Term-only units (IBL placements / onboarding, trimester field
+    // schools, …) have every offering classified as OTHER and so will
+    // *never* match an S1/S2 slot, even when the data is fresh. The
+    // unit still needs to live somewhere on the planner grid, so flag
+    // it as a yellow "non-standard schedule — verify timing manually"
+    // rather than a red blocker.
+    const termOnly =
+      input.offerings.length > 0 &&
+      input.offerings.every((o) => o.periodKind === "OTHER")
+    const dataIsReliable = input.dataIsReliable ?? true
+    const issue: ValidationIssue = {
       kind: "not_offered_in_period",
-      message: `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} for ${input.unit.year}.`,
-    })
+      message: termOnly
+        ? `${input.unit.code} runs on a non-standard schedule (${formatPeriodList(input.offerings)}); verify it overlaps ${periodLabel(input.slotKind)}.`
+        : dataIsReliable
+          ? `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} for ${input.unit.year}.`
+          : `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} in the ${input.unit.year} handbook — future-year offerings may differ.`,
+    }
+    if (termOnly || !dataIsReliable) warnings.push(issue)
+    else errors.push(issue)
   }
 
   const prereqs = input.requisites.filter(
@@ -143,6 +168,21 @@ export function periodLabel(period: PeriodKind): string {
   }
 }
 
+/**
+ * Render a list of teaching periods from the offerings, deduped. Used
+ * in the "non-standard schedule" warning to tell the student what
+ * timing the unit actually runs in (e.g. "Term 1, Term 3").
+ */
+function formatPeriodList(offerings: PlannerOffering[]): string {
+  const seen = new Set<string>()
+  for (const o of offerings) seen.add(o.teachingPeriod)
+  const list = [...seen].sort()
+  if (list.length === 0) return "off-cycle"
+  if (list.length === 1) return list[0]
+  if (list.length === 2) return `${list[0]} or ${list[1]}`
+  return `${list.slice(0, -1).join(", ")} or ${list.at(-1)}`
+}
+
 function formatCodeList(codes: string[]): string {
   if (codes.length === 0) return "(no data)"
   if (codes.length === 1) return codes[0]
@@ -209,6 +249,9 @@ export function validatePlan(
           offerings: offeringsByCode.get(code) ?? [],
           requisites: requisitesByCode.get(code) ?? [],
           slotCreditLoad,
+          // Year 1 of the plan = the handbook year the data was loaded
+          // for; everything beyond is a forecast against stale data.
+          dataIsReliable: y === 0,
         })
         out.set(keyFor(y, s, code), v)
       }

@@ -1,23 +1,20 @@
-import { test } from "node:test";
-import assert from "node:assert/strict";
+import { test } from "node:test"
+import assert from "node:assert/strict"
 
 import {
   isOfferedInPeriod,
   keyFor,
   validatePlan,
   validateUnitInSlot,
-} from "./validation.ts";
+} from "./validation.ts"
 import type {
   PlannerOffering,
   PlannerState,
   PlannerUnit,
   RequisiteBlock,
-} from "./types.ts";
+} from "./types.ts"
 
-function unit(
-  code: string,
-  overrides: Partial<PlannerUnit> = {},
-): PlannerUnit {
+function unit(code: string, overrides: Partial<PlannerUnit> = {}): PlannerUnit {
   return {
     year: "2026",
     code,
@@ -27,12 +24,12 @@ function unit(
     synopsis: null,
     school: null,
     ...overrides,
-  };
+  }
 }
 
 function offering(
   code: string,
-  periodKind: PlannerOffering["periodKind"],
+  periodKind: PlannerOffering["periodKind"]
 ): PlannerOffering {
   return {
     unitCode: code,
@@ -40,14 +37,14 @@ function offering(
     location: "Clayton",
     attendanceModeCode: "ON-CAMPUS",
     periodKind,
-  };
+  }
 }
 
 test("isOfferedInPeriod: matches on periodKind", () => {
-  const offerings = [offering("FIT1045", "S1"), offering("FIT1045", "S2")];
-  assert.equal(isOfferedInPeriod(offerings, "S1"), true);
-  assert.equal(isOfferedInPeriod(offerings, "SUMMER_A"), false);
-});
+  const offerings = [offering("FIT1045", "S1"), offering("FIT1045", "S2")]
+  assert.equal(isOfferedInPeriod(offerings, "S1"), true)
+  assert.equal(isOfferedInPeriod(offerings, "SUMMER_A"), false)
+})
 
 test("validateUnitInSlot: flags 'not offered' when period has no offering", () => {
   const v = validateUnitInSlot({
@@ -61,10 +58,60 @@ test("validateUnitInSlot: flags 'not offered' when period has no offering", () =
     offerings: [offering("FIT1045", "S1")],
     requisites: [],
     slotCreditLoad: 6,
-  });
-  assert.equal(v.errors.length, 1);
-  assert.equal(v.errors[0].kind, "not_offered_in_period");
-});
+  })
+  assert.equal(v.errors.length, 1)
+  assert.equal(v.errors[0].kind, "not_offered_in_period")
+})
+
+test("validateUnitInSlot: future-year 'not offered' is a warning, not an error", () => {
+  // Same slot mismatch as above, but now in a future calendar year —
+  // 2027 / 2028 / etc. We've only loaded handbook data for 2026, so
+  // the period mismatch could be a stale-data artefact rather than a
+  // real blocker. Downgrade to amber.
+  const v = validateUnitInSlot({
+    unit: unit("FIT1045"),
+    slotKind: "SUMMER_A",
+    yearIndex: 0,
+    slotIndex: 0,
+    completedBefore: new Set(),
+    concurrentWith: new Set(),
+    allPlannedCodes: new Set(),
+    offerings: [offering("FIT1045", "S1")],
+    requisites: [],
+    slotCreditLoad: 6,
+    dataIsReliable: false,
+  })
+  assert.equal(v.errors.length, 0)
+  assert.equal(v.warnings.length, 1)
+  assert.equal(v.warnings[0].kind, "not_offered_in_period")
+  assert.match(v.warnings[0].message, /future-year offerings may differ/)
+})
+
+test("validateUnitInSlot: term-only schedule is always a warning, never an error", () => {
+  // FIT3202-style: every offering classifies as OTHER (Term 1 / Term
+  // 3 IBL onboarding). The unit can never match an S1/S2 slot on the
+  // grid even when the data is fresh, so it always lands as amber.
+  const v = validateUnitInSlot({
+    unit: unit("FIT3202"),
+    slotKind: "S2",
+    yearIndex: 0,
+    slotIndex: 1,
+    completedBefore: new Set(),
+    concurrentWith: new Set(),
+    allPlannedCodes: new Set(),
+    offerings: [
+      { ...offering("FIT3202", "OTHER"), teachingPeriod: "Term 1" },
+      { ...offering("FIT3202", "OTHER"), teachingPeriod: "Term 3" },
+    ],
+    requisites: [],
+    slotCreditLoad: 0,
+    dataIsReliable: true,
+  })
+  assert.equal(v.errors.length, 0)
+  assert.equal(v.warnings.length, 1)
+  assert.match(v.warnings[0].message, /non-standard schedule/)
+  assert.match(v.warnings[0].message, /Term 1.*Term 3|Term 3.*Term 1/)
+})
 
 test("validateUnitInSlot: prereq unmet → error lists missing codes", () => {
   const requisites: RequisiteBlock[] = [
@@ -80,7 +127,7 @@ test("validateUnitInSlot: prereq unmet → error lists missing codes", () => {
         },
       ],
     },
-  ];
+  ]
   const v = validateUnitInSlot({
     unit: unit("FIT2004"),
     slotKind: "S1",
@@ -92,11 +139,11 @@ test("validateUnitInSlot: prereq unmet → error lists missing codes", () => {
     offerings: [offering("FIT2004", "S1")],
     requisites,
     slotCreditLoad: 6,
-  });
-  const prereqErr = v.errors.find((e) => e.kind === "prereq_unmet");
-  assert.ok(prereqErr);
-  assert.deepEqual(prereqErr.relatedCodes, ["FIT1008", "FIT1054"]);
-});
+  })
+  const prereqErr = v.errors.find((e) => e.kind === "prereq_unmet")
+  assert.ok(prereqErr)
+  assert.deepEqual(prereqErr.relatedCodes, ["FIT1008", "FIT1054"])
+})
 
 test("validateUnitInSlot: coreq satisfied by concurrent unit", () => {
   const requisites: RequisiteBlock[] = [
@@ -109,7 +156,7 @@ test("validateUnitInSlot: coreq satisfied by concurrent unit", () => {
         },
       ],
     },
-  ];
+  ]
   const v = validateUnitInSlot({
     unit: unit("FIT9999"),
     slotKind: "S1",
@@ -121,9 +168,9 @@ test("validateUnitInSlot: coreq satisfied by concurrent unit", () => {
     offerings: [offering("FIT9999", "S1")],
     requisites,
     slotCreditLoad: 12,
-  });
-  assert.equal(v.errors.length, 0);
-});
+  })
+  assert.equal(v.errors.length, 0)
+})
 
 test("validateUnitInSlot: prohibition fires when paired unit is anywhere in plan", () => {
   const requisites: RequisiteBlock[] = [
@@ -136,7 +183,7 @@ test("validateUnitInSlot: prohibition fires when paired unit is anywhere in plan
         },
       ],
     },
-  ];
+  ]
   const v = validateUnitInSlot({
     unit: unit("FIT1053"),
     slotKind: "S1",
@@ -148,11 +195,11 @@ test("validateUnitInSlot: prohibition fires when paired unit is anywhere in plan
     offerings: [offering("FIT1053", "S1")],
     requisites,
     slotCreditLoad: 6,
-  });
-  const pe = v.errors.find((e) => e.kind === "prohibition_conflict");
-  assert.ok(pe);
-  assert.deepEqual(pe.relatedCodes, ["FIT1045"]);
-});
+  })
+  const pe = v.errors.find((e) => e.kind === "prohibition_conflict")
+  assert.ok(pe)
+  assert.deepEqual(pe.relatedCodes, ["FIT1045"])
+})
 
 test("validateUnitInSlot: over-credit-load is a warning, not an error", () => {
   const v = validateUnitInSlot({
@@ -166,11 +213,11 @@ test("validateUnitInSlot: over-credit-load is a warning, not an error", () => {
     offerings: [offering("FIT1045", "S1")],
     requisites: [],
     slotCreditLoad: 30,
-  });
-  assert.equal(v.errors.length, 0);
-  assert.equal(v.warnings.length, 1);
-  assert.equal(v.warnings[0].kind, "over_credit_load");
-});
+  })
+  assert.equal(v.errors.length, 0)
+  assert.equal(v.warnings.length, 1)
+  assert.equal(v.warnings[0].kind, "over_credit_load")
+})
 
 test("validatePlan: units in earlier slots unlock later slots", () => {
   const state: PlannerState = {
@@ -186,16 +233,16 @@ test("validatePlan: units in earlier slots unlock later slots", () => {
         ],
       },
     ],
-  };
+  }
 
   const unitsByCode = new Map<string, PlannerUnit>([
     ["FIT1045", unit("FIT1045")],
     ["FIT2004", unit("FIT2004")],
-  ]);
+  ])
   const offeringsByCode = new Map<string, PlannerOffering[]>([
     ["FIT1045", [offering("FIT1045", "S1"), offering("FIT1045", "S2")]],
     ["FIT2004", [offering("FIT2004", "S1"), offering("FIT2004", "S2")]],
-  ]);
+  ])
   const requisitesByCode = new Map<string, RequisiteBlock[]>([
     [
       "FIT2004",
@@ -211,13 +258,18 @@ test("validatePlan: units in earlier slots unlock later slots", () => {
         },
       ],
     ],
-  ]);
+  ])
 
-  const out = validatePlan(state, unitsByCode, offeringsByCode, requisitesByCode);
-  const fit2004 = out.get(keyFor(0, 1, "FIT2004"));
-  assert.ok(fit2004);
-  assert.equal(fit2004.errors.length, 0);
-});
+  const out = validatePlan(
+    state,
+    unitsByCode,
+    offeringsByCode,
+    requisitesByCode
+  )
+  const fit2004 = out.get(keyFor(0, 1, "FIT2004"))
+  assert.ok(fit2004)
+  assert.equal(fit2004.errors.length, 0)
+})
 
 test("validatePlan: prereq fails when dependent unit is in same slot (not before)", () => {
   const state: PlannerState = {
@@ -227,12 +279,10 @@ test("validatePlan: prereq fails when dependent unit is in same slot (not before
     years: [
       {
         label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT1045", "FIT2004"] },
-        ],
+        slots: [{ kind: "S1", unitCodes: ["FIT1045", "FIT2004"] }],
       },
     ],
-  };
+  }
   const out = validatePlan(
     state,
     new Map([
@@ -258,12 +308,12 @@ test("validatePlan: prereq fails when dependent unit is in same slot (not before
           },
         ],
       ],
-    ]),
-  );
-  const fit2004 = out.get(keyFor(0, 0, "FIT2004"));
-  assert.ok(fit2004);
-  assert.ok(fit2004.errors.some((e) => e.kind === "prereq_unmet"));
-});
+    ])
+  )
+  const fit2004 = out.get(keyFor(0, 0, "FIT2004"))
+  assert.ok(fit2004)
+  assert.ok(fit2004.errors.some((e) => e.kind === "prereq_unmet"))
+})
 
 test("validatePlan: unknown unit yields an unknown_unit error", () => {
   const state: PlannerState = {
@@ -273,9 +323,9 @@ test("validatePlan: unknown unit yields an unknown_unit error", () => {
     years: [
       { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["ZZZ9999"] }] },
     ],
-  };
-  const out = validatePlan(state, new Map(), new Map(), new Map());
-  const v = out.get(keyFor(0, 0, "ZZZ9999"));
-  assert.ok(v);
-  assert.equal(v.errors[0].kind, "unknown_unit");
-});
+  }
+  const out = validatePlan(state, new Map(), new Map(), new Map())
+  const v = out.get(keyFor(0, 0, "ZZZ9999"))
+  assert.ok(v)
+  assert.equal(v.errors[0].kind, "unknown_unit")
+})

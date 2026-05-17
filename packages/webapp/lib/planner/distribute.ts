@@ -163,14 +163,31 @@ export function distribute(args: {
     // A prereq in S1 yi=Y → this can land yi=Y S2 at earliest.
     // A prereq in S2 yi=Y → this can land yi=Y+1 S1 at earliest.
     // A prereq FULL_YEAR in yi=Y → this can land yi=Y+1 S1 at earliest.
+    // A term-only prereq (offerings all classify as OTHER) is "year-
+    // locked" but not "half-of-year locked" — its actual term might be
+    // T1 (before S1) or T3 (after S2). On the S1/S2 grid we can't tell,
+    // so we treat same-year placement as satisfying the edge rather
+    // than bumping the dependent to the next year. Important for the
+    // IBL chain: FIT3202 (T1 onboarding) → FIT3045 (T2 placement) both
+    // happen in the same calendar year in reality.
     let minYear = baseYear
     let minRank = 0
     for (const pre of prereqEdges.get(code) ?? []) {
       const p = placedAt.get(pre)
       if (!p) continue
+      const preOffers = offerings.get(pre) ?? []
+      const preTermOnly =
+        preOffers.length > 0 && preOffers.every((o) => o.periodKind === "OTHER")
       let needYear = p.yearIndex
       let needRank = 1
-      if (p.kind === "S2" || p.kind === "FULL_YEAR") {
+      if (p.kind === "FULL_YEAR") {
+        needYear = p.yearIndex + 1
+        needRank = 0
+      } else if (preTermOnly) {
+        // Same year, no within-year ordering — see comment above.
+        needYear = p.yearIndex
+        needRank = 0
+      } else if (p.kind === "S2") {
         needYear = p.yearIndex + 1
         needRank = 0
       }

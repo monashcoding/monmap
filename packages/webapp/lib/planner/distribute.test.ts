@@ -275,6 +275,49 @@ test("18 CP IBL placement crowds 6 CP units out of its year", () => {
   )
 })
 
+/**
+ * IBL chain in real life: FIT3202 (Term 1 onboarding, 0 CP) is a
+ * prereq of FIT3045 (Term 2 placement, 18 CP). On the calendar
+ * these run consecutively in the SAME year (T1: Jan–Feb, T2: Apr–
+ * Aug). The S1/S2 grid can't represent that directly, so distribute
+ * must avoid bumping FIT3045 to the year after FIT3202 just because
+ * FIT3202 happened to land in an S1/S2 box.
+ */
+test("term-only prereq stays in same year as its IBL dependent", () => {
+  const state = defaultState("2026", "C2001", 4)
+  const units = new Map<string, PlannerUnit>([
+    ["FIT3202", unit("FIT3202", "Level 3", 0)],
+    ["FIT3045", unit("FIT3045", "Level 3", 18)],
+  ])
+  const offerings = new Map<string, PlannerOffering[]>([
+    ["FIT3202", [termOffering("FIT3202", "Term 1")]],
+    [
+      "FIT3045",
+      [termOffering("FIT3045", "Term 2"), termOffering("FIT3045", "Term 4")],
+    ],
+  ])
+  const requisites = new Map<string, RequisiteBlock[]>([
+    ["FIT3045", [prereqBlock(["FIT3202"])]],
+  ])
+
+  const { placements } = distribute({
+    codes: ["FIT3202", "FIT3045"],
+    units,
+    offerings,
+    state,
+    requisites,
+  })
+
+  const fit3202 = placements.find((p) => p.code === "FIT3202")!
+  const fit3045s = placements.filter((p) => p.code === "FIT3045")
+  assert.equal(fit3045s.length, 2, "IBL placement spans both halves")
+  assert.equal(
+    fit3045s[0]!.yearIndex,
+    fit3202.yearIndex,
+    "IBL placement and its term-only onboarding share a year"
+  )
+})
+
 test("no requisites map → preserves the level-only ordering", () => {
   // Sanity check: existing callers that don't pass `requisites` get
   // the prior behaviour unchanged.
