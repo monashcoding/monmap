@@ -455,8 +455,13 @@ export function plannerReducer(
         locked: !slot.locked,
       }))
 
-    case "reset":
-      return defaultState(state.courseYear, null, action.yearCount ?? 3)
+    case "reset": {
+      const yearCount = action.yearCount ?? state.years.length
+      return {
+        ...state,
+        years: Array.from({ length: yearCount }, (_, i) => defaultYear(i + 1)),
+      }
+    }
 
     case "hydrate":
       return action.state

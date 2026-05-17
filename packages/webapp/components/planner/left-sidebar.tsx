@@ -79,10 +79,8 @@ export function LeftSidebar() {
   const onReset = useCallback(() => {
     if (!confirm("Reset the whole plan? This clears every unit you've placed."))
       return
-    const prevCourse = state.courseCode
     dispatch({ type: "reset" })
-    if (prevCourse) void switchCourse(prevCourse)
-  }, [dispatch, state.courseCode, switchCourse])
+  }, [dispatch])
 
   const onExport = useCallback(() => {
     const blob = new Blob([JSON.stringify(state, null, 2)], {
