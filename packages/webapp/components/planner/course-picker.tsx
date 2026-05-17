@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDownIcon, ExternalLinkIcon } from "lucide-react"
+import { ChevronDownIcon, ExternalLinkIcon, Share2Icon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -65,19 +65,23 @@ export function CoursePicker({ className }: { className?: string }) {
             render={
               <Button
                 variant="outline"
-                className="h-auto w-full justify-between gap-2 rounded-2xl px-3 py-2.5 text-left whitespace-normal"
+                className="h-auto w-full justify-between gap-2 rounded-2xl px-4 py-3.5 text-left whitespace-normal"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-[11px] text-muted-foreground tabular-nums">
+                  <div className="text-xs text-muted-foreground tabular-nums">
                     {course?.code ?? "—"}
                   </div>
-                  <div className="text-sm leading-tight font-semibold whitespace-normal break-words">
+                  <div className="mt-1.5 text-sm leading-tight font-semibold break-words whitespace-normal">
                     {course?.title ?? "Choose a course"}
                   </div>
                   {course ? (
-                    <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2 text-[11px] text-muted-foreground">
-                      <span className="min-w-0 break-words whitespace-normal">{course.aqfLevel ?? "—"}</span>
-                      <span className="tabular-nums shrink-0">{course.creditPoints}cp</span>
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
+                      <span className="min-w-0 break-words whitespace-normal">
+                        {course.aqfLevel ?? "—"}
+                      </span>
+                      <span className="shrink-0 tabular-nums">
+                        {course.creditPoints}cp
+                      </span>
                     </div>
                   ) : null}
                 </div>
@@ -86,16 +90,26 @@ export function CoursePicker({ className }: { className?: string }) {
             }
           />
           {course ? (
-            <a
-              href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="View in handbook"
-              onClick={(e) => e.stopPropagation()}
-              className="absolute right-9 top-2.5 z-10 text-muted-foreground hover:text-foreground"
-            >
-              <ExternalLinkIcon className="size-3" />
-            </a>
+            <div className="absolute top-3.5 right-10 z-10 flex items-center gap-3">
+              <a
+                href={`/tree?course=${course.code}&year=${course.year}`}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Share2Icon className="size-3" />
+                Tree
+              </a>
+              <a
+                href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <ExternalLinkIcon className="size-3" />
+                Handbook
+              </a>
+            </div>
           ) : null}
         </div>
         <PopoverContent
