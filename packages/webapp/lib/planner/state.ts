@@ -397,18 +397,45 @@ export function plannerReducer(
       }
     }
 
-    case "remove_slot":
+    case "remove_slot": {
+      const year = state.years[action.yearIndex]
+      if (!year) return state
+      const target = year.slots[action.slotIndex]
+      if (!target) return state
+      // Removing S1 or S2 from a year orphans any full-year unit that
+      // had its other half in that year. A FY twin is, by construction,
+      // a code that appears in both S1 and S2 of the same year — strip
+      // any such codes from the surviving half before deleting the slot.
+      const twinKind: "S1" | "S2" | null =
+        target.kind === "S1" ? "S2" : target.kind === "S2" ? "S1" : null
+      const orphanedFy = twinKind
+        ? new Set(
+            target.unitCodes.filter((c) =>
+              year.slots.some(
+                (s) => s.kind === twinKind && s.unitCodes.includes(c)
+              )
+            )
+          )
+        : null
       return {
         ...state,
-        years: state.years.map((y, i) =>
-          i === action.yearIndex
-            ? {
-                ...y,
-                slots: y.slots.filter((_, si) => si !== action.slotIndex),
+        years: state.years.map((y, i) => {
+          if (i !== action.yearIndex) return y
+          const slots = y.slots
+            .filter((_, si) => si !== action.slotIndex)
+            .map((s) => {
+              if (!orphanedFy || orphanedFy.size === 0) return s
+              if (s.kind !== twinKind) return s
+              if (!s.unitCodes.some((c) => orphanedFy.has(c))) return s
+              return {
+                ...s,
+                unitCodes: s.unitCodes.filter((c) => !orphanedFy.has(c)),
               }
-            : y
-        ),
+            })
+          return { ...y, slots }
+        }),
       }
+    }
 
     case "set_slot_capacity":
       return withSlot(state, action.yearIndex, action.slotIndex, (slot) => {

@@ -127,6 +127,48 @@ test("add_optional_slot appends a new slot; no-op if kind already present", () =
   assert.equal(s.years[0].slots.length, 3)
 })
 
+test("remove_slot: stripping S1 orphans FY twin from S2 of the same year", () => {
+  let s = defaultState("2026", "C2000")
+  s = plannerReducer(s, {
+    type: "add_full_year_unit",
+    yearIndex: 0,
+    code: "FIT3164",
+    fullYearCodes: [],
+  })
+  // FY twin lands in S1[0] and S2[0] of year 0.
+  assert.ok(s.years[0].slots[0].unitCodes.includes("FIT3164"))
+  assert.ok(s.years[0].slots[1].unitCodes.includes("FIT3164"))
+
+  s = plannerReducer(s, { type: "remove_slot", yearIndex: 0, slotIndex: 0 })
+  // S1 is gone; the surviving S2 has been stripped of the FY twin.
+  assert.deepEqual(
+    s.years[0].slots.map((sl) => sl.kind),
+    ["S2"]
+  )
+  assert.deepEqual(s.years[0].slots[0].unitCodes, [])
+})
+
+test("remove_slot: removing a summer slot leaves S1/S2 untouched", () => {
+  let s = defaultState("2026", "C2000")
+  s = plannerReducer(s, {
+    type: "add_optional_slot",
+    yearIndex: 0,
+    kind: "SUMMER_A",
+  })
+  s = plannerReducer(s, {
+    type: "add_unit",
+    yearIndex: 0,
+    slotIndex: 0,
+    code: "FIT1045",
+  })
+  s = plannerReducer(s, { type: "remove_slot", yearIndex: 0, slotIndex: 2 })
+  assert.deepEqual(
+    s.years[0].slots.map((sl) => sl.kind),
+    ["S1", "S2"]
+  )
+  assert.deepEqual(s.years[0].slots[0].unitCodes, ["FIT1045"])
+})
+
 test("historyReducer: undo / redo round-trips through edits", () => {
   let h = initialHistory(defaultState("2026", "C2000"))
   assert.equal(h.past.length, 0)
