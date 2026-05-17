@@ -227,12 +227,30 @@ export async function createMyPlanAction(
   return { ok: true, plan }
 }
 
-export async function createBlankPlanAction(): Promise<never> {
+/**
+ * Creates a fresh plan and redirects into it. Two entry points:
+ *   - No FormData (or no `year` field) → "Default plan", latest year.
+ *     Used for the user's first plan, where there is nothing to choose
+ *     between yet.
+ *   - FormData with `year` (and optional `name`) → caller-chosen year.
+ *     Used once the user already has plans, so subsequent plans don't
+ *     silently inherit the latest handbook year.
+ */
+export async function createBlankPlanAction(
+  formData?: FormData
+): Promise<never> {
   const u = await getCurrentUser()
   if (!u) redirect("/sign-in")
-  const year = (await listAvailableYears()).at(-1) ?? HANDBOOK_YEAR
+  const availableYears = await listAvailableYears()
+  const requestedYear = formData?.get("year")?.toString()
+  const year =
+    requestedYear && availableYears.includes(requestedYear)
+      ? requestedYear
+      : (availableYears.at(-1) ?? HANDBOOK_YEAR)
+  const requestedName = formData?.get("name")?.toString().trim()
+  const name = requestedName ? requestedName.slice(0, 80) : "Default plan"
   const state = defaultState(year, null, 3)
-  const plan = await createUserPlan(u.id, "Default plan", state)
+  const plan = await createUserPlan(u.id, name, state)
   redirect(`/?plan=${plan.id}`)
 }
 

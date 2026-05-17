@@ -7,12 +7,14 @@ import { getCurrentUser } from "@/lib/auth-server"
 import {
   fetchCoursesMeta,
   fetchUnitCreditPointsBatch,
+  listAvailableYears,
   listUserPlansWithState,
   type CourseMeta,
   type PlanWithState,
 } from "@/lib/db/queries"
 import type { PlannerState } from "@/lib/planner/types"
 
+import { NewPlanButton } from "./new-plan-button"
 import { PlanCard } from "./plan-card"
 
 function allUnitCodes(state: PlannerState): string[] {
@@ -53,7 +55,10 @@ export default async function PlansPage() {
     )
   }
 
-  const plans = await listUserPlansWithState(user.id)
+  const [plans, availableYears] = await Promise.all([
+    listUserPlansWithState(user.id),
+    listAvailableYears(),
+  ])
 
   // Batch-fetch course metadata for all distinct (courseCode, courseYear) pairs.
   const coursePairs = [
@@ -118,15 +123,24 @@ export default async function PlansPage() {
         </div>
       )}
 
-      <form action={createBlankPlanAction} className="flex justify-center">
-        <button
-          type="submit"
-          className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--monash-purple)]/40 bg-[var(--monash-purple-soft)] px-5 py-3 text-sm font-semibold text-[var(--monash-purple-deep)] transition-colors hover:border-[var(--monash-purple)] hover:bg-[var(--monash-purple)]/10"
-        >
-          <PlusIcon className="size-4" />
-          New plan
-        </button>
-      </form>
+      <div className="flex justify-center">
+        {plans.length === 0 ? (
+          // First plan: nothing to choose between yet, so skip the
+          // year prompt and let the server pick the latest handbook
+          // year. Subsequent plans go through NewPlanButton's dialog.
+          <form action={createBlankPlanAction}>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--monash-purple)]/40 bg-[var(--monash-purple-soft)] px-5 py-3 text-sm font-semibold text-[var(--monash-purple-deep)] transition-colors hover:border-[var(--monash-purple)] hover:bg-[var(--monash-purple)]/10"
+            >
+              <PlusIcon className="size-4" />
+              New plan
+            </button>
+          </form>
+        ) : (
+          <NewPlanButton availableYears={availableYears} />
+        )}
+      </div>
     </main>
   )
 }
