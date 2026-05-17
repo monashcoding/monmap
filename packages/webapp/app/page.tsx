@@ -20,19 +20,17 @@ import {
  * Year/course resolution order:
  *   1. ?year=… search param — explicit override
  *   2. signed-in user's saved plan — open it where they left off
- *   3. most recent year in the DB, default course (C2000 — BIT)
+ *   3. most recent year in the DB, no course (planner renders empty,
+ *      prompting the user to pick one)
  *
- * Prewarming the *saved* course (not the default) for signed-in users
- * means a returning user lands on their plan with no client-side
- * refetch needed.
+ * Prewarming the *saved* course (when there is one) means a returning
+ * user lands on their plan with no client-side refetch needed.
  */
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ year?: string; plan?: string }>
 }) {
-  const DEFAULT_COURSE = "C2000"
-
   const [params, availableYears, currentUser] = await Promise.all([
     searchParams as Promise<{ year?: string; plan?: string }>,
     listAvailableYears(),
@@ -78,13 +76,17 @@ export default async function Page({
       : null
   const year = explicitYear ?? planYear ?? fallbackYear
 
-  // Pick the course to prewarm: explicit URL beats saved plan beats default.
-  const courseCode =
-    (!explicitYear && initialPlanState?.courseCode) || DEFAULT_COURSE
+  // Pick the course to prewarm: saved plan unless the user explicitly
+  // picked a year (their plan may not match that year). No hardcoded
+  // fallback — if there's no plan, the planner renders without a
+  // pre-selected course and the user picks one from the rail.
+  const courseCode = !explicitYear
+    ? (initialPlanState?.courseCode ?? null)
+    : null
 
   const [courses, defaultCourse] = await Promise.all([
     listCoursesForPicker(null, 300, year),
-    fetchCourseWithAoS(courseCode, year),
+    courseCode ? fetchCourseWithAoS(courseCode, year) : Promise.resolve(null),
   ])
 
   const prewarmCodes = defaultCourse

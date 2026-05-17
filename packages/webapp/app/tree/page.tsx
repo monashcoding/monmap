@@ -23,8 +23,8 @@ import { TreeView } from "@/components/tree/tree-view"
  * the first graph fetch so the page is rendered with content on first
  * paint. The client orchestrator (TreeView) takes over from there.
  *
- * Default landing: course = C2000 (BIT), no AoS, depth 4. Empty if
- * the URL specifies `?unit=`.
+ * Initial course resolution: ?course= > active plan's courseCode >
+ * none (renders EmptyState prompting the user to pick a course).
  */
 export default async function TreePage({
   searchParams,
@@ -39,7 +39,6 @@ export default async function TreePage({
     plan?: string
   }>
 }) {
-  const DEFAULT_COURSE = "C2000"
   const params = await searchParams
   const [availableYears, currentUser] = await Promise.all([
     listAvailableYears(),
@@ -62,17 +61,22 @@ export default async function TreePage({
       ? ((await getUserPlanById(activePlanId, currentUser.id))?.state ?? null)
       : null
 
-  // Initial controls — URL overrides win, else default to BIT (C2000).
+  // Initial controls — URL beats active plan beats nothing. With no
+  // course resolved the page renders an EmptyState prompting the user
+  // to pick one, rather than silently landing on a hardcoded default.
   const initialMode: TreeMode = params.unit ? "unit" : "course"
   const initialDirection: TreeDirection =
     params.direction === "downstream" || params.direction === "both"
       ? params.direction
       : "upstream"
   const initialDepth = clamp(parseInt(params.depth ?? "", 10) || 4, 1, 5)
+  const resolvedCourse =
+    initialMode === "course"
+      ? (params.course ?? activePlan?.courseCode ?? null)
+      : null
   const initialControls: TreeControlsValue = {
     mode: initialMode,
-    courseCode:
-      initialMode === "course" ? (params.course ?? DEFAULT_COURSE) : null,
+    courseCode: resolvedCourse,
     aosCode: initialMode === "course" ? (params.aos ?? null) : null,
     unitCode: initialMode === "unit" ? (params.unit ?? null) : null,
     direction: initialDirection,
