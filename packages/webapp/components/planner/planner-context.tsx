@@ -540,16 +540,16 @@ export function PlannerProvider({
             if (!nextOff.has(code)) nextOff.set(code, [])
           setUnitsMap(nextUnits)
           setOfferingsMap(nextOff)
-          setRequisitesMap((m) => {
-            const n = new Map(m)
-            for (const [k, v] of Object.entries(res.requisites)) n.set(k, v)
-            for (const code of unique) if (!n.has(code)) n.set(code, [])
-            return n
-          })
+          const nextReq = new Map(requisitesMap)
+          for (const [k, v] of Object.entries(res.requisites)) nextReq.set(k, v)
+          for (const code of unique)
+            if (!nextReq.has(code)) nextReq.set(code, [])
+          setRequisitesMap(nextReq)
           const { placements, skipped } = distribute({
             codes: unique,
             units: nextUnits,
             offerings: nextOff,
+            requisites: nextReq,
             state,
           })
           dispatch({ type: "bulk_load", placements, mode })
@@ -564,7 +564,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state, unitsMap, offeringsMap]
+    [state, unitsMap, offeringsMap, requisitesMap]
   )
 
   const switchCourse = useCallback(
