@@ -6,8 +6,10 @@ import {
   DownloadIcon,
   PlusCircleIcon,
   PrinterIcon,
+  Redo2Icon,
   RotateCcwIcon,
   TagIcon,
+  Undo2Icon,
   UploadIcon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -35,6 +37,10 @@ export function LeftSidebar() {
     activePlanId,
     currentUser,
     renamePlan,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = usePlanner()
   const activePlan = plans.find((p) => p.id === activePlanId)
 
@@ -202,6 +208,21 @@ export function LeftSidebar() {
           tone={showGrade ? "active" : undefined}
           onClick={toggleShowGrade}
         />
+
+        <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
+
+        <ActionButton
+          icon={<Undo2Icon />}
+          label="Undo"
+          onClick={undo}
+          disabled={!canUndo}
+        />
+        <ActionButton
+          icon={<Redo2Icon />}
+          label="Redo"
+          onClick={redo}
+          disabled={!canRedo}
+        />
       </div>
 
       <input
@@ -224,16 +245,19 @@ function ActionButton({
   label,
   tone,
   onClick,
+  disabled,
 }: {
   icon: React.ReactNode
   label: string
   tone?: "good" | "bad" | "active"
   onClick: () => void
+  disabled?: boolean
 }) {
   return (
     <Button
       variant="ghost"
       onClick={onClick}
+      disabled={disabled}
       className="flex h-auto flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs"
     >
       <span

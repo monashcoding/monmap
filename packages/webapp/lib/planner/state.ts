@@ -463,6 +463,76 @@ export function plannerReducer(
   }
 }
 
+/**
+ * Cap on the past/future stacks. Bounded so a long editing session
+ * can't grow the in-memory history unboundedly; 50 covers any
+ * realistic undo depth a student would actually reach for.
+ */
+export const HISTORY_LIMIT = 50
+
+export interface HistoryState {
+  past: PlannerState[]
+  present: PlannerState
+  future: PlannerState[]
+}
+
+export type HistoryAction = { type: "undo" } | { type: "redo" } | PlannerAction
+
+export function initialHistory(present: PlannerState): HistoryState {
+  return { past: [], present, future: [] }
+}
+
+/**
+ * Reducer wrapper that records past/future snapshots around the pure
+ * planner reducer so the UI can offer undo/redo.
+ *
+ * Two non-obvious rules:
+ *   - `hydrate` clears history. Hydration is how plan-switching and
+ *     server-load land state; preserving history across it would let
+ *     "undo" surface state from a *different* plan (cross-plan leak)
+ *     or push state back to the wrong record on save.
+ *   - Actions that the inner reducer treats as no-ops (returns the
+ *     same reference) don't take a history slot. Otherwise idempotent
+ *     dispatches would silently consume undo depth.
+ */
+export function historyReducer(
+  history: HistoryState,
+  action: HistoryAction
+): HistoryState {
+  switch (action.type) {
+    case "undo": {
+      const prev = history.past[history.past.length - 1]
+      if (!prev) return history
+      return {
+        past: history.past.slice(0, -1),
+        present: prev,
+        future: [history.present, ...history.future],
+      }
+    }
+    case "redo": {
+      const next = history.future[0]
+      if (!next) return history
+      return {
+        past: [...history.past, history.present],
+        present: next,
+        future: history.future.slice(1),
+      }
+    }
+    case "hydrate": {
+      return initialHistory(action.state)
+    }
+    default: {
+      const next = plannerReducer(history.present, action)
+      if (next === history.present) return history
+      const past =
+        history.past.length >= HISTORY_LIMIT
+          ? [...history.past.slice(1), history.present]
+          : [...history.past, history.present]
+      return { past, present: next, future: [] }
+    }
+  }
+}
+
 function countPrefix(
   unitCodes: readonly string[],
   fullYearCodes: ReadonlySet<string>
@@ -481,6 +551,16 @@ function withSlot(
   slotIndex: number,
   fn: (slot: PlannerSlot) => PlannerSlot
 ): PlannerState {
+  const year = state.years[yearIndex]
+  if (!year) return state
+  const slot = year.slots[slotIndex]
+  if (!slot) return state
+  const nextSlot = fn(slot)
+  // Preserve identity on no-op edits. Callers (like add_unit on a code
+  // that's already there) commonly return the same slot reference, and
+  // the history wrapper uses === on the result to decide whether the
+  // action took a stack slot.
+  if (nextSlot === slot) return state
   return {
     ...state,
     years: state.years.map((y, yi) =>
@@ -488,7 +568,7 @@ function withSlot(
         ? y
         : {
             ...y,
-            slots: y.slots.map((s, si) => (si !== slotIndex ? s : fn(s))),
+            slots: y.slots.map((s, si) => (si !== slotIndex ? s : nextSlot)),
           }
     ),
   }

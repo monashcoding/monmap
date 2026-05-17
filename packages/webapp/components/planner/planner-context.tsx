@@ -35,7 +35,8 @@ import {
 import { plannedUnitCodes } from "@/lib/planner/progress"
 import {
   defaultState,
-  plannerReducer,
+  historyReducer,
+  initialHistory,
   type PlannerAction,
 } from "@/lib/planner/state"
 import type {
@@ -71,6 +72,12 @@ interface Hydrated {
 export interface PlannerContextValue {
   state: PlannerState
   dispatch: (action: PlannerAction) => void
+  /** Roll the planner state back one step. No-op when no past entries. */
+  undo: () => void
+  /** Re-apply a previously undone step. No-op when no future entries. */
+  redo: () => void
+  canUndo: boolean
+  canRedo: boolean
 
   /** Authenticated user info, or null for anonymous visitors. */
   currentUser: PlannerCurrentUser | null
@@ -189,10 +196,15 @@ export function PlannerProvider({
    * or signed-in-with-no-plans. */
   initialActivePlanId: string | null
 }) {
-  const [state, dispatch] = useReducer(
-    plannerReducer,
-    defaultState(initialYear, defaultCourse?.code ?? null, 3)
+  const [history, dispatch] = useReducer(
+    historyReducer,
+    initialHistory(defaultState(initialYear, defaultCourse?.code ?? null, 3))
   )
+  const state = history.present
+  const canUndo = history.past.length > 0
+  const canRedo = history.future.length > 0
+  const undo = useCallback(() => dispatch({ type: "undo" }), [])
+  const redo = useCallback(() => dispatch({ type: "redo" }), [])
 
   const [saveStatus, setSaveStatus] = useState<
     "saved" | "saving" | "local" | "error"
@@ -855,6 +867,10 @@ export function PlannerProvider({
     () => ({
       state,
       dispatch,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
       currentUser,
       saveStatus,
       plans,
@@ -885,6 +901,10 @@ export function PlannerProvider({
     }),
     [
       state,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
       currentUser,
       saveStatus,
       plans,
