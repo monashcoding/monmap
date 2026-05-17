@@ -1,8 +1,22 @@
 "use client"
 
-import { ExternalLinkIcon, InfoIcon, Share2Icon } from "lucide-react"
+import {
+  CalendarIcon,
+  ChevronDownIcon,
+  ExternalLinkIcon,
+  InfoIcon,
+  Share2Icon,
+} from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
+import { hydrateUnitsAction } from "@/app/actions"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Popover,
   PopoverContent,
@@ -13,6 +27,7 @@ import { keyFor } from "@/lib/planner/validation"
 import type {
   PeriodKind,
   PlannerOffering,
+  PlannerUnit,
   RequisiteBlock,
 } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
@@ -22,12 +37,21 @@ import { RequisiteTreeView } from "./requisite-tree-view"
 
 /**
  * Popover that shows everything the student might want to see about
- * a placed unit:
+ * a unit:
  *   - synopsis (HTML from handbook)
  *   - offerings (which periods + locations are offered)
  *   - prerequisite / corequisite trees (with student's completion state)
  *   - prohibitions
- *   - validation issues (spelled out)
+ *   - validation issues (only when opened from a placed slot)
+ *
+ * `yearIndex` / `slotIndex` are optional — when omitted the popover is
+ * in "unplaced" mode: no slot-specific validation, completed-before
+ * for requisite trees falls back to every currently-placed unit.
+ *
+ * The header includes a small year selector so the student can view
+ * the same unit in a different handbook year (offerings + requisites
+ * can shift across years). Switching just changes what this popover
+ * displays — it does not move the unit in the plan.
  */
 export function UnitDetailPopover({
   code,
@@ -37,29 +61,128 @@ export function UnitDetailPopover({
   onOpenChange,
 }: {
   code: string
-  yearIndex: number
-  slotIndex: number
+  yearIndex?: number
+  slotIndex?: number
   children: React.ReactNode
   onOpenChange?: (open: boolean) => void
 }) {
-  const { units, offerings, requisites, validations, state, availableYears } =
-    usePlanner()
-  const unit = units.get(code)
-  const unitOfferings = offerings.get(code) ?? []
-  const unitReqs = requisites.get(code) ?? []
-  const validation = validations.get(keyFor(yearIndex, slotIndex, code))
+  const {
+    units,
+    offerings,
+    requisites,
+    validations,
+    state,
+    plannedCodes,
+    availableYears,
+  } = usePlanner()
 
-  const completed = collectCompletedBefore(state, yearIndex, slotIndex)
+  const isPlaced = yearIndex !== undefined && slotIndex !== undefined
 
-  const handbookYear = (() => {
-    const target = String(Number(state.courseYear) + yearIndex)
-    return availableYears.includes(target)
-      ? target
+  // Default to the year the planner's unit data was loaded for so the
+  // popover renders instantly from context; year-switching is opt-in
+  // and fetches a one-off snapshot for just this code.
+  const defaultYear = useMemo(() => {
+    return availableYears.includes(state.courseYear)
+      ? state.courseYear
       : ([...availableYears].sort().at(-1) ?? state.courseYear)
-  })()
+  }, [state.courseYear, availableYears])
+
+  const [selectedYear, setSelectedYear] = useState(defaultYear)
+  const [open, setOpen] = useState(false)
+
+  // Reset the selector to its default each time the popover opens so
+  // re-opening lands the student back on the year that matches the
+  // planner — not whatever they were browsing in a previous session.
+  // Done in the open-change handler (event), not an effect, to avoid a
+  // setState-cascade lint flag.
+  function handleOpenChange(o: boolean) {
+    if (o) setSelectedYear(defaultYear)
+    setOpen(o)
+    onOpenChange?.(o)
+  }
+
+  const usingCurrentYear = selectedYear === state.courseYear
+
+  // When the student picks a different year, fetch that year's snapshot
+  // for just this unit. Context maps only hold the current planner year.
+  const [otherYearData, setOtherYearData] = useState<{
+    year: string
+    unit: PlannerUnit | null
+    offerings: PlannerOffering[]
+    requisites: RequisiteBlock[]
+  } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const fetchedKeyRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!open || usingCurrentYear) return
+    const key = `${code}:${selectedYear}`
+    if (fetchedKeyRef.current === key && otherYearData?.year === selectedYear) {
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    hydrateUnitsAction([code], selectedYear)
+      .then((res) => {
+        if (cancelled) return
+        fetchedKeyRef.current = key
+        setOtherYearData({
+          year: selectedYear,
+          unit: res.units[code] ?? null,
+          offerings: res.offerings[code] ?? [],
+          requisites: res.requisites[code] ?? [],
+        })
+      })
+      .catch(() => {
+        if (cancelled) return
+        setOtherYearData({
+          year: selectedYear,
+          unit: null,
+          offerings: [],
+          requisites: [],
+        })
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, usingCurrentYear, selectedYear, code, otherYearData?.year])
+
+  // Only honour otherYearData if it matches selectedYear — otherwise we'd
+  // briefly render stale data while a new year's fetch is still in flight.
+  const otherYearMatches =
+    !usingCurrentYear && otherYearData?.year === selectedYear
+  const unit = usingCurrentYear
+    ? (units.get(code) ?? null)
+    : otherYearMatches
+      ? (otherYearData?.unit ?? null)
+      : null
+  const unitOfferings = usingCurrentYear
+    ? (offerings.get(code) ?? [])
+    : otherYearMatches
+      ? (otherYearData?.offerings ?? [])
+      : []
+  const unitReqs = usingCurrentYear
+    ? (requisites.get(code) ?? [])
+    : otherYearMatches
+      ? (otherYearData?.requisites ?? [])
+      : []
+  const validation = isPlaced
+    ? validations.get(keyFor(yearIndex, slotIndex, code))
+    : undefined
+
+  const completed = useMemo(
+    () =>
+      isPlaced
+        ? collectCompletedBefore(state, yearIndex, slotIndex)
+        : new Set(plannedCodes),
+    [isPlaced, state, yearIndex, slotIndex, plannedCodes]
+  )
 
   return (
-    <Popover onOpenChange={onOpenChange}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger render={children as React.ReactElement} />
       <PopoverContent
         align="start"
@@ -78,15 +201,21 @@ export function UnitDetailPopover({
                 {unit.creditPoints}cp
               </span>
             ) : null}
+            <YearPicker
+              year={selectedYear}
+              years={availableYears}
+              onChange={setSelectedYear}
+              isDefault={selectedYear === defaultYear}
+            />
             <a
-              href={`/tree?unit=${code}&year=${handbookYear}`}
+              href={`/tree?unit=${code}&year=${selectedYear}`}
               className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <Share2Icon className="size-3" />
               Tree
             </a>
             <a
-              href={`https://handbook.monash.edu/${handbookYear}/units/${code}`}
+              href={`https://handbook.monash.edu/${selectedYear}/units/${code}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -96,7 +225,8 @@ export function UnitDetailPopover({
             </a>
           </div>
           <h3 className="text-sm leading-snug font-medium">
-            {unit?.title ?? "Loading…"}
+            {unit?.title ??
+              (loading ? "Loading…" : "Not in this year's handbook")}
           </h3>
           {unit?.level || unit?.school ? (
             <div className="flex flex-wrap gap-1 pt-0.5">
@@ -157,11 +287,11 @@ export function UnitDetailPopover({
 
         <section className="border-b pt-2 pb-4">
           <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-            Offered in {unit?.year ?? "2026"}
+            Offerings
           </h4>
           {unitOfferings.length === 0 ? (
             <p className="text-xs text-muted-foreground italic">
-              No offerings listed.
+              {loading ? "Loading…" : "No offerings listed."}
             </p>
           ) : (
             <OfferingsGrid offerings={unitOfferings} />
@@ -183,6 +313,53 @@ export function UnitDetailPopover({
         ) : null}
       </PopoverContent>
     </Popover>
+  )
+}
+
+function YearPicker({
+  year,
+  years,
+  onChange,
+  isDefault,
+}: {
+  year: string
+  years: string[]
+  onChange: (y: string) => void
+  isDefault: boolean
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            aria-label={`Viewing ${year} handbook — change year`}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] tabular-nums transition-colors",
+              isDefault
+                ? "border-border text-muted-foreground hover:text-foreground"
+                : "border-primary/40 bg-primary/40 text-primary-foreground hover:bg-primary/55"
+            )}
+          />
+        }
+      >
+        <CalendarIcon className="size-2.5" />
+        {year}
+        <ChevronDownIcon className="size-2.5 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" sideOffset={4}>
+        {years.map((y) => (
+          <DropdownMenuItem
+            key={y}
+            disabled={y === year}
+            onClick={() => onChange(y)}
+            className="text-xs tabular-nums"
+          >
+            {y}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

@@ -13,6 +13,7 @@ import type {
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
+import { UnitDetailPopover } from "./unit-detail-popover"
 
 const ROLE_LABEL: Record<keyof PlannerState["selectedAos"], string> = {
   major: "Major",
@@ -30,6 +31,21 @@ const ROLE_LABEL: Record<keyof PlannerState["selectedAos"], string> = {
  */
 export function RequirementsPanel({ className }: { className?: string }) {
   const { course, state, units, plannedCodes } = usePlanner()
+
+  // Map each placed code to where it sits in the plan so the chip's
+  // popover can surface slot-specific validation.
+  const placements = useMemo(() => {
+    const map = new Map<string, { yearIndex: number; slotIndex: number }>()
+    for (let y = 0; y < state.years.length; y++) {
+      const year = state.years[y]
+      for (let s = 0; s < year.slots.length; s++) {
+        for (const c of year.slots[s].unitCodes) {
+          if (!map.has(c)) map.set(c, { yearIndex: y, slotIndex: s })
+        }
+      }
+    }
+    return map
+  }, [state.years])
 
   const pickedAos = useMemo((): PickedAoS[] => {
     if (!course) return []
@@ -75,6 +91,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                     title={comp.courseTitle}
                     requirements={comp.courseRequirements}
                     plannedCodes={plannedCodes}
+                    placements={placements}
                   />
                   {compAos.map(({ role, aos, progress }) => (
                     <AoSBlock
@@ -83,6 +100,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                       aos={aos}
                       progress={progress}
                       plannedCodes={plannedCodes}
+                      placements={placements}
                     />
                   ))}
                 </div>
@@ -103,6 +121,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                   aos={aos}
                   progress={progress}
                   plannedCodes={plannedCodes}
+                  placements={placements}
                 />
               ))}
           </>
@@ -111,6 +130,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
             <CourseBlock
               requirements={course.courseRequirements}
               plannedCodes={plannedCodes}
+              placements={placements}
             />
             {withProgress.map(({ role, aos, progress }) => (
               <AoSBlock
@@ -119,6 +139,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                 aos={aos}
                 progress={progress}
                 plannedCodes={plannedCodes}
+                placements={placements}
               />
             ))}
           </>
@@ -134,6 +155,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
               aos={aos}
               progress={progress}
               plannedCodes={plannedCodes}
+              placements={placements}
             />
           ))
         )}
@@ -150,10 +172,12 @@ interface PickedAoS {
 function CourseBlock({
   requirements,
   plannedCodes,
+  placements,
   title = "Course requirements",
 }: {
   requirements: RequirementGroup[]
   plannedCodes: ReadonlySet<string>
+  placements: ReadonlyMap<string, { yearIndex: number; slotIndex: number }>
   title?: string
 }) {
   const totals = useMemo(
@@ -191,7 +215,11 @@ function CourseBlock({
         />
       </div>
 
-      <GroupList requirements={requirements} plannedCodes={plannedCodes} />
+      <GroupList
+        requirements={requirements}
+        plannedCodes={plannedCodes}
+        placements={placements}
+      />
     </section>
   )
 }
@@ -201,11 +229,13 @@ function AoSBlock({
   aos,
   progress,
   plannedCodes,
+  placements,
 }: {
   role: keyof PlannerState["selectedAos"]
   aos: PlannerAreaOfStudy
   progress: AoSProgress
   plannedCodes: ReadonlySet<string>
+  placements: ReadonlyMap<string, { yearIndex: number; slotIndex: number }>
 }) {
   const completionPct =
     progress.totalRequired === 0
@@ -246,7 +276,11 @@ function AoSBlock({
         />
       </div>
 
-      <GroupList requirements={aos.requirements} plannedCodes={plannedCodes} />
+      <GroupList
+        requirements={aos.requirements}
+        plannedCodes={plannedCodes}
+        placements={placements}
+      />
     </section>
   )
 }
@@ -275,9 +309,11 @@ function computeTotals(
 function GroupList({
   requirements,
   plannedCodes,
+  placements,
 }: {
   requirements: ReadonlyArray<RequirementGroup>
   plannedCodes: ReadonlySet<string>
+  placements: ReadonlyMap<string, { yearIndex: number; slotIndex: number }>
 }) {
   return (
     <div className="mt-2 flex flex-col gap-2">
@@ -314,25 +350,34 @@ function GroupList({
             <ul className="flex flex-wrap gap-1">
               {sortedOptions.map((code) => {
                 const placed = plannedCodes.has(code)
+                const placement = placements.get(code)
                 return (
                   <li key={`${g.grouping}:${code}`}>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-0.5 rounded-md border px-1 py-0.5 text-[9px] tabular-nums transition-colors",
-                        placed
-                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : isChoice
-                            ? "border-dashed border-border text-muted-foreground"
-                            : "border-border text-muted-foreground"
-                      )}
+                    <UnitDetailPopover
+                      code={code}
+                      yearIndex={placement?.yearIndex}
+                      slotIndex={placement?.slotIndex}
                     >
-                      {placed ? (
-                        <CheckIcon className="size-2" />
-                      ) : (
-                        <CircleIcon className="size-2" />
-                      )}
-                      {code}
-                    </span>
+                      <button
+                        type="button"
+                        aria-label={`Details for ${code}`}
+                        className={cn(
+                          "inline-flex cursor-pointer items-center gap-0.5 rounded-md border px-1 py-0.5 text-[9px] tabular-nums transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                          placed
+                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
+                            : isChoice
+                              ? "border-dashed border-border text-muted-foreground"
+                              : "border-border text-muted-foreground"
+                        )}
+                      >
+                        {placed ? (
+                          <CheckIcon className="size-2" />
+                        ) : (
+                          <CircleIcon className="size-2" />
+                        )}
+                        {code}
+                      </button>
+                    </UnitDetailPopover>
                   </li>
                 )
               })}
