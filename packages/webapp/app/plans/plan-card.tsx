@@ -118,7 +118,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
               onClick={handleDelete}
             >
               Delete plan
