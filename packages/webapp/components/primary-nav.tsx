@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { ExternalLinkIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -10,7 +9,6 @@ type PrimaryNavItem = {
   href: string
   label: string
   match: (p: string) => boolean
-  external?: boolean
 }
 
 export const PRIMARY_NAV_ITEMS: readonly PrimaryNavItem[] = [
@@ -24,12 +22,6 @@ export const PRIMARY_NAV_ITEMS: readonly PrimaryNavItem[] = [
     href: "/tree",
     label: "Unit Tree",
     match: (p: string) => p.startsWith("/tree"),
-  },
-  {
-    href: "https://docs.google.com/forms/d/e/1FAIpQLSfEMCU4OCItlK6DGgIXTovH7_sPSW6mZtMaPGf1OCUQW_43kg/viewform",
-    label: "Give Feedback",
-    match: () => false,
-    external: true,
   },
 ] as const
 
@@ -46,21 +38,7 @@ export function PrimaryNav({ className }: { className?: string }) {
   const router = useRouter()
   return (
     <nav className={cn("flex items-center gap-5 text-sm", className)}>
-      {PRIMARY_NAV_ITEMS.map(({ href, label, match, external }) => {
-        if (external) {
-          return (
-            <a
-              key={href}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative inline-flex items-center gap-1 py-1 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {label}
-              <ExternalLinkIcon className="size-3.5" aria-hidden />
-            </a>
-          )
-        }
+      {PRIMARY_NAV_ITEMS.map(({ href, label, match }) => {
         const active = match(pathname)
         return (
           <Link
