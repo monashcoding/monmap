@@ -30,15 +30,15 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
-    --color-warning: var(--warning);
-    --color-warning-foreground: var(--warning-foreground);
-    --color-warning-soft: var(--warning-soft);
-    --color-success: var(--success);
-    --color-success-foreground: var(--success-foreground);
-    --color-success-soft: var(--success-soft);
-    --color-info: var(--info);
-    --color-info-foreground: var(--info-foreground);
-    --color-info-soft: var(--info-soft);
+    --color-warning: oklch(0.72 0.16 70);
+    --color-warning-foreground: oklch(0.38 0.10 55);
+    --color-warning-soft: oklch(0.93 0.10 88);
+    --color-success: oklch(0.62 0.14 155);
+    --color-success-foreground: oklch(0.34 0.09 155);
+    --color-success-soft: oklch(0.93 0.08 160);
+    --color-info: oklch(0.60 0.16 245);
+    --color-info-foreground: oklch(0.32 0.11 245);
+    --color-info-soft: oklch(0.93 0.07 245);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -100,24 +100,6 @@
     --accent-foreground: #ffffff;
 
     --destructive: oklch(0.58 0.22 27);
-
-    /* Status colours. `*-soft` is the tinted surface; `*-foreground`
-       is the readable text on that surface. `--warning` / `--success`
-       themselves are the saturated mid-tone for icons, borders, and
-       rings. Picked so text on the soft tint clears WCAG AA. */
-    --warning: oklch(0.65 0.17 65);            /* amber-600-ish */
-    --warning-foreground: oklch(0.36 0.10 60); /* amber-900, body text on tint */
-    --warning-soft: oklch(0.965 0.045 85);     /* amber-50-ish surface */
-
-    --success: oklch(0.62 0.14 155);
-    --success-foreground: oklch(0.34 0.09 155);
-    --success-soft: oklch(0.955 0.04 155);
-
-    /* Info — neutral blue. Used for category chips (specialisation
-       AoS) where neither warning nor success fits. */
-    --info: oklch(0.60 0.16 245);
-    --info-foreground: oklch(0.32 0.11 245);
-    --info-soft: oklch(0.955 0.04 245);
 
     --border: oklch(0.92 0.015 300);
     --input: oklch(0.94 0.01 300);
