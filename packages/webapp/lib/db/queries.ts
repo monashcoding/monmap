@@ -623,6 +623,44 @@ async function _searchUnits(
 export const searchUnits = cacheHandbook(_searchUnits, "searchUnits")
 
 /**
+ * "Smart search" candidate generation: run the same text match as
+ * `searchUnits` but pull a wider pool (default 150) and bundle in
+ * each candidate's offerings + requisites so the client can rerank
+ * with personalization signals (slot fit, prereq readiness, AoS
+ * membership, …) without a second roundtrip. The `rank` map records
+ * the server-side text-match position per code so the client can use
+ * it as a stable tiebreaker.
+ */
+export async function searchUnitsRich(
+  query: string,
+  year: string = HANDBOOK_YEAR,
+  limit = 150
+): Promise<{
+  units: Map<string, PlannerUnit>
+  offerings: Map<string, PlannerOffering[]>
+  requisites: Map<string, RequisiteBlock[]>
+  rank: Map<string, number>
+}> {
+  const list = await searchUnits(query, limit, year)
+  const codes = list.map((u) => u.code)
+  const rank = new Map<string, number>()
+  list.forEach((u, i) => rank.set(u.code, i))
+  if (codes.length === 0) {
+    return {
+      units: new Map(),
+      offerings: new Map(),
+      requisites: new Map(),
+      rank,
+    }
+  }
+  const { units, offerings, requisites } = await hydratePlannerUnits(
+    codes,
+    year
+  )
+  return { units, offerings, requisites, rank }
+}
+
+/**
  * Inner row fetchers return JSON-serializable arrays so they fit
  * inside the Next data cache. The outer functions rebuild the Map for
  * callers that prefer it.

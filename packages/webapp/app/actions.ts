@@ -24,6 +24,7 @@ import {
   type UserGradeWithTitle,
   renameUserPlan,
   searchUnits,
+  searchUnitsRich,
   updateUserPlanState,
   upsertUserGrade,
 } from "@/lib/db/queries"
@@ -52,6 +53,37 @@ export async function searchUnitsAction(
   year: string
 ): Promise<PlannerUnit[]> {
   return searchUnits(query, 25, year)
+}
+
+/**
+ * Smart search: text-match a wider candidate pool and bundle every
+ * candidate's offerings + requisites so the client can rerank with
+ * personalization signals (slot fit, prereq readiness, AoS membership)
+ * without a second roundtrip. `rank` preserves the server-side
+ * text-match order keyed by code so the client can use it as a
+ * tiebreaker.
+ */
+export async function searchUnitsRichAction(
+  query: string,
+  year: string,
+  limit = 150
+): Promise<{
+  units: Record<string, PlannerUnit>
+  offerings: Record<string, PlannerOffering[]>
+  requisites: Record<string, RequisiteBlock[]>
+  rank: Record<string, number>
+}> {
+  const { units, offerings, requisites, rank } = await searchUnitsRich(
+    query,
+    year,
+    limit
+  )
+  return {
+    units: Object.fromEntries(units),
+    offerings: Object.fromEntries(offerings),
+    requisites: Object.fromEntries(requisites),
+    rank: Object.fromEntries(rank),
+  }
 }
 
 export async function listCoursesAction(

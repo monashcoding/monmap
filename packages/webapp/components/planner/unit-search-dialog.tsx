@@ -4,7 +4,7 @@ import { CheckIcon, SearchIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import posthog from "posthog-js"
 
-import { hydrateUnitsAction, searchUnitsAction } from "@/app/actions"
+import { searchUnitsRichAction } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,6 +13,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  buildPersonalSignals,
+  rankCandidates,
+  slotContextFor,
+  topFeatures,
+  type ScoreBreakdown,
+} from "@/lib/planner/personalize-search"
 import {
   PERIOD_KIND_LABEL,
   PERIOD_KIND_SHORT,
@@ -37,6 +44,9 @@ const PERIOD_CHIP_ORDER: PeriodKind[] = [
   "FULL_YEAR",
   "OTHER",
 ]
+
+const SEARCH_DISPLAY_LIMIT = 50
+const SUGGEST_DISPLAY_LIMIT = 25
 
 /**
  * Debounce helper — small inline implementation so we don't drag in
@@ -72,11 +82,15 @@ export function UnitSearchDialog({
     mergeRequisites,
     units,
     offerings,
+    requisites,
     plannedCodes,
     availableYears,
   } = usePlanner()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<PlannerUnit[]>([])
+  const [searchRank, setSearchRank] = useState<Map<string, number>>(
+    () => new Map()
+  )
   const [loading, setLoading] = useState(false)
   const [focusIndex, setFocusIndex] = useState(0)
 
@@ -101,115 +115,133 @@ export function UnitSearchDialog({
     return [...availableYears].sort().at(-1) ?? state.courseYear
   }, [state.courseYear, yearIndex, availableYears])
 
-  // Quick-suggest when the dialog opens with no query — offer units
-  // from the course's AoS that the student hasn't placed yet. Much
-  // nicer than an empty dialog.
+  // Personalisation signals — derived from the plan + course graph
+  // once per plan change. Cheap O(units-in-plan); we memoise so a
+  // typing burst doesn't re-walk the AoS / requisite trees on every
+  // keystroke.
+  const signals = useMemo(
+    () => buildPersonalSignals(state, course, requisites),
+    [state, course, requisites]
+  )
+  const slotCtx = useMemo(
+    () => slotContextFor(state, yearIndex, slotIndex),
+    [state, yearIndex, slotIndex]
+  )
+
+  // Empty-query suggestions: the full pool of course / AoS units the
+  // student could still take, ranked by personal score with no text
+  // signal. The top of the list ends up being "fits the slot,
+  // satisfies an unmet requirement group, and is the right level for
+  // this year" — i.e. literally the next move.
   const suggestions = useMemo<PlannerUnit[]>(() => {
     if (!course) return []
-    const placed = new Set<string>()
-    for (const y of state.years)
-      for (const s of y.slots) for (const c of s.unitCodes) placed.add(c)
     const seen = new Set<string>()
-    const out: PlannerUnit[] = []
-    for (const aos of course.areasOfStudy) {
-      for (const u of aos.units) {
-        if (placed.has(u.code) || seen.has(u.code)) continue
-        seen.add(u.code)
-        const full = units.get(u.code)
-        if (full) out.push(full)
-        if (out.length >= 20) break
-      }
-      if (out.length >= 20) break
+    const pool: PlannerUnit[] = []
+    const consider = (code: string) => {
+      if (seen.has(code) || plannedCodes.has(code)) return
+      seen.add(code)
+      const u = units.get(code)
+      if (u) pool.push(u)
     }
-    return out
-  }, [course, state.years, units])
+    for (const cu of course.courseUnits) consider(cu.code)
+    for (const aos of course.areasOfStudy)
+      for (const u of aos.units) consider(u.code)
+    if (pool.length === 0) return []
+    return rankCandidates(pool, {
+      signals,
+      slot: slotCtx,
+      offeringsByCode: offerings,
+      requisitesByCode: requisites,
+    })
+      .slice(0, SUGGEST_DISPLAY_LIMIT)
+      .map((r) => r.unit)
+  }, [course, units, offerings, requisites, signals, slotCtx, plannedCodes])
 
+  // Search: one network roundtrip pulls a wider candidate pool plus
+  // their offerings + requisites in a single bundle. We then rerank
+  // locally with `signals` so the right slot / AoS / level wins.
   useEffect(() => {
     let cancelled = false
     if (!debounced.trim()) {
-      // Empty query — clear cached results.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([])
+      setSearchRank(new Map())
       setLoading(false)
       return
     }
     setLoading(true)
-    searchUnitsAction(debounced, handbookYear)
-      .then(async (list) => {
+    searchUnitsRichAction(debounced, handbookYear)
+      .then((res) => {
         if (cancelled) return
-        setResults(list)
+        const unitsList = Object.values(res.units)
+        const rank = new Map(Object.entries(res.rank))
+        setResults(unitsList)
+        setSearchRank(rank)
         setLoading(false)
-        mergeUnits(list)
-        // Search returns units only; hydrate the offerings + requisites
-        // for any that aren't already in the planner cache so we can
-        // tell the student which units fit this slot and render the
-        // right-pane details without extra round trips. Codes already
-        // placed (and therefore hydrated by the planner) are skipped.
-        const need = list.map((u) => u.code).filter((c) => !offerings.has(c))
-        if (need.length === 0) return
-        try {
-          const hr = await hydrateUnitsAction(need, handbookYear)
-          if (cancelled) return
-          mergeUnits(Object.values(hr.units))
-          mergeOfferings(hr.offerings)
-          mergeRequisites(hr.requisites)
-        } catch {
-          // Non-fatal: rows just won't show fit chips until the next
-          // search succeeds. The user can still pick a unit.
-        }
+        mergeUnits(unitsList)
+        mergeOfferings(res.offerings)
+        mergeRequisites(res.requisites)
       })
       .catch(() => {
         if (cancelled) return
         setResults([])
+        setSearchRank(new Map())
         setLoading(false)
       })
     return () => {
       cancelled = true
     }
-  }, [
-    debounced,
-    handbookYear,
-    mergeUnits,
-    mergeOfferings,
-    mergeRequisites,
-    offerings,
-  ])
+  }, [debounced, handbookYear, mergeUnits, mergeOfferings, mergeRequisites])
 
   useEffect(() => {
     if (!open) {
-      // Resetting on close — the dialog's open state is an external
-      // input we sync our cached query/results to.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery("")
       setResults([])
+      setSearchRank(new Map())
       setFocusIndex(0)
     }
   }, [open])
 
-  // Sort each list so the most actionable units float to the top:
-  //   1. Units that fit this slot's period
-  //   2. Units offered elsewhere (greyed but still pickable)
-  //   3. Units already on the plan (visually disabled)
-  // Within each group we preserve the upstream ordering (relevance from
-  // search; AoS order for suggestions) so the existing ranking still
-  // wins on ties.
-  const items = useMemo(() => {
-    const source = debounced.trim() ? results : suggestions
-    const rank = (u: PlannerUnit): number => {
-      if (plannedCodes.has(u.code)) return 2
-      if (!slotKind) return 0
-      const offs = offerings.get(u.code) ?? []
-      if (offs.length === 0) return 0 // unknown yet — keep with "fits"
-      return isOfferedInPeriod(offs, slotKind) ? 0 : 1
+  // Final display list — ranked by `personalScore`. For empty queries
+  // we already ranked the suggestions pool above; for searches we
+  // rerank the server's text-match candidates here so the textRank
+  // becomes one feature among many rather than the only sort key.
+  const ranked = useMemo(() => {
+    if (debounced.trim()) {
+      return rankCandidates(results, {
+        signals,
+        slot: slotCtx,
+        offeringsByCode: offerings,
+        requisitesByCode: requisites,
+        rankByCode: searchRank,
+      }).slice(0, SEARCH_DISPLAY_LIMIT)
     }
-    return source
-      .map((u, i) => ({ u, i, r: rank(u) }))
-      .sort((a, b) => a.r - b.r || a.i - b.i)
-      .map((x) => x.u)
-  }, [debounced, results, suggestions, offerings, slotKind, plannedCodes])
+    return suggestions.map((u) => ({
+      unit: u,
+      // For suggestions we already ranked above; we still want the
+      // breakdown for the add-event, so recompute cheaply.
+      score: null as ScoreBreakdown | null,
+    }))
+  }, [
+    debounced,
+    results,
+    suggestions,
+    signals,
+    slotCtx,
+    offerings,
+    requisites,
+    searchRank,
+  ])
+
+  const items = useMemo(() => ranked.map((r) => r.unit), [ranked])
+  const scoreByCode = useMemo(() => {
+    const m = new Map<string, ScoreBreakdown>()
+    for (const r of ranked) if (r.score) m.set(r.unit.code, r.score)
+    return m
+  }, [ranked])
 
   useEffect(() => {
-    // Keep focus in range when the items list shrinks.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (focusIndex >= items.length) setFocusIndex(Math.max(0, items.length - 1))
   }, [items.length, focusIndex])
@@ -219,6 +251,7 @@ export function UnitSearchDialog({
   const addAndClose = useCallback(
     (code: string) => {
       const unit = units.get(code)
+      const score = scoreByCode.get(code)
       posthog.capture("unit_added", {
         unit_code: code,
         unit_title: unit?.title,
@@ -227,6 +260,13 @@ export function UnitSearchDialog({
         slot_index: slotIndex,
         slot_kind: slotKind,
         from_search: !!debounced.trim(),
+        // Personalisation telemetry — lets us later learn weights from
+        // which features mattered for the units users actually add.
+        rank_score: score?.total,
+        rank_top_features: score ? topFeatures(score) : undefined,
+        rank_period_fit: score?.periodFit,
+        rank_fills_gap: score?.fillsGap,
+        rank_prereq_ready: score?.prereqReady,
       })
       addUnit(yearIndex, slotIndex, code)
       onOpenChangeAction(false)
@@ -238,6 +278,7 @@ export function UnitSearchDialog({
       slotKind,
       debounced,
       units,
+      scoreByCode,
       onOpenChangeAction,
     ]
   )
@@ -283,7 +324,7 @@ export function UnitSearchDialog({
           <div className="min-h-0 overflow-y-auto md:border-r">
             <div className="p-1.5">
               {!debounced.trim() && suggestions.length > 0 ? (
-                <GroupHeading>Suggested from your course</GroupHeading>
+                <GroupHeading>Best picks for {slotLabel}</GroupHeading>
               ) : null}
               {debounced.trim() && loading ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">
