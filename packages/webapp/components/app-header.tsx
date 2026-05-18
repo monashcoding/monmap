@@ -45,7 +45,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
       <div className="flex min-w-0 items-center gap-3 md:gap-6">
         <MobileNavTrigger />
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-          <Link href="/" aria-label="monmap home" className="relative shrink-0">
+          <Link href="/" aria-label="MonMap home" className="relative shrink-0">
             <div className="flex size-9 items-center justify-center overflow-hidden rounded-2xl bg-primary ring-2 ring-[var(--monash-purple)] sm:size-10">
               <Image
                 src="/brand-logo.png"
@@ -59,7 +59,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
           </Link>
           <div className="min-w-0">
             <h1 className="truncate text-base leading-tight font-semibold">
-              monmap
+              MonMap
             </h1>
             <p className="hidden truncate text-[11px] text-muted-foreground sm:block">
               A course mapper by{" "}
@@ -107,7 +107,7 @@ function MobileNavTrigger() {
       </SheetTrigger>
       <SheetContent side="left" className="w-[min(280px,80vw)] gap-0 p-0">
         <SheetHeader className="border-b p-4">
-          <SheetTitle>monmap</SheetTitle>
+          <SheetTitle>MonMap</SheetTitle>
           <SheetDescription>Monash course planner</SheetDescription>
         </SheetHeader>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">

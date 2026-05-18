@@ -102,7 +102,7 @@ export function LeftSidebar() {
         const text = await file.text()
         const parsed = JSON.parse(text) as PlannerState
         if (!parsed || !Array.isArray(parsed.years)) {
-          throw new Error("File isn't a monmap plan")
+          throw new Error("File isn't a MonMap plan")
         }
         dispatch({ type: "hydrate", state: parsed })
         if (parsed.courseCode) void switchCourse(parsed.courseCode)

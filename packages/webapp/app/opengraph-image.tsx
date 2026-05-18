@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { ImageResponse } from "next/og"
 
-export const alt = "monmap — Monash course planner"
+export const alt = "MonMap — Monash course planner"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -138,8 +138,8 @@ export default async function OpengraphImage() {
               lineHeight: 1,
             }}
           >
-            <span>mon</span>
-            <span style={{ color: MONASH_YELLOW }}>map</span>
+            <span>Mon</span>
+            <span style={{ color: MONASH_YELLOW }}>Map</span>
           </div>
           <div
             style={{

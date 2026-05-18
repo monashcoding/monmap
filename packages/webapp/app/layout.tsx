@@ -21,21 +21,21 @@ const siteUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    template: "%s · monmap",
-    default: "monmap — Monash course planner",
+    template: "%s · MonMap",
+    default: "MonMap — Monash course planner",
   },
   description:
     "Plan your Monash degree visually: drag units into semesters, check prereqs, and track WAM.",
   openGraph: {
-    title: "monmap — Monash course planner",
+    title: "MonMap — Monash course planner",
     description:
       "Plan your Monash degree visually: drag units into semesters, check prereqs, and track WAM.",
-    siteName: "monmap",
+    siteName: "MonMap",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "monmap — Monash course planner",
+    title: "MonMap — Monash course planner",
     description:
       "Plan your Monash degree visually: drag units into semesters, check prereqs, and track WAM.",
   },
