@@ -71,6 +71,59 @@ export function UnitDetailPopover({
   children: React.ReactNode
   onOpenChangeAction?: (open: boolean) => void
 }) {
+  const [open, setOpen] = useState(false)
+
+  function handleOpenChange(o: boolean) {
+    setOpen(o)
+    onOpenChangeAction?.(o)
+  }
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger render={children as React.ReactElement} />
+      <PopoverContent
+        align="start"
+        side="right"
+        sideOffset={8}
+        collisionPadding={16}
+        initialFocus={false}
+        finalFocus={false}
+        className="max-h-[min(70svh,520px)] w-[min(520px,calc(100vw-2rem))] overflow-y-auto overscroll-none p-0 shadow-2xl ring-foreground/15 dark:ring-foreground/20"
+      >
+        <UnitDetailView
+          code={code}
+          yearIndex={yearIndex}
+          slotIndex={slotIndex}
+          active={open}
+          className="p-4"
+        />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/**
+ * The full unit detail body — header, validation issues, synopsis,
+ * offerings, requisites. Extracted from the popover so other surfaces
+ * (e.g. the search dialog's right pane) can render the same content
+ * inline. `active` gates the cross-year fetch so the view doesn't
+ * over-fetch when it's mounted but not visible (the popover passes its
+ * `open` here). When the view is always visible — like in the dialog —
+ * leave `active` at its default `true`.
+ */
+export function UnitDetailView({
+  code,
+  yearIndex,
+  slotIndex,
+  active = true,
+  className,
+}: {
+  code: string
+  yearIndex?: number
+  slotIndex?: number
+  active?: boolean
+  className?: string
+}) {
   const {
     units,
     offerings,
@@ -84,8 +137,8 @@ export function UnitDetailPopover({
   const isPlaced = yearIndex !== undefined && slotIndex !== undefined
 
   // Default to the year the planner's unit data was loaded for so the
-  // popover renders instantly from context; year-switching is opt-in
-  // and fetches a one-off snapshot for just this code.
+  // view renders instantly from context; year-switching is opt-in and
+  // fetches a one-off snapshot for just this code.
   const defaultYear = useMemo(() => {
     return availableYears.includes(state.courseYear)
       ? state.courseYear
@@ -93,23 +146,28 @@ export function UnitDetailPopover({
   }, [state.courseYear, availableYears])
 
   const [selectedYear, setSelectedYear] = useState(defaultYear)
-  const [open, setOpen] = useState(false)
 
-  // Reset the selector to its default each time the popover opens so
-  // re-opening lands the student back on the year that matches the
-  // planner — not whatever they were browsing in a previous session.
-  // Done in the open-change handler (event), not an effect, to avoid a
-  // setState-cascade lint flag.
-  function handleOpenChange(o: boolean) {
-    if (o) setSelectedYear(defaultYear)
-    setOpen(o)
-    onOpenChangeAction?.(o)
+  // Reset the year picker back to the default whenever the focused
+  // code changes (so the dialog's "next focused unit" starts fresh)
+  // or whenever the view re-activates (so reopening the popover
+  // doesn't surface a stale pick from a previous session). Done in
+  // render — the React-recommended pattern for "derive state from a
+  // prop change" — instead of an effect, which would burn a useless
+  // paint cycle.
+  const [lastCode, setLastCode] = useState(code)
+  const [lastActive, setLastActive] = useState(active)
+  if (lastCode !== code) {
+    setLastCode(code)
+    setSelectedYear(defaultYear)
+  } else if (active && !lastActive) {
+    setLastActive(active)
+    setSelectedYear(defaultYear)
+  } else if (active !== lastActive) {
+    setLastActive(active)
   }
 
   const usingCurrentYear = selectedYear === state.courseYear
 
-  // When the student picks a different year, fetch that year's snapshot
-  // for just this unit. Context maps only hold the current planner year.
   const [otherYearData, setOtherYearData] = useState<{
     year: string
     unit: PlannerUnit | null
@@ -120,7 +178,7 @@ export function UnitDetailPopover({
   const fetchedKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!open || usingCurrentYear) return
+    if (!active || usingCurrentYear) return
     const key = `${code}:${selectedYear}`
     if (fetchedKeyRef.current === key && otherYearData?.year === selectedYear) {
       return
@@ -153,10 +211,8 @@ export function UnitDetailPopover({
     return () => {
       cancelled = true
     }
-  }, [open, usingCurrentYear, selectedYear, code, otherYearData?.year])
+  }, [active, usingCurrentYear, selectedYear, code, otherYearData?.year])
 
-  // Only honour otherYearData if it matches selectedYear — otherwise we'd
-  // briefly render stale data while a new year's fetch is still in flight.
   const otherYearMatches =
     !usingCurrentYear && otherYearData?.year === selectedYear
   const unit = usingCurrentYear
@@ -187,137 +243,122 @@ export function UnitDetailPopover({
   )
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger render={children as React.ReactElement} />
-      <PopoverContent
-        align="start"
-        side="right"
-        sideOffset={8}
-        collisionPadding={16}
-        initialFocus={false}
-        finalFocus={false}
-        className="max-h-[min(70svh,520px)] w-[min(520px,calc(100vw-2rem))] overflow-y-auto overscroll-none p-4 shadow-2xl ring-foreground/15 dark:ring-foreground/20"
-      >
-        <header className="flex flex-col gap-1 border-b pb-3">
-          <div className="flex items-baseline gap-2">
-            <span className="text-base font-semibold tabular-nums">{code}</span>
-            {unit ? (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {unit.creditPoints}cp
-              </span>
-            ) : null}
-            <YearPicker
-              year={selectedYear}
-              years={availableYears}
-              onChange={setSelectedYear}
-              isDefault={selectedYear === defaultYear}
-            />
-            <a
-              href={`/tree?unit=${code}&year=${selectedYear}`}
-              className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Share2Icon className="size-3" />
-              Tree
-            </a>
-            <a
-              href={`https://handbook.monash.edu/${selectedYear}/units/${code}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <ExternalLinkIcon className="size-3" />
-              Handbook
-            </a>
-          </div>
-          <h3 className="text-sm leading-snug font-medium">
-            {unit?.title ??
-              (loading ? "Loading…" : "Not in this year's handbook")}
-          </h3>
-          {unit?.level || unit?.school ? (
-            <div className="flex flex-wrap gap-1 pt-0.5">
-              {unit?.level ? (
-                <Badge variant="secondary" className="text-[10px]">
-                  {unit.level}
-                </Badge>
-              ) : null}
-              {unit?.school ? (
-                <Badge variant="outline" className="text-[10px] font-normal">
-                  {unit.school}
-                </Badge>
-              ) : null}
-            </div>
+    <div className={className}>
+      <header className="flex flex-col gap-1 border-b pb-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-base font-semibold tabular-nums">{code}</span>
+          {unit ? (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {unit.creditPoints}cp
+            </span>
           ) : null}
-        </header>
-
-        {validation &&
-        (validation.errors.length > 0 || validation.warnings.length > 0) ? (
-          <section className="border-b pt-2 pb-4">
-            <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-              Issues in this slot
-            </h4>
-            <ul className="flex flex-col gap-1.5">
-              {validation.errors.map((issue, i) => (
-                <li
-                  key={`err-${i}`}
-                  className="flex gap-2 rounded-lg bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive"
-                >
-                  <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-                  <span>{issue.message}</span>
-                </li>
-              ))}
-              {validation.warnings.map((issue, i) => (
-                <li
-                  key={`warn-${i}`}
-                  className="flex gap-2 rounded-lg bg-warning-soft px-2.5 py-1.5 text-xs text-warning-foreground"
-                >
-                  <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-                  <span>{issue.message}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <YearPicker
+            year={selectedYear}
+            years={availableYears}
+            onChange={setSelectedYear}
+            isDefault={selectedYear === defaultYear}
+          />
+          <a
+            href={`/tree?unit=${code}&year=${selectedYear}`}
+            className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Share2Icon className="size-3" />
+            Tree
+          </a>
+          <a
+            href={`https://handbook.monash.edu/${selectedYear}/units/${code}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ExternalLinkIcon className="size-3" />
+            Handbook
+          </a>
+        </div>
+        <h3 className="text-sm leading-snug font-medium">
+          {unit?.title ??
+            (loading ? "Loading…" : "Not in this year's handbook")}
+        </h3>
+        {unit?.level || unit?.school ? (
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {unit?.level ? (
+              <Badge variant="secondary" className="text-[10px]">
+                {unit.level}
+              </Badge>
+            ) : null}
+            {unit?.school ? (
+              <Badge variant="outline" className="text-[10px] font-normal">
+                {unit.school}
+              </Badge>
+            ) : null}
+          </div>
         ) : null}
+      </header>
 
-        {unit?.synopsis ? (
-          <section className="border-b pt-2 pb-4">
-            <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-              About
-            </h4>
-            <div
-              className="prose-sm line-clamp-6 text-xs leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_br]:hidden [&_p]:mt-0 [&_p]:mb-2 [&_p:empty]:hidden [&_p:last-child]:mb-0"
-              dangerouslySetInnerHTML={{ __html: unit.synopsis }}
-            />
-          </section>
-        ) : null}
-
+      {validation &&
+      (validation.errors.length > 0 || validation.warnings.length > 0) ? (
         <section className="border-b pt-2 pb-4">
           <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-            Offerings
+            Issues in this slot
           </h4>
-          {unitOfferings.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">
-              {loading ? "Loading…" : "No offerings listed."}
-            </p>
-          ) : (
-            <OfferingsGrid offerings={unitOfferings} />
-          )}
+          <ul className="flex flex-col gap-1.5">
+            {validation.errors.map((issue, i) => (
+              <li
+                key={`err-${i}`}
+                className="flex gap-2 rounded-lg bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive"
+              >
+                <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
+                <span>{issue.message}</span>
+              </li>
+            ))}
+            {validation.warnings.map((issue, i) => (
+              <li
+                key={`warn-${i}`}
+                className="flex gap-2 rounded-lg bg-warning-soft px-2.5 py-1.5 text-xs text-warning-foreground"
+              >
+                <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
+                <span>{issue.message}</span>
+              </li>
+            ))}
+          </ul>
         </section>
+      ) : null}
 
-        {unitReqs.length > 0 ? (
-          <section className="pt-2">
-            {unitReqs
-              .filter((r) => r.rule && r.rule.length > 0)
-              .map((block, i) => (
-                <RequisiteBlockView
-                  key={i}
-                  block={block}
-                  completed={completed}
-                />
-              ))}
-          </section>
-        ) : null}
-      </PopoverContent>
-    </Popover>
+      {unit?.synopsis ? (
+        <section className="border-b pt-2 pb-4">
+          <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
+            About
+          </h4>
+          <div
+            className="prose-sm line-clamp-6 text-xs leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_br]:hidden [&_p]:mt-0 [&_p]:mb-2 [&_p:empty]:hidden [&_p:last-child]:mb-0"
+            dangerouslySetInnerHTML={{ __html: unit.synopsis }}
+          />
+        </section>
+      ) : null}
+
+      <section className="border-b pt-2 pb-4">
+        <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
+          Offerings
+        </h4>
+        {unitOfferings.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">
+            {loading ? "Loading…" : "No offerings listed."}
+          </p>
+        ) : (
+          <OfferingsGrid offerings={unitOfferings} />
+        )}
+      </section>
+
+      {unitReqs.length > 0 ? (
+        <section className="pt-2">
+          {unitReqs
+            .filter((r) => r.rule && r.rule.length > 0)
+            .map((block, i) => (
+              <RequisiteBlockView key={i} block={block} completed={completed} />
+            ))}
+        </section>
+      ) : null}
+    </div>
   )
 }
 

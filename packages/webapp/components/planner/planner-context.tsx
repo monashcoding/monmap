@@ -109,6 +109,10 @@ export interface PlannerContextValue {
 
   /** Merge additional unit data (from search results) into the local cache. */
   mergeUnits: (units: PlannerUnit[]) => void
+  /** Merge additional offering data into the local cache, keyed by unit code. */
+  mergeOfferings: (offerings: Record<string, PlannerOffering[]>) => void
+  /** Merge additional requisite blocks into the local cache, keyed by unit code. */
+  mergeRequisites: (requisites: Record<string, RequisiteBlock[]>) => void
   /** True if a code is a full-year unit per current offerings data. */
   isFullYear: (code: string) => boolean
   /** All FY codes currently placed anywhere in the plan. */
@@ -501,6 +505,28 @@ export function PlannerProvider({
       return next
     })
   }, [])
+
+  const mergeOfferings = useCallback(
+    (incoming: Record<string, PlannerOffering[]>) => {
+      setOfferingsMap((m) => {
+        const next = new Map(m)
+        for (const [k, v] of Object.entries(incoming)) next.set(k, v)
+        return next
+      })
+    },
+    []
+  )
+
+  const mergeRequisites = useCallback(
+    (incoming: Record<string, RequisiteBlock[]>) => {
+      setRequisitesMap((m) => {
+        const next = new Map(m)
+        for (const [k, v] of Object.entries(incoming)) next.set(k, v)
+        return next
+      })
+    },
+    []
+  )
 
   const isFullYear = useCallback(
     (code: string) => isFullYearUnit(code, offeringsMap),
@@ -906,6 +932,8 @@ export function PlannerProvider({
       plannedCodes,
       isSyncing,
       mergeUnits,
+      mergeOfferings,
+      mergeRequisites,
       isFullYear,
       fullYearCodes,
       addUnit,
@@ -940,6 +968,8 @@ export function PlannerProvider({
       plannedCodes,
       isSyncing,
       mergeUnits,
+      mergeOfferings,
+      mergeRequisites,
       isFullYear,
       fullYearCodes,
       addUnit,

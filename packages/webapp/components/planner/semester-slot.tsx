@@ -120,7 +120,7 @@ export function SemesterSlot({
 
       <UnitSearchDialog
         open={open}
-        onOpenChange={setOpen}
+        onOpenChangeAction={setOpen}
         yearIndex={yearIndex}
         slotIndex={slotIndex}
       />
