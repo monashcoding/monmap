@@ -97,9 +97,31 @@ export function TreeView(props: TreeViewProps) {
   const isMobile = useIsMobile()
   const [controlsOpen, setControlsOpen] = useState(false)
 
-  const [controls, setControls] = useState<TreeControlsValue>(
-    props.initial.controls
-  )
+  // Initial controls come from the server, but on the canonical
+  // /units/[code] and /courses/[code] routes we deliberately skip
+  // searchParams server-side (it would break ISR caching — see the
+  // entity page files for context). To preserve deep-links like
+  // `?direction=upstream` and `?aos=...`, read them once on mount
+  // from window.location and overlay onto the server-supplied
+  // initial controls. Doesn't affect /tree which already passes its
+  // searchParams through the server.
+  const [controls, setControls] = useState<TreeControlsValue>(() => {
+    const seed = props.initial.controls
+    if (typeof window === "undefined") return seed
+    const sp = new URLSearchParams(window.location.search)
+    const direction = sp.get("direction")
+    const aos = sp.get("aos")
+    return {
+      ...seed,
+      direction:
+        direction === "upstream" ||
+        direction === "downstream" ||
+        direction === "both"
+          ? direction
+          : seed.direction,
+      aosCode: seed.mode === "course" && aos ? aos : seed.aosCode,
+    }
+  })
   const [course, setCourse] = useState<PlannerCourseWithAoS | null>(
     props.initialCourse
   )

@@ -70,35 +70,30 @@ export async function generateMetadata({
  */
 export default async function CourseTreePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ code: string }>
-  searchParams: Promise<{
-    aos?: string
-    direction?: string
-    year?: string
-  }>
 }) {
-  const [{ code }, sp] = await Promise.all([params, searchParams])
+  const { code } = await params
   const upper = code.toUpperCase()
 
+  // No `searchParams` — see /units/[code]/page.tsx for the rationale.
+  // Awaiting searchParams forces dynamic rendering, which is
+  // incompatible with the `revalidate = 86400` ISR caching that makes
+  // these pages cheap on Vercel. Deep-links like `?aos=...` are still
+  // picked up client-side by TreeView via window.location.
   const availableYears = await listAvailableYears()
   const fallbackYear = (await listMostRecentYear()) ?? availableYears.at(-1)
-  const year =
-    sp.year && availableYears.includes(sp.year) ? sp.year : fallbackYear!
+  const year = fallbackYear!
 
   const course = await fetchPublicCourse(upper, year)
   if (!course) notFound()
 
-  const direction: TreeDirection =
-    sp.direction === "downstream" || sp.direction === "both"
-      ? sp.direction
-      : "upstream"
+  const direction: TreeDirection = "upstream"
 
   const initialControls: TreeControlsValue = {
     mode: "course",
     courseCode: course.code,
-    aosCode: sp.aos ?? null,
+    aosCode: null,
     unitCode: null,
     direction,
     year,

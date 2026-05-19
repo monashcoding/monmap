@@ -71,28 +71,29 @@ export async function generateMetadata({
  */
 export default async function UnitTreePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ code: string }>
-  searchParams: Promise<{ direction?: string; year?: string }>
 }) {
-  const [{ code }, sp] = await Promise.all([params, searchParams])
+  const { code } = await params
   const upper = code.toUpperCase()
 
+  // Deliberately no `searchParams` here. Awaiting searchParams in a
+  // server component opts the route into dynamic mode — incompatible
+  // with `revalidate = 86400` ISR, which is what makes these 5k+
+  // entity pages cheap on Vercel. The canonical URL for SEO is the
+  // bare `/units/[code]` anyway; deep-links like `?direction=upstream`
+  // still work, the client just picks them up via window.location on
+  // mount (see TreeView's URL-sync + initial-controls logic).
   const availableYears = await listAvailableYears()
   const fallbackYear = (await listMostRecentYear()) ?? availableYears.at(-1)
-  const year =
-    sp.year && availableYears.includes(sp.year) ? sp.year : fallbackYear!
+  const year = fallbackYear!
 
   // 404 if the unit doesn't exist in the chosen year — keeps URL space
   // honest and stops Googlebot from indexing typo'd paths.
   const unit = await fetchPublicUnit(upper, year)
   if (!unit) notFound()
 
-  const direction: TreeDirection =
-    sp.direction === "downstream" || sp.direction === "both"
-      ? sp.direction
-      : "both"
+  const direction: TreeDirection = "both"
 
   const initialControls: TreeControlsValue = {
     mode: "unit",
