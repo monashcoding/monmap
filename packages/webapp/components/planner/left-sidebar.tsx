@@ -175,13 +175,13 @@ export function LeftSidebar() {
           />
 
           <ActionButton
-            icon={<DownloadIcon />}
+            icon={<UploadIcon />}
             label="Export"
             onClick={onExport}
           />
 
           <ActionButton
-            icon={<UploadIcon />}
+            icon={<DownloadIcon />}
             label="Import"
             onClick={() => fileInputRef.current?.click()}
           />
