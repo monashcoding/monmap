@@ -1,4 +1,4 @@
-import type { PlannerOffering, PlannerState } from "./types.ts"
+import type { PeriodKind, PlannerOffering, PlannerState } from "./types.ts"
 
 /**
  * A unit is "full year" when its meaningful offerings are exclusively
@@ -53,4 +53,34 @@ export function countFullYearPrefix(
     else break
   }
   return n
+}
+
+/**
+ * Effective credit-point load a unit contributes to a single slot.
+ *
+ * A full-year unit's twins sit in S1 and S2 of the same year, but its
+ * actual workload runs *across* the year — naively counting the full
+ * CP in each half double-charges every per-slot metric (capacity
+ * gauge, over-CP warning, per-semester totals, grid column span). For
+ * FY units in S1/S2 we therefore return half the unit's CP; non-FY
+ * placements and FY-in-other-period (rare, shouldn't happen) get the
+ * full value.
+ *
+ * Returns 0 when the unit isn't loaded or has no credit points.
+ */
+export function perSlotCreditPoints(
+  code: string,
+  slotKind: PeriodKind,
+  units: ReadonlyMap<string, { creditPoints: number | null | undefined }>,
+  offerings: ReadonlyMap<string, PlannerOffering[]>
+): number {
+  const cp = units.get(code)?.creditPoints
+  if (cp == null || cp <= 0) return 0
+  if (
+    (slotKind === "S1" || slotKind === "S2") &&
+    isFullYearUnit(code, offerings)
+  ) {
+    return cp / 2
+  }
+  return cp
 }

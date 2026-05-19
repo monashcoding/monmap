@@ -24,7 +24,8 @@ import { UnitDetailPopover } from "./unit-detail-popover"
  * details, or use the `+` popover for keyboard / non-pointer adds.
  */
 export function DraggableUnitRow({ code }: { code: string }) {
-  const { state, units, addUnit, isFullYear, plannedCodes } = usePlanner()
+  const { state, units, offerings, addUnit, isFullYear, plannedCodes } =
+    usePlanner()
   const [addOpen, setAddOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const placed = plannedCodes.has(code)
@@ -113,7 +114,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
               {state.years.map((year, yi) =>
                 year.slots.map((slot, si) => {
                   const cap = slotCapacity(slot)
-                  const used = slotUsedWeight(slot, units)
+                  const used = slotUsedWeight(slot, units, offerings)
                   const full = used >= cap
                   const label =
                     slot.label ??

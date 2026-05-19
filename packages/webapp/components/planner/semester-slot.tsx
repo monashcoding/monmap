@@ -6,6 +6,7 @@ import { useMemo, useState } from "react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
+import { perSlotCreditPoints } from "@/lib/planner/full-year"
 import { slotCapacity, slotUsedWeight, STANDARD_CP } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
@@ -34,7 +35,7 @@ export function SemesterSlot({
   yearIndex: number
   slotIndex: number
 }) {
-  const { state, units } = usePlanner()
+  const { state, units, offerings } = usePlanner()
   const [open, setOpen] = useState(false)
   const isMobile = useIsMobile()
 
@@ -53,7 +54,7 @@ export function SemesterSlot({
   if (!slot) return null
 
   const capacity = slotCapacity(slot)
-  const usedWeight = slotUsedWeight(slot, units)
+  const usedWeight = slotUsedWeight(slot, units, offerings)
   const atCapacity = usedWeight >= capacity
   const activeData = active?.data.current as
     | { kind: string; yearIndex: number; slotIndex: number; code?: string }
@@ -64,10 +65,14 @@ export function SemesterSlot({
     activeData.slotIndex === slotIndex
   const showDropTint = isOver && activeData?.kind === "unit" && !isFromSameSlot
 
-  // Per-unit column spans derived from credit points.
+  // Per-unit column spans derived from per-slot credit-point load.
+  // FY twins span one column per semester (not two), matching the
+  // per-slot CP a 12 CP FY unit actually contributes to each half.
   const unitSpans = slot.unitCodes.map((code) => {
-    const cp = units.get(code)?.creditPoints ?? STANDARD_CP
-    return Math.max(1, Math.round(cp / STANDARD_CP))
+    const cp = perSlotCreditPoints(code, slot.kind, units, offerings)
+    const effective =
+      cp > 0 ? cp : (units.get(code)?.creditPoints ?? STANDARD_CP)
+    return Math.max(1, Math.round(effective / STANDARD_CP))
   })
   const placedSpan = unitSpans.reduce((sum, s) => sum + s, 0)
   // Column count must fit all placed spans plus the add button (if visible),

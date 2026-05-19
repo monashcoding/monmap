@@ -1,3 +1,4 @@
+import { perSlotCreditPoints } from "./full-year.ts"
 import { evaluateProhibition, evaluateRequisiteTree } from "./requisites.ts"
 import type {
   PeriodKind,
@@ -230,8 +231,12 @@ export function validatePlan(
       const slot = year.slots[s]
       const concurrent = new Set(slot.unitCodes)
 
+      // Per-slot CP load — full-year units contribute their half-year
+      // share so a 12 CP FY twin doesn't single-handedly trip the
+      // over-credit-load warning in both S1 and S2 of the same year.
       const slotCreditLoad = slot.unitCodes.reduce(
-        (sum, c) => sum + (unitsByCode.get(c)?.creditPoints ?? 0),
+        (sum, c) =>
+          sum + perSlotCreditPoints(c, slot.kind, unitsByCode, offeringsByCode),
         0
       )
 

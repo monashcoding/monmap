@@ -9,6 +9,7 @@ import {
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
+  PlannerOffering,
   PlannerState,
   PlannerUnit,
 } from "./types.ts"
@@ -90,6 +91,41 @@ test("summarizePlan: counts credit points per year and slot kind", () => {
   assert.equal(s.creditPointsBySlotKind.S2, 6)
   assert.equal(s.uniqueUnitCount, 4)
   assert.deepEqual(s.duplicateUnitCodes, [])
+})
+
+test("summarizePlan: full-year twin contributes half its CP to each semester", () => {
+  // FIT3144-shape: 12 CP, only-full-year offering, placed in both
+  // S1[0] and S2[0] of year 1 by the add_full_year_unit reducer.
+  const state = emptyState()
+  state.years[0].slots[0].unitCodes = ["FIT3144"]
+  state.years[0].slots[1].unitCodes = ["FIT3144"]
+
+  const units = new Map([["FIT3144", unit("FIT3144", 12)]])
+  const offerings = new Map<string, PlannerOffering[]>([
+    [
+      "FIT3144",
+      [
+        {
+          unitCode: "FIT3144",
+          teachingPeriod: "Full year",
+          location: null,
+          attendanceModeCode: null,
+          periodKind: "FULL_YEAR",
+        },
+      ],
+    ],
+  ])
+
+  const s = summarizePlan(state, bit, units, offerings)
+  // Degree total counts the unit once, not twice.
+  assert.equal(s.totalCreditPoints, 12)
+  assert.deepEqual(s.creditPointsByYear, [12, 0])
+  // Per-slot view splits the workload across the year.
+  assert.equal(s.creditPointsBySlotKind.S1, 6)
+  assert.equal(s.creditPointsBySlotKind.S2, 6)
+  // Both twins resolve to the same unit, so no duplicate flag.
+  assert.deepEqual(s.duplicateUnitCodes, [])
+  assert.equal(s.uniqueUnitCount, 1)
 })
 
 test("summarizePlan: detects duplicate unit placements", () => {

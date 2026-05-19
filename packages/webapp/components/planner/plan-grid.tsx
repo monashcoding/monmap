@@ -41,8 +41,15 @@ type ActiveDrag =
  * same context as in-grid moves and swaps.
  */
 export function PlannerDnd({ children }: { children: React.ReactNode }) {
-  const { state, dispatch, fullYearCodes, units, addUnit, plannedCodes } =
-    usePlanner()
+  const {
+    state,
+    dispatch,
+    fullYearCodes,
+    units,
+    offerings,
+    addUnit,
+    plannedCodes,
+  } = usePlanner()
   const [active, setActive] = useState<ActiveDrag | null>(null)
 
   // 6px activation distance lets the unit-detail popover button still
@@ -90,8 +97,8 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
           return
         }
         if (
-          slotUsedWeight(s1, units) >= slotCapacity(s1) ||
-          slotUsedWeight(s2, units) >= slotCapacity(s2)
+          slotUsedWeight(s1, units, offerings) >= slotCapacity(s1) ||
+          slotUsedWeight(s2, units, offerings) >= slotCapacity(s2)
         ) {
           toast.warning(
             "Not enough room — S1 and S2 both need an open slot for a year-long unit."
@@ -101,7 +108,7 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
         addUnit(targetYearIdx, targetSlotIdx, a.code)
         return
       }
-      if (slotUsedWeight(target, units) >= slotCapacity(target)) {
+      if (slotUsedWeight(target, units, offerings) >= slotCapacity(target)) {
         toast.warning("That slot is full.")
         return
       }
@@ -180,8 +187,8 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
         return
       }
       if (
-        slotUsedWeight(s1, units) >= slotCapacity(s1) ||
-        slotUsedWeight(s2, units) >= slotCapacity(s2)
+        slotUsedWeight(s1, units, offerings) >= slotCapacity(s1) ||
+        slotUsedWeight(s2, units, offerings) >= slotCapacity(s2)
       ) {
         toast.warning(
           `Not enough room in ${targetYear + 1} — both S1 and S2 need an open slot for a year-long unit.`
@@ -230,7 +237,11 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
       return
     }
     const target = state.years[overData.yearIndex]?.slots[overData.slotIndex]
-    if (target && slotUsedWeight(target, units) >= slotCapacity(target)) return
+    if (
+      target &&
+      slotUsedWeight(target, units, offerings) >= slotCapacity(target)
+    )
+      return
     dispatch({
       type: "move_unit",
       fromYearIndex: a.yearIndex,

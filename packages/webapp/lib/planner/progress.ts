@@ -1,4 +1,4 @@
-import { isFullYearUnit } from "./full-year.ts"
+import { isFullYearUnit, perSlotCreditPoints } from "./full-year.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
@@ -37,22 +37,30 @@ export function summarizePlan(
     const fyAlreadyCountedThisYear = new Set<string>()
     for (const slot of year.slots) {
       for (const code of slot.unitCodes) {
-        const cp = unitsByCode.get(code)?.creditPoints ?? 0
+        const fullCp = unitsByCode.get(code)?.creditPoints ?? 0
         const isFY =
           offeringsByCode != null && isFullYearUnit(code, offeringsByCode)
+        // Per-semester load: a FY twin contributes half its CP to each
+        // half of the year so the per-slot chart reflects actual
+        // workload, not the unit's whole-year value repeated twice.
+        const perSlotCp = offeringsByCode
+          ? perSlotCreditPoints(code, slot.kind, unitsByCode, offeringsByCode)
+          : fullCp
+
+        if (slot.kind === "S1" || slot.kind === "S2") {
+          byKind[slot.kind] += perSlotCp
+        } else {
+          byKind.OTHER += perSlotCp
+        }
 
         if (isFY && fyAlreadyCountedThisYear.has(code)) {
-          // Second twin half — count toward per-slot kind so the per-
-          // semester load chart still shows the unit's presence, but
-          // don't double the running degree total.
-          if (slot.kind === "S1" || slot.kind === "S2") byKind[slot.kind] += cp
+          // Already counted toward the degree total when the first
+          // twin was seen — skip the degree-level bookkeeping.
           continue
         }
 
-        total += cp
-        yearTotal += cp
-        if (slot.kind === "S1" || slot.kind === "S2") byKind[slot.kind] += cp
-        else byKind.OTHER += cp
+        total += fullCp
+        yearTotal += fullCp
         if (isFY) fyAlreadyCountedThisYear.add(code)
         else seen.set(code, (seen.get(code) ?? 0) + 1)
       }

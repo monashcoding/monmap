@@ -292,6 +292,62 @@ test("validatePlan: units in earlier slots unlock later slots", () => {
   assert.equal(fit2004.errors.length, 0)
 })
 
+test("validatePlan: full-year twin doesn't double-charge slotCreditLoad", () => {
+  // A 12 CP FY unit placed in S1 + S2 alongside three 6 CP units in
+  // each semester. With per-slot FY accounting the load is 18 + 6 =
+  // 24 = max, no warning. Before the fix the FY contributed its full
+  // 12 CP to each half so the load read as 30 and warned in both S1
+  // and S2 of every year a FY unit sat in.
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    years: [
+      {
+        label: "Year 1",
+        slots: [
+          { kind: "S1", unitCodes: ["A", "B", "C", "FY"] },
+          { kind: "S2", unitCodes: ["D", "E", "F", "FY"] },
+        ],
+      },
+    ],
+  }
+  const u = (c: string, cp = 6) => unit(c, { creditPoints: cp })
+  const units = new Map<string, PlannerUnit>([
+    ["A", u("A")],
+    ["B", u("B")],
+    ["C", u("C")],
+    ["D", u("D")],
+    ["E", u("E")],
+    ["F", u("F")],
+    ["FY", u("FY", 12)],
+  ])
+  const flat = (code: string, period: PlannerOffering["periodKind"]) => [
+    offering(code, period),
+  ]
+  const offerings = new Map<string, PlannerOffering[]>([
+    ["A", flat("A", "S1")],
+    ["B", flat("B", "S1")],
+    ["C", flat("C", "S1")],
+    ["D", flat("D", "S2")],
+    ["E", flat("E", "S2")],
+    ["F", flat("F", "S2")],
+    ["FY", flat("FY", "FULL_YEAR")],
+  ])
+  const out = validatePlan(state, units, offerings, new Map())
+  const fy0 = out.get(keyFor(0, 0, "FY"))
+  const fy1 = out.get(keyFor(0, 1, "FY"))
+  assert.ok(fy0 && fy1)
+  assert.equal(
+    fy0.warnings.find((w) => w.kind === "over_credit_load"),
+    undefined
+  )
+  assert.equal(
+    fy1.warnings.find((w) => w.kind === "over_credit_load"),
+    undefined
+  )
+})
+
 test("validatePlan: prereq fails when dependent unit is in same slot (not before)", () => {
   const state: PlannerState = {
     courseYear: "2026",

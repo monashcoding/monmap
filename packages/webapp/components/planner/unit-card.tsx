@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { facultyStyle } from "@/lib/planner/faculty-color"
+import { perSlotCreditPoints } from "@/lib/planner/full-year"
 import { GRADE_STYLES, markToGrade } from "@/lib/planner/grades"
 import type { PlannerCourseWithAoS } from "@/lib/planner/types"
 import { keyFor } from "@/lib/planner/validation"
@@ -58,16 +59,25 @@ export function UnitCard({
   const {
     state,
     units,
+    offerings,
     validations,
     removeUnit,
     isFullYear,
     flashVersion,
     course,
   } = usePlanner()
-  const slotLocked = !!state.years[yearIndex]?.slots[slotIndex]?.locked
+  const slot = state.years[yearIndex]?.slots[slotIndex]
+  const slotLocked = !!slot?.locked
   const { wamMode, showGrade, grades, setGrade } = useWam()
   const isFY = isFullYear(code)
   const unit = units.get(code)
+  // What this card contributes to its slot — full CP for normal units;
+  // half CP for FY twins (rounded so a 12 CP FY reads "6cp" per
+  // semester) so the per-slot display reflects actual workload, not
+  // the unit's whole-year total repeated twice.
+  const displayCp = slot
+    ? Math.round(perSlotCreditPoints(code, slot.kind, units, offerings))
+    : (unit?.creditPoints ?? 0)
   const validation = validations.get(keyFor(yearIndex, slotIndex, code))
   const faculty = useMemo(() => facultyStyle(code), [code])
   const isCore = useMemo(() => unitIsCore(code, course), [code, course])
@@ -215,8 +225,8 @@ export function UnitCard({
             <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
               {unit
                 ? wamMode
-                  ? `${unit.creditPoints}cp`
-                  : `${unit.creditPoints} Credit Points`
+                  ? `${displayCp}cp`
+                  : `${displayCp} Credit Points`
                 : ""}
             </span>
             {wamMode ? (
