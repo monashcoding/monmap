@@ -36,8 +36,11 @@ export async function generateMetadata({
       robots: { index: false, follow: false },
     }
   }
+  // `unit.level` already comes through as "Level 2" (the lite-ref
+  // `.label`), so don't prefix another "level " — would produce
+  // "level Level 2" in the snippet.
   const description = `${unit.code} ${unit.title} (${unit.creditPoints} cp${
-    unit.level ? `, level ${unit.level}` : ""
+    unit.level ? `, ${unit.level.toLowerCase()}` : ""
   }) — visual prereq map for Monash University. ${unit.requisites.length} prereq${unit.requisites.length === 1 ? "" : "s"}, unlocks ${unit.unlocks.length}.`
   const path = `/units/${unit.code}`
   return {
