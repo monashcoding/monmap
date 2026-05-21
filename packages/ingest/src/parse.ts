@@ -286,6 +286,33 @@ export function parseUnit(year: string, raw: UnitContent): UnitRows {
       typeof e["description"] === "string" ? (e["description"] as string) : null,
   }));
 
+  // Some units (e.g. MTH2021, MTH2010) store PREREQUISITE / PROHIBITION info
+  // in enrolment_rules HTML instead of the structured requisites field. Extract
+  // unit code refs from those HTML descriptions and add them to refSet so the
+  // graph edges and "what does X unlock" views reflect reality.
+  for (const rule of enrolmentRules) {
+    if (!rule.description) continue;
+    const desc = rule.description;
+    const isPrereq = /<strong>\s*PREREQUISITE/i.test(desc);
+    const isProhibition = !isPrereq && /<strong>\s*PROHIBITION/i.test(desc);
+    if (!isPrereq && !isProhibition) continue;
+    const rType: RequisiteType = isPrereq ? "prerequisite" : "prohibition";
+    const unitLinkRe = /handbook\.monash\.edu\/[^"]+\/units\/([A-Za-z][A-Za-z0-9-]*)/g;
+    let m;
+    while ((m = unitLinkRe.exec(desc)) !== null) {
+      const upper = m[1]!.toUpperCase();
+      const key = `${rType}|${upper}`;
+      if (!refSet.has(key)) {
+        refSet.set(key, {
+          year,
+          unitCode: code,
+          requisiteType: rType,
+          requiresUnitCode: upper,
+        });
+      }
+    }
+  }
+
   return {
     unit: {
       year,

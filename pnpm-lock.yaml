@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  drizzle-orm: 0.38.4
-
 importers:
 
   .:
@@ -36,7 +33,7 @@ importers:
         specifier: ^16.4.7
         version: 16.6.1
       drizzle-orm:
-        specifier: 0.38.4
+        specifier: ^0.38.0
         version: 0.38.4(@opentelemetry/api@1.9.1)(@types/react@19.2.14)(kysely@0.28.17)(postgres@3.4.9)(react@19.2.5)
       postgres:
         specifier: ^3.4.5
@@ -55,7 +52,7 @@ importers:
         specifier: workspace:*
         version: link:../scraper
       drizzle-orm:
-        specifier: 0.38.4
+        specifier: ^0.38.0
         version: 0.38.4(@opentelemetry/api@1.9.1)(@types/react@19.2.14)(kysely@0.28.17)(postgres@3.4.9)(react@19.2.5)
     devDependencies:
       tsx:
@@ -104,7 +101,7 @@ importers:
         specifier: ^16.4.7
         version: 16.6.1
       drizzle-orm:
-        specifier: 0.38.4
+        specifier: ^0.38.0
         version: 0.38.4(@opentelemetry/api@1.9.1)(@types/react@19.2.14)(kysely@0.28.17)(postgres@3.4.9)(react@19.2.5)
       embla-carousel-react:
         specifier: ^8.6.0
@@ -389,7 +386,7 @@ packages:
     peerDependencies:
       '@better-auth/core': ^1.6.9
       '@better-auth/utils': 0.4.0
-      drizzle-orm: 0.38.4
+      drizzle-orm: ^0.45.2
     peerDependenciesMeta:
       drizzle-orm:
         optional: true
@@ -2171,7 +2168,7 @@ packages:
       '@tanstack/solid-start': ^1.0.0
       better-sqlite3: ^12.0.0
       drizzle-kit: '>=0.31.4'
-      drizzle-orm: 0.38.4
+      drizzle-orm: ^0.45.2
       mongodb: ^6.0.0 || ^7.0.0
       mysql2: ^3.0.0
       next: ^14.0.0 || ^15.0.0 || ^16.0.0
@@ -2577,6 +2574,7 @@ packages:
 
   dompurify@3.4.4:
     resolution: {integrity: sha512-r8K7KGKEcztXfA/nfabSYB2hg9tDphORJTdf8xprN/luSLGmNhOBN8dm1/SYjqLLet6YUFEXOcrdTuwryp/Bew==}
+    deprecated: Fixed a security issue introduced in 3.4.4
 
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
