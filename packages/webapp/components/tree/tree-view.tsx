@@ -1,6 +1,7 @@
 "use client"
 
 import { SlidersHorizontalIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
 import {
@@ -94,6 +95,7 @@ export interface TreeViewProps {
 }
 
 export function TreeView(props: TreeViewProps) {
+  const router = useRouter()
   const isMobile = useIsMobile()
   const [controlsOpen, setControlsOpen] = useState(false)
 
@@ -192,25 +194,57 @@ export function TreeView(props: TreeViewProps) {
   // Keep the browser URL in sync with the picker state. /tree,
   // /units/[code] and /courses/[code] all render the same workbench,
   // and the canonical URL for any given (course, unit) is the entity
-  // path — so when the user picks something we replaceState into the
-  // canonical form. `replaceState` (not `pushState`) on purpose: the
-  // back button shouldn't accumulate every keystroke in the picker.
-  // We don't fire a Next navigation — local React state owns the
-  // graph data, the URL is just a bookmark of it.
+  // path.
+  //
+  // Two cases, deliberately handled differently:
+  //
+  //  • The *pathname* changes (the user picked a different course/unit,
+  //    switched mode, or cleared the picker). Here we must do a REAL
+  //    navigation (`router.replace`) so the destination route renders
+  //    server-side and supplies the graph. A bare `history.replaceState`
+  //    to a different route path is the bug that prompted this: Next's
+  //    App Router patches replaceState, so swapping the pathname without
+  //    a navigation desyncs the router from our client-owned state — the
+  //    next Server Action reconciles against the new route and the
+  //    freshly-fetched graph never lands, leaving the canvas empty until
+  //    a manual refresh. `replace` (not `push`) keeps the back button
+  //    from accumulating an entry per pick.
+  //
+  //  • Only the *query* changes (aos / direction / year on the same
+  //    entity). That's a true same-route shallow update, so a plain
+  //    `replaceState` is correct and avoids a server round-trip — the
+  //    refetch effect below already owns the updated graph.
   useEffect(() => {
     const url = canonicalUrlFor(controls)
-    if (typeof window !== "undefined" && url) {
-      const current = `${window.location.pathname}${window.location.search}`
-      if (current !== url) {
-        window.history.replaceState(null, "", url)
-      }
+    if (typeof window === "undefined" || !url) return
+    const current = `${window.location.pathname}${window.location.search}`
+    if (current === url) return
+    const nextPathname = url.split("?")[0]
+    if (nextPathname !== window.location.pathname) {
+      router.replace(url)
+    } else {
+      window.history.replaceState(null, "", url)
     }
-  }, [controls])
+  }, [controls, router])
 
   // Single effect: refetch the graph (and the course meta when needed)
   // whenever the controls change. Pushing all setStates into the awaited
   // block keeps us out of the `set-state-in-effect` rule's crosshairs.
   useEffect(() => {
+    // If this change will navigate to a different route (the URL-sync
+    // effect above fires router.replace for cross-route picks), don't
+    // refetch here — the destination route renders the graph
+    // server-side, and a refetch now would be a redundant Server Action
+    // fired mid-navigation. Same-route query changes (pathname already
+    // matches) fall through and refetch as before.
+    const target = canonicalUrlFor(controls)
+    if (
+      typeof window !== "undefined" &&
+      target &&
+      target.split("?")[0] !== window.location.pathname
+    ) {
+      return
+    }
     let cancelled = false
     const run = async () => {
       const tag = setTimeout(() => {
