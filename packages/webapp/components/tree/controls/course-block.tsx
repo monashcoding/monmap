@@ -140,7 +140,7 @@ export function CourseBlock({
             {aosOptions.map((a) => (
               <SelectItem key={a.code} value={a.code}>
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="inline-flex shrink-0 items-center justify-center rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-muted-foreground uppercase tabular-nums">
+                  <span className="inline-flex shrink-0 items-center justify-center rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-muted-foreground! uppercase tabular-nums">
                     {shortKindLabel(a.kind)}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-[12px] leading-tight">
