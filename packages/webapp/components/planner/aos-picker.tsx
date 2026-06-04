@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -195,22 +196,24 @@ function RoleSelect({
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-[320px] min-w-[360px]">
-            {sorted.map((a) => (
-              <SelectItem
-                key={a.code}
-                value={a.code}
-                className="items-baseline py-2.5 pr-12 pl-3.5"
-              >
-                <span className="flex min-w-0 items-baseline gap-2">
-                  {a.code.includes(":") ? null : (
-                    <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
-                      {a.code}
-                    </span>
-                  )}
-                  <span className="whitespace-normal">{a.title}</span>
-                </span>
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              {sorted.map((a) => (
+                <SelectItem
+                  key={a.code}
+                  value={a.code}
+                  className="items-baseline py-2.5 pr-12 pl-3.5"
+                >
+                  <span className="flex min-w-0 items-baseline gap-2">
+                    {a.code.includes(":") ? null : (
+                      <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                        {a.code}
+                      </span>
+                    )}
+                    <span className="whitespace-normal">{a.title}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
         {current ? (

@@ -3,6 +3,7 @@
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -33,11 +34,13 @@ export function YearDepthRow({
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
-            {availableYears.map((y) => (
-              <SelectItem key={y} value={y}>
-                Handbook {y}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              {availableYears.map((y) => (
+                <SelectItem key={y} value={y}>
+                  Handbook {y}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
       </div>

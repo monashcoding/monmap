@@ -15,6 +15,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -88,11 +89,13 @@ export function NewPlanButton({
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
-                {yearChoices.map((y) => (
-                  <SelectItem key={y} value={y}>
-                    Handbook {y}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {yearChoices.map((y) => (
+                    <SelectItem key={y} value={y}>
+                      Handbook {y}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
