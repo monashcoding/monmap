@@ -23,10 +23,12 @@ export function RequisiteTreeView({
   rule,
   completed,
   isProhibition = false,
+  units,
 }: {
   rule: RequisiteRule | null | undefined
   completed: ReadonlySet<string>
   isProhibition?: boolean
+  units?: ReadonlyMap<string, { title: string }>
 }) {
   if (!rule || rule.length === 0) {
     return (
@@ -44,6 +46,7 @@ export function RequisiteTreeView({
           depth={0}
           completed={completed}
           isProhibition={isProhibition}
+          units={units}
         />
       ))}
     </div>
@@ -55,11 +58,13 @@ function ContainerNode({
   depth,
   completed,
   isProhibition,
+  units,
 }: {
   container: RequisiteContainer
   depth: number
   completed: ReadonlySet<string>
   isProhibition: boolean
+  units?: ReadonlyMap<string, { title: string }>
 }) {
   const connector = (container.parent_connector?.value ?? "AND").toUpperCase()
   const children = [
@@ -70,6 +75,7 @@ function ContainerNode({
         depth={depth + 1}
         completed={completed}
         isProhibition={isProhibition}
+        units={units}
       />
     )),
     ...(container.relationships ?? []).map((l, i) => (
@@ -78,6 +84,7 @@ function ContainerNode({
         leaf={l}
         completed={completed}
         isProhibition={isProhibition}
+        units={units}
       />
     )),
   ]
@@ -104,15 +111,20 @@ function LeafNode({
   leaf,
   completed,
   isProhibition,
+  units,
 }: {
   leaf: RequisiteLeaf
   completed: ReadonlySet<string>
   isProhibition: boolean
+  units?: ReadonlyMap<string, { title: string }>
 }) {
   const taken = completed.has(leaf.academic_item_code)
 
   // Prohibitions invert: "taken" is a problem, not a check.
   const good = isProhibition ? !taken : taken
+
+  const name =
+    units?.get(leaf.academic_item_code)?.title ?? leaf.academic_item_name
 
   return (
     <div
@@ -141,10 +153,8 @@ function LeafNode({
       <span className="text-xs font-semibold tabular-nums">
         {leaf.academic_item_code}
       </span>
-      {leaf.academic_item_name ? (
-        <span className="truncate text-xs text-muted-foreground">
-          {leaf.academic_item_name}
-        </span>
+      {name ? (
+        <span className="truncate text-xs text-muted-foreground">{name}</span>
       ) : null}
     </div>
   )

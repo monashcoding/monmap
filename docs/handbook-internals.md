@@ -47,17 +47,35 @@ same thing:
   structured AND/OR tree of unit-code references in `rule` JSONB. The
   `description` field is **empty 99.9% of the time** — do not render
   it. The rule tree is the authoritative source.
-- **`enrolment_rules`** are program-level constraints ("must be
+- **`enrolment_rules`** are mostly program-level constraints ("must be
   enrolled in Bachelor of IT", "must have 48cp in Art, Design and
   Architecture"). They ship as HTML prose only — no structured tree —
-  and they always have a populated `description`. You can't evaluate
-  these programmatically without NLP; just render the HTML.
+  and they always have a populated `description`. Most you can't
+  evaluate programmatically without NLP; just render the HTML.
+
+  **The leaky exception:** ~2,340 unit-years (Science, Engineering,
+  Pharmacy, Education) put their *unit-level* PREREQUISITE /
+  PROHIBITION / CO-REQUISITE refs *here* instead of in `requisites`,
+  as `<strong>PREREQUISITE</strong>: <a href=".../units/MTH1030">…`
+  prose. So a unit with an empty `requisites` tree is **not**
+  necessarily requisite-free — check `enrolment_rules` too. The ingest
+  extractor (`packages/ingest/src/parse.ts`) and migration `0007`
+  pull these into `requisite_refs`. Gotchas that bit the first pass:
+  one description can carry several labels (121 mix PREREQ +
+  PROHIBITION), the unit links use *both* the `handbook.monash.edu`
+  and legacy `www.monash.edu/pubs/.../units/CODE.html` hosts, the same
+  prose links to `/courses/` and `/aos/` (which must **not** become
+  unit edges), and some units list themselves. Extraction is
+  anchor-only and per-`<strong>`-section; plain-text codes ("…or
+  MTH1040") are deliberately left unparsed (NLP-only; risks reading
+  course codes like `4531`/`M6011` as units).
 
 For graph-shaped queries on requisites ("what requires X?", "what
 unlocks after X?"), use `requisite_refs` — it's the flat edge view of
-the trees. Use `requisites.rule` only when you need AND/OR semantics
-for validation ("does this student's set of completed units satisfy
-this block?").
+the trees, **plus** the `enrolment_rules`-derived edges above. Use
+`requisites.rule` only when you need AND/OR semantics for validation
+("does this student's set of completed units satisfy this block?") —
+note the rule tree does *not* include the `enrolment_rules` edges.
 
 ## Graph shape: what references what
 

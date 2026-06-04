@@ -1,7 +1,12 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { collectCodeRefs, extractCourseAosRefs, extractAosUnitRefs } from "./parse.ts"
+import {
+  collectCodeRefs,
+  extractCourseAosRefs,
+  extractAosUnitRefs,
+  extractEnrolmentRuleRefs,
+} from "./parse.ts"
 
 /* ------------------------------------------------------------------ *
  * Fixtures
@@ -199,4 +204,84 @@ test("AoS→unit: unknown unit codes are filtered out", () => {
   }
   const refs = extractAosUnitRefs("2026", "AOS01", structure, new Set(["U1"]))
   assert.deepEqual(refs.map((r) => r.unitCode), ["U1"])
+})
+
+/* ------------------------------------------------------------------ *
+ * extractEnrolmentRuleRefs — prose requisites in enrolment_rules
+ * ------------------------------------------------------------------ */
+
+const erDesc = (s: string) => [{ description: s }]
+const erKey = (r: { requisiteType: string; requiresUnitCode: string }) =>
+  `${r.requisiteType}:${r.requiresUnitCode}`
+
+test("enrolment refs: a single description carrying both PREREQUISITE and PROHIBITION attributes each link to its own section (CIV4283 regression)", () => {
+  const refs = extractEnrolmentRuleRefs(
+    "2026",
+    "CIV4283",
+    erDesc(
+      '<p><strong>Prerequisite: </strong><a href="http://www.monash.edu/pubs/handbooks/units/CIV2282.html">CIV2282</a></p>' +
+        '<p><strong>Prohibitions:</strong> <a href="http://www.monash.edu/pubs/handbooks/units/CIV4293.html">CIV4293</a></p>',
+    ),
+  )
+  assert.deepEqual(refs.map(erKey).sort(), [
+    "prerequisite:CIV2282",
+    "prohibition:CIV4293",
+  ])
+})
+
+test("enrolment refs: ignores /courses/ and /aos/ links, keeps only /units/ (MTH2010 regression)", () => {
+  const refs = extractEnrolmentRuleRefs(
+    "2026",
+    "MTH2010",
+    erDesc(
+      '<p><strong>PROHIBITION</strong>: <a href="https://handbook.monash.edu/current/units/ENG2005">ENG2005</a>, ' +
+        '<a href="https://handbook.monash.edu/current/units/MTH2015">MTH2015</a> and incompatible with course versions ' +
+        '<a href="https://handbook.monash.edu/current/courses/E3001">E3001</a>.</p>' +
+        '<p><strong>PREREQUISITE</strong>: You must have passed ' +
+        '<a href="https://handbook.monash.edu/current/units/MTH1030">MTH1030</a>, or MTH1040</p>',
+    ),
+  )
+  // E3001 (/courses/) dropped; plain-text "MTH1040" (no anchor) not parsed.
+  assert.deepEqual(refs.map(erKey).sort(), [
+    "prerequisite:MTH1030",
+    "prohibition:ENG2005",
+    "prohibition:MTH2015",
+  ])
+})
+
+test("enrolment refs: extracts CO-REQUISITE but drops a unit listed as its own corequisite (CHM3990 regression)", () => {
+  const refs = extractEnrolmentRuleRefs(
+    "2026",
+    "CHM3990",
+    erDesc(
+      '<p><strong>Co-requisites:</strong> ' +
+        '<a href="https://handbook.monash.edu/current/units/CHM3990">CHM3990</a>, ' +
+        '<a href="https://handbook.monash.edu/current/units/CHM3911">CHM3911</a></p>',
+    ),
+  )
+  assert.deepEqual(refs.map(erKey), ["corequisite:CHM3911"])
+})
+
+test("enrolment refs: prose with no <strong> requisite label yields nothing", () => {
+  const refs = extractEnrolmentRuleRefs(
+    "2026",
+    "ABC1000",
+    erDesc(
+      '<p>Must be enrolled in <a href="https://handbook.monash.edu/current/courses/S6002">S6002</a>.</p>',
+    ),
+  )
+  assert.deepEqual(refs, [])
+})
+
+test("enrolment refs: de-dupes a unit repeated within the same section", () => {
+  const refs = extractEnrolmentRuleRefs(
+    "2026",
+    "ABC1000",
+    erDesc(
+      '<p><strong>Prerequisites:</strong> ' +
+        '<a href="https://handbook.monash.edu/current/units/MTH1030">MTH1030</a> or ' +
+        '<a href="https://handbook.monash.edu/current/units/MTH1030">MTH1030</a></p>',
+    ),
+  )
+  assert.deepEqual(refs.map(erKey), ["prerequisite:MTH1030"])
 })
