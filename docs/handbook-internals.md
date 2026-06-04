@@ -77,6 +77,25 @@ the trees, **plus** the `enrolment_rules`-derived edges above. Use
 ("does this student's set of completed units satisfy this block?") —
 note the rule tree does *not* include the `enrolment_rules` edges.
 
+### Unit equivalence is encoded as a mutual prohibition
+
+There is **no explicit "equivalent unit" field**. Monash expresses
+equivalence (advanced twins like `FIT1045`/`FIT1053`, faculty
+cross-listings like `FIT3184`/`ITI3184`, campus variants) as a
+**mutual prohibition**: `A` prohibits `B` *and* `B` prohibits `A`.
+That alone is not enough — mutual prohibition *also* covers pick-one
+alternatives that are **not** equivalent (e.g. `ENG4105` "Biomedical
+engineering integrated design" ⟂ `MAE4410` "Flight vehicle design",
+two different final-year capstones you may only do one of). The
+discriminator is **title equality** after normalising away a trailing
+`(Advanced)`/`(Honours)`, case, and whitespace. In the 2026 corpus ~740
+pairs mutually prohibit; ~406 also share a title and are the genuine
+equivalents. The planner uses this (`fetchEquivalentsForCodes` →
+`PlannerUnit.equivalents` → `withEquivalents`) so completing one twin
+satisfies a prerequisite that names the other. Note prohibitions are
+often **asymmetric** (1,557 of 3,041 edges in 2026 are one-directional),
+so always check *both* directions before calling two units equivalent.
+
 ## Graph shape: what references what
 
 - **Unit requisites only reference units** (`academic_item_type.value

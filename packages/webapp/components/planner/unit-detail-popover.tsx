@@ -23,7 +23,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
-import { keyFor } from "@/lib/planner/validation"
+import { keyFor, withEquivalents } from "@/lib/planner/validation"
 import type {
   PeriodKind,
   PlannerOffering,
@@ -234,12 +234,18 @@ export function UnitDetailView({
     ? validations.get(keyFor(yearIndex, slotIndex, code))
     : undefined
 
+  // Expand with equivalents so a requisite leaf naming FIT1045 reads as
+  // satisfied when the student took its twin FIT1053 — keeping the tree's
+  // checkmarks consistent with validateUnitInSlot, which does the same.
   const completed = useMemo(
     () =>
-      isPlaced
-        ? collectCompletedBefore(state, yearIndex, slotIndex)
-        : new Set(plannedCodes),
-    [isPlaced, state, yearIndex, slotIndex, plannedCodes]
+      withEquivalents(
+        isPlaced
+          ? collectCompletedBefore(state, yearIndex, slotIndex)
+          : plannedCodes,
+        units
+      ),
+    [isPlaced, state, yearIndex, slotIndex, plannedCodes, units]
   )
 
   return (

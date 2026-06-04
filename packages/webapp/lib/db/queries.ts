@@ -807,9 +807,80 @@ export async function fetchEnrolmentRulesForCodes(
 }
 
 /**
+ * Title normalisation used to decide unit equivalence: lowercase, trim,
+ * collapse internal whitespace, and drop a trailing "(Advanced)" /
+ * "(Honours)" qualifier so "Introduction to programming (Advanced)"
+ * matches "Introduction to programming". Returns a SQL expression over
+ * the given table alias's `title` column.
+ */
+function normalizedTitleExpr(alias: string): string {
+  return `lower(regexp_replace(regexp_replace(btrim(${alias}.title), '\\s*\\((advanced|honours|hons)\\)\\s*$', '', 'i'), '\\s+', ' ', 'g'))`
+}
+
+async function _fetchEquivalentsRows(
+  codes: readonly string[],
+  year: string
+): Promise<Array<{ code: string; equivalent: string }>> {
+  if (codes.length === 0) return []
+  const db = getDb()
+  const valuesClause = sql.join(
+    codes.map((c) => sql`(${c})`),
+    sql`, `
+  )
+  // Two units are equivalent when they *mutually* prohibit each other
+  // (a ⟂ b AND b ⟂ a) AND share a normalised title. Mutual prohibition
+  // alone conflates genuine equivalents (cross-listings, advanced twins)
+  // with pick-one alternatives (e.g. two different final-year design
+  // capstones); the title match is what separates them.
+  const rows = await db.execute(sql`
+    WITH input(code) AS (VALUES ${valuesClause})
+    SELECT a.unit_code AS code, a.requires_unit_code AS equivalent
+    FROM requisite_refs a
+    JOIN requisite_refs b
+      ON b.year = a.year
+     AND b.unit_code = a.requires_unit_code
+     AND b.requires_unit_code = a.unit_code
+     AND b.requisite_type = 'prohibition'
+    JOIN input i ON i.code = a.unit_code
+    JOIN units uc ON uc.year = a.year AND uc.code = a.unit_code
+    JOIN units ue ON ue.year = a.year AND ue.code = a.requires_unit_code
+    WHERE a.year = ${year}
+      AND a.requisite_type = 'prohibition'
+      AND ${sql.raw(normalizedTitleExpr("uc"))} = ${sql.raw(normalizedTitleExpr("ue"))}
+  `)
+  return (rows as unknown as Array<{ code: string; equivalent: string }>).map(
+    (r) => ({ code: r.code, equivalent: r.equivalent })
+  )
+}
+const _fetchEquivalentsRowsCached = cacheHandbook(
+  _fetchEquivalentsRows,
+  "fetchEquivalentsRows"
+)
+
+/**
+ * For each requested code, the codes it is equivalent to (same content,
+ * different code). Used by the planner to let a completed unit satisfy a
+ * prerequisite that names its equivalent twin.
+ */
+export async function fetchEquivalentsForCodes(
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
+): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>()
+  if (codes.length === 0) return out
+  const rows = await _fetchEquivalentsRowsCached([...codes].sort(), year)
+  for (const r of rows) {
+    const list = out.get(r.code) ?? []
+    list.push(r.equivalent)
+    out.set(r.code, list)
+  }
+  return out
+}
+
+/**
  * Hydrate every piece of per-unit data the planner needs for a given
- * set of codes. Single round-trip from the UI's perspective (three
- * parallel DB queries internally).
+ * set of codes. Single round-trip from the UI's perspective (parallel
+ * DB queries internally).
  */
 export async function hydratePlannerUnits(
   codes: readonly string[],
@@ -819,12 +890,18 @@ export async function hydratePlannerUnits(
   offerings: Map<string, PlannerOffering[]>
   requisites: Map<string, RequisiteBlock[]>
 }> {
-  const [unitList, offerings, reqs] = await Promise.all([
+  const [unitList, offerings, reqs, equivalents] = await Promise.all([
     fetchUnitsByCode(codes, year),
     fetchOfferingsForCodes(codes, year),
     fetchRequisitesForCodes(codes, year),
+    fetchEquivalentsForCodes(codes, year),
   ])
-  const unitsByCode = new Map(unitList.map((u) => [u.code, u]))
+  const unitsByCode = new Map(
+    unitList.map((u) => [
+      u.code,
+      { ...u, equivalents: equivalents.get(u.code) ?? [] },
+    ])
+  )
   return { units: unitsByCode, offerings, requisites: reqs }
 }
 
