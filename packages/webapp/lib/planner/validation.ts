@@ -229,7 +229,11 @@ export function validatePlan(
       : undefined
     for (let s = 0; s < year.slots.length; s++) {
       const slot = year.slots[s]
-      const concurrent = new Set(slot.unitCodes)
+      // Equivalents (advanced twins, cross-listings) count as having
+      // taken the unit they're equivalent to, so a prereq/coreq naming
+      // FIT1045 is met by completing FIT1053. Prohibitions are checked
+      // against literal enrolments (allPlanned), so they're not expanded.
+      const concurrent = withEquivalents(slot.unitCodes, unitsByCode)
 
       // Per-slot CP load — full-year units contribute their half-year
       // share so a 12 CP FY twin doesn't single-handedly trip the
@@ -281,7 +285,8 @@ export function validatePlan(
         out.set(keyFor(y, s, code), v)
       }
 
-      for (const c of slot.unitCodes) completed.add(c)
+      for (const c of withEquivalents(slot.unitCodes, unitsByCode))
+        completed.add(c)
     }
   }
 
@@ -294,4 +299,25 @@ export function keyFor(
   code: string
 ): string {
   return `${yearIndex}:${slotIndex}:${code}`
+}
+
+/**
+ * Expand a set of taken/planned codes to also include each unit's
+ * equivalents (advanced twins, faculty cross-listings, campus variants —
+ * see PlannerUnit.equivalents). Returns a new set; the input is left
+ * untouched. Used wherever "what has the student effectively completed?"
+ * feeds requisite satisfaction, so e.g. completing FIT1053 satisfies a
+ * prerequisite that names FIT1045. NOT used for prohibition checks,
+ * which test literal enrolments.
+ */
+export function withEquivalents(
+  codes: Iterable<string>,
+  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+): Set<string> {
+  const out = new Set<string>()
+  for (const c of codes) {
+    out.add(c)
+    for (const eq of unitsByCode.get(c)?.equivalents ?? []) out.add(eq)
+  }
+  return out
 }

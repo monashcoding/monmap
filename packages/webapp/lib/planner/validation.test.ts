@@ -467,6 +467,112 @@ test("validatePlan: not-offered severity tracks loaded-vs-slot year per study ye
   assert.equal(v2.warnings.length, 0)
 })
 
+test("validatePlan: an equivalent twin satisfies a prereq naming the other (issue #7: FIT1053 → FIT2175 needs FIT1045)", () => {
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    years: [
+      {
+        label: "Year 1",
+        slots: [
+          { kind: "S1", unitCodes: ["FIT1053"] },
+          { kind: "S2", unitCodes: ["FIT2175"] },
+        ],
+      },
+    ],
+  }
+  const unitsByCode = new Map<string, PlannerUnit>([
+    // FIT1053 "Introduction to programming (Advanced)" is the equivalent
+    // twin of FIT1045 — completing it should satisfy a FIT1045 prereq.
+    ["FIT1053", unit("FIT1053", { equivalents: ["FIT1045"] })],
+    ["FIT2175", unit("FIT2175")],
+  ])
+  const offeringsByCode = new Map<string, PlannerOffering[]>([
+    ["FIT1053", [offering("FIT1053", "S1")]],
+    ["FIT2175", [offering("FIT2175", "S2")]],
+  ])
+  const requisitesByCode = new Map<string, RequisiteBlock[]>([
+    [
+      "FIT2175",
+      [
+        {
+          requisiteType: "prerequisite",
+          rule: [
+            {
+              parent_connector: { value: "AND" },
+              relationships: [{ academic_item_code: "FIT1045" }],
+            },
+          ],
+        },
+      ],
+    ],
+  ])
+  const out = validatePlan(
+    state,
+    unitsByCode,
+    offeringsByCode,
+    requisitesByCode
+  )
+  const fit2175 = out.get(keyFor(0, 1, "FIT2175"))
+  assert.ok(fit2175)
+  assert.equal(
+    fit2175.errors.find((e) => e.kind === "prereq_unmet"),
+    undefined
+  )
+})
+
+test("validatePlan: a completed unit WITHOUT an equivalence link does not satisfy the prereq (pick-one alternatives stay unmet)", () => {
+  // Same shape as above but FIT1053 carries no `equivalents` — proves
+  // the expansion is gated on the equivalence link, not on any completed
+  // unit, so genuinely different mutually-prohibited units (capstones,
+  // alternatives) never cross-satisfy.
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    years: [
+      {
+        label: "Year 1",
+        slots: [
+          { kind: "S1", unitCodes: ["FIT1053"] },
+          { kind: "S2", unitCodes: ["FIT2175"] },
+        ],
+      },
+    ],
+  }
+  const out = validatePlan(
+    state,
+    new Map([
+      ["FIT1053", unit("FIT1053")],
+      ["FIT2175", unit("FIT2175")],
+    ]),
+    new Map([
+      ["FIT1053", [offering("FIT1053", "S1")]],
+      ["FIT2175", [offering("FIT2175", "S2")]],
+    ]),
+    new Map([
+      [
+        "FIT2175",
+        [
+          {
+            requisiteType: "prerequisite",
+            rule: [
+              {
+                parent_connector: { value: "AND" },
+                relationships: [{ academic_item_code: "FIT1045" }],
+              },
+            ],
+          },
+        ],
+      ],
+    ])
+  )
+  const fit2175 = out.get(keyFor(0, 1, "FIT2175"))
+  assert.ok(fit2175)
+  assert.ok(fit2175.errors.some((e) => e.kind === "prereq_unmet"))
+})
+
 test("validatePlan: unknown unit yields an unknown_unit error", () => {
   const state: PlannerState = {
     courseYear: "2026",

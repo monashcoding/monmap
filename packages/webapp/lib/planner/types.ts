@@ -28,6 +28,15 @@ export interface PlannerUnit {
   level: string | null
   synopsis: string | null
   school: string | null
+  /**
+   * Codes this unit is equivalent to — same content under a different
+   * code (advanced twins like FIT1045/FIT1053, faculty cross-listings,
+   * campus variants). Derived from a mutual prohibition + matching title
+   * (see fetchEquivalentsForCodes). Completing this unit satisfies a
+   * prerequisite that names any of these. Only populated by the planner
+   * hydration path; absent elsewhere.
+   */
+  equivalents?: string[]
 }
 
 /** A single offering row as the planner needs it. */
