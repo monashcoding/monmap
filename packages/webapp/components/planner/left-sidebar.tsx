@@ -248,7 +248,7 @@ export function LeftSidebar() {
           target="_blank"
           rel="noopener noreferrer"
           title="Give Feedback"
-          className="flex h-auto flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
+          className="flex h-auto flex-col items-center gap-1 rounded-2xl border border-transparent px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
         >
           <FileTextIcon className="size-4" />
           <span className="text-[10px] leading-none font-medium">Feedback</span>
@@ -258,7 +258,7 @@ export function LeftSidebar() {
           target="_blank"
           rel="noopener noreferrer"
           title="Contribute on GitHub"
-          className="flex h-auto flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
+          className="flex h-auto flex-col items-center gap-1 rounded-2xl border border-transparent px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
         >
           <svg
             viewBox="0 0 24 24"

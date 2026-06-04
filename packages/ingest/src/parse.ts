@@ -231,6 +231,71 @@ export interface UnitRows {
   }>;
 }
 
+/**
+ * Some units (Science, Engineering, Pharmacy, Education — ~2,340 unit-years)
+ * record their PREREQUISITE / PROHIBITION / CO-REQUISITE relationships as HTML
+ * prose in `enrolment_rules` instead of the structured `requisites` tree, e.g.
+ *   <p><strong>Prerequisite: </strong><a href=".../units/MTH1030">MTH1030</a></p>
+ *   <p><strong>Prohibitions:</strong> <a href=".../units/MTH2015">MTH2015</a></p>
+ * Pull the unit-code refs out so the graph edges and "what does X unlock"
+ * views reflect reality.
+ *
+ * High-precision, anchor-based extraction:
+ *  - Split each description at every `<strong>` label, so a description that
+ *    carries several labels attributes each unit link to its OWN section
+ *    rather than the whole blob (121 descriptions mix PREREQUISITE +
+ *    PROHIBITION; a whole-blob classify would mislabel ~126 edges).
+ *  - Take only `/units/CODE` anchors, across every handbook host the corpus
+ *    uses (`handbook.monash.edu/<year>/units/` and the legacy
+ *    `www[3].monash.edu/pubs/.../units/CODE.html`). `/courses/` and `/aos/`
+ *    links in the same prose are ignored — unit edges only reference units.
+ *  - Drop self-references (a unit listing itself, e.g. CHM3990's corequisite).
+ *  - Plain-text codes with no anchor ("…or MTH1040") are deliberately NOT
+ *    parsed: that needs NLP and would read course codes (4531, M6011) as units.
+ *
+ * Kept in lockstep with migration
+ * `packages/db/drizzle/0007_backfill_enrolment_rule_refs.sql`.
+ */
+export function extractEnrolmentRuleRefs(
+  year: string,
+  unitCode: string,
+  rules: ReadonlyArray<{ description: string | null }>,
+): UnitRows["requisiteRefs"] {
+  const out = new Map<string, UnitRows["requisiteRefs"][number]>();
+  const selfCode = unitCode.toUpperCase();
+  for (const rule of rules) {
+    if (!rule.description) continue;
+    for (const seg of rule.description.split(/(?=<strong)/i)) {
+      const rType: RequisiteType | null = /^<strong[^>]*>\s*PREREQUISITE/i.test(
+        seg,
+      )
+        ? "prerequisite"
+        : /^<strong[^>]*>\s*PROHIBITION/i.test(seg)
+          ? "prohibition"
+          : /^<strong[^>]*>\s*CO-?REQUISITE/i.test(seg)
+            ? "corequisite"
+            : null;
+      if (!rType) continue;
+      const unitLinkRe = /\/units\/([A-Za-z][A-Za-z0-9]+)/g;
+      let m: RegExpExecArray | null;
+      while ((m = unitLinkRe.exec(seg)) !== null) {
+        const upper = m[1]!.toUpperCase();
+        if (upper === selfCode) continue; // drop self-references
+        const key = `${rType}|${upper}`;
+        if (!out.has(key)) {
+          out.set(key, {
+            year,
+            unitCode,
+            requisiteType: rType,
+            requiresUnitCode: upper,
+          });
+        }
+      }
+    }
+  }
+  return [...out.values()];
+}
+
 export function parseUnit(year: string, raw: UnitContent): UnitRows {
   const code = raw.code;
 
@@ -285,6 +350,15 @@ export function parseUnit(year: string, raw: UnitContent): UnitRows {
     description:
       typeof e["description"] === "string" ? (e["description"] as string) : null,
   }));
+
+  // Fold in the refs that some units record as HTML prose in enrolment_rules
+  // instead of the structured requisites field (see extractEnrolmentRuleRefs).
+  // Structured refs added above win on key collision; the two sources are
+  // effectively disjoint in practice.
+  for (const ref of extractEnrolmentRuleRefs(year, code, enrolmentRules)) {
+    const key = `${ref.requisiteType}|${ref.requiresUnitCode}`;
+    if (!refSet.has(key)) refSet.set(key, ref);
+  }
 
   return {
     unit: {

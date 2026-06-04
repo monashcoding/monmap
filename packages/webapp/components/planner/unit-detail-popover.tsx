@@ -468,6 +468,7 @@ function RequisiteBlockView({
   block: RequisiteBlock
   completed: ReadonlySet<string>
 }) {
+  const { units } = usePlanner()
   const label =
     block.requisiteType[0].toUpperCase() + block.requisiteType.slice(1) + "s"
   return (
@@ -486,6 +487,7 @@ function RequisiteBlockView({
         rule={block.rule}
         completed={completed}
         isProhibition={block.requisiteType === "prohibition"}
+        units={units}
       />
     </div>
   )

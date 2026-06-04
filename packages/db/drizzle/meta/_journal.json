@@ -50,6 +50,13 @@
       "when": 1778818974464,
       "tag": "0006_smooth_living_lightning",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778819074464,
+      "tag": "0007_backfill_enrolment_rule_refs",
+      "breakpoints": true
     }
   ]
 }
