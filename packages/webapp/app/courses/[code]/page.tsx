@@ -102,7 +102,7 @@ export default async function CourseTreePage({
 
   const [initial, courses, initialCourse] = await Promise.all([
     prefetchTreeData(initialControls),
-    listCoursesForPicker(null, 300, year),
+    listCoursesForPicker(null, 500, year),
     fetchCourseWithAoS(
       course.code,
       year
