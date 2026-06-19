@@ -57,6 +57,13 @@
       "when": 1778819074464,
       "tag": "0007_backfill_enrolment_rule_refs",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1750291200000,
+      "tag": "0008_patch_course_requirement_groups",
+      "breakpoints": true
     }
   ]
 }
