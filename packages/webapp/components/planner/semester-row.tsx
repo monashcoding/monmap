@@ -59,9 +59,9 @@ export function SemesterRow({
   slot: PlannerSlot
   yearLabel: string
 }) {
-  const { dispatch, units } = usePlanner()
+  const { dispatch, units, offerings } = usePlanner()
   const capacity = slotCapacity(slot)
-  const usedWeight = slotUsedWeight(slot, units)
+  const usedWeight = slotUsedWeight(slot, units, offerings)
   const canDecrease = capacity > Math.max(1, usedWeight)
   const canIncrease = capacity < MAX_SLOT_CAPACITY
   const hasUnits = slot.unitCodes.length > 0
