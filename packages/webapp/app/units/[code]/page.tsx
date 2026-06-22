@@ -110,7 +110,7 @@ export default async function UnitTreePage({
     useMyPlan: false,
   }
   const initial = await prefetchTreeData(initialControls)
-  const courses = await listCoursesForPicker(null, 300, year)
+  const courses = await listCoursesForPicker(null, 500, year)
   // Unit mode doesn't need course-meta, but TreeView accepts null.
   const initialCourse: PlannerCourseWithAoS | null = null
 

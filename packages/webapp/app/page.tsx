@@ -85,7 +85,7 @@ export default async function Page({
     : null
 
   const [courses, defaultCourse] = await Promise.all([
-    listCoursesForPicker(null, 300, year),
+    listCoursesForPicker(null, 500, year),
     courseCode ? fetchCourseWithAoS(courseCode, year) : Promise.resolve(null),
   ])
 

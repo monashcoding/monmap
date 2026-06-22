@@ -91,7 +91,7 @@ export async function listCoursesAction(
   search: string | null,
   year: string
 ): Promise<PlannerCourse[]> {
-  return listCoursesForPicker(search, 300, year)
+  return listCoursesForPicker(search, 500, year)
 }
 
 export async function listAvailableYearsAction(): Promise<string[]> {

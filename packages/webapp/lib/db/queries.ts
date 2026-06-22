@@ -76,7 +76,7 @@ export const listAvailableYears = cacheHandbook(
 
 async function _listCoursesForPicker(
   search: string | null,
-  limit = 50,
+  limit = 500,
   year: string = HANDBOOK_YEAR
 ): Promise<PlannerCourse[]> {
   const db = getDb()
