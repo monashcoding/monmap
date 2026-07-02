@@ -176,6 +176,51 @@ programming" rows grouped by AND/OR without joining back.
   2026) have null `curriculum_structure`. Expected, not missing.
 - `requisites.description` — empty 99.9% of the time (see above).
 
+## Curriculum credit-point math lies in specific, recurring ways
+
+Learned while making `extractRequirementGroups` recall-complete
+(2026-07). The extractor (`packages/db/src/curriculum.ts`) handles all
+of these; if you write another tree consumer, don't rediscover them:
+
+- **Intentionally over-budget Parts.** S2000 Part A lists 54cp of subs
+  against a 48cp budget; the handbook's own prose says the overlap is
+  expected ("a level 1 sequence is typically counted towards the
+  chosen major in Part B"). You cannot conclude "over budget ⇒ data
+  error" or "removing X keeps budget ⇒ X optional".
+- **Zero-cp sub-containers hold real unit pools.** A2000's Part B
+  domains ("complete 24 points from the following…") carry no
+  credit_points. ~49 courses/year do this. Skipping cp-less subs
+  silently hides half of every "…and Arts" double degree.
+- **Umbrella + duplicate views.** E3001/L3001 expose a full-budget
+  "Course requirements" container (often *empty prose*) NEXT TO
+  per-Part containers holding the same content. Top-level part cps sum
+  to 2× the course. Only unit-bearing subs should compete for budget.
+- **Leaf lists share their container budget with sibling subs.**
+  B2001 Part A: 42cp = 7 × 6cp listed units + a 6cp "Specified
+  commerce elective" sub ⇒ the list is 6-of-7 (the ACC1100/ACC1001
+  pair is a hidden pick-one), NOT all-required. Campus-scoped or
+  choice-shaped siblings are alternatives — count one, not the sum.
+- **Campus scoping lives only in container titles.** "Core studies -
+  Malaysia", "Additional coursework studies (Clayton)", "CLAYTON: …",
+  "Part E … - For the Indonesia offering only", bare "a. Malaysia".
+  There is no structured campus field. Beware red herrings like
+  "Accreditation in Malaysia - IMPORTANT INFORMATION". A single-campus
+  course (C2004) may suffix its *real core* with "- Malaysia" — only
+  suppress scoped groups when unscoped/other-scope siblings exist.
+- **"Elective"-titled groups whose options sum exactly to the budget**
+  (C2004 Part C: 8 × 6cp under 48cp) look mandatory to cp math but are
+  open pools. Title semantics ("elective", "minor") beat arithmetic.
+- **Container `description` prose states the real rule** ("You must
+  complete 42 credit points, comprising 36 credit points (six units)
+  from the following list; and 6 credit points…") and is the best
+  ground truth for validating extraction — used by the golden fixture
+  tests and `pnpm eval:curriculum`.
+
+Hand corrections the math can't derive live in
+`packages/ingest/curriculum-overrides.json` (applied by ingest,
+`backfill:curriculum`, and `pnpm overrides:apply` — never in SQL
+migrations, which re-ingest wipes).
+
 ## Attendance mode codes
 
 `unit_offerings.attendance_mode` is verbose prose. Every value has a
