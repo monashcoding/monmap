@@ -106,6 +106,25 @@ so always check *both* directions before calling two units equivalent.
 - **Course curriculum → AoS**, with the nearest ancestor container
   title naming the relationship ("Part B. Major studies", "Science
   extended majors", "Discipline elective studies"). 719 edges.
+- **Double degrees own no AoS edges after 2022.** From the 2023
+  handbook on, a double degree's tree is a skeleton whose top-level
+  containers each hold one course reference (S2004 → `Course: S2000`
+  + `Course: C2001`); the majors/minors/specialisations are linked on
+  the *component* courses, not the double. S2004 has 60 direct
+  `course_areas_of_study` rows in 2020–2022 and zero in 2023–2026 —
+  every one of 2026's 110 double degrees has zero. Any query that
+  wants a double degree's AoS must follow `courses.sub_course_refs`
+  to the component courses and read their edges (this is what
+  `fetchCourseWithAoS` does).
+- **Not every sub-course ref is a degree component.** Refs sharing a
+  (trimmed) `componentTitle` are "pick one of these programs"
+  alternatives, not halves of a double: A6039 lists six partner
+  programs under one "Indonesian programs" container, M6041 seven
+  under "Elective studies". Titles also carry trailing whitespace
+  (A6011's "Master of Journalism ") and case drift versus the
+  component-label strings baked from the tree ("Computer science
+  component" vs "Computer Science component") — join on course codes,
+  never on title strings.
 - **Course curriculum → units** also exists (C2000 references 17
   units directly). We don't surface this as a flat table yet; reach
   into `courses.curriculum_structure` JSONB for it.
@@ -148,6 +167,19 @@ Each leaf in a curriculum tree carries `academic_item_credit_points`,
 `parent_connector` (`{label: "AND"|"OR", value: ...}`) — so you have
 everything needed to render "6cp | FIT1045 Introduction to
 programming" rows grouped by AND/OR without joining back.
+
+## Baked curriculum columns are the only read path
+
+`courses.requirement_groups`, `embedded_specialisations`,
+`sub_course_refs` and `component_labels` are populated by ingest (and
+`backfill --force`) for **every** row that has a curriculum tree; they
+are NULL exactly when `curriculum_structure` is NULL (research
+programs — expected). The webapp reads these columns and never walks a
+course tree at request time: extraction logic runs in one place
+(ingest), so a fix to the extractor plus a backfill is guaranteed to
+be what users see. Areas of study are the exception — they have no
+baked requirement-group column yet, so `fetchCourseWithAoS` still
+extracts from `areas_of_study.curriculum_structure` per AoS.
 
 ## Fields that aren't what they look like
 
