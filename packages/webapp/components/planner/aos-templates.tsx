@@ -73,27 +73,29 @@ export function AoSTemplates({ className }: { className?: string }) {
         specialisations.
       </p>
       <div className="mt-2 flex flex-col gap-1.5">
-        {course.componentCourses.length > 0 ? (
-          course.componentCourses.map((comp) =>
-            comp.missingTemplate || comp.courseUnits.length === 0 ? (
-              <MissingTemplateCard
-                key={comp.courseCode}
-                label={comp.courseTitle}
-                courseCode={comp.courseCode}
-                year={course.year}
-                hasRequirements={comp.courseRequirements.length > 0}
-              />
-            ) : (
-              <CourseUnitsCard
-                key={comp.courseCode}
-                label={comp.courseTitle}
-                courseUnits={comp.courseUnits}
-              />
-            )
-          )
-        ) : course.courseUnits.length > 0 ? (
+        {/* Parent-level template renders alongside component cards when
+            both exist — some doubles keep one half's groups on the
+            double degree itself (F2016) or share groups across halves. */}
+        {course.courseUnits.length > 0 ? (
           <CourseUnitsCard courseUnits={course.courseUnits} />
         ) : null}
+        {course.componentCourses.map((comp) =>
+          comp.missingTemplate || comp.courseUnits.length === 0 ? (
+            <MissingTemplateCard
+              key={comp.courseCode}
+              label={comp.courseTitle}
+              courseCode={comp.courseCode}
+              year={course.year}
+              hasRequirements={comp.courseRequirements.length > 0}
+            />
+          ) : (
+            <CourseUnitsCard
+              key={comp.courseCode}
+              label={comp.courseTitle}
+              courseUnits={comp.courseUnits}
+            />
+          )
+        )}
         {selectedAos.map((aos) => (
           <AoSCard key={aos.code} aos={aos} />
         ))}

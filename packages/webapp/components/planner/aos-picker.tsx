@@ -96,22 +96,30 @@ function computeRolesForCourse(course: PlannerCourseWithAoS): RoleDefinition[] {
   const specs = byKind.get("specialisation") ?? []
   if (specs.length > 0) {
     // For double degrees, specialisations may come from two distinct
-    // curriculum sections. Group by componentLabel (top-level container
-    // title, e.g. "Computer Science component") when available, falling
-    // back to relationshipLabel. Show a separate picker per group.
+    // degree components. Group structurally by the component course
+    // code when available (labels can collide or differ only in
+    // whitespace/case), falling back to componentLabel then
+    // relationshipLabel for pre-componentCourseCode records. Show a
+    // separate picker per group, titled by the display label.
     const groupKey = (a: PlannerAreaOfStudy) =>
-      a.componentLabel ?? a.relationshipLabel
-    const byGroup = new Map<string, PlannerAreaOfStudy[]>()
+      a.componentCourseCode ?? a.componentLabel ?? a.relationshipLabel
+    const byGroup = new Map<
+      string,
+      { title: string; options: PlannerAreaOfStudy[] }
+    >()
     for (const a of specs) {
       const key = groupKey(a)
-      const list = byGroup.get(key) ?? []
-      list.push(a)
-      byGroup.set(key, list)
+      const group = byGroup.get(key) ?? {
+        title: a.componentLabel ?? a.relationshipLabel,
+        options: [],
+      }
+      group.options.push(a)
+      byGroup.set(key, group)
     }
-    const groups = [...byGroup.entries()]
+    const groups = [...byGroup.values()]
     const roleKeys = ["specialisation", "specialisation2"] as const
     const multiGroup = groups.length > 1
-    groups.forEach(([groupTitle, options], i) => {
+    groups.forEach(({ title: groupTitle, options }, i) => {
       const role = roleKeys[i]
       if (!role) return
       // "Computer Science component" → "Computer Science specialisation"

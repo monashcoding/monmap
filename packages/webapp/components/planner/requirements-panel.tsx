@@ -81,9 +81,18 @@ export function RequirementsPanel({ className }: { className?: string }) {
       <div className="flex flex-col divide-y">
         {course && course.componentCourses.length > 0 ? (
           <>
+            {/* Parent-level groups shared across components (e.g. F2016's
+                architecture half lives on the double degree itself). */}
+            {course.courseRequirements.length > 0 ? (
+              <CourseBlock
+                requirements={course.courseRequirements}
+                plannedCodes={plannedCodes}
+                placements={placements}
+              />
+            ) : null}
             {course.componentCourses.map((comp) => {
-              const compAos = withProgress.filter(
-                ({ aos }) => aos.componentLabel === comp.componentTitle
+              const compAos = withProgress.filter(({ aos }) =>
+                aosBelongsToComponent(aos, comp)
               )
               return (
                 <div key={comp.courseCode} className="flex flex-col divide-y">
@@ -110,8 +119,8 @@ export function RequirementsPanel({ className }: { className?: string }) {
             {withProgress
               .filter(
                 ({ aos }) =>
-                  !course.componentCourses.some(
-                    (c) => c.componentTitle === aos.componentLabel
+                  !course.componentCourses.some((c) =>
+                    aosBelongsToComponent(aos, c)
                   )
               )
               .map(({ role, aos, progress }) => (
@@ -145,7 +154,9 @@ export function RequirementsPanel({ className }: { className?: string }) {
           </>
         ) : withProgress.length === 0 ? (
           <div className="px-4 py-6 text-center text-[11px] text-muted-foreground">
-            Pick a major, minor or specialisation to see listed units.
+            {course && course.areasOfStudy.length === 0
+              ? "The handbook has no structured requirements for this course."
+              : "Pick a major, minor or specialisation to see listed units."}
           </div>
         ) : (
           withProgress.map(({ role, aos, progress }) => (
@@ -167,6 +178,26 @@ export function RequirementsPanel({ className }: { className?: string }) {
 interface PickedAoS {
   role: keyof PlannerState["selectedAos"]
   aos: PlannerAreaOfStudy
+}
+
+/**
+ * Structural AoS→component join on course code, with a display-label
+ * fallback for AoS records that predate `componentCourseCode` (rows
+ * cached or persisted before the field existed). Labels differ in case
+ * and trailing whitespace between the tree and the sub-course refs, so
+ * the fallback compares loosely.
+ */
+function aosBelongsToComponent(
+  aos: PlannerAreaOfStudy,
+  comp: { courseCode: string; componentTitle: string }
+): boolean {
+  if (aos.componentCourseCode)
+    return aos.componentCourseCode === comp.courseCode
+  if (!aos.componentLabel) return false
+  return (
+    aos.componentLabel.trim().toLowerCase() ===
+    comp.componentTitle.trim().toLowerCase()
+  )
 }
 
 function CourseBlock({
