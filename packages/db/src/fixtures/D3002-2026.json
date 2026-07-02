@@ -1,0 +1,348 @@
+{
+    "code": "D3002",
+    "year": "2026",
+    "title": "Bachelor of Education (Honours) and Bachelor of Arts",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/D3002",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 204,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "59aea3bcc395661040721d4bb00131bf",
+            "value": "D3002"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "caee2919972276104301b137f053affe",
+            "value": "caee2919972276104301b137f053affe"
+        },
+        "container": [
+            {
+                "cl_id": "82b45c2b9793b2504301b137f053afde",
+                "order": "100",
+                "title": "Arts component",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete 96 credit points comprising all the requirements from Parts A and B as described in the Bachelor of Arts degree. <br /> At least 24 credit points must be completed at Level 3. <br /><br />For Part B Arts Specified Study, you must complete 12 credit points of units from the Professional Futures domains and the remaining 12 credit points should be selected from Level 1, 2 or 3 Arts' elective units. <br /><br />For your discipline studies in the double degree secondary education specialisation, you must complete a Victorian Institute of Teaching minor study in one secondary teaching area. The minor study must consist of four units, with no more than two units at first year level. Space for the minor study units will come from elective unit allocations on the course map. Approved disciplines can be found on the secondary specialist areas page: https://www.monash.edu/education/students/courses/units/secondary-specialisms",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "06b45c2b9793b2504301b137f053afde",
+                        "order": "0",
+                        "abbr_name": "BA",
+                        "child_table": "x_f5sl_cl_courses",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_courses",
+                            "cl_id": "a2ee653f9722ba504301b137f053af6d",
+                            "value": "Course: A2000"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "82b45c2b9793b2504301b137f053afde",
+                            "value": "Curriculum Structure Container: Arts component"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "4ab45c2b9793b2504301b137f053afdc",
+                            "value": "2026.02.005"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/courses/A2000",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "A2000",
+                        "academic_item_name": "Bachelor of Arts",
+                        "academic_item_type": {
+                            "label": "Course",
+                            "value": "course"
+                        },
+                        "abbreviated_name_and_major": "",
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "144"
+                    }
+                ],
+                "credit_points": "96",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "4ab45c2b9793b2504301b137f053afdc",
+                    "value": "Curriculum Structure: 2026.02.005"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Course",
+                    "value": "course"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "86b45c2b9793b2504301b137f053afde",
+                "order": "0",
+                "title": "Education component",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "c2b45c2b9793b2504301b137f053afde",
+                        "order": "100",
+                        "title": "Specialisations",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "42b45c2b9793b2504301b137f053afde",
+                                "order": "100",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "1f7e6f7cc395661040721d4bb0013106",
+                                    "value": "Area of study: SECONDRY01"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c2b45c2b9793b2504301b137f053afde",
+                                    "value": "Curriculum Structure Container: Specialisations"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "4ab45c2b9793b2504301b137f053afdc",
+                                    "value": "2026.02.005"
+                                },
+                                "parent_connector": {
+                                    "label": "OR",
+                                    "value": "OR"
+                                },
+                                "academic_item_url": "/2026/aos/SECONDRY01",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "SECONDRY01",
+                                "academic_item_name": "Secondary education",
+                                "academic_item_type": {
+                                    "label": "UG specialisation",
+                                    "value": "ug_specialisation"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02AU",
+                                "academic_item_credit_points": "204"
+                            },
+                            {
+                                "cl_id": "46b45c2b9793b2504301b137f053afde",
+                                "order": "0",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "c66eeb7cc395661040721d4bb0013143",
+                                    "value": "Area of study: PRIMARY04"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c2b45c2b9793b2504301b137f053afde",
+                                    "value": "Curriculum Structure Container: Specialisations"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "4ab45c2b9793b2504301b137f053afdc",
+                                    "value": "2026.02.005"
+                                },
+                                "parent_connector": {
+                                    "label": "OR",
+                                    "value": "OR"
+                                },
+                                "academic_item_url": "/2026/aos/PRIMARY04",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "PRIMARY04",
+                                "academic_item_name": "Primary education",
+                                "academic_item_type": {
+                                    "label": "UG specialisation",
+                                    "value": "ug_specialisation"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02AU",
+                                "academic_item_credit_points": "204"
+                            }
+                        ],
+                        "credit_points": "108",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "86b45c2b9793b2504301b137f053afde",
+                            "value": "Curriculum Structure Container: Education component"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "You must complete 108 credit points from the Bachelor of Education (Honours) including all of the requirements in Parts A, B, C, D and E and any special course requirements from one of the following specialisations.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "02b45c2b9793b2504301b137f053afde",
+                        "order": "0",
+                        "abbr_name": "BEd(Hons)",
+                        "child_table": "x_f5sl_cl_courses",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_courses",
+                            "cl_id": "23460fd197c172144301b137f053af39",
+                            "value": "Course: D3001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "86b45c2b9793b2504301b137f053afde",
+                            "value": "Curriculum Structure Container: Education component"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "4ab45c2b9793b2504301b137f053afdc",
+                            "value": "2026.02.005"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/courses/D3001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "D3001",
+                        "academic_item_name": "Bachelor of Education (Honours)",
+                        "academic_item_type": {
+                            "label": "Course",
+                            "value": "course"
+                        },
+                        "abbreviated_name_and_major": "",
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "204"
+                    }
+                ],
+                "credit_points": "108",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "4ab45c2b9793b2504301b137f053afdc",
+                    "value": "Curriculum Structure: 2026.02.005"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "900c85c3c35ed21040721d4bb00131a8",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:13:57 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "204",
+        "ai_to_cs_cl_id": "02b45c2b9793b2504301b137f053afe2",
+        "effective_date": "",
+        "structure_cl_id": "4ab45c2b9793b2504301b137f053afdc",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "4ab45c2b9793b2504301b137f053afdc",
+            "value": "2026.02.005"
+        }
+    }
+}

@@ -1,0 +1,396 @@
+{
+    "code": "D3001",
+    "year": "2026",
+    "title": "Bachelor of Education (Honours)",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/D3001",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 204,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "23460fd197c172144301b137f053af39",
+            "value": "D3001"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "03bf72eec312e61040721d4bb00131a2",
+            "value": "03bf72eec312e61040721d4bb00131a2"
+        },
+        "container": [
+            {
+                "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                "order": "0",
+                "title": "Specialisations",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete one of the following specialisations",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "374e404c97d6f6d04301b137f053af1c",
+                        "order": "0",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "f72daff8c395661040721d4bb0013122",
+                            "value": "Area of study: EARCHPRI02"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                            "value": "Curriculum Structure Container: Specialisations"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                            "value": "2026.02.002"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/EARCHPRI02",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "EARCHPRI02",
+                        "academic_item_name": "Early childhood and primary education",
+                        "academic_item_type": {
+                            "label": "UG specialisation",
+                            "value": "ug_specialisation"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02AU",
+                        "academic_item_credit_points": "204"
+                    },
+                    {
+                        "cl_id": "3b4e404c97d6f6d04301b137f053af1c",
+                        "order": "300",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "edf5910847dd7610448f409b136d43f3",
+                            "value": "Area of study: PRISECIE02"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                            "value": "Curriculum Structure Container: Specialisations"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                            "value": "2026.02.002"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/PRISECIE02",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PRISECIE02",
+                        "academic_item_name": "Primary and secondary inclusive and special education",
+                        "academic_item_type": {
+                            "label": "UG specialisation",
+                            "value": "ug_specialisation"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "204"
+                    },
+                    {
+                        "cl_id": "774e404c97d6f6d04301b137f053af1c",
+                        "order": "200",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "751551c447dd7610448f409b136d4391",
+                            "value": "Area of study: PRISEC05"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                            "value": "Curriculum Structure Container: Specialisations"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                            "value": "2026.02.002"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/PRISEC05",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PRISEC05",
+                        "academic_item_name": "Primary and secondary education",
+                        "academic_item_type": {
+                            "label": "UG specialisation",
+                            "value": "ug_specialisation"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "204"
+                    },
+                    {
+                        "cl_id": "7b4e404c97d6f6d04301b137f053af1c",
+                        "order": "500",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "6b8e23bcc395661040721d4bb001319b",
+                            "value": "Area of study: SCNDRYHP01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                            "value": "Curriculum Structure Container: Specialisations"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                            "value": "2026.02.002"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/SCNDRYHP01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "SCNDRYHP01",
+                        "academic_item_name": "Secondary health and physical education",
+                        "academic_item_type": {
+                            "label": "UG specialisation",
+                            "value": "ug_specialisation"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02AU",
+                        "academic_item_credit_points": "204"
+                    },
+                    {
+                        "cl_id": "b74e404c97d6f6d04301b137f053af1c",
+                        "order": "400",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "f8e5d9c447dd7610448f409b136d43f4",
+                            "value": "Area of study: PRISECHP03"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                            "value": "Curriculum Structure Container: Specialisations"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                            "value": "2026.02.002"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/PRISECHP03",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PRISECHP03",
+                        "academic_item_name": "Primary and secondary health and physical education",
+                        "academic_item_type": {
+                            "label": "UG specialisation",
+                            "value": "ug_specialisation"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "204"
+                    },
+                    {
+                        "cl_id": "f34e404c97d6f6d04301b137f053af1c",
+                        "order": "600",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "1f7e6f7cc395661040721d4bb0013106",
+                            "value": "Area of study: SECONDRY01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                            "value": "Curriculum Structure Container: Specialisations"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                            "value": "2026.02.002"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/SECONDRY01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "SECONDRY01",
+                        "academic_item_name": "Secondary education",
+                        "academic_item_type": {
+                            "label": "UG specialisation",
+                            "value": "ug_specialisation"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02AU",
+                        "academic_item_credit_points": "204"
+                    },
+                    {
+                        "cl_id": "f74e404c97d6f6d04301b137f053af1c",
+                        "order": "100",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "c66eeb7cc395661040721d4bb0013143",
+                            "value": "Area of study: PRIMARY04"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b34e404c97d6f6d04301b137f053af1c",
+                            "value": "Curriculum Structure Container: Specialisations"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                            "value": "2026.02.002"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/PRIMARY04",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PRIMARY04",
+                        "academic_item_name": "Primary education",
+                        "academic_item_type": {
+                            "label": "UG specialisation",
+                            "value": "ug_specialisation"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02AU",
+                        "academic_item_credit_points": "204"
+                    }
+                ],
+                "credit_points": "204",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+                    "value": "Curriculum Structure: 2026.02.002"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "27fb45c3c35ed21040721d4bb0013159",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:13:54 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "204",
+        "ai_to_cs_cl_id": "bb4e404c97d6f6d04301b137f053af39",
+        "effective_date": "",
+        "structure_cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "fb4e404c97d6f6d04301b137f053af1a",
+            "value": "2026.02.002"
+        }
+    }
+}

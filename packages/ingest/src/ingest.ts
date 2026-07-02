@@ -18,6 +18,7 @@ import type {
   CourseContent,
   UnitContent,
 } from "@monmap/scraper/types";
+import { applyCurriculumOverrides } from "@monmap/db";
 import {
   extractAosUnitRefs,
   extractCourseAosRefs,
@@ -25,6 +26,7 @@ import {
   parseCourse,
   parseUnit,
 } from "./parse.ts";
+import { loadCurriculumOverrides } from "./overrides.ts";
 
 const CHUNK = 200;
 
@@ -104,6 +106,27 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
     }
   }
   console.log(`  courses: parsed ${courseRows.length}`);
+
+  // Hand corrections the extractor can't derive. Applied here — inside
+  // the same pipeline that delete-and-reinserts the year — so a
+  // re-ingest can never silently wipe a fix again (the failure mode of
+  // the old migration-0008 approach).
+  const overrides = loadCurriculumOverrides();
+  let overridden = 0;
+  for (const c of courseRows) {
+    const { groups, applied } = applyCurriculumOverrides(
+      c.code,
+      year,
+      c.requirementGroups ?? [],
+      overrides,
+    );
+    if (applied.length > 0) {
+      c.requirementGroups = groups;
+      overridden++;
+    }
+  }
+  if (overridden > 0)
+    console.log(`  courses: applied curriculum overrides to ${overridden}`);
 
   /* -------- aos --------------------------------------------------- */
   const aosFiles = await readdir(join(base, "aos")).catch(() => []);

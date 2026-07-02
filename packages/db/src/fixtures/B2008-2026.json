@@ -1,0 +1,260 @@
+{
+    "code": "B2008",
+    "year": "2026",
+    "title": "Bachelor of Commerce and Bachelor of Computer Science",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/B2008",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 192,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "fb6730fb47dc7ed0448f409b136d4300",
+            "value": "B2008"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "097775c097e3f6504301b137f053af37",
+            "value": "097775c097e3f6504301b137f053af37"
+        },
+        "container": [
+            {
+                "cl_id": "4c5575a097bf7e504301b137f053af34",
+                "order": "200",
+                "title": "Computer Science component",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete 96 credit points, including all of the requirements in Part A, Part B, Part C and Part D for the Bachelor of Computer Science.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "0c5575a097bf7e504301b137f053af34",
+                        "order": "0",
+                        "abbr_name": "BCompSci",
+                        "child_table": "x_f5sl_cl_courses",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_courses",
+                            "cl_id": "608fee56973272d04301b137f053af82",
+                            "value": "Course: C2001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "4c5575a097bf7e504301b137f053af34",
+                            "value": "Curriculum Structure Container: Computer Science component"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "445575a097bf7e504301b137f053af33",
+                            "value": "2026.02.006"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/courses/C2001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "C2001",
+                        "academic_item_name": "Bachelor of Computer Science",
+                        "academic_item_type": {
+                            "label": "Course",
+                            "value": "course"
+                        },
+                        "abbreviated_name_and_major": "",
+                        "academic_item_version_name": "2026.06",
+                        "academic_item_credit_points": "144"
+                    }
+                ],
+                "credit_points": "96",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "445575a097bf7e504301b137f053af33",
+                    "value": "Curriculum Structure: 2026.02.006"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "8c5575a097bf7e504301b137f053af34",
+                "order": "0",
+                "title": "Rules",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You will complete your Bachelor of Computer Science specialisation and one major in the Bachelor of Commerce.  Where you have space in your degree you may complete a second major with no more than two units contributing towards both of your chosen majors or towards both a major and the specialisation.<br /><br />You can enrich your degree to hone your academic and professional skills with a range of Flagship Rich Educational Experiences (FREE), including the Research, Experimentation and Discovery, Monash Innovation Guarantee, Global Immersion Guarantee and Volunteering. These flagship rich educational experience units may be credited in place of your specified commerce elective if approved by the faculty, or alternatively utilising your replacement units. There are both 6 and 12 credit point unit options available.<br /><br />If you are enrolled in a double degree it may be possible to use 6 credit points from each degree to do the Global Immersion Guarantee (12 credit points). For information on eligible double degree combinations please see Global Immersion Guarantee. ",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "0",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "445575a097bf7e504301b137f053af33",
+                    "value": "Curriculum Structure: 2026.02.006"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": null,
+                    "value": null
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "cc5575a097bf7e504301b137f053af34",
+                "order": "100",
+                "title": "Commerce component",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete 96 credit points, including all of the requirements in Part A, Part B and Parts C for the Bachelor of Commerce. <br /><br />Note: If you are completing the Accounting major as part of your double degree, please note ECX2953 is required for professional accreditation and can be completed in Part A instead of ECC1000, and you will not be required to complete ECC1100.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "005575a097bf7e504301b137f053af35",
+                        "order": "0",
+                        "abbr_name": "BCom",
+                        "child_table": "x_f5sl_cl_courses",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_courses",
+                            "cl_id": "6bb7b58847efb650448f409b136d430d",
+                            "value": "Course: B2001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "cc5575a097bf7e504301b137f053af34",
+                            "value": "Curriculum Structure Container: Commerce component"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "445575a097bf7e504301b137f053af33",
+                            "value": "2026.02.006"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/courses/B2001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "B2001",
+                        "academic_item_name": "Bachelor of Commerce",
+                        "academic_item_type": {
+                            "label": "Course",
+                            "value": "course"
+                        },
+                        "abbreviated_name_and_major": "",
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "144"
+                    }
+                ],
+                "credit_points": "96",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "445575a097bf7e504301b137f053af33",
+                    "value": "Curriculum Structure: 2026.02.006"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "a30c8dc3c35ed21040721d4bb0013185",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:14:10 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "192",
+        "ai_to_cs_cl_id": "c45575a097bf7e504301b137f053af44",
+        "effective_date": "",
+        "structure_cl_id": "445575a097bf7e504301b137f053af33",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "445575a097bf7e504301b137f053af33",
+            "value": "2026.02.006"
+        }
+    }
+}

@@ -1,0 +1,3012 @@
+{
+    "code": "M6030",
+    "year": "2026",
+    "title": "Master of Biotechnology",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/M6030",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 96,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "925d0c859791b6104301b137f053af63",
+            "value": "M6030"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "43576aa3976b76504301b137f053af6a",
+            "value": "43576aa3976b76504301b137f053af6a"
+        },
+        "container": [
+            {
+                "cl_id": "30bcd46d97e403904301b137f053afa9",
+                "order": "200",
+                "title": "SEU, Suzhou ",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                        "order": "0",
+                        "title": "Part A. Core studies - SEU",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following units",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "70bcd46d97e403904301b137f053afa7",
+                                "order": "700",
+                                "abbr_name": "CROSS CULT MGT COMM",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "0a1c28e647ed3290448f409b136d433d",
+                                    "value": "Unit: MGZ5640"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MGZ5640",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MGZ5640",
+                                "academic_item_name": "Cross-cultural management communication",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "34bcd46d97e403904301b137f053afa7",
+                                "order": "400",
+                                "abbr_name": "THEU APPL BBIOTECH",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "918c15c097efb6504301b137f053afe6",
+                                    "value": "Unit: BRM5014"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5014",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5014",
+                                "academic_item_name": "Therapeutic approaches and biotechnology",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "74bcd46d97e403904301b137f053afa8",
+                                "order": "300",
+                                "abbr_name": "MED BIOTEC CEL GEN",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "6fbbd10097efb6504301b137f053af33",
+                                    "value": "Unit: BRM5013"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5013",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5013",
+                                "academic_item_name": "Techniques in medical biotechnology: Imaging, iPS cells, cell and gene therapies",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.08",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "34bcd46d97e403904301b137f053afa9",
+                                "order": "200",
+                                "abbr_name": "MED BIOTEC OMICS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "284bdd4c97afb6504301b137f053af2d",
+                                    "value": "Unit: BRM5012"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5012",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5012",
+                                "academic_item_name": "Techniques in medical biotechnology: Genomics, proteomics and bioinformatics",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "f8bcd46d97e403904301b137f053afa9",
+                                "order": "100",
+                                "abbr_name": "MED BIOTEC APPL",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "54c9118497afb6504301b137f053af96",
+                                    "value": "Unit: BRM5011"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5011",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5011",
+                                "academic_item_name": "Foundations for medical biotechnology and its applications",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "78bcd46d97e403904301b137f053afaa",
+                                "order": "0",
+                                "abbr_name": "BIOTECHNOLOGY",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "a326c6a347637e10448f409b136d433e",
+                                    "value": "Unit: BMS5007"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BMS5007",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BMS5007",
+                                "academic_item_name": "Biotechnology: Commercialising biomedical science",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "f8bcd46d97e403904301b137f053afaa",
+                                "order": "600",
+                                "abbr_name": "ADV GEN AND BIOTECH",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "407854b6c332665002fcfb777d013144",
+                                    "value": "Unit: GNA5010"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/GNA5010",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "GNA5010",
+                                "academic_item_name": "Advanced genetics and biotechnology",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "fcbcd46d97e403904301b137f053afaa",
+                                "order": "500",
+                                "abbr_name": "BIOTEC RES STUDIES",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "9c2209e447727e50448f409b136d43a0",
+                                    "value": "Unit: BRM5015"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f0bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - SEU"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5015",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5015",
+                                "academic_item_name": "Biotechnology research studies",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "30bcd46d97e403904301b137f053afa9",
+                            "value": "Curriculum Structure Container: SEU, Suzhou "
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "For students completing the course at Southeast University (SEU), Suzhou ",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "0",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                    "value": "Curriculum Structure: 2026.03.045"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "38bcd46d97e403904301b137f053afaa",
+                "order": "100",
+                "title": "Malaysia",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "b8bcd46d97e403904301b137f053afa7",
+                        "order": "100",
+                        "title": "Part B. Applied studies - Malaysia",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                            {
+                                "cl_id": "f4bcd46d97e403904301b137f053afa9",
+                                "order": "0",
+                                "title": " Research pathway",
+                                "preface": "",
+                                "footnote": "",
+                                "map_type": "",
+                                "container": [
+                                ],
+                                "child_table": "",
+                                "description": "You must complete the following unit",
+                                "child_record": {
+                                    "key": "",
+                                    "type": null,
+                                    "cl_id": null,
+                                    "value": ""
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "relationship": [
+                                    {
+                                        "cl_id": "b0bcd46d97e403904301b137f053afa8",
+                                        "order": "0",
+                                        "abbr_name": "BIOTEC RES",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "aa7d11c497efb6504301b137f053af03",
+                                            "value": "Unit: BRM5021"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "f4bcd46d97e403904301b137f053afa9",
+                                            "value": "Curriculum Structure Container:  Research pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BRM5021",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BRM5021",
+                                        "academic_item_name": "Biotechnology research project",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.07",
+                                        "academic_item_credit_points": "48"
+                                    }
+                                ],
+                                "credit_points": "48",
+                                "dynamic_query": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part B. Applied studies - Malaysia"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "credit_points_max": "",
+                                "vertical_grouping": {
+                                    "label": "Component",
+                                    "value": "component"
+                                },
+                                "horizontal_grouping": {
+                                    "label": null,
+                                    "value": null
+                                }
+                            },
+                            {
+                                "cl_id": "70bcd46d97e403904301b137f053afaa",
+                                "order": "100",
+                                "title": "Coursework pathway",
+                                "preface": "",
+                                "footnote": "",
+                                "map_type": "",
+                                "container": [
+                                ],
+                                "child_table": "",
+                                "description": "You must complete BRM5022 and a further 24 credit points from the following list of units",
+                                "child_record": {
+                                    "key": "",
+                                    "type": null,
+                                    "cl_id": null,
+                                    "value": ""
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "relationship": [
+                                    {
+                                        "cl_id": "38bcd46d97e403904301b137f053afa7",
+                                        "order": "300",
+                                        "abbr_name": "INNOV & ENTRPSHP",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "8b6305044722fe50448f409b136d4319",
+                                            "value": "Unit: MGM5251"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "70bcd46d97e403904301b137f053afaa",
+                                            "value": "Curriculum Structure Container: Coursework pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MGM5251",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MGM5251",
+                                        "academic_item_name": "Innovation and entrepreneurship",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "30bcd46d97e403904301b137f053afa8",
+                                        "order": "100",
+                                        "abbr_name": "FINTECH",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "e7047321c372ae9040721d4bb0013144",
+                                            "value": "Unit: BFM5120"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "70bcd46d97e403904301b137f053afaa",
+                                            "value": "Curriculum Structure Container: Coursework pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BFM5120",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BFM5120",
+                                        "academic_item_name": "Financial technology (FinTech)",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "f4bcd46d97e403904301b137f053afa8",
+                                        "order": "200",
+                                        "abbr_name": "INTROTODIGITALBUS",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "15d629d9c307a29002fcfb777d013191",
+                                            "value": "Unit: MGM5160"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "70bcd46d97e403904301b137f053afaa",
+                                            "value": "Curriculum Structure Container: Coursework pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MGM5160",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MGM5160",
+                                        "academic_item_name": "Introduction to digital business",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.04",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "f4bcd46d97e403904301b137f053afaa",
+                                        "order": "500",
+                                        "abbr_name": "EXPERI NEUROBIO",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "c94f958c97efb6504301b137f053afa2",
+                                            "value": "Unit: MSM5003"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "70bcd46d97e403904301b137f053afaa",
+                                            "value": "Curriculum Structure Container: Coursework pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MSM5003",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MSM5003",
+                                        "academic_item_name": "Experimental neurobiology ",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.07",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "bcbcd46d97e403904301b137f053afa9",
+                                        "order": "400",
+                                        "abbr_name": "MKTGMGMTINDIGAGE",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "04e6a9d9c307a29002fcfb777d01311d",
+                                            "value": "Unit: MKM5330"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "70bcd46d97e403904301b137f053afaa",
+                                            "value": "Curriculum Structure Container: Coursework pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MKM5330",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MKM5330",
+                                        "academic_item_name": "Marketing management in digital age",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.04",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "b0bcd46d97e403904301b137f053afab",
+                                        "order": "0",
+                                        "abbr_name": "WIL BIOTEC",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "c2edd54897efb6504301b137f053af1c",
+                                            "value": "Unit: BRM5022"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "70bcd46d97e403904301b137f053afaa",
+                                            "value": "Curriculum Structure Container: Coursework pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BRM5022",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BRM5022",
+                                        "academic_item_name": "Biotechnology work-integrated learning",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.06",
+                                        "academic_item_credit_points": "24"
+                                    }
+                                ],
+                                "credit_points": "48",
+                                "dynamic_query": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part B. Applied studies - Malaysia"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "credit_points_max": "",
+                                "vertical_grouping": {
+                                    "label": "Component",
+                                    "value": "component"
+                                },
+                                "horizontal_grouping": {
+                                    "label": null,
+                                    "value": null
+                                }
+                            }
+                        ],
+                        "child_table": "",
+                        "description": "You must complete either the Research Pathway or the Coursework Pathway",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "38bcd46d97e403904301b137f053afaa",
+                            "value": "Curriculum Structure Container: Malaysia"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                        "order": "0",
+                        "title": "Part A. Core studies - Malaysia",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following units",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "7cbcd46d97e403904301b137f053afa7",
+                                "order": "400",
+                                "abbr_name": "BIOTEC RES STUDIES",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "9c2209e447727e50448f409b136d43a0",
+                                    "value": "Unit: BRM5015"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5015",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5015",
+                                "academic_item_name": "Biotechnology research studies",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "bcbcd46d97e403904301b137f053afa7",
+                                "order": "300",
+                                "abbr_name": "THEU APPL BBIOTECH",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "918c15c097efb6504301b137f053afe6",
+                                    "value": "Unit: BRM5014"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5014",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5014",
+                                "academic_item_name": "Therapeutic approaches and biotechnology",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "38bcd46d97e403904301b137f053afa8",
+                                "order": "500",
+                                "abbr_name": "TECH TRANSFER COMM",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "117ed5c897efb6504301b137f053afb1",
+                                    "value": "Unit: MSM5001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MSM5001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MSM5001",
+                                "academic_item_name": "Technology transfer and commercialisation",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "7cbcd46d97e403904301b137f053afa8",
+                                "order": "200",
+                                "abbr_name": "MED BIOTEC CEL GEN",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "6fbbd10097efb6504301b137f053af33",
+                                    "value": "Unit: BRM5013"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5013",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5013",
+                                "academic_item_name": "Techniques in medical biotechnology: Imaging, iPS cells, cell and gene therapies",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.08",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "70bcd46d97e403904301b137f053afa9",
+                                "order": "700",
+                                "abbr_name": "DIGITALLEADERSHIP",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "e40e622c470fba10448f409b136d4382",
+                                    "value": "Unit: MGM5260"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MGM5260",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MGM5260",
+                                "academic_item_name": "Digital leadership",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "30bcd46d97e403904301b137f053afaa",
+                                "order": "100",
+                                "abbr_name": "MED BIOTEC OMICS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "284bdd4c97afb6504301b137f053af2d",
+                                    "value": "Unit: BRM5012"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5012",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5012",
+                                "academic_item_name": "Techniques in medical biotechnology: Genomics, proteomics and bioinformatics",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "bcbcd46d97e403904301b137f053afaa",
+                                "order": "600",
+                                "abbr_name": "ADV MOL GENETICS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "dceedd0c97efb6504301b137f053af51",
+                                    "value": "Unit: MSM5002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MSM5002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MSM5002",
+                                "academic_item_name": "Advanced molecular genetics",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "30bcd46d97e403904301b137f053afab",
+                                "order": "0",
+                                "abbr_name": "MED BIOTEC APPL",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "54c9118497afb6504301b137f053af96",
+                                    "value": "Unit: BRM5011"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fcbcd46d97e403904301b137f053afa8",
+                                    "value": "Curriculum Structure Container: Part A. Core studies - Malaysia"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5011",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5011",
+                                "academic_item_name": "Foundations for medical biotechnology and its applications",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "38bcd46d97e403904301b137f053afaa",
+                            "value": "Curriculum Structure Container: Malaysia"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "For students completing the course at Monash University Malaysia (MUM) Campus",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "0",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                    "value": "Curriculum Structure: 2026.03.045"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "b0bcd46d97e403904301b137f053afa9",
+                "order": "0",
+                "title": "Clayton ",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "74bcd46d97e403904301b137f053afa7",
+                        "order": "0",
+                        "title": "Part A. Core studies",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                            {
+                                "cl_id": "b4bcd46d97e403904301b137f053afa7",
+                                "order": "700",
+                                "title": "Specified elective studies",
+                                "preface": "",
+                                "footnote": "",
+                                "map_type": "",
+                                "container": [
+                                ],
+                                "child_table": "",
+                                "description": "You must complete one of the following units",
+                                "child_record": {
+                                    "key": "",
+                                    "type": null,
+                                    "cl_id": null,
+                                    "value": ""
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "relationship": [
+                                    {
+                                        "cl_id": "3cbcd46d97e403904301b137f053afa7",
+                                        "order": "200",
+                                        "abbr_name": "CREATIVITY & ENTRE",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "1b5091c047e7b650448f409b136d4394",
+                                            "value": "Unit: BEX5411"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b4bcd46d97e403904301b137f053afa7",
+                                            "value": "Curriculum Structure Container: Specified elective studies"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5411",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5411",
+                                        "academic_item_name": "Creativity and entrepreneurship",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.06",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "b0bcd46d97e403904301b137f053afaa",
+                                        "order": "0",
+                                        "abbr_name": "VALCREASTARTUPCAPOPT",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "9142d54c47e7b650448f409b136d43df",
+                                            "value": "Unit: BEX5114"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b4bcd46d97e403904301b137f053afa7",
+                                            "value": "Curriculum Structure Container: Specified elective studies"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5114",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5114",
+                                        "academic_item_name": "Value creation and start-up capital optimisation for founders",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.05",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "74bcd46d97e403904301b137f053afa9",
+                                        "order": "100",
+                                        "abbr_name": "STARTUPFNDMNTLS",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "2ee091c447e7b650448f409b136d4329",
+                                            "value": "Unit: BEX5120"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b4bcd46d97e403904301b137f053afa7",
+                                            "value": "Curriculum Structure Container: Specified elective studies"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5120",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5120",
+                                        "academic_item_name": "Startup fundamentals: From setting up to securing investment",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.04",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "78bcd46d97e403904301b137f053afa9",
+                                        "order": "300",
+                                        "abbr_name": "TECH&INNO FOR START",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "7d7a65ec471ff210448f409b136d43a9",
+                                            "value": "Unit: BEX5413"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b4bcd46d97e403904301b137f053afa7",
+                                            "value": "Curriculum Structure Container: Specified elective studies"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5413",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5413",
+                                        "academic_item_name": "Technology and innovation for start-ups",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.05",
+                                        "academic_item_credit_points": "6"
+                                    }
+                                ],
+                                "credit_points": "6",
+                                "dynamic_query": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "credit_points_max": "",
+                                "vertical_grouping": {
+                                    "label": "Unit",
+                                    "value": "unit"
+                                },
+                                "horizontal_grouping": {
+                                    "label": null,
+                                    "value": null
+                                }
+                            }
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following units",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "b4bcd46d97e403904301b137f053afa8",
+                                "order": "400",
+                                "abbr_name": "THEU APPL BBIOTECH",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "918c15c097efb6504301b137f053afe6",
+                                    "value": "Unit: BRM5014"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5014",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5014",
+                                "academic_item_name": "Therapeutic approaches and biotechnology",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "f8bcd46d97e403904301b137f053afa8",
+                                "order": "500",
+                                "abbr_name": "BIOTEC RES STUDIES",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "9c2209e447727e50448f409b136d43a0",
+                                    "value": "Unit: BRM5015"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5015",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5015",
+                                "academic_item_name": "Biotechnology research studies",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "b4bcd46d97e403904301b137f053afa9",
+                                "order": "300",
+                                "abbr_name": "MED BIOTEC CEL GEN",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "6fbbd10097efb6504301b137f053af33",
+                                    "value": "Unit: BRM5013"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5013",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5013",
+                                "academic_item_name": "Techniques in medical biotechnology: Imaging, iPS cells, cell and gene therapies",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.08",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "b8bcd46d97e403904301b137f053afa9",
+                                "order": "100",
+                                "abbr_name": "MED BIOTEC APPL",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "54c9118497afb6504301b137f053af96",
+                                    "value": "Unit: BRM5011"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5011",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5011",
+                                "academic_item_name": "Foundations for medical biotechnology and its applications",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "7cbcd46d97e403904301b137f053afa9",
+                                "order": "600",
+                                "abbr_name": "ADV GEN AND BIOTECH",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "407854b6c332665002fcfb777d013144",
+                                    "value": "Unit: GNA5010"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/GNA5010",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "GNA5010",
+                                "academic_item_name": "Advanced genetics and biotechnology",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "7cbcd46d97e403904301b137f053afaa",
+                                "order": "200",
+                                "abbr_name": "MED BIOTEC OMICS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "284bdd4c97afb6504301b137f053af2d",
+                                    "value": "Unit: BRM5012"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BRM5012",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BRM5012",
+                                "academic_item_name": "Techniques in medical biotechnology: Genomics, proteomics and bioinformatics",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "70bcd46d97e403904301b137f053afab",
+                                "order": "0",
+                                "abbr_name": "BIOTECHNOLOGY",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "a326c6a347637e10448f409b136d433e",
+                                    "value": "Unit: BMS5007"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "74bcd46d97e403904301b137f053afa7",
+                                    "value": "Curriculum Structure Container: Part A. Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                    "value": "2026.03.045"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BMS5007",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BMS5007",
+                                "academic_item_name": "Biotechnology: Commercialising biomedical science",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b0bcd46d97e403904301b137f053afa9",
+                            "value": "Curriculum Structure Container: Clayton "
+                        },
+                        "parent_connector": {
+                            "label": "OR",
+                            "value": "OR"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Unit",
+                            "value": "unit"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "3cbcd46d97e403904301b137f053afaa",
+                        "order": "100",
+                        "title": "Part B. Applied studies ",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                            {
+                                "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                "order": "100",
+                                "title": "Coursework pathway ",
+                                "preface": "",
+                                "footnote": "",
+                                "map_type": "",
+                                "container": [
+                                ],
+                                "child_table": "",
+                                "description": "You must complete BRM5022 and a further 24 credit points from the following list of units.<br /><br />Note 1: In order to be eligible for the industry placement unit, you need to have an average of at least 70% in your core biotechnology studies (Part A). If you do not meet this requirement, then you can undertake 48 credit points from the elective list or you may exit and graduate with a Graduate Diploma of Biotechnology.<br /><br />Note 2: You must have a successful application with an organisation to undertake BRM5022. Training on how to write a CV and to prepare for an interview is available and you will be provided with a list of positions to apply for.",
+                                "child_record": {
+                                    "key": "",
+                                    "type": null,
+                                    "cl_id": null,
+                                    "value": ""
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "relationship": [
+                                    {
+                                        "cl_id": "30bcd46d97e403904301b137f053afa7",
+                                        "order": "1700",
+                                        "abbr_name": "PRACTICAL DATA MAN",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "8f86d5e847367e50448f409b136d4387",
+                                            "value": "Unit: MPH5277"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5277",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5277",
+                                        "academic_item_name": "Practical data management",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "b0bcd46d97e403904301b137f053afa7",
+                                        "order": "1100",
+                                        "abbr_name": "INTRO EPIDEM BIOSTAT",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "d4e3dd3697fb6e504301b137f053af6d",
+                                            "value": "Unit: MPH5020"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5020",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5020",
+                                        "academic_item_name": "Introduction to epidemiology and biostatistics",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "f4bcd46d97e403904301b137f053afa7",
+                                        "order": "200",
+                                        "abbr_name": "ADDICTION SCI BIOPSY",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "0120a58f97feb6d04301b137f053afb0",
+                                            "value": "Unit: ASC5001"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/ASC5001",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "ASC5001",
+                                        "academic_item_name": "Fundamentals of addiction science and addiction policy",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "12"
+                                    },
+                                    {
+                                        "cl_id": "78bcd46d97e403904301b137f053afa7",
+                                        "order": "900",
+                                        "abbr_name": "CANCER BIOL THERAP",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "818220894703be10448f409b136d43e9",
+                                            "value": "Unit: BMS5012"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BMS5012",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BMS5012",
+                                        "academic_item_name": "Cancer biology and therapeutics",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "f8bcd46d97e403904301b137f053afa7",
+                                        "order": "1900",
+                                        "abbr_name": "BIOMATERIALSBIOMECH",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "909c9dbb979f36504301b137f053af2a",
+                                            "value": "Unit: MTE5885"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MTE5885",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MTE5885",
+                                        "academic_item_name": "Biomaterials and biomechanics",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.02",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "fcbcd46d97e403904301b137f053afa7",
+                                        "order": "0",
+                                        "abbr_name": "WIL BIOTEC",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "c2edd54897efb6504301b137f053af1c",
+                                            "value": "Unit: BRM5022"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BRM5022",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BRM5022",
+                                        "academic_item_name": "Biotechnology work-integrated learning",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.06",
+                                        "academic_item_credit_points": "24"
+                                    },
+                                    {
+                                        "cl_id": "70bcd46d97e403904301b137f053afa8",
+                                        "order": "500",
+                                        "abbr_name": "STARTUPFNDMNTLS",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "2ee091c447e7b650448f409b136d4329",
+                                            "value": "Unit: BEX5120"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5120",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5120",
+                                        "academic_item_name": "Startup fundamentals: From setting up to securing investment",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.04",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "f0bcd46d97e403904301b137f053afa8",
+                                        "order": "1300",
+                                        "abbr_name": "INTRO BIOSTATS",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "df79782f978776904301b137f053afdc",
+                                            "value": "Unit: MPH5041"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5041",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5041",
+                                        "academic_item_name": "Introductory biostatistics",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.05",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "34bcd46d97e403904301b137f053afa8",
+                                        "order": "1500",
+                                        "abbr_name": "HEALTH POLICY",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "81e1ad12c32e6a5040721d4bb00131dd",
+                                            "value": "Unit: MPH5269"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5269",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5269",
+                                        "academic_item_name": "Foundations of health policy",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.01RO",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "78bcd46d97e403904301b137f053afa8",
+                                        "order": "1600",
+                                        "abbr_name": "PRINC HLTH SYS",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "a34514b347b7a250448f409b136d43d1",
+                                            "value": "Unit: MPH5272"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5272",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5272",
+                                        "academic_item_name": "Principles of health systems",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.02",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "3cbcd46d97e403904301b137f053afa8",
+                                        "order": "400",
+                                        "abbr_name": "VALCREASTARTUPCAPOPT",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "9142d54c47e7b650448f409b136d43df",
+                                            "value": "Unit: BEX5114"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5114",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5114",
+                                        "academic_item_name": "Value creation and start-up capital optimisation for founders",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.05",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "bcbcd46d97e403904301b137f053afa8",
+                                        "order": "600",
+                                        "abbr_name": "CREATIVITY & ENTRE",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "1b5091c047e7b650448f409b136d4394",
+                                            "value": "Unit: BEX5411"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5411",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5411",
+                                        "academic_item_name": "Creativity and entrepreneurship",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.06",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "34bcd46d97e403904301b137f053afaa",
+                                        "order": "1800",
+                                        "abbr_name": "ETHICS GOOD RES PRAC",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "d662ed92c32e6a5040721d4bb0013164",
+                                            "value": "Unit: MPH5283"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5283",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5283",
+                                        "academic_item_name": "Ethics, good research practice and practical research methods",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.01RO",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "74bcd46d97e403904301b137f053afaa",
+                                        "order": "1000",
+                                        "abbr_name": "INTRO HLTH DTA ANLYT",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "e25e7da19766f6104301b137f053aff6",
+                                            "value": "Unit: EPM5029"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/EPM5029",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "EPM5029",
+                                        "academic_item_name": "Introduction to health data analytics",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.02",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "b4bcd46d97e403904301b137f053afaa",
+                                        "order": "300",
+                                        "abbr_name": "SCREEN ASSESS BRIEF INTERVEN ADDIC BEHAV",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "7f02654b9732f6d04301b137f053af2d",
+                                            "value": "Unit: ASC5004"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/ASC5004",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "ASC5004",
+                                        "academic_item_name": "Screening, assessment and brief interventions for addictive behaviours",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "12"
+                                    },
+                                    {
+                                        "cl_id": "f0bcd46d97e403904301b137f053afa9",
+                                        "order": "1200",
+                                        "abbr_name": "INTRO EPIDEMIOLOGY",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "c9be917d979336104301b137f053af5f",
+                                            "value": "Unit: MPH5040"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5040",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5040",
+                                        "academic_item_name": "Introductory epidemiology",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.06",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "3cbcd46d97e403904301b137f053afa9",
+                                        "order": "100",
+                                        "abbr_name": "Human Biomechanical Analysis",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "2ab17491c347a21440721d4bb00131b4",
+                                            "value": "Unit: AHC5002"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/AHC5002",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "AHC5002",
+                                        "academic_item_name": "Technology in human biomechanical analysis",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.01",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "fcbcd46d97e403904301b137f053afa9",
+                                        "order": "1400",
+                                        "abbr_name": "INTRO HEALTH ECO",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "aa8cc4c5470f7e10448f409b136d43d0",
+                                            "value": "Unit: MPH5220"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/MPH5220",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "MPH5220",
+                                        "academic_item_name": "Introductory health economics",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.03",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "b8bcd46d97e403904301b137f053afaa",
+                                        "order": "800",
+                                        "abbr_name": "INFECT DIS POP HLTH",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "d01a774a4774b650448f409b136d439a",
+                                            "value": "Unit: BMS5003"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BMS5003",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BMS5003",
+                                        "academic_item_name": "Infectious diseases and population health",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.02",
+                                        "academic_item_credit_points": "6"
+                                    },
+                                    {
+                                        "cl_id": "f0bcd46d97e403904301b137f053afab",
+                                        "order": "700",
+                                        "abbr_name": "TECH&INNO FOR START",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "7d7a65ec471ff210448f409b136d43a9",
+                                            "value": "Unit: BEX5413"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa8",
+                                            "value": "Curriculum Structure Container: Coursework pathway "
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BEX5413",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BEX5413",
+                                        "academic_item_name": "Technology and innovation for start-ups",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.05",
+                                        "academic_item_credit_points": "6"
+                                    }
+                                ],
+                                "credit_points": "48",
+                                "dynamic_query": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "3cbcd46d97e403904301b137f053afaa",
+                                    "value": "Curriculum Structure Container: Part B. Applied studies "
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "credit_points_max": "",
+                                "vertical_grouping": {
+                                    "label": "Component",
+                                    "value": "component"
+                                },
+                                "horizontal_grouping": {
+                                    "label": null,
+                                    "value": null
+                                }
+                            },
+                            {
+                                "cl_id": "f0bcd46d97e403904301b137f053afaa",
+                                "order": "0",
+                                "title": "Research pathway",
+                                "preface": "",
+                                "footnote": "",
+                                "map_type": "",
+                                "container": [
+                                ],
+                                "child_table": "",
+                                "description": "Note 1: In order to be eligible for the research project, you need to have an average of at least 70% in your core biotechnology studies (Part A). If you do not meet this requirement, then you can undertake 48 credit points from the elective list or you may exit and graduate with a Graduate Diploma of Biotechnology.<br /><br />Note 2: You must have a successful application with a research group to undertake this unit. You will be provided with a list of projects to apply for.",
+                                "child_record": {
+                                    "key": "",
+                                    "type": null,
+                                    "cl_id": null,
+                                    "value": ""
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "relationship": [
+                                    {
+                                        "cl_id": "38bcd46d97e403904301b137f053afa9",
+                                        "order": "0",
+                                        "abbr_name": "BIOTEC RES",
+                                        "child_table": "x_f5sl_cl_subjects",
+                                        "description": "",
+                                        "child_record": {
+                                            "key": "code",
+                                            "type": "x_f5sl_cl_subjects",
+                                            "cl_id": "aa7d11c497efb6504301b137f053af03",
+                                            "value": "Unit: BRM5021"
+                                        },
+                                        "parent_table": "x_f5sl_cl_cs_container",
+                                        "credit_points": "",
+                                        "parent_record": {
+                                            "key": "title",
+                                            "type": "x_f5sl_cl_cs_container",
+                                            "cl_id": "f0bcd46d97e403904301b137f053afaa",
+                                            "value": "Curriculum Structure Container: Research pathway"
+                                        },
+                                        "owning_structure": {
+                                            "key": "version_code",
+                                            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                                            "value": "2026.03.045"
+                                        },
+                                        "parent_connector": {
+                                            "label": "AND",
+                                            "value": "AND"
+                                        },
+                                        "academic_item_url": "/2026/units/BRM5021",
+                                        "vertical_grouping": {
+                                            "label": null,
+                                            "value": null
+                                        },
+                                        "academic_item_code": "BRM5021",
+                                        "academic_item_name": "Biotechnology research project",
+                                        "academic_item_type": {
+                                            "label": "Unit",
+                                            "value": "subject"
+                                        },
+                                        "abbreviated_name_and_major": null,
+                                        "academic_item_version_name": "2026.07",
+                                        "academic_item_credit_points": "48"
+                                    }
+                                ],
+                                "credit_points": "48",
+                                "dynamic_query": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "3cbcd46d97e403904301b137f053afaa",
+                                    "value": "Curriculum Structure Container: Part B. Applied studies "
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "credit_points_max": "",
+                                "vertical_grouping": {
+                                    "label": "Component",
+                                    "value": "component"
+                                },
+                                "horizontal_grouping": {
+                                    "label": null,
+                                    "value": null
+                                }
+                            }
+                        ],
+                        "child_table": "",
+                        "description": "You must complete either the Research Pathway or the Coursework Pathway",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "b0bcd46d97e403904301b137f053afa9",
+                            "value": "Curriculum Structure Container: Clayton "
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "For students completing the course at Clayton Campus",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "b8bcd46d97e403904301b137f053afa5",
+                    "value": "Curriculum Structure: 2026.03.045"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "b32c0547c35ed21040721d4bb00131e7",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:14:44 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "96",
+        "ai_to_cs_cl_id": "34bcd46d97e403904301b137f053afbd",
+        "effective_date": "",
+        "structure_cl_id": "b8bcd46d97e403904301b137f053afa5",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "b8bcd46d97e403904301b137f053afa5",
+            "value": "2026.03.045"
+        }
+    }
+}

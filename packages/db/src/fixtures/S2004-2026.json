@@ -1,0 +1,260 @@
+{
+    "code": "S2004",
+    "year": "2026",
+    "title": "Bachelor of Science and Bachelor of Computer Science",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/S2004",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 192,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "947639339754fe104301b137f053af11",
+            "value": "S2004"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "b51f407b47dbf250448f409b136d4373",
+            "value": "b51f407b47dbf250448f409b136d4373"
+        },
+        "container": [
+            {
+                "cl_id": "057775c097e3f6504301b137f053af40",
+                "order": "100",
+                "title": "Science component",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "In choosing the 96 credit points of Bachelor of Science listed study over Part A and Part B, you must ensure that you complete six science listed units (36 credit points) at Level 1 and ten science listed units (60 credit points) at Levels 2 and 3 with a minimum of four (24 credit points) at Level 3. You must complete the Mathematics and statistics unit requirement within the first 72 credit points of this double degree.<br /><br />Note: Areas of study not available in this double degree:<br />- Computational science minor, major and extended major<br />- Psychology extended major",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "817775c097e3f6504301b137f053af40",
+                        "order": "0",
+                        "abbr_name": "BSc",
+                        "child_table": "x_f5sl_cl_courses",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_courses",
+                            "cl_id": "f349cd08474f7610448f409b136d43a6",
+                            "value": "Course: S2000"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "057775c097e3f6504301b137f053af40",
+                            "value": "Curriculum Structure Container: Science component"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "897775c097e3f6504301b137f053af3e",
+                            "value": "2026.02.007"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/courses/S2000",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "S2000",
+                        "academic_item_name": "Bachelor of Science",
+                        "academic_item_type": {
+                            "label": "Course",
+                            "value": "course"
+                        },
+                        "abbreviated_name_and_major": "",
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "144"
+                    }
+                ],
+                "credit_points": "96",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "897775c097e3f6504301b137f053af3e",
+                    "value": "Curriculum Structure: 2026.02.007"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "417775c097e3f6504301b137f053af40",
+                "order": "0",
+                "title": "Rules",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete 192 credit points, of which 96 credit points are from the Bachelor of Science (including all of the requirements in Parts A and B for the single degree) and 96 credit points from the Bachelor of Computer Science (including all of the requirements in Parts A, B, C and D for the single degree).",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "897775c097e3f6504301b137f053af3e",
+                    "value": "Curriculum Structure: 2026.02.007"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": null,
+                    "value": null
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "c17775c097e3f6504301b137f053af40",
+                "order": "200",
+                "title": "Computer Science component",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete 96 credit points from the Bachelor of Computer Science",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "457775c097e3f6504301b137f053af40",
+                        "order": "0",
+                        "abbr_name": "BCompSci",
+                        "child_table": "x_f5sl_cl_courses",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_courses",
+                            "cl_id": "608fee56973272d04301b137f053af82",
+                            "value": "Course: C2001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c17775c097e3f6504301b137f053af40",
+                            "value": "Curriculum Structure Container: Computer Science component"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "897775c097e3f6504301b137f053af3e",
+                            "value": "2026.02.007"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/courses/C2001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "C2001",
+                        "academic_item_name": "Bachelor of Computer Science",
+                        "academic_item_type": {
+                            "label": "Course",
+                            "value": "course"
+                        },
+                        "abbreviated_name_and_major": "",
+                        "academic_item_version_name": "2026.06",
+                        "academic_item_credit_points": "144"
+                    }
+                ],
+                "credit_points": "96",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "897775c097e3f6504301b137f053af3e",
+                    "value": "Curriculum Structure: 2026.02.007"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "c91c4107c35ed21040721d4bb001319e",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:14:16 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "192",
+        "ai_to_cs_cl_id": "0d7775c097e3f6504301b137f053af4f",
+        "effective_date": "",
+        "structure_cl_id": "897775c097e3f6504301b137f053af3e",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "897775c097e3f6504301b137f053af3e",
+            "value": "2026.02.007"
+        }
+    }
+}

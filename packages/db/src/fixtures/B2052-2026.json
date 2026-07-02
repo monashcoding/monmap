@@ -1,0 +1,1400 @@
+{
+    "code": "B2052",
+    "year": "2026",
+    "title": "Bachelor in Actuarial Analytics",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/B2052",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 144,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "1d1fdc0cc359221040721d4bb00131ab",
+            "value": "B2052"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "5e0c22ab47e77e10448f409b136d433f",
+            "value": "5e0c22ab47e77e10448f409b136d433f"
+        },
+        "container": [
+            {
+                "cl_id": "192407b797a33a504301b137f053afcf",
+                "order": "100",
+                "title": "Part A. Core studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete the following units.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "112407b797a33a504301b137f053afd0",
+                        "order": "300",
+                        "abbr_name": "PRIN OF ECO",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "1e4dbf0c979c3ed04301b137f053afe1",
+                            "value": "Unit: ECM1953"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afcf",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ECM1953",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ECM1953",
+                        "academic_item_name": "Principles of economics",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "952407b797a33a504301b137f053afd0",
+                        "order": "100",
+                        "abbr_name": "FOUNDATIONS FIN",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "fe17d5d897c63a504301b137f053afd3",
+                            "value": "Unit: BFW1001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afcf",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BFW1001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BFW1001",
+                        "academic_item_name": "Foundations of finance",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.05",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "9d2407b797a33a504301b137f053afcf",
+                        "order": "200",
+                        "abbr_name": "CORPFIN 1",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "dd1ceb98476c7214448f409b136d4376",
+                            "value": "Unit: BFW2140"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afcf",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BFW2140",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BFW2140",
+                        "academic_item_name": "Corporate finance 1",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "d12407b797a33a504301b137f053afcf",
+                        "order": "0",
+                        "abbr_name": "FIN ACC 1",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "2c81563697f0f2d04301b137f053af62",
+                            "value": "Unit: ACW1120"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afcf",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ACW1120",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ACW1120",
+                        "academic_item_name": "Financial accounting 1",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    }
+                ],
+                "credit_points": "24",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "112407b797a33a504301b137f053afcd",
+                    "value": "Curriculum Structure: 2026.01.052"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "192407b797a33a504301b137f053afd0",
+                "order": "400",
+                "title": "Part D. Elective studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "Elective studies will enable you to further develop your knowledge of actuarial science, analytics, or commerce more broadly, or to select any units from across the University in which you are eligible to enrol including to complete a minor from another course.<br /><br />You must complete 24 credit points of elective study of which 6 credit points must be at Level 3.<br /><br />You can choose to complete units from the list of recommended electives given below from the Faculty of Business and Economics to gain additional analytics, finance or actuarial knowledge.<br /><br />Electives can also be chosen from across the University if you have met the required prerequisites and there are no restrictions on enrolling in the units. Enrolment in Faculty of Business and Economics units at campuses other than the campus of enrolment is subject to there being capacity after students from that campus have enrolled. You should also be aware of travel and timetabling limitations.<br /><br />List of recommended electives are below.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "512407b797a33a504301b137f053afd0",
+                        "order": "200",
+                        "abbr_name": "INT FIN MGT",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "72838ed797afb2504301b137f053afed",
+                            "value": "Unit: BFW2341"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part D. Elective studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BFW2341",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BFW2341",
+                        "academic_item_name": "International financial management",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "512407b797a33a504301b137f053afd1",
+                        "order": "500",
+                        "abbr_name": "INVEST & PORT MGT",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "47e3f56f972f36504301b137f053afa2",
+                            "value": "Unit: BFW3121"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part D. Elective studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BFW3121",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BFW3121",
+                        "academic_item_name": "Investments  and portfolio management",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "5d2407b797a33a504301b137f053afcf",
+                        "order": "300",
+                        "abbr_name": "COMM BKG & FIN",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "0ad44bea97b53a104301b137f053af4f",
+                            "value": "Unit: BFW2401"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part D. Elective studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BFW2401",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BFW2401",
+                        "academic_item_name": "Commercial banking and finance",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "d52407b797a33a504301b137f053afcf",
+                        "order": "0",
+                        "abbr_name": "WORK EXP PROG",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "6cf6add9c307a29002fcfb777d013127",
+                            "value": "Unit: BEW3110"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part D. Elective studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BEW3110",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BEW3110",
+                        "academic_item_name": "Work experience program",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "d92407b797a33a504301b137f053afd0",
+                        "order": "100",
+                        "abbr_name": "INTROFINTECH",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "b9d2ca1797afb2504301b137f053afc5",
+                            "value": "Unit: BFW2120"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part D. Elective studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BFW2120",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BFW2120",
+                        "academic_item_name": "Introduction to financial technology",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "dd2407b797a33a504301b137f053afcf",
+                        "order": "400",
+                        "abbr_name": "DERIVATIVES 1",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "91bf7dc94723fe50448f409b136d4359",
+                            "value": "Unit: BFW2751"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "192407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part D. Elective studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BFW2751",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BFW2751",
+                        "academic_item_name": "Derivatives 1",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    }
+                ],
+                "credit_points": "24",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "112407b797a33a504301b137f053afcd",
+                    "value": "Curriculum Structure: 2026.01.052"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "1d2407b797a33a504301b137f053afd0",
+                "order": "0",
+                "title": "Rules",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "In choosing your units, you must ensure that you complete no more than 10 units (60 credit points) at Level 1 and at least six units (36 credit points) at Level 3, including four units (24 credit points) at Level 3 offered by the Faculty of Business and Economics.<br /><br />You can apply to transfer to the Bachelor in Actuarial Science after completion of 96 credit points.  To be eligible for transfer, students must achieve an overall course WAM of 70 and a minimum mark of 70 for selected units.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "0",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "112407b797a33a504301b137f053afcd",
+                    "value": "Curriculum Structure: 2026.01.052"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "592407b797a33a504301b137f053afd0",
+                "order": "200",
+                "title": "Part B. Discipline studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete the following units.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "112407b797a33a504301b137f053afd1",
+                        "order": "1200",
+                        "abbr_name": "ECO MODEL 2",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "7e83f43e971366504301b137f053af8e",
+                            "value": "Unit: ETM3860"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM3860",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM3860",
+                        "academic_item_name": "Economic modelling 2",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "152407b797a33a504301b137f053afcf",
+                        "order": "1300",
+                        "abbr_name": "DATMINPREDMODEL",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "48f29c509786f6504301b137f053af99",
+                            "value": "Unit: ETW3482"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETW3482",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETW3482",
+                        "academic_item_name": "Data mining and predictive modelling",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "152407b797a33a504301b137f053afd0",
+                        "order": "0",
+                        "abbr_name": "PROGFORBUSAPPL",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "aca78fa697f53a104301b137f053af94",
+                            "value": "Unit: ETM1005"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM1005",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM1005",
+                        "academic_item_name": "Programming for business applications\t",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "1d2407b797a33a504301b137f053afcf",
+                        "order": "1000",
+                        "abbr_name": "UNSUP LEARN FOR BUS",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "d565dc5097507ed04301b137f053af52",
+                            "value": "Unit: ETW2500"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETW2500",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETW2500",
+                        "academic_item_name": "Unsupervised learning for business",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "552407b797a33a504301b137f053afcf",
+                        "order": "1100",
+                        "abbr_name": "TEXTANALYTICSBUS",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "11f61e63972776504301b137f053afe5",
+                            "value": "Unit: ETM3800"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM3800",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM3800",
+                        "academic_item_name": "Text analytics for business",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "552407b797a33a504301b137f053afd0",
+                        "order": "800",
+                        "abbr_name": "ECO MODEL 1",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "815328dac3226a5040721d4bb0013162",
+                            "value": "Unit: ETM2860"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM2860",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM2860",
+                        "academic_item_name": "Economic modelling 1",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01RO",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "592407b797a33a504301b137f053afcf",
+                        "order": "600",
+                        "abbr_name": "TSANALYSIS&STOCHAS",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "9053e4dac3226a5040721d4bb0013127",
+                            "value": "Unit: ETM2200"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM2200",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM2200",
+                        "academic_item_name": "Time series analysis and stochastic processes",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01RO",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "5d2407b797a33a504301b137f053afd0",
+                        "order": "300",
+                        "abbr_name": "MATH STATS",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "84034e2b97ef36504301b137f053afb3",
+                            "value": "Unit: ETM1030"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM1030",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM1030",
+                        "academic_item_name": "Mathematical statistics",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "952407b797a33a504301b137f053afcf",
+                        "order": "200",
+                        "abbr_name": "CALC 2",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "b3b014549746f6504301b137f053af66",
+                            "value": "Unit: ETM1020"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM1020",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM1020",
+                        "academic_item_name": "Calculus 2",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "992407b797a33a504301b137f053afcf",
+                        "order": "700",
+                        "abbr_name": "ACT MATH 1",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "c273b43e971366504301b137f053af08",
+                            "value": "Unit: ETM2550"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM2550",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM2550",
+                        "academic_item_name": "Actuarial mathematics 1",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "992407b797a33a504301b137f053afd0",
+                        "order": "900",
+                        "abbr_name": "BUS MOD & ANAL METH",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "fcc214109786f6504301b137f053af21",
+                            "value": "Unit: ETW2440"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETW2440",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETW2440",
+                        "academic_item_name": "Business modelling and analytics methods",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "9d2407b797a33a504301b137f053afd0",
+                        "order": "1400",
+                        "abbr_name": "APPL ANALYTICS",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "888ad05897507ed04301b137f053afa1",
+                            "value": "Unit: ETW3483"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETW3483",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETW3483",
+                        "academic_item_name": "Applied analytics",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "d52407b797a33a504301b137f053afd0",
+                        "order": "400",
+                        "abbr_name": "PRINC STATS INFER",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "f2e3ce2f97ef36504301b137f053af3e",
+                            "value": "Unit: ETM2100"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM2100",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM2100",
+                        "academic_item_name": "Principles of statistical inference\t\t",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.06",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "d92407b797a33a504301b137f053afcf",
+                        "order": "100",
+                        "abbr_name": "CALC 1",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "ca395594970a3a504301b137f053aff4",
+                            "value": "Unit: ETM1015"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM1015",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM1015",
+                        "academic_item_name": "Calculus 1",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "dd2407b797a33a504301b137f053afd0",
+                        "order": "500",
+                        "abbr_name": "RISK&SURVIVALMODEL",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "d58446ef97ef36504301b137f053af5e",
+                            "value": "Unit: ETM2110"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "592407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part B. Discipline studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM2110",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM2110",
+                        "academic_item_name": "Risk and survival modelling\t",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    }
+                ],
+                "credit_points": "90",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "112407b797a33a504301b137f053afcd",
+                    "value": "Curriculum Structure: 2026.01.052"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "912407b797a33a504301b137f053afd0",
+                "order": "300",
+                "title": "Part C. Capstone studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete the following unit.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "d12407b797a33a504301b137f053afd0",
+                        "order": "0",
+                        "abbr_name": "ACT MATH 2",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "695328dac3226a5040721d4bb00131da",
+                            "value": "Unit: ETM3550"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "912407b797a33a504301b137f053afd0",
+                            "value": "Curriculum Structure Container: Part C. Capstone studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "112407b797a33a504301b137f053afcd",
+                            "value": "2026.01.052"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETM3550",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETM3550",
+                        "academic_item_name": "Actuarial mathematics 2",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01RO",
+                        "academic_item_credit_points": "6"
+                    }
+                ],
+                "credit_points": "6",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "112407b797a33a504301b137f053afcd",
+                    "value": "Curriculum Structure: 2026.01.052"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "20bc4d8bc35ed21040721d4bb0013160",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:16:58 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "144",
+        "ai_to_cs_cl_id": "a92407b797a33a504301b137f053afe8",
+        "effective_date": "",
+        "structure_cl_id": "112407b797a33a504301b137f053afcd",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "112407b797a33a504301b137f053afcd",
+            "value": "2026.01.052"
+        }
+    }
+}

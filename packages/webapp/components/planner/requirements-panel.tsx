@@ -343,6 +343,11 @@ function GroupList({
                   Pick {g.required} of {g.options.length}
                 </span>
               ) : null}
+              {g.scope ? (
+                <span className="rounded bg-info/30 px-1 py-px text-[8px] font-medium tracking-wide text-info-foreground uppercase">
+                  {g.scope}
+                </span>
+              ) : null}
               <span className="ml-auto text-[9px] text-muted-foreground tabular-nums">
                 {Math.min(placedCount, g.required)}/{g.required}
               </span>

@@ -1,0 +1,478 @@
+{
+    "code": "M3708",
+    "year": "2026",
+    "title": "Bachelor of Psychology (Honours)",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/M3708",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 48,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "e3735554c3dd621040721d4bb00131ac",
+            "value": "M3708"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "4cb8171347d37250448f409b136d4365",
+            "value": "4cb8171347d37250448f409b136d4365"
+        },
+        "container": [
+            {
+                "cl_id": "f7d91ac8972bf6504301b137f053af74",
+                "order": "0",
+                "title": "Part A. Research studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete the following unit",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "bfd91ac8972bf6504301b137f053af74",
+                        "order": "0",
+                        "abbr_name": "RESEARCH PROJECT",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "690fa1bf47a5be90448f409b136d43ff",
+                            "value": "Unit: PSY4100"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "f7d91ac8972bf6504301b137f053af74",
+                            "value": "Curriculum Structure Container: Part A. Research studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                            "value": "2026.01.016"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/PSY4100",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PSY4100",
+                        "academic_item_name": "Psychology honours: Research project",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "24"
+                    }
+                ],
+                "credit_points": "24",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                    "value": "Curriculum Structure: 2026.01.016"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "ffd91ac8972bf6504301b137f053af74",
+                "order": "100",
+                "title": "Part B. Coursework studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "7fd91ac8972bf6504301b137f053af74",
+                        "order": "300",
+                        "title": "Additional coursework studies (Clayton)",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following unit",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "fbd91ac8972bf6504301b137f053af74",
+                                "order": "0",
+                                "abbr_name": "DATA COM",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "9133ac8447c77610448f409b136d436c",
+                                    "value": "Unit: PSY4215"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "7fd91ac8972bf6504301b137f053af74",
+                                    "value": "Curriculum Structure Container: Additional coursework studies (Clayton)"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                                    "value": "2026.01.016"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/PSY4215",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "PSY4215",
+                                "academic_item_name": "Data Communication: From research problem to storytelling",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "6",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "ffd91ac8972bf6504301b137f053af74",
+                            "value": "Curriculum Structure Container: Part B. Coursework studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "bbd91ac8972bf6504301b137f053af74",
+                        "order": "400",
+                        "title": "Additional coursework studies (Malaysia)",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following unit",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "3bd91ac8972bf6504301b137f053af74",
+                                "order": "0",
+                                "abbr_name": "PSYCHOLOGY SOCIETY",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "21441e1d97cfb2504301b137f053af2b",
+                                    "value": "Unit: PSY4110"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "bbd91ac8972bf6504301b137f053af74",
+                                    "value": "Curriculum Structure Container: Additional coursework studies (Malaysia)"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                                    "value": "2026.01.016"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/PSY4110",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "PSY4110",
+                                "academic_item_name": "Psychology in society",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "6",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "ffd91ac8972bf6504301b137f053af74",
+                            "value": "Curriculum Structure Container: Part B. Coursework studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "You must complete the following units",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "33d91ac8972bf6504301b137f053af75",
+                        "order": "100",
+                        "abbr_name": "ETHICS IN PSYCH",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "8ad61ecc97e7f6504301b137f053afd7",
+                            "value": "Unit: PSY4220"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "ffd91ac8972bf6504301b137f053af74",
+                            "value": "Curriculum Structure Container: Part B. Coursework studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                            "value": "2026.01.016"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/PSY4220",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PSY4220",
+                        "academic_item_name": "Ethics, legal and professional issues in psychology",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.06",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "3fd91ac8972bf6504301b137f053af74",
+                        "order": "0",
+                        "abbr_name": "PSYCH HONS RDA",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "3542240447c77610448f409b136d4355",
+                            "value": "Unit: PSY4210"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "ffd91ac8972bf6504301b137f053af74",
+                            "value": "Curriculum Structure Container: Part B. Coursework studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                            "value": "2026.01.016"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/PSY4210",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PSY4210",
+                        "academic_item_name": "Statistics and data science for psychology",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "7bd91ac8972bf6504301b137f053af74",
+                        "order": "200",
+                        "abbr_name": "PSY ASSESS INTERVENT",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "5ddcb05d978b72504301b137f053af94",
+                            "value": "Unit: PSY4270"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "ffd91ac8972bf6504301b137f053af74",
+                            "value": "Curriculum Structure Container: Part B. Coursework studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                            "value": "2026.01.016"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/PSY4270",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "PSY4270",
+                        "academic_item_name": "Psychological assessment and intervention",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    }
+                ],
+                "credit_points": "24",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "3bd91ac8972bf6504301b137f053af71",
+                    "value": "Curriculum Structure: 2026.01.016"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "3a5cc1c7c35ed21040721d4bb0013169",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:15:29 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "48",
+        "ai_to_cs_cl_id": "f3d91ac8972bf6504301b137f053af88",
+        "effective_date": "",
+        "structure_cl_id": "3bd91ac8972bf6504301b137f053af71",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "3bd91ac8972bf6504301b137f053af71",
+            "value": "2026.01.016"
+        }
+    }
+}

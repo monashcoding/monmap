@@ -1,0 +1,1524 @@
+{
+    "code": "C2000",
+    "year": "2026",
+    "title": "Bachelor of Information Technology",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/C2000",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 144,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "ea23bb2d479ef610448f409b136d43b6",
+            "value": "C2000"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "e0a0d41a47b7b290448f409b136d4340",
+            "value": "e0a0d41a47b7b290448f409b136d4340"
+        },
+        "container": [
+            {
+                "cl_id": "2f646d1497d403104301b137f053afe6",
+                "order": "0",
+                "title": "Rules",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "In choosing units you must ensure that you complete no more than 10 Level one units (60 credit points), and at least six units (36 credit points) at Level 3 of which at least four (24 credit points) are Bachelor of Information Technology listed (FIT-coded) units.<br /><br />Note: If you are in a double degree with the Bachelor of Information Technology, no more than 36 credit points can be completed at Level 1.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "0",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                    "value": "Curriculum Structure: 2026.03.008"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "a7646d1497d403104301b137f053afe7",
+                "order": "300",
+                "title": "Part C. Free elective studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "27646d1497d403104301b137f053afe8",
+                        "order": "0",
+                        "title": "Discipline elective studies",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "To enhance your IT studies the Faculty recommends the following minors and elective units which can be taken as part of your free electives. Other IT minors are also available, check the Faculty Handbook pages.<br /><br />Note: If you are doing the Applied cybersecurity major you cannot do the Cybersecurity minor.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "23646d1497d403104301b137f053afe7",
+                                "order": "0",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "9a40321a973272d04301b137f053afa2",
+                                    "value": "Area of study: CYBERSEC05"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Discipline elective studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/CYBERSEC05",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "CYBERSEC05",
+                                "academic_item_name": "Cybersecurity",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "63646d1497d403104301b137f053afe7",
+                                "order": "100",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "fd8c1360c391261040721d4bb00131f7",
+                                    "value": "Area of study: DATASCI04"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Discipline elective studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/DATASCI04",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "DATASCI04",
+                                "academic_item_name": "Data science",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "67646d1497d403104301b137f053afe8",
+                                "order": "400",
+                                "abbr_name": "AI FOR EVERYONE",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "2c7b91a9473f3e50448f409b136d4315",
+                                    "value": "Unit: FIT1059"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Discipline elective studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT1059",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT1059",
+                                "academic_item_name": "AI for everyone",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "2b646d1497d403104301b137f053afe7",
+                                "order": "600",
+                                "abbr_name": "DTE",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "58b5a23ec3aea21002fcfb777d0131e9",
+                                    "value": "Unit: FIT3195"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Discipline elective studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3195",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3195",
+                                "academic_item_name": "Deep tech entrepreneurship",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "6b646d1497d403104301b137f053afe7",
+                                "order": "300",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "e71d1be0c391261040721d4bb00131b3",
+                                    "value": "Area of study: MOBAPDEV03"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Discipline elective studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/MOBAPDEV03",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MOBAPDEV03",
+                                "academic_item_name": "Mobile apps development",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "2f646d1497d403104301b137f053afe7",
+                                "order": "500",
+                                "abbr_name": "WIL Industry Placement",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "06c67251474f7250448f409b136d43a1",
+                                    "value": "Unit: FIT3190"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Discipline elective studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3190",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3190",
+                                "academic_item_name": "Work Integrated Learning - Industry placement",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "2b646d1497d403104301b137f053afe8",
+                                "order": "200",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "bf2a07c6475c36d0448f409b136d4342",
+                                    "value": "Area of study: HMNCMPIN02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Discipline elective studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/HMNCMPIN02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "HMNCMPIN02",
+                                "academic_item_name": "Human computer interaction",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "24"
+                            }
+                        ],
+                        "credit_points": "0",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "a7646d1497d403104301b137f053afe7",
+                            "value": "Curriculum Structure Container: Part C. Free elective studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "Note 1: Your elective units may be chosen from any of the units offered at Monash to suit your interests or career aspirations. You may choose to take other units available in the Bachelor of Information Technology course to extend your major or to complete a second major or minor(s) from the course, or you may take Faculty of IT units from C2001 Bachelor of Computer Science, or the software engineering specialisation in the Bachelor of Engineering (Honours). <br /><br />Elective units may also be used to sample from across the University or to complete a major or minor(s) from another course as long as you have completed the prerequisites and there are no restrictions on enrolment in the units. The units may be at any level, however, no more than 10 units (60 credit points) at Level 1 may be credited to the Bachelor of Information Technology and a minimum 36 credit points must be at Level 3.<br /><br />Note 2: If you are in a double degree course, some units required for the partner degree are credited as electives towards this degree. ",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "48",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                    "value": "Curriculum Structure: 2026.03.008"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "6f646d1497d403104301b137f053afe7",
+                "order": "100",
+                "title": "Part A. Specified studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "27646d1497d403104301b137f053afe7",
+                        "order": "300",
+                        "title": "Professional placement",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "FIT3045 is only available if you are selected to participate in the Industry Based Learning placement program. [https://www.monash.edu/it/industry-based-learning]<br /><br />If you are selected for the IBL program you will complete FIT3045 Industry-based learning (18 credit points) and FIT2108 Industry-based learning (0 points); or FIT3045 (18 credit points), FIT2108 (0 points) and either FIT3201 Industry-based learning onboarding (8 weeks) (0 points) or FIT3202 Industry-based learning onboarding (4 weeks) (0 points) (depending on the duration of your placement). The IBL placement will replace your Applied studies project units and the nominated Level 3 unit in your major.<br /><br />In the IBL program you must complete a unit over summer semester or overload in one semester by one unit in order to complete the degree within three years (this is because you only complete 18 credit points of credit during the IBL placement semester). You must have completed at least three semesters of your course before starting your IBL placement.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "ab646d1497d403104301b137f053afe6",
+                                "order": "0",
+                                "abbr_name": "IBL 3",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "51c9c151470b3250448f409b136d4331",
+                                    "value": "Unit: FIT3045"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe7",
+                                    "value": "Curriculum Structure Container: Professional placement"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3045",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3045",
+                                "academic_item_name": "Industry-based learning",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "18"
+                            },
+                            {
+                                "cl_id": "a3646d1497d403104301b137f053afe7",
+                                "order": "100",
+                                "abbr_name": "IND BASED LEARN SEM",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "6181a0b997603a504301b137f053affb",
+                                    "value": "Unit: FIT2108"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe7",
+                                    "value": "Curriculum Structure Container: Professional placement"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT2108",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT2108",
+                                "academic_item_name": "Industry based learning seminar",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "0"
+                            },
+                            {
+                                "cl_id": "e3646d1497d403104301b137f053afe7",
+                                "order": "200",
+                                "abbr_name": "IBLO",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "56c57a5d470f7250448f409b136d4321",
+                                    "value": "Unit: FIT3201"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe7",
+                                    "value": "Curriculum Structure Container: Professional placement"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3201",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3201",
+                                "academic_item_name": "Industry-based learning onboarding (8 weeks)",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "0"
+                            },
+                            {
+                                "cl_id": "ab646d1497d403104301b137f053afe7",
+                                "order": "300",
+                                "abbr_name": "IBLO4WK",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "a27bfde14793b210448f409b136d4385",
+                                    "value": "Unit: FIT3202"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "27646d1497d403104301b137f053afe7",
+                                    "value": "Curriculum Structure Container: Professional placement"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3202",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3202",
+                                "academic_item_name": " Industry-based learning onboarding (4 weeks)",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "0"
+                            }
+                        ],
+                        "credit_points": "18",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "6f646d1497d403104301b137f053afe7",
+                            "value": "Curriculum Structure Container: Part A. Specified studies"
+                        },
+                        "parent_connector": {
+                            "label": "OR",
+                            "value": "OR"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "63646d1497d403104301b137f053afe8",
+                        "order": "0",
+                        "title": "Core studies",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following units<br /><br />Note: If you are in the double degree course with the Bachelor of Engineering (Honours) completing the software engineering specialisation, you should replace FIT2094 with a FIT-coded level 2 elective.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "6f646d1497d403104301b137f053afe6",
+                                "order": "300",
+                                "abbr_name": "SYS DEV",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "2302d71747c5b210448f409b136d439b",
+                                    "value": "Unit: FIT2001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "63646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT2001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT2001",
+                                "academic_item_name": "Systems development",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "ef646d1497d403104301b137f053afe6",
+                                "order": "400",
+                                "abbr_name": "IT PROJ MGMT",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "62a2418c976272944301b137f053af51",
+                                    "value": "Unit: FIT2002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "63646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT2002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT2002",
+                                "academic_item_name": "IT project management",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "67646d1497d403104301b137f053afe7",
+                                "order": "200",
+                                "abbr_name": "IT PROF PRAC",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "4be2a4c647f1f214448f409b136d4390",
+                                    "value": "Unit: FIT1049"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "63646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT1049",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT1049",
+                                "academic_item_name": "IT professional practice",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "e7646d1497d403104301b137f053afe7",
+                                "order": "500",
+                                "abbr_name": "DATABASES",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "c3be651647e7f210448f409b136d43ee",
+                                    "value": "Unit: FIT2094"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "63646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT2094",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT2094",
+                                "academic_item_name": "Databases",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "ef646d1497d403104301b137f053afe7",
+                                "order": "100",
+                                "abbr_name": "INTRO CSN&SEC",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "5519f13947573610448f409b136d43de",
+                                    "value": "Unit: FIT1047"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "63646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT1047",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT1047",
+                                "academic_item_name": "Introduction to computer systems, networks and security",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.09",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "ab646d1497d403104301b137f053afe8",
+                                "order": "0",
+                                "abbr_name": "INTRO TO PROGRAMMING",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b10aca5b474c4b14448f409b136d43c3",
+                                    "value": "Unit: FIT1045"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "63646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Core studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT1045",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT1045",
+                                "academic_item_name": "Introduction to programming",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.11",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "36",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "6f646d1497d403104301b137f053afe7",
+                            "value": "Curriculum Structure Container: Part A. Specified studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "a7646d1497d403104301b137f053afe8",
+                        "order": "100",
+                        "title": "Applied studies for Applied cybersecurity, Business information systems, and Software development majors",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following units",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "eb646d1497d403104301b137f053afe6",
+                                "order": "0",
+                                "abbr_name": "IE STUDIO PROJECT1",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "a5d114cf474f7e50448f409b136d4343",
+                                    "value": "Unit: FIT3047"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "a7646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Applied studies for Applied cybersecurity, Business information systems, and Software development majors"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3047",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3047",
+                                "academic_item_name": "Industry experience studio project 1",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "eb646d1497d403104301b137f053afe8",
+                                "order": "100",
+                                "abbr_name": "IE STUDIO PROJECT2",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "eda36075471a3a10448f409b136d43f5",
+                                    "value": "Unit: FIT3048"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "a7646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Applied studies for Applied cybersecurity, Business information systems, and Software development majors"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3048",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3048",
+                                "academic_item_name": "Industry experience studio project 2",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "12",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "6f646d1497d403104301b137f053afe7",
+                            "value": "Curriculum Structure Container: Part A. Specified studies"
+                        },
+                        "parent_connector": {
+                            "label": "OR",
+                            "value": "OR"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "6b646d1497d403104301b137f053afe8",
+                        "order": "200",
+                        "title": "Applied studies for Games and immersive media major",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete the following units",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "af646d1497d403104301b137f053afe6",
+                                "order": "100",
+                                "abbr_name": "STUDIO PROJ 2",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b51a327247037e50448f409b136d43c9",
+                                    "value": "Unit: FIT3040"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "6b646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Applied studies for Games and immersive media major"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3040",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3040",
+                                "academic_item_name": "Studio project 2",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "af646d1497d403104301b137f053afe7",
+                                "order": "0",
+                                "abbr_name": "STUDIO PROJ 1",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b0c9fafe47cf3e50448f409b136d43f1",
+                                    "value": "Unit: FIT3039"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "6b646d1497d403104301b137f053afe8",
+                                    "value": "Curriculum Structure Container: Applied studies for Games and immersive media major"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                                    "value": "2026.03.008"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/FIT3039",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FIT3039",
+                                "academic_item_name": "Studio project 1",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "12",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "6f646d1497d403104301b137f053afe7",
+                            "value": "Curriculum Structure Container: Part A. Specified studies"
+                        },
+                        "parent_connector": {
+                            "label": "OR",
+                            "value": "OR"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "You must complete 36 credit points of core studies and 12 credit points of Applied studies units as applicable to your chosen major; or the industry-based learning placement (18 credit points)",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "48",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                    "value": "Curriculum Structure: 2026.03.008"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "e3646d1497d403104301b137f053afe8",
+                "order": "200",
+                "title": "Part B. Major studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete at least one of the following Information Technology majors. <br /><br />A major requires eight units with no more than two units at Level one (12 credit points) and at least three units (18 credit points) at Level three. ",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "eb646d1497d403104301b137f053afe7",
+                        "order": "0",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "2e8009b147127a10448f409b136d4331",
+                            "value": "Area of study: APCYBSEC01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "e3646d1497d403104301b137f053afe8",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "2b646d1497d403104301b137f053afe5",
+                            "value": "2026.03.008"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/APCYBSEC01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "APCYBSEC01",
+                        "academic_item_name": "Applied cybersecurity",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "23646d1497d403104301b137f053afe8",
+                        "order": "200",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "839b40cc972a32944301b137f053afa3",
+                            "value": "Area of study: GAMEIMMD01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "e3646d1497d403104301b137f053afe8",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "2b646d1497d403104301b137f053afe5",
+                            "value": "2026.03.008"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/GAMEIMMD01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "GAMEIMMD01",
+                        "academic_item_name": "Games and immersive media",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "a3646d1497d403104301b137f053afe8",
+                        "order": "100",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "cc8bc88c972a32944301b137f053af4f",
+                            "value": "Area of study: ITBIS06"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "e3646d1497d403104301b137f053afe8",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "2b646d1497d403104301b137f053afe5",
+                            "value": "2026.03.008"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/ITBIS06",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ITBIS06",
+                        "academic_item_name": "Business information systems",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "e7646d1497d403104301b137f053afe8",
+                        "order": "300",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "a4a005f147127a10448f409b136d4338",
+                            "value": "Area of study: SFTWRDEV08"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "e3646d1497d403104301b137f053afe8",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "2b646d1497d403104301b137f053afe5",
+                            "value": "2026.03.008"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/SFTWRDEV08",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "SFTWRDEV08",
+                        "academic_item_name": "Software development",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "48"
+                    }
+                ],
+                "credit_points": "48",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "2b646d1497d403104301b137f053afe5",
+                    "value": "Curriculum Structure: 2026.03.008"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "400c85c3c35ed21040721d4bb0013155",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:13:56 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "144",
+        "ai_to_cs_cl_id": "e3646d1497d403104301b137f053aff2",
+        "effective_date": "",
+        "structure_cl_id": "2b646d1497d403104301b137f053afe5",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "2b646d1497d403104301b137f053afe5",
+            "value": "2026.03.008"
+        }
+    }
+}

@@ -82,11 +82,22 @@ export interface RequisiteBlock {
  * the handbook lists under it, and how many of those students must
  * complete. `required === options.length` for "all required" groups;
  * `required < options.length` for "pick X of Y" choice groups.
+ *
+ * Mirrors `RequirementGroup` in `@monmap/db` (the extractor's output
+ * shape); kept structurally identical so rows flow through untouched.
  */
 export interface RequirementGroup {
   grouping: string
   required: number
   options: string[]
+  /**
+   * Explicit auto-load verdict from the extractor. Absent on rows
+   * baked before the field existed — consumers fall back to
+   * `required === options.length`.
+   */
+  autoLoad?: boolean
+  /** Campus/offering scope ("Malaysia", "Clayton", …), if detected. */
+  scope?: string
 }
 
 /** An area of study on a course, as the picker surfaces it. */
@@ -150,6 +161,13 @@ export interface PlannerCourseComponent {
   courseTitle: string
   courseUnits: { code: string; grouping: string }[]
   courseRequirements: RequirementGroup[]
+  /**
+   * True when the component course has no extractable course-level
+   * template (all its units come via AoS/specialisation selection —
+   * e.g. D3001 Education). The card must still render so half the
+   * degree never silently vanishes.
+   */
+  missingTemplate?: boolean
 }
 
 /** A course with its attached areas of study, used once a course is selected. */
