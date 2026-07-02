@@ -877,3 +877,126 @@ export function extractComponentLabels(structure: unknown): ComponentLabelMap {
   }
   return out
 }
+
+/**
+ * Areas of study a double degree's prose explicitly rules out.
+ *
+ * Double degrees inherit their AoS from the component courses (S2004
+ * offers whatever S2000 and C2001 link), but the handbook narrows the
+ * offer in container-description prose, in two recurring shapes:
+ *
+ *   "The psychology extended major is not available in this double
+ *    degree."                                          (sentence form)
+ *   "Areas of study not available in this double degree:
+ *    - Computational science minor, major and extended major
+ *    - Psychology extended major"                          (list form)
+ *
+ * Each parsed entry pairs the AoS *title* with the kinds being ruled
+ * out; consumers match against real AoS by case-insensitive title +
+ * kind, so an entry that fails to correspond to a real AoS is a no-op
+ * rather than a wrong removal. Phrases whose tail carries no
+ * major/minor/specialisation keyword (B6074's "Research pathway …")
+ * are skipped — they don't name an area of study.
+ */
+export type ExcludedAosKind =
+  | "major"
+  | "extended_major"
+  | "minor"
+  | "specialisation"
+
+export interface ExcludedAos {
+  title: string
+  kinds: ExcludedAosKind[]
+}
+
+const KIND_TOKEN =
+  "(?:extended\\s+majors?|majors?|minors?|specialisations?|specializations?)"
+const TRAILING_KINDS = new RegExp(
+  `^(.*?)\\s+(${KIND_TOKEN}(?:(?:\\s*,\\s*|\\s+and\\s+)${KIND_TOKEN})*)$`,
+  "i"
+)
+// The capture must not cross sentence punctuation, and must not
+// contain another "the" — both force the match to anchor on the "the"
+// nearest the AoS phrase. Without those guards a lazy `.+?` anchors on
+// an earlier "the" ("…the mathematics requirement. The psychology
+// extended major is not available…"), and D3005 2025 even omits the
+// sentence period, so punctuation alone is not enough. "is|are"
+// because S2004 2024 pluralises ("…minor, major and extended major are
+// not available…").
+const SENTENCE_FORM =
+  /\bthe\s+((?:(?!\bthe\b)[^.:;])+?)\s+(?:is|are)\s+not\s+available\s+in\s+this\s+double\s+degree/gi
+const LIST_FORM =
+  /\bareas\s+of\s+study\s+not\s+available\s+in\s+this\s+double\s+degree\s*:?\s*(.+)$/i
+
+function normalizeKind(word: string): ExcludedAosKind | null {
+  const w = word.toLowerCase().replace(/\s+/g, " ").replace(/s$/, "")
+  if (w === "extended major") return "extended_major"
+  if (w === "major") return "major"
+  if (w === "minor") return "minor"
+  if (w === "specialisation" || w === "specialization") return "specialisation"
+  return null
+}
+
+/** "Computational science minor, major and extended major" → entry. */
+function parseExclusionPhrase(phrase: string): ExcludedAos | null {
+  const m = TRAILING_KINDS.exec(phrase.trim())
+  if (!m) return null
+  const title = (m[1] ?? "").trim()
+  if (!title) return null
+  const kinds: ExcludedAosKind[] = []
+  for (const part of (m[2] ?? "").split(/\s*,\s*|\s+and\s+/i)) {
+    const kind = normalizeKind(part)
+    if (kind && !kinds.includes(kind)) kinds.push(kind)
+  }
+  return kinds.length > 0 ? { title, kinds } : null
+}
+
+export function extractExcludedAos(structure: unknown): ExcludedAos[] {
+  const texts: string[] = []
+  const collect = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const x of node) collect(x)
+      return
+    }
+    if (!node || typeof node !== "object") return
+    const n = node as Record<string, unknown>
+    const desc = n["description"]
+    if (typeof desc === "string" && /not\s+available/i.test(desc)) {
+      texts.push(
+        desc
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+      )
+    }
+    for (const v of Object.values(n)) collect(v)
+  }
+  collect(structure)
+
+  const byTitle = new Map<string, ExcludedAos>()
+  const add = (entry: ExcludedAos | null): void => {
+    if (!entry) return
+    const key = entry.title.toLowerCase()
+    const existing = byTitle.get(key)
+    if (!existing) {
+      byTitle.set(key, entry)
+      return
+    }
+    for (const k of entry.kinds)
+      if (!existing.kinds.includes(k)) existing.kinds.push(k)
+  }
+
+  for (const text of texts) {
+    const list = LIST_FORM.exec(text)
+    if (list) {
+      // Items are "- "-separated; a non-parsing chunk is trailing prose.
+      for (const item of (list[1] ?? "").split(/\s+-\s+/)) {
+        add(parseExclusionPhrase(item.replace(/^-\s*/, "")))
+      }
+    }
+    for (const m of text.matchAll(SENTENCE_FORM)) {
+      add(parseExclusionPhrase(m[1] ?? ""))
+    }
+  }
+  return [...byTitle.values()]
+}

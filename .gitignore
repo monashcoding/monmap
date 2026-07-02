@@ -7,3 +7,4 @@ data/
 *.tar.gz
 .env
 .mcp.json
+backups/

@@ -2,6 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  extractExcludedAos,
   extractRequirementGroups,
   extractEmbeddedSpecialisations,
   extractSubCourseRefs,
@@ -653,4 +654,91 @@ test("overrides: validation rejects malformed entries", () => {
       },
     ]),
   )
+})
+
+/* ------------------------------------------------------------------ *
+ * extractExcludedAos — prose shapes captured verbatim from the 2026
+ * corpus (S2004 list form, C2003 sentence form, B6074 non-AoS skip).
+ * ------------------------------------------------------------------ */
+
+const structureWithDescription = (description: string) => ({
+  name: "Structure",
+  container: [{ title: "Science component", description, container: [] }],
+})
+
+test("excluded AoS: list form parses multi-kind items (S2004)", () => {
+  const out = extractExcludedAos(
+    structureWithDescription(
+      "In choosing the 96 credit points… <br /><br />Note: Areas of study not available in this double degree:<br />- Computational science minor, major and extended major<br />- Psychology extended major"
+    )
+  )
+  assert.deepEqual(out, [
+    {
+      title: "Computational science",
+      kinds: ["minor", "major", "extended_major"],
+    },
+    { title: "Psychology", kinds: ["extended_major"] },
+  ])
+})
+
+test("excluded AoS: sentence form parses single kind (C2003)", () => {
+  const out = extractExcludedAos(
+    structureWithDescription(
+      "You must complete the mathematics requirement. The psychology extended major is not available in this double degree."
+    )
+  )
+  assert.deepEqual(out, [{ title: "psychology", kinds: ["extended_major"] }])
+})
+
+test("excluded AoS: phrases without an AoS-kind tail are skipped (B6074)", () => {
+  const out = extractExcludedAos(
+    structureWithDescription(
+      "Note: The Research pathway in the Master of Public Policy and Management is not available in this double degree."
+    )
+  )
+  assert.deepEqual(out, [])
+})
+
+test("excluded AoS: duplicate mentions merge kinds by title", () => {
+  const out = extractExcludedAos({
+    container: [
+      structureWithDescription(
+        "The psychology extended major is not available in this double degree."
+      ),
+      structureWithDescription(
+        "The psychology major is not available in this double degree."
+      ),
+    ],
+  })
+  assert.deepEqual(out, [
+    { title: "psychology", kinds: ["extended_major", "major"] },
+  ])
+})
+
+test("excluded AoS: null / missing structure yields empty", () => {
+  assert.deepEqual(extractExcludedAos(null), [])
+  assert.deepEqual(extractExcludedAos({}), [])
+})
+
+test("excluded AoS: plural verb form parses (S2004 2024)", () => {
+  const out = extractExcludedAos(
+    structureWithDescription(
+      "You will complete the mathematics and statistics requirement of the Bachelor of Science when you complete MAT1841 Continuous mathematics for computer science in the Bachelor of Computer Science. In its place you must complete an additional science unit. <br /><br />The computational science minor, major and extended major are not available in this double degree."
+    )
+  )
+  assert.deepEqual(out, [
+    {
+      title: "computational science",
+      kinds: ["minor", "major", "extended_major"],
+    },
+  ])
+})
+
+test("excluded AoS: missing sentence period cannot bleed into the title (D3005 2025)", () => {
+  const out = extractExcludedAos(
+    structureWithDescription(
+      "You must complete the mathematics and statistics unit requirement within the first 72 credit points of this double degree course The psychology extended major is not available in this double degree."
+    )
+  )
+  assert.deepEqual(out, [{ title: "psychology", kinds: ["extended_major"] }])
 })

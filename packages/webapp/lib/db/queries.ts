@@ -18,6 +18,7 @@ import {
   extractRequirementGroups,
   pickDefaultUnits,
   type EmbeddedSpecialisation,
+  type ExcludedAos,
   type RequirementGroup,
 } from "./curriculum.ts"
 import { classifyTeachingPeriod } from "../planner/teaching-period.ts"
@@ -116,6 +117,13 @@ async function _fetchCourseWithAoS(
       embeddedSpecialisations: courses.embeddedSpecialisations,
       subCourseRefs: courses.subCourseRefs,
       componentLabels: courses.componentLabels,
+      // Read via to_jsonb so the query degrades to NULL (not an SQL
+      // error) on a database that hasn't applied migration 0010 yet —
+      // this code can deploy before or after the column exists. Switch
+      // to `courses.excludedAos` once 0010 is applied everywhere.
+      excludedAos: sql<
+        ExcludedAos[] | null
+      >`to_jsonb(${courses}) -> 'excluded_aos'`,
     })
     .from(courses)
     .where(and(eq(courses.year, year), eq(courses.code, code)))
@@ -387,7 +395,25 @@ async function _fetchCourseWithAoS(
   // Append virtual (curriculum-tree-embedded) AoS — they coexist with
   // DB-linked AoS without conflict because real AoS use codes like
   // CSCYBSEC01 while virtual ones are namespaced as "C2001:part-d:...".
-  const combined = [...byCode.values(), ...virtualAos, ...componentVirtualAos]
+  //
+  // Then drop AoS the course's prose explicitly rules out. Double
+  // degrees inherit whatever their components link, but the handbook
+  // narrows the offer ("The psychology extended major is not available
+  // in this double degree") — baked as `excluded_aos` and matched here
+  // by case-insensitive title + kind, so a prose entry that names no
+  // real AoS is a no-op.
+  const excludedAos = course.excludedAos ?? []
+  const isExcluded = (a: PlannerAreaOfStudy): boolean =>
+    excludedAos.some(
+      (e) =>
+        (e.kinds as string[]).includes(a.kind) &&
+        e.title.trim().toLowerCase() === a.title.trim().toLowerCase()
+    )
+  const combined = [
+    ...byCode.values(),
+    ...virtualAos,
+    ...componentVirtualAos,
+  ].filter((a) => !isExcluded(a))
   const orderedAos = combined.sort((a, b) => {
     if (a.kind !== b.kind) return kindOrder(a.kind) - kindOrder(b.kind)
     return a.title.localeCompare(b.title)
