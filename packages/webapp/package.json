@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "test": "node --test 'lib/planner/*.test.ts' 'lib/tree/*.test.ts'",
+    "test": "node --test 'lib/planner/*.test.ts' 'lib/tree/*.test.ts' 'lib/*.test.ts'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
