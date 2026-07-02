@@ -1,7 +1,7 @@
 "use client"
 
-import { CheckIcon, CircleIcon } from "lucide-react"
-import { useMemo } from "react"
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
+import { useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
@@ -176,6 +176,13 @@ function aosBelongsToComponent(
   )
 }
 
+/**
+ * Above this many groupings a degree card starts collapsed — some
+ * course templates are huge (A6011's Journalism component carries 17
+ * groups) and would bury the other component's card entirely.
+ */
+const COLLAPSE_GROUP_THRESHOLD = 8
+
 function CourseBlock({
   requirements,
   plannedCodes,
@@ -193,6 +200,8 @@ function CourseBlock({
   )
   const completionPct =
     totals.total === 0 ? 0 : Math.round((totals.satisfied / totals.total) * 100)
+  const collapsible = requirements.length > COLLAPSE_GROUP_THRESHOLD
+  const [open, setOpen] = useState(!collapsible)
 
   return (
     <section className="px-4 py-3">
@@ -222,11 +231,34 @@ function CourseBlock({
         />
       </div>
 
-      <GroupList
-        requirements={requirements}
-        plannedCodes={plannedCodes}
-        placements={placements}
-      />
+      {collapsible && !open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-2 flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left text-[10px] text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        >
+          <ChevronRightIcon className="size-3 shrink-0" />
+          Show all {requirements.length} requirement groups
+        </button>
+      ) : (
+        <>
+          <GroupList
+            requirements={requirements}
+            plannedCodes={plannedCodes}
+            placements={placements}
+          />
+          {collapsible ? (
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="mt-2 flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left text-[10px] text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            >
+              <ChevronRightIcon className="size-3 shrink-0 rotate-90" />
+              Collapse requirement groups
+            </button>
+          ) : null}
+        </>
+      )}
     </section>
   )
 }
