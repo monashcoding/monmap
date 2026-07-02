@@ -4,25 +4,13 @@ import { CheckIcon, CircleIcon } from "lucide-react"
 import { useMemo } from "react"
 
 import { Badge } from "@/components/ui/badge"
+import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
 import { summarizeAoSProgress, type AoSProgress } from "@/lib/planner/progress"
-import type {
-  PlannerAreaOfStudy,
-  PlannerState,
-  RequirementGroup,
-} from "@/lib/planner/types"
+import type { PlannerAreaOfStudy, RequirementGroup } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
 import { UnitDetailPopover } from "./unit-detail-popover"
-
-const ROLE_LABEL: Record<keyof PlannerState["selectedAos"], string> = {
-  major: "Major",
-  extendedMajor: "Extended major",
-  minor: "Minor",
-  specialisation: "Specialisation",
-  specialisation2: "Specialisation",
-  elective: "Elective",
-}
 
 /**
  * Sidebar requirements panel. Shows each picked AoS as a collapsible
@@ -47,19 +35,12 @@ export function RequirementsPanel({ className }: { className?: string }) {
     return map
   }, [state.years])
 
-  const pickedAos = useMemo((): PickedAoS[] => {
-    if (!course) return []
-    const picked: PickedAoS[] = []
-    for (const [role, code] of Object.entries(state.selectedAos)) {
-      if (!code) continue
-      const aos = course.areasOfStudy.find((a) => a.code === code)
-      if (!aos) continue
-      picked.push({ role: role as keyof PlannerState["selectedAos"], aos })
-    }
-    return picked
-  }, [course, state.selectedAos])
+  const pickedAos = useMemo(
+    () => (course ? pickedAosEntries(course, state.selectedAos) : []),
+    [course, state.selectedAos]
+  )
 
-  const withProgress = useMemo<(PickedAoS & { progress: AoSProgress })[]>(
+  const withProgress = useMemo<(PickedAosEntry & { progress: AoSProgress })[]>(
     () =>
       pickedAos.map((p) => ({
         ...p,
@@ -102,10 +83,10 @@ export function RequirementsPanel({ className }: { className?: string }) {
                     plannedCodes={plannedCodes}
                     placements={placements}
                   />
-                  {compAos.map(({ role, aos, progress }) => (
+                  {compAos.map(({ slotKey, label, aos, progress }) => (
                     <AoSBlock
-                      key={`${role}:${aos.code}`}
-                      role={role}
+                      key={`${slotKey}:${aos.code}`}
+                      label={label}
                       aos={aos}
                       progress={progress}
                       plannedCodes={plannedCodes}
@@ -123,10 +104,10 @@ export function RequirementsPanel({ className }: { className?: string }) {
                     aosBelongsToComponent(aos, c)
                   )
               )
-              .map(({ role, aos, progress }) => (
+              .map(({ slotKey, label, aos, progress }) => (
                 <AoSBlock
-                  key={`${role}:${aos.code}`}
-                  role={role}
+                  key={`${slotKey}:${aos.code}`}
+                  label={label}
                   aos={aos}
                   progress={progress}
                   plannedCodes={plannedCodes}
@@ -141,10 +122,10 @@ export function RequirementsPanel({ className }: { className?: string }) {
               plannedCodes={plannedCodes}
               placements={placements}
             />
-            {withProgress.map(({ role, aos, progress }) => (
+            {withProgress.map(({ slotKey, label, aos, progress }) => (
               <AoSBlock
-                key={`${role}:${aos.code}`}
-                role={role}
+                key={`${slotKey}:${aos.code}`}
+                label={label}
                 aos={aos}
                 progress={progress}
                 plannedCodes={plannedCodes}
@@ -159,10 +140,10 @@ export function RequirementsPanel({ className }: { className?: string }) {
               : "Pick a major, minor or specialisation to see listed units."}
           </div>
         ) : (
-          withProgress.map(({ role, aos, progress }) => (
+          withProgress.map(({ slotKey, label, aos, progress }) => (
             <AoSBlock
-              key={`${role}:${aos.code}`}
-              role={role}
+              key={`${slotKey}:${aos.code}`}
+              label={label}
               aos={aos}
               progress={progress}
               plannedCodes={plannedCodes}
@@ -173,11 +154,6 @@ export function RequirementsPanel({ className }: { className?: string }) {
       </div>
     </section>
   )
-}
-
-interface PickedAoS {
-  role: keyof PlannerState["selectedAos"]
-  aos: PlannerAreaOfStudy
 }
 
 /**
@@ -256,13 +232,14 @@ function CourseBlock({
 }
 
 function AoSBlock({
-  role,
+  label,
   aos,
   progress,
   plannedCodes,
   placements,
 }: {
-  role: keyof PlannerState["selectedAos"]
+  /** Kind label for the badge, e.g. "Major" or "Specialisation". */
+  label: string
   aos: PlannerAreaOfStudy
   progress: AoSProgress
   plannedCodes: ReadonlySet<string>
@@ -279,7 +256,7 @@ function AoSBlock({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <Badge variant="secondary" className="text-[9px] font-normal">
-              {ROLE_LABEL[role]}
+              {label}
             </Badge>
             {aos.code.includes(":") ? null : (
               <span className="text-[9px] text-muted-foreground">

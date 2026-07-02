@@ -13,142 +13,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type {
-  PlannerAreaOfStudy,
-  PlannerCourseWithAoS,
-  PlannerState,
-} from "@/lib/planner/types"
+import {
+  computeAosSlots,
+  legacyKeyServing,
+  resolveSlotSelection,
+} from "@/lib/planner/aos-slots"
+import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
 
 /**
- * Sidebar-oriented AoS picker — one row per role, stacked. Roles hide
- * when the course doesn't offer them (e.g. a PhD has none, a BCS has
- * specialisations but no majors).
+ * Sidebar-oriented AoS picker — one row per selection slot, stacked.
+ * Slots hide when the course doesn't offer them (a PhD has none, a BCS
+ * has specialisations but no majors); double degrees get one slot per
+ * component per kind, so a Science major and a CS specialisation are
+ * independent picks (see lib/planner/aos-slots.ts).
  */
 export function AoSPicker() {
   const { course, state, dispatch } = usePlanner()
   if (!course) return null
 
-  const roles = computeRolesForCourse(course)
-  if (roles.length === 0) return null
+  const slots = computeAosSlots(course)
+  if (slots.length === 0) return null
 
   return (
     <div className="flex flex-col gap-2 border-t pt-2">
-      {roles.map((role) => (
+      {slots.map((slot) => (
         <RoleSelect
-          key={role.role}
-          label={role.label}
-          options={role.options}
-          current={state.selectedAos[role.role]}
+          key={slot.key}
+          label={slot.label}
+          options={slot.options}
+          current={resolveSlotSelection(state.selectedAos, slot)}
           year={course.year}
           onChange={(code) => {
             if (code) {
-              const selected = role.options.find((o) => o.code === code)
+              const selected = slot.options.find((o) => o.code === code)
               posthog.capture("area_of_study_selected", {
                 aos_code: code,
                 aos_title: selected?.title,
-                aos_kind: role.kind,
-                aos_role: role.role,
+                aos_kind: slot.kind,
+                aos_role: slot.key,
                 course_code: course.code,
               })
             }
-            dispatch({ type: "set_aos", role: role.role, code })
+            // A legacy fixed-role value serving this slot must clear in
+            // the same step, or it resurfaces as the slot's fallback.
+            const legacy = legacyKeyServing(state.selectedAos, slot)
+            dispatch({
+              type: "set_aos",
+              role: slot.key,
+              code,
+              ...(legacy ? { alsoClear: [legacy] } : {}),
+            })
           }}
         />
       ))}
     </div>
   )
-}
-
-interface RoleDefinition {
-  role: keyof PlannerState["selectedAos"]
-  label: string
-  kind: PlannerAreaOfStudy["kind"]
-  options: PlannerAreaOfStudy[]
-}
-
-function computeRolesForCourse(course: PlannerCourseWithAoS): RoleDefinition[] {
-  const byKind = new Map<PlannerAreaOfStudy["kind"], PlannerAreaOfStudy[]>()
-  for (const a of course.areasOfStudy) {
-    const list = byKind.get(a.kind) ?? []
-    list.push(a)
-    byKind.set(a.kind, list)
-  }
-
-  const roles: RoleDefinition[] = []
-  if ((byKind.get("major")?.length ?? 0) > 0) {
-    roles.push({
-      role: "major",
-      label: "Major",
-      kind: "major",
-      options: byKind.get("major")!,
-    })
-  }
-  if ((byKind.get("extended_major")?.length ?? 0) > 0) {
-    roles.push({
-      role: "extendedMajor",
-      label: "Extended major",
-      kind: "extended_major",
-      options: byKind.get("extended_major")!,
-    })
-  }
-  const specs = byKind.get("specialisation") ?? []
-  if (specs.length > 0) {
-    // For double degrees, specialisations may come from two distinct
-    // degree components. Group structurally by the component course
-    // code when available (labels can collide or differ only in
-    // whitespace/case), falling back to componentLabel then
-    // relationshipLabel for pre-componentCourseCode records. Show a
-    // separate picker per group, titled by the display label.
-    const groupKey = (a: PlannerAreaOfStudy) =>
-      a.componentCourseCode ?? a.componentLabel ?? a.relationshipLabel
-    const byGroup = new Map<
-      string,
-      { title: string; options: PlannerAreaOfStudy[] }
-    >()
-    for (const a of specs) {
-      const key = groupKey(a)
-      const group = byGroup.get(key) ?? {
-        title: a.componentLabel ?? a.relationshipLabel,
-        options: [],
-      }
-      group.options.push(a)
-      byGroup.set(key, group)
-    }
-    const groups = [...byGroup.values()]
-    const roleKeys = ["specialisation", "specialisation2"] as const
-    const multiGroup = groups.length > 1
-    groups.forEach(({ title: groupTitle, options }, i) => {
-      const role = roleKeys[i]
-      if (!role) return
-      // "Computer Science component" → "Computer Science specialisation"
-      const cleanedTitle = groupTitle.replace(/\s*component\s*$/i, "").trim()
-      roles.push({
-        role,
-        label: multiGroup ? `${cleanedTitle} specialisation` : "Specialisation",
-        kind: "specialisation",
-        options,
-      })
-    })
-  }
-  if ((byKind.get("minor")?.length ?? 0) > 0) {
-    roles.push({
-      role: "minor",
-      label: "Minor",
-      kind: "minor",
-      options: byKind.get("minor")!,
-    })
-  }
-  if ((byKind.get("elective")?.length ?? 0) > 0) {
-    roles.push({
-      role: "elective",
-      label: "Elective stream",
-      kind: "elective",
-      options: byKind.get("elective")!,
-    })
-  }
-  return roles
 }
 
 function RoleSelect({

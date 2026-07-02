@@ -47,20 +47,22 @@ export interface PlannerState {
   courseYear: string
   courseCode: string | null
   /**
-   * Picked AoS codes, one per `kind`. The shape matches what a BIT
-   * student actually picks: one major (+ optionally an elective major),
-   * one minor, a specialisation, etc. We store by role so requirement-
-   * progress can look up "the picked major" quickly.
+   * Picked AoS codes keyed by selection slot.
+   *
+   * Slot keys come in two generations, and both stay readable forever
+   * so saved plans never migrate:
+   *
+   *   - Fixed roles: "major", "extendedMajor", "minor",
+   *     "specialisation", "specialisation2", "elective". Written for
+   *     courses whose picker has no component scoping, and consulted
+   *     as a fallback everywhere (a value counts for a scoped slot
+   *     when its code is one of that slot's options).
+   *   - Component-scoped slots: "<kind>@<scope>", e.g. "major@S2000"
+   *     or "specialisation@C2001:part-d-applied-studies", minted by
+   *     the webapp's aos-slots module. Double degrees need a pick per
+   *     component (Science major AND CS specialisation), and one
+   *     fixed role per kind cannot express that.
    */
-  selectedAos: {
-    major?: string
-    extendedMajor?: string
-    minor?: string
-    specialisation?: string
-    /** Second specialisation slot — used by double-degree courses where
-     * each component carries its own picker. */
-    specialisation2?: string
-    elective?: string
-  }
+  selectedAos: Record<string, string | undefined>
   years: PlannerYear[]
 }

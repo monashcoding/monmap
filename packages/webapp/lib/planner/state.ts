@@ -44,8 +44,15 @@ export type PlannerAction =
   | { type: "set_year"; year: string }
   | {
       type: "set_aos"
-      role: keyof PlannerState["selectedAos"]
+      /** A `selectedAos` slot key — fixed role or "<kind>@<scope>". */
+      role: string
       code: string | null
+      /**
+       * Slot keys to delete in the same step — used when a scoped slot
+       * write supersedes a legacy fixed-role value so the old pick
+       * doesn't resurface as the slot's fallback.
+       */
+      alsoClear?: readonly string[]
     }
   | { type: "add_unit"; yearIndex: number; slotIndex: number; code: string }
   | { type: "remove_unit"; yearIndex: number; slotIndex: number; code: string }
@@ -149,6 +156,7 @@ export function plannerReducer(
 
     case "set_aos": {
       const next = { ...state.selectedAos }
+      for (const k of action.alsoClear ?? []) delete next[k]
       if (!action.code) delete next[action.role]
       else next[action.role] = action.code
       return { ...state, selectedAos: next }
