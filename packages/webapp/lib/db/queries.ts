@@ -15,7 +15,6 @@ import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 import { getDb, HANDBOOK_YEAR } from "./client.ts"
 import { cacheHandbook } from "./memo.ts"
 import {
-  extractEmbeddedSpecialisations,
   extractRequirementGroups,
   pickDefaultUnits,
   type EmbeddedSpecialisation,
@@ -107,32 +106,27 @@ async function _fetchCourseWithAoS(
       aqfLevel: courses.aqfLevel,
       type: courses.type,
       overview: courses.overview,
-      // Pre-baked curriculum extractions populated by ingest. Fall back
-      // to walking `curriculumStructure` only when the row was ingested
-      // before migration 0006 added these columns.
+      // Pre-baked curriculum extractions. Ingest is the only place
+      // extraction runs — the webapp reads these columns, period. They
+      // are NULL exactly when `curriculum_structure` is NULL (research
+      // programs), where extraction would return [] anyway, so coalesce
+      // to empty instead of shipping multi-KB trees over the wire to
+      // re-derive them per request.
       requirementGroups: courses.requirementGroups,
       embeddedSpecialisations: courses.embeddedSpecialisations,
       subCourseRefs: courses.subCourseRefs,
       componentLabels: courses.componentLabels,
-      curriculumStructure: courses.curriculumStructure,
     })
     .from(courses)
     .where(and(eq(courses.year, year), eq(courses.code, code)))
     .limit(1)
   if (!course) return null
 
-  const rawCourseGroups =
-    course.requirementGroups ??
-    extractRequirementGroups(
-      course.curriculumStructure,
-      course.creditPoints ?? 0
-    )
+  const rawCourseGroups = course.requirementGroups ?? []
   // Embedded specialisations are "pick one of N" sub-containers (e.g.
   // F2010 Part C studios, C2001 Part D tracks) that don't appear in the
   // course_areas_of_study table — surfaced as virtual AoS.
-  const embeddedSpecs =
-    course.embeddedSpecialisations ??
-    extractEmbeddedSpecialisations(course.curriculumStructure)
+  const embeddedSpecs = course.embeddedSpecialisations ?? []
 
   // Double-degree component refs. Refs that share a component title are
   // "pick one of these programs" alternatives (A6039 lists six partner
@@ -140,8 +134,7 @@ async function _fetchCourseWithAoS(
   // under "Elective studies") — a card per ref would load N full course
   // templates. Only distinctly-titled refs are true degree components
   // (BSc + BCS, Arts + Education, ...).
-  const subCourseRefs =
-    course.subCourseRefs ?? extractSubCourseRefs(course.curriculumStructure)
+  const subCourseRefs = course.subCourseRefs ?? []
   const refTitle = (r: { componentTitle: string }) => r.componentTitle.trim()
   const refTitleCounts = new Map<string, number>()
   for (const r of subCourseRefs)
@@ -165,7 +158,6 @@ async function _fetchCourseWithAoS(
             creditPoints: courses.creditPoints,
             requirementGroups: courses.requirementGroups,
             embeddedSpecialisations: courses.embeddedSpecialisations,
-            curriculumStructure: courses.curriculumStructure,
           })
           .from(courses)
           .where(
@@ -204,22 +196,10 @@ async function _fetchCourseWithAoS(
   const componentEmbeddedSpecs = new Map<string, EmbeddedSpecialisation[]>()
   for (const ref of componentRefs) {
     const sub = subCourseMap.get(ref.courseCode)
-    componentRawGroups.set(
-      ref.courseCode,
-      sub
-        ? (sub.requirementGroups ??
-            extractRequirementGroups(
-              sub.curriculumStructure,
-              sub.creditPoints ?? 0
-            ))
-        : []
-    )
+    componentRawGroups.set(ref.courseCode, sub?.requirementGroups ?? [])
     componentEmbeddedSpecs.set(
       ref.courseCode,
-      sub
-        ? (sub.embeddedSpecialisations ??
-            extractEmbeddedSpecialisations(sub.curriculumStructure))
-        : []
+      sub?.embeddedSpecialisations ?? []
     )
   }
 
@@ -341,14 +321,10 @@ async function _fetchCourseWithAoS(
   }
 
   // Pre-baked map of aosCode → depth-1 ancestor title (double-degree
-  // component labels) for AoS linked on the course itself. Old rows
-  // fall back to walking the tree.
-  const parentAosCodes = new Set(
-    links.filter((l) => l.ownerCode === code).map((l) => l.aosCode)
+  // component labels) for AoS linked on the course itself.
+  const componentLabels: ReadonlyMap<string, string> = new Map(
+    Object.entries(course.componentLabels ?? {})
   )
-  const componentLabels: ReadonlyMap<string, string> = course.componentLabels
-    ? new Map(Object.entries(course.componentLabels))
-    : buildComponentLabels(course.curriculumStructure, parentAosCodes)
   // Resolve a parent-linked AoS's component *course* from its label so
   // the UI can join AoS to components structurally instead of comparing
   // display strings (titles differ in case and trailing whitespace —
@@ -540,86 +516,6 @@ function groupsFromFlat(
     options,
     required: options.length,
   }))
-}
-
-/**
- * Walk the top-level containers of a course's curriculumStructure and
- * return any course references found in each container's direct
- * `relationship` array. Used to detect double-degree sub-courses
- * (e.g. E3010 → C2001 + E3001).
- */
-function extractSubCourseRefs(
-  structure: unknown
-): Array<{ componentTitle: string; courseCode: string }> {
-  const out: Array<{ componentTitle: string; courseCode: string }> = []
-  if (!structure || typeof structure !== "object") return out
-  const root = structure as Record<string, unknown>
-  const containers = root["container"]
-  if (!Array.isArray(containers)) return out
-
-  for (const c of containers) {
-    if (!c || typeof c !== "object") continue
-    const container = c as Record<string, unknown>
-    const title =
-      typeof container["title"] === "string" ? container["title"] : null
-    if (!title) continue
-    const rels = container["relationship"]
-    if (!Array.isArray(rels)) continue
-    for (const rel of rels) {
-      if (!rel || typeof rel !== "object") continue
-      const r = rel as Record<string, unknown>
-      const typeRef = r["academic_item_type"] as { value?: string } | undefined
-      if (typeRef?.value !== "course") continue
-      const courseCode =
-        typeof r["academic_item_code"] === "string"
-          ? r["academic_item_code"]
-          : null
-      if (courseCode) out.push({ componentTitle: title, courseCode })
-    }
-  }
-  return out
-}
-
-/**
- * Walk the top-level containers of a course's curriculumStructure and
- * return a map of aosCode → the title of its depth-1 ancestor container.
- * Used to label per-degree specialisation pickers in double degrees
- * (e.g. "Computer Science component" or "Engineering component").
- *
- * Looks specifically for `academic_item_code` leaves (the same field the
- * ingest walker uses) rather than any string value.
- */
-function buildComponentLabels(
-  structure: unknown,
-  aosCodes: ReadonlySet<string>
-): Map<string, string> {
-  const out = new Map<string, string>()
-  if (!structure || typeof structure !== "object") return out
-  const root = structure as Record<string, unknown>
-  const containers = root["container"]
-  if (!Array.isArray(containers)) return out
-
-  const walk = (node: unknown, depth1Title: string): void => {
-    if (Array.isArray(node)) {
-      for (const x of node) walk(x, depth1Title)
-      return
-    }
-    if (!node || typeof node !== "object") return
-    const n = node as Record<string, unknown>
-    const code = n["academic_item_code"]
-    if (typeof code === "string") {
-      const upper = code.toUpperCase()
-      if (aosCodes.has(upper) && !out.has(upper)) out.set(upper, depth1Title)
-    }
-    for (const v of Object.values(n)) walk(v, depth1Title)
-  }
-
-  for (const c of containers) {
-    if (!c || typeof c !== "object") continue
-    const title = (c as Record<string, unknown>)["title"]
-    if (typeof title === "string" && title) walk(c, title)
-  }
-  return out
 }
 
 function kindOrder(k: PlannerAreaOfStudy["kind"]): number {

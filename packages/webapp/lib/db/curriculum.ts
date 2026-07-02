@@ -1,17 +1,13 @@
 /**
  * Curriculum tree walkers live in `@monmap/db` so the ingest pipeline
- * and the webapp share one implementation. This file re-exports them
- * so existing webapp imports keep working.
+ * and the webapp share one implementation. The webapp reads pre-baked
+ * course columns (requirement_groups, embedded_specialisations,
+ * sub_course_refs, component_labels) and only extracts at read time
+ * for areas of study, which have no baked equivalent yet.
  */
 export {
   type RequirementGroup,
   type EmbeddedSpecialisation,
-  type SubCourseRef,
-  type ComponentLabelMap,
   extractRequirementGroups,
-  extractEmbeddedSpecialisations,
-  extractSubCourseRefs,
-  extractComponentLabels,
-  extractUnitRefs,
   pickDefaultUnits,
 } from "@monmap/db"
