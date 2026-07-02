@@ -11,11 +11,10 @@ export default function robots(): MetadataRoute.Robots {
       rules: [{ userAgent: "*", disallow: "/" }],
     }
   }
-  // /units and /courses (without a code) used to be browse hubs but
-  // were removed — humans search via the workbench at /tree, Google
-  // discovers entities via the sitemap which lists every /units/[code]
-  // and /courses/[code] directly. No `allow` rule needed for those —
-  // crawling is allowed by default; we only mention what to block.
+  // /units/[code] and /courses/[code] used to be per-entity SEO pages
+  // but were retired with the move back to a SPA — they now redirect
+  // into the /tree workbench (see next.config.mjs). Crawling is
+  // allowed by default; we only mention what to block.
   return {
     rules: [
       {

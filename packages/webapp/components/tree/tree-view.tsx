@@ -1,7 +1,6 @@
 "use client"
 
 import { SlidersHorizontalIcon } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
 import {
@@ -72,58 +71,25 @@ export interface TreeViewProps {
   activePlan: PlannerState | null
   /**
    * Curated featured units (typically level-1) shown in the empty-state
-   * facts card below the workbench. These render as real <a href>
-   * anchors so Googlebot can follow them from /tree out to the unit
-   * pages — the canonical way internal PageRank flows on the site.
+   * facts card below the workbench as quick entry points into the graph.
    */
   featured?: ReadonlyArray<{
     code: string
     title: string
     level: string | null
   }>
-  /**
-   * Pre-fetched details for the seeded entity. Canonical pages
-   * (/units/[code], /courses/[code]) pass this so the overview /
-   * synopsis HTML renders on first paint; /tree leaves it undefined
-   * and the client refetches via `fetchEntityDetailsAction` if/when
-   * the user picks something.
-   */
-  initialEntityDetails?: {
-    unit: PublicUnitForAction | null
-    course: PublicCourseForAction | null
-  }
 }
 
 export function TreeView(props: TreeViewProps) {
-  const router = useRouter()
   const isMobile = useIsMobile()
   const [controlsOpen, setControlsOpen] = useState(false)
 
-  // Initial controls come from the server, but on the canonical
-  // /units/[code] and /courses/[code] routes we deliberately skip
-  // searchParams server-side (it would break ISR caching — see the
-  // entity page files for context). To preserve deep-links like
-  // `?direction=upstream` and `?aos=...`, read them once on mount
-  // from window.location and overlay onto the server-supplied
-  // initial controls. Doesn't affect /tree which already passes its
-  // searchParams through the server.
-  const [controls, setControls] = useState<TreeControlsValue>(() => {
-    const seed = props.initial.controls
-    if (typeof window === "undefined") return seed
-    const sp = new URLSearchParams(window.location.search)
-    const direction = sp.get("direction")
-    const aos = sp.get("aos")
-    return {
-      ...seed,
-      direction:
-        direction === "upstream" ||
-        direction === "downstream" ||
-        direction === "both"
-          ? direction
-          : seed.direction,
-      aosCode: seed.mode === "course" && aos ? aos : seed.aosCode,
-    }
-  })
+  // Initial controls come from the server — /tree resolves its
+  // searchParams (?unit=, ?course=, ?aos=, ?direction=, ?year=)
+  // server-side and prefetches the matching graph.
+  const [controls, setControls] = useState<TreeControlsValue>(
+    props.initial.controls
+  )
   const [course, setCourse] = useState<PlannerCourseWithAoS | null>(
     props.initialCourse
   )
@@ -145,7 +111,7 @@ export function TreeView(props: TreeViewProps) {
     >
   >(props.initial.enrolmentRules)
 
-  // Auto-focus the seed unit on load. Landing on /units/FIT2004 should
+  // Auto-focus the seed unit on load. Landing on /tree?unit=FIT2004 should
   // open the side panel with FIT2004 already selected — that's the
   // entity the user came to look at. Course mode has no single "seed"
   // (multiple seeds from Part A + AoS), so leave focus null there.
@@ -156,14 +122,14 @@ export function TreeView(props: TreeViewProps) {
   )
   const [loading, setLoading] = useState(false)
 
-  // Below-the-workbench facts. Server-supplied for canonical pages,
-  // otherwise refetched on the client whenever the seeded entity
-  // changes (the URL-sync replaceState doesn't trigger a Next nav, so
-  // the page itself doesn't re-render — we have to ask explicitly).
+  // Below-the-workbench facts, fetched on the client whenever the
+  // seeded entity changes (the URL-sync replaceState doesn't trigger a
+  // Next nav, so the page itself doesn't re-render — we have to ask
+  // explicitly).
   const [entityDetails, setEntityDetails] = useState<{
     unit: PublicUnitForAction | null
     course: PublicCourseForAction | null
-  }>(props.initialEntityDetails ?? { unit: null, course: null })
+  }>({ unit: null, course: null })
   useEffect(() => {
     let cancelled = false
     void fetchEntityDetailsAction(controls).then((d) => {
@@ -191,60 +157,30 @@ export function TreeView(props: TreeViewProps) {
     setFocused(seedUnitCode)
   }
 
-  // Keep the browser URL in sync with the picker state. /tree,
-  // /units/[code] and /courses/[code] all render the same workbench,
-  // and the canonical URL for any given (course, unit) is the entity
-  // path.
-  //
-  // Two cases, deliberately handled differently:
-  //
-  //  • The *pathname* changes (the user picked a different course/unit,
-  //    switched mode, or cleared the picker). Here we must do a REAL
-  //    navigation (`router.replace`) so the destination route renders
-  //    server-side and supplies the graph. A bare `history.replaceState`
-  //    to a different route path is the bug that prompted this: Next's
-  //    App Router patches replaceState, so swapping the pathname without
-  //    a navigation desyncs the router from our client-owned state — the
-  //    next Server Action reconciles against the new route and the
-  //    freshly-fetched graph never lands, leaving the canvas empty until
-  //    a manual refresh. `replace` (not `push`) keeps the back button
-  //    from accumulating an entry per pick.
-  //
-  //  • Only the *query* changes (aos / direction / year on the same
-  //    entity). That's a true same-route shallow update, so a plain
-  //    `replaceState` is correct and avoids a server round-trip — the
-  //    refetch effect below already owns the updated graph.
+  // Keep the browser URL in sync with the picker state so any moment
+  // of a session is shareable / bookmarkable. Everything lives at
+  // /tree with query params, so this is always a same-route shallow
+  // update — a plain `replaceState` (never a server round-trip; the
+  // refetch effect below owns the data). `replaceState` (not push)
+  // keeps the back button from accumulating an entry per pick.
+  const latestYear = props.availableYears.at(-1)
   useEffect(() => {
-    const url = canonicalUrlFor(controls)
+    const url = canonicalUrlFor(controls, latestYear)
     if (typeof window === "undefined" || !url) return
     const current = `${window.location.pathname}${window.location.search}`
     if (current === url) return
-    const nextPathname = url.split("?")[0]
-    if (nextPathname !== window.location.pathname) {
-      router.replace(url)
-    } else {
-      window.history.replaceState(null, "", url)
-    }
-  }, [controls, router])
+    window.history.replaceState(null, "", url)
+  }, [controls, latestYear])
 
   // Single effect: refetch the graph (and the course meta when needed)
   // whenever the controls change. Pushing all setStates into the awaited
   // block keeps us out of the `set-state-in-effect` rule's crosshairs.
   useEffect(() => {
-    // If this change will navigate to a different route (the URL-sync
-    // effect above fires router.replace for cross-route picks), don't
-    // refetch here — the destination route renders the graph
-    // server-side, and a refetch now would be a redundant Server Action
-    // fired mid-navigation. Same-route query changes (pathname already
-    // matches) fall through and refetch as before.
-    const target = canonicalUrlFor(controls)
-    if (
-      typeof window !== "undefined" &&
-      target &&
-      target.split("?")[0] !== window.location.pathname
-    ) {
-      return
-    }
+    // Skip the mount run: the server already prefetched the graph for
+    // the initial controls, so refetching would be a redundant Server
+    // Action. Reference equality is enough — every later change goes
+    // through setControls with a fresh object.
+    if (controls === props.initial.controls) return
     let cancelled = false
     const run = async () => {
       const tag = setTimeout(() => {
@@ -271,7 +207,7 @@ export function TreeView(props: TreeViewProps) {
     return () => {
       cancelled = true
     }
-  }, [controls])
+  }, [controls, props.initial.controls])
 
   const planCompleted = useMemo<ReadonlySet<string>>(() => {
     if (!controls.useMyPlan || !props.activePlan) return new Set()
@@ -547,31 +483,34 @@ function EmptyState({
 }
 
 /**
- * Map the current picker state to its canonical URL. Used by the
+ * Map the current picker state to its shareable /tree URL. Used by the
  * URL-sync effect — pure function so it's trivial to reason about.
  *
- * Empty workbench (no course or unit picked) stays at `/tree` so a
- * user who clears the picker doesn't end up stranded on a stale
- * entity URL. Year is only encoded when it differs from the latest
- * handbook to keep the URL clean for the common case.
+ * Defaults are omitted to keep the URL clean for the common case:
+ * direction "both" in unit mode / "upstream" in course mode (matching
+ * the server's seeding defaults in app/tree/page.tsx), and the year
+ * when it's the latest handbook year.
  */
-function canonicalUrlFor(controls: TreeControlsValue): string | null {
+function canonicalUrlFor(
+  controls: TreeControlsValue,
+  latestYear: string | undefined
+): string | null {
   const sp = new URLSearchParams()
   if (controls.mode === "unit") {
     if (!controls.unitCode) return "/tree"
+    sp.set("unit", controls.unitCode)
     if (controls.direction !== "both") sp.set("direction", controls.direction)
-    const qs = sp.toString()
-    return `/units/${controls.unitCode}${qs ? `?${qs}` : ""}`
-  }
-  if (controls.mode === "course") {
+  } else if (controls.mode === "course") {
     if (!controls.courseCode) return "/tree"
+    sp.set("course", controls.courseCode)
     if (controls.aosCode) sp.set("aos", controls.aosCode)
     if (controls.direction !== "upstream")
       sp.set("direction", controls.direction)
-    const qs = sp.toString()
-    return `/courses/${controls.courseCode}${qs ? `?${qs}` : ""}`
+  } else {
+    return null
   }
-  return null
+  if (latestYear && controls.year !== latestYear) sp.set("year", controls.year)
+  return `/tree?${sp.toString()}`
 }
 
 function derivePeriodBadge(offerings: PlannerOffering[]): string | null {

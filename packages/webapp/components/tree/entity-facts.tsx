@@ -345,7 +345,7 @@ function EmptyHint({ featured }: EntityFactsProps) {
               className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['—']"
             >
               <Link
-                href={`/units/${u.code}`}
+                href={`/tree?unit=${u.code}`}
                 prefetch={false}
                 className="text-foreground/90 hover:text-[var(--monash-purple-deep)] hover:underline"
               >
@@ -406,7 +406,7 @@ function FactsList({
   )
 }
 
-/** Prereq/unlock bullet list — links to /units/[code], shows the unit
+/** Prereq/unlock bullet list — links to /tree?unit=, shows the unit
  *  title (with the code as a small subtitle next to it). */
 function UnitBullets({
   codes,
@@ -425,7 +425,7 @@ function UnitBullets({
             className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['—']"
           >
             <Link
-              href={`/units/${c}`}
+              href={`/tree?unit=${c}`}
               prefetch={false}
               className="text-foreground/90 hover:text-[var(--monash-purple-deep)] hover:underline"
             >
