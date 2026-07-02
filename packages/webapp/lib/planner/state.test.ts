@@ -67,6 +67,18 @@ test("set_aos with null code deletes the role", () => {
   assert.equal(s.selectedAos.major, undefined)
 })
 
+test("set_aos writes component-scoped slot keys and clears superseded legacy keys atomically", () => {
+  let s = defaultState("2026", "S2004")
+  s = plannerReducer(s, { type: "set_aos", role: "major", code: "BIOCHEM05" })
+  s = plannerReducer(s, {
+    type: "set_aos",
+    role: "major@S2000",
+    code: "APPLMTH05",
+    alsoClear: ["major"],
+  })
+  assert.deepEqual(s.selectedAos, { "major@S2000": "APPLMTH05" })
+})
+
 test("move_unit removes from source and adds to destination", () => {
   let s = defaultState("2026", "C2000")
   s = plannerReducer(s, {
