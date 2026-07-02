@@ -1,0 +1,256 @@
+{
+  "S2004@2026": {
+    "title": "Bachelor of Science and Bachelor of Computer Science",
+    "courseRequirements": 0,
+    "courseUnits": 0,
+    "components": [
+      {
+        "code": "S2000",
+        "title": "Science component",
+        "groups": 5,
+        "units": 1,
+        "missingTemplate": false
+      },
+      {
+        "code": "C2001",
+        "title": "Computer Science component",
+        "groups": 4,
+        "units": 7,
+        "missingTemplate": false
+      }
+    ],
+    "aosTotal": 94,
+    "aosByKind": {
+      "major": 28,
+      "extended_major": 21,
+      "specialisation": 17,
+      "minor": 23,
+      "elective": 5
+    },
+    "aosByComponent": {
+      "S2000": 80,
+      "C2001": 14
+    }
+  },
+  "S2004@2025": {
+    "title": "Bachelor of Science and Bachelor of Computer Science",
+    "courseRequirements": 0,
+    "courseUnits": 0,
+    "components": [
+      {
+        "code": "C2001",
+        "title": "Computer Science component",
+        "groups": 5,
+        "units": 7,
+        "missingTemplate": false
+      },
+      {
+        "code": "S2000",
+        "title": "Science component",
+        "groups": 4,
+        "units": 0,
+        "missingTemplate": false
+      }
+    ],
+    "aosTotal": 93,
+    "aosByKind": {
+      "major": 27,
+      "extended_major": 20,
+      "specialisation": 19,
+      "minor": 27
+    },
+    "aosByComponent": {
+      "S2000": 77,
+      "C2001": 16
+    }
+  },
+  "S2004@2022": {
+    "title": "Bachelor of Science and Bachelor of Computer Science",
+    "courseRequirements": 7,
+    "courseUnits": 8,
+    "components": [],
+    "aosTotal": 71,
+    "aosByKind": {
+      "major": 22,
+      "extended_major": 16,
+      "specialisation": 13,
+      "minor": 20
+    },
+    "aosByComponent": {
+      "Science component": 58,
+      "Computer science component": 2,
+      "(course)": 11
+    }
+  },
+  "D3002@2026": {
+    "title": "Bachelor of Education (Honours) and Bachelor of Arts",
+    "courseRequirements": 0,
+    "courseUnits": 0,
+    "components": [
+      {
+        "code": "A2000",
+        "title": "Arts component",
+        "groups": 4,
+        "units": 0,
+        "missingTemplate": false
+      },
+      {
+        "code": "D3001",
+        "title": "Education component",
+        "groups": 0,
+        "units": 0,
+        "missingTemplate": true
+      }
+    ],
+    "aosTotal": 69,
+    "aosByKind": {
+      "major": 29,
+      "extended_major": 1,
+      "specialisation": 7,
+      "elective": 32
+    },
+    "aosByComponent": {
+      "A2000": 62,
+      "D3001": 7
+    }
+  },
+  "A6039@2026": {
+    "title": "Master of Marketing and Digital Communications",
+    "courseRequirements": 5,
+    "courseUnits": 10,
+    "components": [],
+    "aosTotal": 0,
+    "aosByKind": {},
+    "aosByComponent": {}
+  },
+  "A6011@2026": {
+    "title": "Master of International Relations and Master of Journalism",
+    "courseRequirements": 1,
+    "courseUnits": 3,
+    "components": [
+      {
+        "code": "A6008",
+        "title": "Master of Journalism",
+        "groups": 17,
+        "units": 5,
+        "missingTemplate": false
+      },
+      {
+        "code": "A6010",
+        "title": "Master of International Relations",
+        "groups": 7,
+        "units": 3,
+        "missingTemplate": false
+      }
+    ],
+    "aosTotal": 0,
+    "aosByKind": {},
+    "aosByComponent": {}
+  },
+  "F2016@2026": {
+    "title": "Bachelor of Architectural Studies and Bachelor of Business",
+    "courseRequirements": 3,
+    "courseUnits": 12,
+    "components": [
+      {
+        "code": "B2000",
+        "title": "Business component",
+        "groups": 3,
+        "units": 0,
+        "missingTemplate": false
+      }
+    ],
+    "aosTotal": 29,
+    "aosByKind": {
+      "major": 14,
+      "specialisation": 4,
+      "minor": 11
+    },
+    "aosByComponent": {
+      "B2000": 29
+    }
+  },
+  "B2008@2026": {
+    "title": "Bachelor of Commerce and Bachelor of Computer Science",
+    "courseRequirements": 0,
+    "courseUnits": 0,
+    "components": [
+      {
+        "code": "C2001",
+        "title": "Computer Science component",
+        "groups": 4,
+        "units": 7,
+        "missingTemplate": false
+      },
+      {
+        "code": "B2001",
+        "title": "Commerce component",
+        "groups": 2,
+        "units": 0,
+        "missingTemplate": false
+      }
+    ],
+    "aosTotal": 41,
+    "aosByKind": {
+      "major": 11,
+      "specialisation": 13,
+      "minor": 12,
+      "elective": 5
+    },
+    "aosByComponent": {
+      "B2001": 27,
+      "C2001": 14
+    }
+  },
+  "C2001@2026": {
+    "title": "Bachelor of Computer Science",
+    "courseRequirements": 4,
+    "courseUnits": 7,
+    "components": [],
+    "aosTotal": 14,
+    "aosByKind": {
+      "specialisation": 9,
+      "elective": 5
+    },
+    "aosByComponent": {
+      "Part C. Specialist studies": 4,
+      "(course)": 5,
+      "Part E. Free elective studies": 5
+    }
+  },
+  "S2000@2026": {
+    "title": "Bachelor of Science",
+    "courseRequirements": 5,
+    "courseUnits": 1,
+    "components": [],
+    "aosTotal": 84,
+    "aosByKind": {
+      "major": 29,
+      "extended_major": 23,
+      "specialisation": 8,
+      "minor": 24
+    },
+    "aosByComponent": {
+      "Part B. Science listed major": 76,
+      "(course)": 8
+    }
+  },
+  "0047@2026": {
+    "title": "Doctor of Philosophy",
+    "courseRequirements": 0,
+    "courseUnits": 0,
+    "components": [],
+    "aosTotal": 0,
+    "aosByKind": {},
+    "aosByComponent": {}
+  },
+  "C6001@2026": {
+    "title": "Master of Information Technology",
+    "courseRequirements": 5,
+    "courseUnits": 10,
+    "components": [],
+    "aosTotal": 0,
+    "aosByKind": {},
+    "aosByComponent": {}
+  }
+}
