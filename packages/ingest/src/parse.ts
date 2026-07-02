@@ -16,12 +16,14 @@ import type {
   UnitOffering,
 } from "@monmap/scraper/types";
 import {
+  extractExcludedAos,
   extractRequirementGroups,
   extractEmbeddedSpecialisations,
   extractSubCourseRefs,
   extractComponentLabels,
   type ComponentLabelMap,
   type EmbeddedSpecialisation,
+  type ExcludedAos,
   type RequirementGroup,
   type SubCourseRef,
 } from "@monmap/db";
@@ -408,6 +410,7 @@ export interface CourseRows {
     embeddedSpecialisations: EmbeddedSpecialisation[] | null;
     subCourseRefs: SubCourseRef[] | null;
     componentLabels: ComponentLabelMap | null;
+    excludedAos: ExcludedAos[] | null;
     raw: CourseContent;
   };
 }
@@ -444,6 +447,7 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
         : null,
       subCourseRefs: hasStructure ? extractSubCourseRefs(structure) : null,
       componentLabels: hasStructure ? extractComponentLabels(structure) : null,
+      excludedAos: hasStructure ? extractExcludedAos(structure) : null,
       raw,
     },
   };

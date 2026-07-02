@@ -45,6 +45,7 @@ import type { PlannerState } from "./planner-state.ts";
 import type {
   ComponentLabelMap,
   EmbeddedSpecialisation,
+  ExcludedAos,
   RequirementGroup,
   SubCourseRef,
 } from "./curriculum.ts";
@@ -140,15 +141,19 @@ export const courses = pgTable(
     /** Requirement tree rendered on the course structure page. */
     curriculumStructure: jsonb().$type<CurriculumStructure>(),
     /**
-     * Precomputed by ingest from `curriculumStructure` — saves the
-     * planner from re-walking the tree on every page load. Nullable
-     * because rows ingested before migration 0006 have no value; the
-     * webapp falls back to extracting on the fly when null.
+     * Precomputed by ingest (and `backfill:curriculum`) from
+     * `curriculumStructure`. The webapp reads these columns only —
+     * extraction never runs at request time. NULL exactly when
+     * `curriculumStructure` is NULL (research programs).
      */
     requirementGroups: jsonb().$type<RequirementGroup[]>(),
     embeddedSpecialisations: jsonb().$type<EmbeddedSpecialisation[]>(),
     subCourseRefs: jsonb().$type<SubCourseRef[]>(),
     componentLabels: jsonb().$type<ComponentLabelMap>(),
+    /** AoS the course's prose rules out ("psychology extended major
+     *  is not available in this double degree"), matched by title+kind
+     *  against the AoS merged from component courses. */
+    excludedAos: jsonb().$type<ExcludedAos[]>(),
     raw: jsonb().$type<CourseContent>().notNull(),
   },
   (t) => [

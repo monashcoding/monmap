@@ -1,0 +1,12 @@
+-- drizzle-kit also emitted DROP TABLE account/session/verification here
+-- because the 0007 meta snapshot predates their removal from schema.ts;
+-- migration 0009 already owns those drops (with IF EXISTS), so this
+-- file keeps only the new column. The 0010 snapshot is the first one
+-- that matches schema.ts exactly, so future generates diff cleanly.
+--
+-- IF NOT EXISTS because this column was applied to the shared database
+-- ahead of the ledger: migration 0009 cannot be applied yet (the
+-- session table it drops was still receiving live writes as of
+-- 2026-07-02 — see PR discussion), and the migrator runs strictly in
+-- order. Re-running via db:migrate later is a safe no-op.
+ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "excluded_aos" jsonb;
