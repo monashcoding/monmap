@@ -1,8 +1,8 @@
 /**
- * Queries that back the public, indexable pages (/units, /units/[code],
- * /courses, /courses/[code], /sitemap.xml). Kept separate from the
- * planner's queries.ts so the cache surface stays narrow and the SEO
- * pages don't accidentally pull planner-specific columns.
+ * Queries for the public entity overviews (the facts panel below the
+ * /tree workbench, via `fetchEntityDetailsAction`). Kept separate from
+ * the planner's queries.ts so this surface stays narrow and doesn't
+ * accidentally pull planner-specific columns.
  */
 import {
   areaOfStudyUnits,
@@ -14,22 +14,9 @@ import {
   units,
 } from "@monmap/db"
 import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm"
-import { unstable_cache } from "next/cache"
 
 import { getDb, HANDBOOK_YEAR } from "./client.ts"
-
-const HANDBOOK_TAG = "handbook"
-const HANDBOOK_REVALIDATE = 60 * 60 * 24
-
-function cacheHandbook<Args extends readonly unknown[], R>(
-  fn: (...args: Args) => Promise<R>,
-  key: string
-): (...args: Args) => Promise<R> {
-  return unstable_cache(fn, [key], {
-    tags: [HANDBOOK_TAG],
-    revalidate: HANDBOOK_REVALIDATE,
-  })
-}
+import { cacheHandbook } from "./memo.ts"
 
 export interface UnitListItem {
   code: string
@@ -68,30 +55,7 @@ async function _listAllUnits(year: string): Promise<UnitListItem[]> {
     school: r.school,
   }))
 }
-export const listAllUnits = cacheHandbook(_listAllUnits, "listAllUnits")
-
-async function _listAllCourses(year: string): Promise<CourseListItem[]> {
-  const db = getDb()
-  const rows = await db
-    .select({
-      code: courses.code,
-      title: courses.title,
-      creditPoints: courses.creditPoints,
-      aqfLevel: courses.aqfLevel,
-      type: courses.type,
-    })
-    .from(courses)
-    .where(and(eq(courses.year, year), sql`${courses.creditPoints} > 0`))
-    .orderBy(asc(courses.title))
-  return rows.map((r) => ({
-    code: r.code,
-    title: r.title,
-    creditPoints: r.creditPoints ?? 0,
-    aqfLevel: r.aqfLevel,
-    type: r.type,
-  }))
-}
-export const listAllCourses = cacheHandbook(_listAllCourses, "listAllCourses")
+export const listAllUnits = cacheHandbook(_listAllUnits)
 
 export interface PublicUnit {
   year: string
@@ -289,10 +253,7 @@ async function _fetchPublicUnit(
     partOfAreasOfStudy,
   }
 }
-export const fetchPublicUnit = cacheHandbook(
-  _fetchPublicUnit,
-  "fetchPublicUnit"
-)
+export const fetchPublicUnit = cacheHandbook(_fetchPublicUnit)
 
 export interface PublicCourse {
   year: string
@@ -400,10 +361,7 @@ async function _fetchPublicCourse(
     areasOfStudy: areasOfStudyList,
   }
 }
-export const fetchPublicCourse = cacheHandbook(
-  _fetchPublicCourse,
-  "fetchPublicCourse"
-)
+export const fetchPublicCourse = cacheHandbook(_fetchPublicCourse)
 
 async function _listMostRecentYear(): Promise<string> {
   const db = getDb()
@@ -413,10 +371,7 @@ async function _listMostRecentYear(): Promise<string> {
     .orderBy(asc(courses.year))
   return rows.at(-1)?.year ?? HANDBOOK_YEAR
 }
-export const listMostRecentYear = cacheHandbook(
-  _listMostRecentYear,
-  "listMostRecentYear"
-)
+export const listMostRecentYear = cacheHandbook(_listMostRecentYear)
 
 export async function searchUnitsForListing(
   query: string,

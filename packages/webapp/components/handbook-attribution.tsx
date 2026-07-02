@@ -7,9 +7,9 @@
  *   2. The text is sourced from Monash's public handbook; the
  *      authoritative entry lives at handbook.monash.edu.
  *
- * Rendered at the bottom of canonical entity pages (/units/[code],
- * /courses/[code]) so anyone landing there from a search engine sees
- * the disclaimer alongside the synopsis/overview.
+ * Rendered at the bottom of the /tree workbench so anyone reading the
+ * entity facts panel sees the disclaimer alongside the
+ * synopsis/overview.
  */
 export function HandbookAttribution({ year }: { year: string }) {
   return (

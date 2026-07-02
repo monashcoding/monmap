@@ -84,10 +84,17 @@ export default async function TreePage({
   // course resolved the page renders an EmptyState prompting the user
   // to pick one, rather than silently landing on a hardcoded default.
   const initialMode: TreeMode = params.unit ? "unit" : "course"
+  // Unit mode defaults to "both": a redirected /units/[code] link (the
+  // retired canonical pages 308 here) should show the full neighbourhood
+  // of the unit, same as those pages did. Course mode keeps "upstream".
   const initialDirection: TreeDirection =
-    params.direction === "downstream" || params.direction === "both"
+    params.direction === "upstream" ||
+    params.direction === "downstream" ||
+    params.direction === "both"
       ? params.direction
-      : "upstream"
+      : initialMode === "unit"
+        ? "both"
+        : "upstream"
   const resolvedCourse =
     initialMode === "course"
       ? (params.course ?? activePlan?.courseCode ?? null)
@@ -121,7 +128,7 @@ export default async function TreePage({
 
   // Curated entry-level units to surface on the empty-state facts
   // card. First 18 L1 units (sorted by code) covers FIT / MTH / ENG /
-  // BIO / CHM and gives Googlebot a fan-out of anchor links from /tree.
+  // BIO / CHM — quick entry points into the graph.
   const featured = allUnits
     .filter((u) => u.level === "1")
     .slice(0, 18)

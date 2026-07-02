@@ -11,9 +11,9 @@ import {
   userPlan,
 } from "@monmap/db"
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
-import { unstable_cache } from "next/cache"
 
 import { getDb, HANDBOOK_YEAR } from "./client.ts"
+import { cacheHandbook } from "./memo.ts"
 import {
   extractEmbeddedSpecialisations,
   extractRequirementGroups,
@@ -43,36 +43,12 @@ import type { TreeDirection, TreeEdge, TreeGraphRaw } from "../tree/types.ts"
  * — start year drives everything, matching MonPlan's pragmatic model.
  */
 
-/**
- * Handbook data is static between ingest runs — wrap reads in the
- * Next data cache. Revalidate daily as a safety net; `revalidateTag`
- * on the `handbook` tag (e.g. from the ingest CLI hitting an API route)
- * busts everything atomically. Note: results must be JSON-serializable,
- * so functions that build `Map` returns cache their row-array form and
- * rebuild the Map in the outer (uncached) function.
- */
-const HANDBOOK_TAG = "handbook"
-const HANDBOOK_REVALIDATE = 60 * 60 * 24
-
-function cacheHandbook<Args extends readonly unknown[], R>(
-  fn: (...args: Args) => Promise<R>,
-  key: string
-): (...args: Args) => Promise<R> {
-  return unstable_cache(fn, [key], {
-    tags: [HANDBOOK_TAG],
-    revalidate: HANDBOOK_REVALIDATE,
-  })
-}
-
 async function _listAvailableYears(): Promise<string[]> {
   const db = getDb()
   const rows = await db.selectDistinct({ year: courses.year }).from(courses)
   return rows.map((r) => r.year).sort()
 }
-export const listAvailableYears = cacheHandbook(
-  _listAvailableYears,
-  "listAvailableYears"
-)
+export const listAvailableYears = cacheHandbook(_listAvailableYears)
 
 async function _listCoursesForPicker(
   search: string | null,
@@ -110,10 +86,7 @@ async function _listCoursesForPicker(
     overview: r.overview,
   }))
 }
-export const listCoursesForPicker = cacheHandbook(
-  _listCoursesForPicker,
-  "listCoursesForPicker"
-)
+export const listCoursesForPicker = cacheHandbook(_listCoursesForPicker)
 
 /**
  * Load a course plus the AoS it offers. Groups edges by (year, code)
@@ -364,10 +337,7 @@ async function _fetchCourseWithAoS(
     componentCourses,
   }
 }
-export const fetchCourseWithAoS = cacheHandbook(
-  _fetchCourseWithAoS,
-  "fetchCourseWithAoS"
-)
+export const fetchCourseWithAoS = cacheHandbook(_fetchCourseWithAoS)
 
 /**
  * Convert curriculum-tree embedded specialisations into virtual
@@ -578,10 +548,7 @@ export async function fetchUnitsByCode(
 ): Promise<PlannerUnit[]> {
   return _fetchUnitsByCodeCached([...codes].sort(), year)
 }
-const _fetchUnitsByCodeCached = cacheHandbook(
-  _fetchUnitsByCode,
-  "fetchUnitsByCode"
-)
+const _fetchUnitsByCodeCached = cacheHandbook(_fetchUnitsByCode)
 
 async function _searchUnits(
   query: string,
@@ -620,7 +587,7 @@ async function _searchUnits(
     school: r.school,
   }))
 }
-export const searchUnits = cacheHandbook(_searchUnits, "searchUnits")
+export const searchUnits = cacheHandbook(_searchUnits)
 
 /**
  * "Smart search" candidate generation: run the same text match as
@@ -694,10 +661,7 @@ async function _fetchOfferingsRows(
     periodKind: classifyTeachingPeriod(r.teachingPeriod),
   }))
 }
-const _fetchOfferingsRowsCached = cacheHandbook(
-  _fetchOfferingsRows,
-  "fetchOfferingsRows"
-)
+const _fetchOfferingsRowsCached = cacheHandbook(_fetchOfferingsRows)
 export async function fetchOfferingsForCodes(
   codes: readonly string[],
   year: string = HANDBOOK_YEAR
@@ -737,10 +701,7 @@ async function _fetchRequisitesRows(
     },
   }))
 }
-const _fetchRequisitesRowsCached = cacheHandbook(
-  _fetchRequisitesRows,
-  "fetchRequisitesRows"
-)
+const _fetchRequisitesRowsCached = cacheHandbook(_fetchRequisitesRows)
 export async function fetchRequisitesForCodes(
   codes: readonly string[],
   year: string = HANDBOOK_YEAR
@@ -782,10 +743,7 @@ async function _fetchEnrolmentRulesRows(
       )
     )
 }
-const _fetchEnrolmentRulesRowsCached = cacheHandbook(
-  _fetchEnrolmentRulesRows,
-  "fetchEnrolmentRulesRows"
-)
+const _fetchEnrolmentRulesRowsCached = cacheHandbook(_fetchEnrolmentRulesRows)
 export async function fetchEnrolmentRulesForCodes(
   codes: readonly string[],
   year: string = HANDBOOK_YEAR
@@ -852,10 +810,7 @@ async function _fetchEquivalentsRows(
     (r) => ({ code: r.code, equivalent: r.equivalent })
   )
 }
-const _fetchEquivalentsRowsCached = cacheHandbook(
-  _fetchEquivalentsRows,
-  "fetchEquivalentsRows"
-)
+const _fetchEquivalentsRowsCached = cacheHandbook(_fetchEquivalentsRows)
 
 /**
  * For each requested code, the codes it is equivalent to (same content,
@@ -1013,10 +968,7 @@ async function _fetchCoursesMeta(
     school: r.school,
   }))
 }
-const _fetchCoursesMetaCached = cacheHandbook(
-  _fetchCoursesMeta,
-  "fetchCoursesMeta"
-)
+const _fetchCoursesMetaCached = cacheHandbook(_fetchCoursesMeta)
 export async function fetchCoursesMeta(
   pairs: Array<{ code: string; year: string }>
 ): Promise<CourseMeta[]> {
@@ -1041,8 +993,7 @@ async function _fetchUnitCreditPointsBatch(
   return Object.fromEntries(rows.map((r) => [r.code, r.creditPoints ?? 6]))
 }
 const _fetchUnitCreditPointsBatchCached = cacheHandbook(
-  _fetchUnitCreditPointsBatch,
-  "fetchUnitCreditPointsBatch"
+  _fetchUnitCreditPointsBatch
 )
 export async function fetchUnitCreditPointsBatch(
   codes: string[],
@@ -1402,10 +1353,7 @@ async function _expandRequisiteGraph(
  * closure, so a UI can render equivalent-unit hints without expanding
  * the closure across prohibitions.
  */
-export const expandRequisiteGraph = cacheHandbook(
-  _expandRequisiteGraph,
-  "expandRequisiteGraph"
-)
+export const expandRequisiteGraph = cacheHandbook(_expandRequisiteGraph)
 
 /**
  * Build the seed unit set for a course (+ optional AoS), then expand
@@ -1461,7 +1409,4 @@ async function _expandCourseClosure(
   return _expandRequisiteGraph(seeds, year, "upstream", maxDepth)
 }
 
-export const expandCourseClosure = cacheHandbook(
-  _expandCourseClosure,
-  "expandCourseClosure"
-)
+export const expandCourseClosure = cacheHandbook(_expandCourseClosure)

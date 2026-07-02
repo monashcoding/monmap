@@ -1,8 +1,6 @@
 /**
  * Server-side helper that loads everything <TreeView> needs to render
- * its initial graph. Used by the open-ended /tree page and by the
- * canonical /units/[code] and /courses/[code] embeds — same payload
- * shape either way.
+ * its initial graph. Used by the /tree page for its first paint.
  */
 import {
   expandCourseClosure,

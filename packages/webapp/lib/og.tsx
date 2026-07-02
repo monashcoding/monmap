@@ -1,9 +1,9 @@
 /**
- * Shared shell for OG images. The home page, /units/[code], and
- * /courses/[code] all render social-share cards on the same gradient
- * background with the same brand bug — only the headline text and the
- * subtitle change. Centralising here keeps the three callers identical
- * so a logo / colour tweak lands everywhere at once.
+ * Shared shell for OG images. Only the site-wide card at
+ * app/opengraph-image.tsx renders it today (the per-entity cards went
+ * away with the /units/[code] and /courses/[code] pages), but the
+ * shell stays layout-agnostic: headline text, subtitle and chips are
+ * all props.
  *
  * Returns a `ReactElement` plus the font byte arrays — the calling
  * route is expected to wrap with `new ImageResponse(...)` so the
