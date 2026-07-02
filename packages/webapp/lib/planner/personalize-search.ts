@@ -133,6 +133,11 @@ export function buildPersonalSignals(
     for (const cu of course.courseUnits) {
       aosWeight.set(cu.code, Math.max(aosWeight.get(cu.code) ?? 0, 1.0))
     }
+    for (const comp of course.componentCourses) {
+      for (const cu of comp.courseUnits) {
+        aosWeight.set(cu.code, Math.max(aosWeight.get(cu.code) ?? 0, 1.0))
+      }
+    }
     for (const aos of course.areasOfStudy) {
       const w = aosKindWeight(aos.kind)
       for (const u of aos.units) {
@@ -145,6 +150,7 @@ export function buildPersonalSignals(
   if (course) {
     const groupLists = [
       course.courseRequirements,
+      ...course.componentCourses.map((c) => c.courseRequirements),
       ...course.areasOfStudy.map((a) => a.requirements),
     ]
     for (const groups of groupLists) {

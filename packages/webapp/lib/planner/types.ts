@@ -119,6 +119,15 @@ export interface PlannerAreaOfStudy {
    * named top-level section. Used to label per-degree specialisation pickers.
    */
   componentLabel?: string
+  /**
+   * For double degrees, the course code of the component degree this AoS
+   * belongs to (e.g. "C2001" for a CS specialisation inside S2004). The
+   * structural join key to `PlannerCourseComponent.courseCode` — prefer
+   * it over comparing `componentLabel` display strings, which differ in
+   * case and trailing whitespace between the curriculum tree and the
+   * sub-course refs.
+   */
+  componentCourseCode?: string
   creditPoints: number | null
   /**
    * Every unit listed by the AoS, regardless of whether it's required

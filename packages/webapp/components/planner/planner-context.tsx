@@ -345,6 +345,9 @@ export function PlannerProvider({
             ...new Set([
               ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
               ...c.courseUnits.map((u) => u.code),
+              ...c.componentCourses.flatMap((cc) =>
+                cc.courseUnits.map((u) => u.code)
+              ),
             ]),
           ]
           const res = await hydrateUnitsAction(codes, savedYear)
@@ -634,6 +637,9 @@ export function PlannerProvider({
               ...new Set([
                 ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
                 ...c.courseUnits.map((u) => u.code),
+                ...c.componentCourses.flatMap((cc) =>
+                  cc.courseUnits.map((u) => u.code)
+                ),
               ]),
             ]
             const res = await hydrateUnitsAction(codes, yearForFetch)
@@ -689,6 +695,9 @@ export function PlannerProvider({
               ...new Set([
                 ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
                 ...c.courseUnits.map((u) => u.code),
+                ...c.componentCourses.flatMap((cc) =>
+                  cc.courseUnits.map((u) => u.code)
+                ),
               ]),
             ]
             const res = await hydrateUnitsAction(codes, year)
@@ -775,6 +784,9 @@ export function PlannerProvider({
               ...new Set([
                 ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
                 ...c.courseUnits.map((u) => u.code),
+                ...c.componentCourses.flatMap((cc) =>
+                  cc.courseUnits.map((u) => u.code)
+                ),
               ]),
             ]
             const res = await hydrateUnitsAction(codes, targetYear)

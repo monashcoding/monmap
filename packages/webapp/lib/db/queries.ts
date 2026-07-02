@@ -134,13 +134,149 @@ async function _fetchCourseWithAoS(
     course.embeddedSpecialisations ??
     extractEmbeddedSpecialisations(course.curriculumStructure)
 
-  // Collect every code that needs a validity check in one round-trip.
+  // Double-degree component refs. Refs that share a component title are
+  // "pick one of these programs" alternatives (A6039 lists six partner
+  // programs under one "Indonesian programs" container, M6041 seven
+  // under "Elective studies") — a card per ref would load N full course
+  // templates. Only distinctly-titled refs are true degree components
+  // (BSc + BCS, Arts + Education, ...).
+  const subCourseRefs =
+    course.subCourseRefs ?? extractSubCourseRefs(course.curriculumStructure)
+  const refTitle = (r: { componentTitle: string }) => r.componentTitle.trim()
+  const refTitleCounts = new Map<string, number>()
+  for (const r of subCourseRefs)
+    refTitleCounts.set(refTitle(r), (refTitleCounts.get(refTitle(r)) ?? 0) + 1)
+  const componentRefs = subCourseRefs.filter(
+    (r) => r.courseCode !== code && refTitleCounts.get(refTitle(r)) === 1
+  )
+  const componentCodes = componentRefs.map((r) => r.courseCode)
+
+  // One links query covers the course itself AND its components: since
+  // ~2023 CourseLoop attaches a double degree's majors/minors to the
+  // component courses (S2000, C2001), not to the double (S2004) — so a
+  // double degree with zero direct links must still surface its
+  // components' AoS.
+  const [subCourseRows, links] = await Promise.all([
+    componentCodes.length > 0
+      ? db
+          .select({
+            code: courses.code,
+            title: courses.title,
+            creditPoints: courses.creditPoints,
+            requirementGroups: courses.requirementGroups,
+            embeddedSpecialisations: courses.embeddedSpecialisations,
+            curriculumStructure: courses.curriculumStructure,
+          })
+          .from(courses)
+          .where(
+            and(eq(courses.year, year), inArray(courses.code, componentCodes))
+          )
+      : Promise.resolve([]),
+    db
+      .select({
+        ownerCode: courseAreasOfStudy.courseCode,
+        aosCode: courseAreasOfStudy.aosCode,
+        aosYear: courseAreasOfStudy.aosYear,
+        kind: courseAreasOfStudy.kind,
+        relationshipLabel: courseAreasOfStudy.relationshipLabel,
+        title: areasOfStudy.title,
+        creditPoints: areasOfStudy.creditPoints,
+        curriculumStructure: areasOfStudy.curriculumStructure,
+      })
+      .from(courseAreasOfStudy)
+      .leftJoin(
+        areasOfStudy,
+        and(
+          eq(courseAreasOfStudy.aosYear, areasOfStudy.year),
+          eq(courseAreasOfStudy.aosCode, areasOfStudy.code)
+        )
+      )
+      .where(
+        and(
+          eq(courseAreasOfStudy.courseYear, year),
+          inArray(courseAreasOfStudy.courseCode, [code, ...componentCodes])
+        )
+      ),
+  ])
+  const subCourseMap = new Map(subCourseRows.map((r) => [r.code, r]))
+
+  const componentRawGroups = new Map<string, RequirementGroup[]>()
+  const componentEmbeddedSpecs = new Map<string, EmbeddedSpecialisation[]>()
+  for (const ref of componentRefs) {
+    const sub = subCourseMap.get(ref.courseCode)
+    componentRawGroups.set(
+      ref.courseCode,
+      sub
+        ? (sub.requirementGroups ??
+            extractRequirementGroups(
+              sub.curriculumStructure,
+              sub.creditPoints ?? 0
+            ))
+        : []
+    )
+    componentEmbeddedSpecs.set(
+      ref.courseCode,
+      sub
+        ? (sub.embeddedSpecialisations ??
+            extractEmbeddedSpecialisations(sub.curriculumStructure))
+        : []
+    )
+  }
+
+  // Build per-AoS requirement groups from each AoS's curriculum.
+  const aosGroups = new Map<string, RequirementGroup[]>()
+  for (const l of links) {
+    if (aosGroups.has(l.aosCode)) continue
+    aosGroups.set(
+      l.aosCode,
+      extractRequirementGroups(l.curriculumStructure, l.creditPoints ?? 0)
+    )
+  }
+
+  const aosCodes = [...new Set(links.map((l) => l.aosCode))]
+  const unitRows =
+    aosCodes.length > 0
+      ? await db
+          .select({
+            aosCode: areaOfStudyUnits.aosCode,
+            unitCode: areaOfStudyUnits.unitCode,
+            grouping: areaOfStudyUnits.grouping,
+          })
+          .from(areaOfStudyUnits)
+          .where(
+            and(
+              eq(areaOfStudyUnits.aosYear, year),
+              inArray(areaOfStudyUnits.aosCode, aosCodes)
+            )
+          )
+          .orderBy(areaOfStudyUnits.grouping, areaOfStudyUnits.unitCode)
+      : []
+
+  const unitsByAos = new Map<string, { code: string; grouping: string }[]>()
+  for (const u of unitRows) {
+    const list = unitsByAos.get(u.aosCode) ?? []
+    list.push({ code: u.unitCode, grouping: u.grouping })
+    unitsByAos.set(u.aosCode, list)
+  }
+
+  // Collect every code that needs a validity/offering check — course
+  // groups, embedded specs, component templates and their embedded
+  // specs, AoS groups, AoS unit lists — in one round-trip.
   const allCandidateCodes = new Set<string>()
   for (const g of rawCourseGroups)
     for (const c of g.options) allCandidateCodes.add(c)
   for (const spec of embeddedSpecs)
     for (const g of spec.requirements)
       for (const c of g.options) allCandidateCodes.add(c)
+  for (const groups of componentRawGroups.values())
+    for (const g of groups) for (const c of g.options) allCandidateCodes.add(c)
+  for (const specs of componentEmbeddedSpecs.values())
+    for (const spec of specs)
+      for (const g of spec.requirements)
+        for (const c of g.options) allCandidateCodes.add(c)
+  for (const groups of aosGroups.values())
+    for (const g of groups) for (const c of g.options) allCandidateCodes.add(c)
+  for (const u of unitRows) allCandidateCodes.add(u.unitCode)
 
   let valid = new Set<string>()
   let offered = new Set<string>()
@@ -187,114 +323,64 @@ async function _fetchCourseWithAoS(
     offered
   )
 
-  const links = await db
-    .select({
-      aosCode: courseAreasOfStudy.aosCode,
-      aosYear: courseAreasOfStudy.aosYear,
-      kind: courseAreasOfStudy.kind,
-      relationshipLabel: courseAreasOfStudy.relationshipLabel,
-      title: areasOfStudy.title,
-      creditPoints: areasOfStudy.creditPoints,
-      curriculumStructure: areasOfStudy.curriculumStructure,
-    })
-    .from(courseAreasOfStudy)
-    .leftJoin(
-      areasOfStudy,
-      and(
-        eq(courseAreasOfStudy.aosYear, areasOfStudy.year),
-        eq(courseAreasOfStudy.aosCode, areasOfStudy.code)
-      )
-    )
-    .where(
-      and(
-        eq(courseAreasOfStudy.courseYear, year),
-        eq(courseAreasOfStudy.courseCode, code)
-      )
-    )
-
-  if (links.length === 0) {
-    return {
-      year: course.year,
-      code: course.code,
-      title: course.title,
-      creditPoints: course.creditPoints ?? 0,
-      aqfLevel: course.aqfLevel,
-      type: course.type,
-      overview: course.overview,
-      areasOfStudy: virtualAos,
-      courseUnits,
-      courseRequirements,
-      componentCourses: [],
+  // Component courses' own embedded specialisations (e.g. C2001's
+  // Part D applied studies inside S2004) surface for the double degree
+  // too, tagged with the owning component. Codes stay namespaced by the
+  // component course (`C2001:part-d:...`) — the same code a student
+  // planning C2001 directly would have saved.
+  const componentVirtualAos: PlannerAreaOfStudy[] = []
+  for (const ref of componentRefs) {
+    const specs = componentEmbeddedSpecs.get(ref.courseCode) ?? []
+    for (const aos of buildEmbeddedAos(ref.courseCode, specs, valid, offered)) {
+      componentVirtualAos.push({
+        ...aos,
+        componentLabel: refTitle(ref),
+        componentCourseCode: ref.courseCode,
+      })
     }
   }
 
-  // Build per-AoS requirement groups from each AoS's curriculum.
-  const aosGroups = new Map<string, RequirementGroup[]>()
-  for (const l of links) {
-    if (aosGroups.has(l.aosCode)) continue
-    aosGroups.set(
-      l.aosCode,
-      extractRequirementGroups(l.curriculumStructure, l.creditPoints ?? 0)
-    )
-  }
-
-  const aosCodes = [...new Set(links.map((l) => l.aosCode))]
-  const unitRows = await db
-    .select({
-      aosCode: areaOfStudyUnits.aosCode,
-      unitCode: areaOfStudyUnits.unitCode,
-      grouping: areaOfStudyUnits.grouping,
-    })
-    .from(areaOfStudyUnits)
-    .where(
-      and(
-        eq(areaOfStudyUnits.aosYear, year),
-        inArray(areaOfStudyUnits.aosCode, aosCodes)
-      )
-    )
-    .orderBy(areaOfStudyUnits.grouping, areaOfStudyUnits.unitCode)
-
-  const unitsByAos = new Map<string, { code: string; grouping: string }[]>()
-  for (const u of unitRows) {
-    const list = unitsByAos.get(u.aosCode) ?? []
-    list.push({ code: u.unitCode, grouping: u.grouping })
-    unitsByAos.set(u.aosCode, list)
-  }
-
-  // Extend the offered set to cover AoS-sourced codes so their
-  // auto-load templates get the same no-offering filter.
-  const aosCandidateCodes = new Set<string>()
-  for (const u of unitRows) aosCandidateCodes.add(u.unitCode)
-  for (const groups of aosGroups.values())
-    for (const g of groups) for (const c of g.options) aosCandidateCodes.add(c)
-  const aosUnknown = [...aosCandidateCodes].filter((c) => !offered.has(c))
-  if (aosUnknown.length > 0) {
-    const rows = await db
-      .selectDistinct({ code: unitOfferings.unitCode })
-      .from(unitOfferings)
-      .where(
-        and(
-          eq(unitOfferings.year, year),
-          eq(unitOfferings.offered, true),
-          inArray(unitOfferings.unitCode, aosUnknown)
-        )
-      )
-    for (const r of rows) offered.add(r.code)
-  }
-
   // Pre-baked map of aosCode → depth-1 ancestor title (double-degree
-  // component labels). Old rows fall back to walking the tree.
+  // component labels) for AoS linked on the course itself. Old rows
+  // fall back to walking the tree.
+  const parentAosCodes = new Set(
+    links.filter((l) => l.ownerCode === code).map((l) => l.aosCode)
+  )
   const componentLabels: ReadonlyMap<string, string> = course.componentLabels
     ? new Map(Object.entries(course.componentLabels))
-    : buildComponentLabels(
-        course.curriculumStructure,
-        new Set(links.map((l) => l.aosCode))
-      )
+    : buildComponentLabels(course.curriculumStructure, parentAosCodes)
+  // Resolve a parent-linked AoS's component *course* from its label so
+  // the UI can join AoS to components structurally instead of comparing
+  // display strings (titles differ in case and trailing whitespace —
+  // "Computer science component" vs "Computer Science component ").
+  const refCodeByTitle = new Map(
+    componentRefs.map((r) => [refTitle(r).toLowerCase(), r.courseCode])
+  )
 
-  // De-duplicate course→AoS edges that share (code, kind) — first label wins
+  // De-duplicate course→AoS edges by aosCode; first edge wins. Edges
+  // linked on the course itself sort first — when an AoS is reachable
+  // both directly and via a component, the parent edge carries the
+  // double-degree-specific context.
   const byCode = new Map<string, PlannerAreaOfStudy>()
-  for (const l of links) {
+  const orderedLinks = [...links].sort(
+    (a, b) => (a.ownerCode === code ? 0 : 1) - (b.ownerCode === code ? 0 : 1)
+  )
+  for (const l of orderedLinks) {
     if (byCode.has(l.aosCode)) continue
+    const fromParent = l.ownerCode === code
+    const ref = fromParent
+      ? undefined
+      : componentRefs.find((r) => r.courseCode === l.ownerCode)
+    const componentLabel = fromParent
+      ? componentLabels.get(l.aosCode)
+      : ref
+        ? refTitle(ref)
+        : undefined
+    const componentCourseCode = fromParent
+      ? componentLabel
+        ? refCodeByTitle.get(componentLabel.trim().toLowerCase())
+        : undefined
+      : l.ownerCode
     const allUnits = unitsByAos.get(l.aosCode) ?? []
     const groups = aosGroups.get(l.aosCode) ?? []
     // Fall back to treating every listed unit as required if the AoS
@@ -313,7 +399,8 @@ async function _fetchCourseWithAoS(
       title: l.title ?? l.aosCode,
       kind: l.kind,
       relationshipLabel: l.relationshipLabel,
-      componentLabel: componentLabels.get(l.aosCode),
+      componentLabel,
+      componentCourseCode,
       creditPoints: l.creditPoints,
       units: allUnits,
       requiredUnits,
@@ -324,7 +411,7 @@ async function _fetchCourseWithAoS(
   // Append virtual (curriculum-tree-embedded) AoS — they coexist with
   // DB-linked AoS without conflict because real AoS use codes like
   // CSCYBSEC01 while virtual ones are namespaced as "C2001:part-d:...".
-  const combined = [...byCode.values(), ...virtualAos]
+  const combined = [...byCode.values(), ...virtualAos, ...componentVirtualAos]
   const orderedAos = combined.sort((a, b) => {
     if (a.kind !== b.kind) return kindOrder(a.kind) - kindOrder(b.kind)
     return a.title.localeCompare(b.title)
@@ -334,72 +421,27 @@ async function _fetchCourseWithAoS(
   // A component is NEVER silently dropped: an empty template (e.g.
   // D3001, whose units all come via specialisation AoS) still renders
   // as a card with `missingTemplate` — this was the "half my double
-  // degree is invisible" bug.
-  const subCourseRefs =
-    course.subCourseRefs ?? extractSubCourseRefs(course.curriculumStructure)
+  // degree is invisible" bug. Built unconditionally: courses whose AoS
+  // all hang off the components (every 2023+ double degree) used to
+  // bail out on `links.length === 0` before ever reaching this.
   const componentCourses: PlannerCourseComponent[] = []
-  if (subCourseRefs.length > 0) {
-    const subCourseCodes = subCourseRefs.map((r) => r.courseCode)
-    const subCourseRows = await db
-      .select({
-        code: courses.code,
-        title: courses.title,
-        creditPoints: courses.creditPoints,
-        requirementGroups: courses.requirementGroups,
-        curriculumStructure: courses.curriculumStructure,
-      })
-      .from(courses)
-      .where(and(eq(courses.year, year), inArray(courses.code, subCourseCodes)))
-
-    const subCourseMap = new Map(subCourseRows.map((r) => [r.code, r]))
-
-    for (const ref of subCourseRefs) {
-      const sub = subCourseMap.get(ref.courseCode)
-      const rawGroups = sub
-        ? (sub.requirementGroups ??
-          extractRequirementGroups(
-            sub.curriculumStructure,
-            sub.creditPoints ?? 0
-          ))
-        : []
-      let requirements: RequirementGroup[] = []
-      let componentUnits: { code: string; grouping: string }[] = []
-      if (rawGroups.length > 0) {
-        const candidateCodes = [...new Set(rawGroups.flatMap((g) => g.options))]
-        const [validRows, offeredRows] = await Promise.all([
-          db
-            .select({ code: units.code })
-            .from(units)
-            .where(
-              and(eq(units.year, year), inArray(units.code, candidateCodes))
-            ),
-          db
-            .selectDistinct({ code: unitOfferings.unitCode })
-            .from(unitOfferings)
-            .where(
-              and(
-                eq(unitOfferings.year, year),
-                eq(unitOfferings.offered, true),
-                inArray(unitOfferings.unitCode, candidateCodes)
-              )
-            ),
-        ])
-        const validSet = new Set(validRows.map((r) => r.code))
-        const offeredSet = new Set(offeredRows.map((r) => r.code))
-        requirements = filterGroups(rawGroups, validSet)
-        componentUnits = pickDefaultUnits(requirements).filter((u) =>
-          offeredSet.has(u.code)
-        )
-      }
-      componentCourses.push({
-        componentTitle: ref.componentTitle,
-        courseCode: ref.courseCode,
-        courseTitle: sub?.title ?? ref.courseCode,
-        courseUnits: componentUnits,
-        courseRequirements: requirements,
-        ...(requirements.length === 0 ? { missingTemplate: true } : {}),
-      })
+  for (const ref of componentRefs) {
+    const sub = subCourseMap.get(ref.courseCode)
+    const rawGroups = componentRawGroups.get(ref.courseCode) ?? []
+    let requirements: RequirementGroup[] = []
+    let componentUnits: { code: string; grouping: string }[] = []
+    if (rawGroups.length > 0) {
+      requirements = filterGroups(rawGroups, valid)
+      componentUnits = onlyOffered(pickDefaultUnits(requirements))
     }
+    componentCourses.push({
+      componentTitle: refTitle(ref),
+      courseCode: ref.courseCode,
+      courseTitle: sub?.title ?? ref.courseCode,
+      courseUnits: componentUnits,
+      courseRequirements: requirements,
+      ...(requirements.length === 0 ? { missingTemplate: true } : {}),
+    })
   }
 
   return {
