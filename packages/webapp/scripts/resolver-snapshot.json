@@ -19,16 +19,16 @@
         "missingTemplate": false
       }
     ],
-    "aosTotal": 98,
+    "aosTotal": 94,
     "aosByKind": {
-      "major": 29,
-      "extended_major": 23,
+      "major": 28,
+      "extended_major": 21,
       "specialisation": 17,
-      "minor": 24,
+      "minor": 23,
       "elective": 5
     },
     "aosByComponent": {
-      "S2000": 84,
+      "S2000": 80,
       "C2001": 14
     }
   },
@@ -52,15 +52,15 @@
         "missingTemplate": false
       }
     ],
-    "aosTotal": 97,
+    "aosTotal": 93,
     "aosByKind": {
-      "major": 28,
-      "extended_major": 22,
+      "major": 27,
+      "extended_major": 20,
       "specialisation": 19,
-      "minor": 28
+      "minor": 27
     },
     "aosByComponent": {
-      "S2000": 81,
+      "S2000": 77,
       "C2001": 16
     }
   },
