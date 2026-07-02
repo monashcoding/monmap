@@ -12,8 +12,7 @@
  *      preview deploys don't pollute Google's index.
  *   3. VERCEL_URL — the per-deployment hostname. Used only as a last
  *      resort (e.g. previews where canonicals don't matter).
- *   4. BETTER_AUTH_URL — local-dev fallback (we already set this).
- *   5. localhost.
+ *   4. localhost.
  */
 function resolveSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL
@@ -26,8 +25,6 @@ function resolveSiteUrl(): string {
 
   const vercel = process.env.VERCEL_URL ?? process.env.NEXT_PUBLIC_VERCEL_URL
   if (vercel) return withProtocol(vercel)
-
-  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL
 
   return "http://localhost:3000"
 }
