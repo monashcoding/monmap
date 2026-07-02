@@ -1,17 +1,18 @@
--- Drop the Better Auth session/account/verification tables.
+-- Originally: DROP TABLE session / account / verification, on the
+-- premise that the MAC-auth cutover left them dead. Converted to a
+-- no-op before it was ever applied, because the premise is wrong on
+-- the shared database: `session` was still receiving live browser
+-- sessions (multiple devices, latest 2026-07-02 09:05 UTC) when this
+-- ledger entry came up for application. Either a deployment still runs
+-- Better Auth, or the central MAC identity service shares this
+-- database and owns these tables.
 --
--- MonMap has cut over to the central MAC identity service
--- (auth.monashcoding.com): it no longer mints sessions or performs OAuth,
--- so these three tables are now dead. Identity is owned centrally and
--- verified per request from a JWT (see webapp/lib/mac-auth.ts).
+-- Do NOT resurrect the drops here — this file's hash is what the
+-- migration ledger records. Once whatever is writing sessions is
+-- identified and stopped (or confirmed to own its own schema), issue
+-- the drops as a NEW migration.
 --
--- The `user` table is intentionally KEPT as a local mirror so the foreign
--- keys from `user_plan` / `user_grade` stay intact — its ids already equal
--- the central `macUserId`, so no user data moves. `getCurrentUser()`
--- upserts a mirror row on first sight.
---
--- Each table owns its own FK to `user` (onDelete cascade); dropping the
--- table drops that constraint. Nothing else references these tables.
-DROP TABLE IF EXISTS "session";--> statement-breakpoint
-DROP TABLE IF EXISTS "account";--> statement-breakpoint
-DROP TABLE IF EXISTS "verification";
+-- (Historical intent, kept for context: the `user` table stays as a
+-- local mirror so user_plan / user_grade FKs remain intact; its ids
+-- equal the central macUserId.)
+SELECT 1;

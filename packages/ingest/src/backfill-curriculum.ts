@@ -17,7 +17,7 @@
  * Checked-in curriculum overrides are re-applied after extraction, so
  * a recompute can never wipe a hand fix.
  */
-import { and, eq, inArray, isNull, isNotNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, isNotNull, or } from "drizzle-orm";
 import {
   applyCurriculumOverrides,
   createDb,
@@ -26,6 +26,7 @@ import {
   courses,
   extractComponentLabels,
   extractEmbeddedSpecialisations,
+  extractExcludedAos,
   extractRequirementGroups,
   extractSubCourseRefs,
 } from "@monmap/db";
@@ -60,7 +61,13 @@ const rows = await db
         ? isNotNull(courses.curriculumStructure)
         : and(
             isNotNull(courses.curriculumStructure),
-            isNull(courses.requirementGroups),
+            // A row needs backfilling when any precompute column is
+            // missing — requirement_groups for pre-0006 rows,
+            // excluded_aos for pre-0010 rows.
+            or(
+              isNull(courses.requirementGroups),
+              isNull(courses.excludedAos),
+            ),
           ),
       ...(onlyYear ? [eq(courses.year, onlyYear)] : []),
     ),
@@ -91,6 +98,7 @@ for (const row of rows) {
         embeddedSpecialisations: extractEmbeddedSpecialisations(structure),
         subCourseRefs: extractSubCourseRefs(structure),
         componentLabels: extractComponentLabels(structure),
+        excludedAos: extractExcludedAos(structure),
       })
       .where(and(eq(courses.year, row.year), eq(courses.code, row.code)));
   }

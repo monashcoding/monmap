@@ -8,6 +8,7 @@
 export {
   type RequirementGroup,
   type EmbeddedSpecialisation,
+  type ExcludedAos,
   extractRequirementGroups,
   pickDefaultUnits,
 } from "@monmap/db"
