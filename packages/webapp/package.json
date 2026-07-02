@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "test": "node --test 'lib/planner/*.test.ts' 'lib/tree/*.test.ts'",
+    "test": "node --test 'lib/planner/*.test.ts' 'lib/tree/*.test.ts' 'lib/*.test.ts'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
     "drizzle-orm": "^0.38.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
+    "jose": "^6.2.3",
     "lucide-react": "^1.8.0",
     "next": "16.1.7",
     "next-themes": "^0.4.6",

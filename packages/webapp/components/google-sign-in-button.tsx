@@ -38,7 +38,18 @@ export function GoogleSignInButton({
           provider: "google",
           callback_url: callbackURL,
         })
-        void signIn.social({ provider: "google", callbackURL })
+        // The central service returns the browser here after login, so it
+        // needs an absolute URL back into MonMap (a relative "/" would
+        // resolve against the auth origin). Resolve against the current
+        // origin, tolerating callers that already pass an absolute URL.
+        const absoluteCallback = new URL(
+          callbackURL,
+          window.location.origin
+        ).toString()
+        void signIn.social({
+          provider: "google",
+          callbackURL: absoluteCallback,
+        })
       }}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white text-zinc-800 shadow-sm transition-colors",

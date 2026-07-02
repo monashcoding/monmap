@@ -64,6 +64,13 @@
       "when": 1750291200000,
       "tag": "0008_patch_course_requirement_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1751414400000,
+      "tag": "0009_drop_better_auth_tables",
+      "breakpoints": true
     }
   ]
 }

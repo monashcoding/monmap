@@ -352,12 +352,21 @@ export const areaOfStudyUnits = pgTable(
 );
 
 /* ------------------------------------------------------------------ *
- * Better Auth tables
+ * User mirror (central MAC identity)
  *
- * Mirrors `npx @better-auth/cli generate`'s pg output. Better Auth
- * owns these table/column names and types — don't rename them or sign-
- * in silently breaks. Regenerate after upgrading better-auth in case
- * the upstream schema picks up new columns.
+ * Identity is owned by the central MAC auth service; MonMap no longer
+ * mints sessions or performs OAuth, so the Better Auth `session`,
+ * `account`, and `verification` tables were dropped (see the migration
+ * that removes them).
+ *
+ * `user` is kept only as a local mirror so the FKs from `user_plan` /
+ * `user_grade` remain intact. Its `id` equals the token's `macUserId`
+ * (== the legacy Better Auth id — the 405 existing rows were migrated
+ * with ids preserved). `getCurrentUser()` upserts a row on first sight
+ * (onConflictDoNothing) keyed by `macUserId`; `name`/`image` are
+ * best-effort display fallbacks (the live name/image come from the
+ * central session), so nothing here needs to stay in lockstep with the
+ * central schema.
  * ------------------------------------------------------------------ */
 
 export const user = pgTable("user", {
@@ -372,67 +381,6 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
-
-export const session = pgTable(
-  "session",
-  {
-    id: text().primaryKey(),
-    expiresAt: timestamp().notNull(),
-    token: text().notNull().unique(),
-    createdAt: timestamp().notNull().defaultNow(),
-    updatedAt: timestamp()
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
-    ipAddress: text(),
-    userAgent: text(),
-    userId: text()
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-  },
-  (t) => [index("session_user_id_idx").on(t.userId)],
-);
-
-export const account = pgTable(
-  "account",
-  {
-    id: text().primaryKey(),
-    accountId: text().notNull(),
-    providerId: text().notNull(),
-    userId: text()
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    accessToken: text(),
-    refreshToken: text(),
-    idToken: text(),
-    accessTokenExpiresAt: timestamp(),
-    refreshTokenExpiresAt: timestamp(),
-    scope: text(),
-    password: text(),
-    createdAt: timestamp().notNull().defaultNow(),
-    updatedAt: timestamp()
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
-  },
-  (t) => [index("account_user_id_idx").on(t.userId)],
-);
-
-export const verification = pgTable(
-  "verification",
-  {
-    id: text().primaryKey(),
-    identifier: text().notNull(),
-    value: text().notNull(),
-    expiresAt: timestamp().notNull(),
-    createdAt: timestamp().notNull().defaultNow(),
-    updatedAt: timestamp()
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
-  },
-  (t) => [index("verification_identifier_idx").on(t.identifier)],
-);
 
 /* ------------------------------------------------------------------ *
  * Application tables (not Better Auth)

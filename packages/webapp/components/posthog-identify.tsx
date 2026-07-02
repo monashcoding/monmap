@@ -5,10 +5,11 @@ import posthog from "posthog-js"
 
 import { useSession } from "@/lib/auth-client"
 
-// Bridges Better Auth session → PostHog identity. Without this, client
-// captures use the anonymous device id while server captures use the
-// real user id, so a signed-in user's events never merge into one
-// profile. Mounted once in the root layout.
+// Bridges the MAC session (via useSession) → PostHog identity. The id is
+// the central macUserId. Without this, client captures use the anonymous
+// device id while server captures use the real user id, so a signed-in
+// user's events never merge into one profile. Mounted once in the root
+// layout.
 export function PostHogIdentify() {
   const { data, isPending } = useSession()
   const lastIdRef = useRef<string | null>(null)
