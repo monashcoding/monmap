@@ -1,0 +1,1652 @@
+{
+    "code": "F2010",
+    "year": "2026",
+    "title": "Bachelor of Design",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/F2010",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 144,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "6a17770bc3bd2e5040721d4bb00131eb",
+            "value": "F2010"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "a7858bcf9757fe104301b137f053af9a",
+            "value": "a7858bcf9757fe104301b137f053af9a"
+        },
+        "container": [
+            {
+                "cl_id": "3d3d959447f7f250448f409b136d4378",
+                "order": "300",
+                "title": "Part C. Studio practices",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "713d959447f7f250448f409b136d4378",
+                        "order": "100",
+                        "title": "Collaborative design",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "For this specialisation, you must complete 48 credit points, with at least 36 credit points (three units) from the following list.<br /><br />Note 1: You must complete Studio 4 and Studio 5 units in your chosen specialisation.<br />Note 2: You may replace either the Studio 2 or Studio 3 unit below with the equivalent unit from an alternative specialisation.<br />Note 3: You may replace either the Studio 4 or Studio 5 unit below with the Global design studio unit (DGN3000). Refer to the Global design studio for more information on eligibility.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "313d959447f7f250448f409b136d4379",
+                                "order": "300",
+                                "abbr_name": "COLLAB DES STUD 5",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b926499c97ffae104301b137f053af6e",
+                                    "value": "Unit: COL3002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "713d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Collaborative design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/COL3002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "COL3002",
+                                "academic_item_name": "Collaborative design studio 5",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "3d3d959447f7f250448f409b136d4379",
+                                "order": "200",
+                                "abbr_name": "COLLAB DES STUD 4",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "8a3fa5789701bed04301b137f053aff5",
+                                    "value": "Unit: COL3001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "713d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Collaborative design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/COL3001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "COL3001",
+                                "academic_item_name": "Collaborative design studio 4",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "b13d959447f7f250448f409b136d4379",
+                                "order": "100",
+                                "abbr_name": "COLLAB DES STUDIO 3",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "119eadf49701bed04301b137f053af87",
+                                    "value": "Unit: COL2001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "713d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Collaborative design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/COL2001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "COL2001",
+                                "academic_item_name": "Collaborative design studio 3",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "fd3d959447f7f250448f409b136d4379",
+                                "order": "0",
+                                "abbr_name": "COLLAB DES STUD 2",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "ceab845c9797a6104301b137f053af7d",
+                                    "value": "Unit: COL1002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "713d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Collaborative design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/COL1002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "COL1002",
+                                "academic_item_name": "Collaborative design studio 2",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "12"
+                            }
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "3d3d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part C. Studio practices"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "7d3d959447f7f250448f409b136d4378",
+                        "order": "300",
+                        "title": "Industrial design",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "For this specialisation, you must complete 48 credit points, with at least 36 credit points (three units) from the following list.<br /><br />Note 1: You must complete Studio 4 and Studio 5 units in your chosen specialisation.<br />Note 2: You may replace either the Studio 2 or Studio 3 unit below with the equivalent unit from an alternative specialisation.<br />Note 3: You may replace either the Studio 4 or Studio 5 unit below with the Global design studio unit (DGN3000). Refer to the Global design studio for more information on eligibility.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "353d959447f7f250448f409b136d4378",
+                                "order": "0",
+                                "abbr_name": "INDUST DES STUDIO 2",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "e75604549797a6104301b137f053af7d",
+                                    "value": "Unit: IDN1002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "7d3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Industrial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/IDN1002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "IDN1002",
+                                "academic_item_name": "Industrial design studio 2",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "793d959447f7f250448f409b136d4378",
+                                "order": "100",
+                                "abbr_name": "IND DES STUDIO 3",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "c5c5edb647693690448f409b136d430f",
+                                    "value": "Unit: IDN2001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "7d3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Industrial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/IDN2001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "IDN2001",
+                                "academic_item_name": "Industrial design studio 3",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "b53d959447f7f250448f409b136d4378",
+                                "order": "200",
+                                "abbr_name": "IND DES STUDIO 4",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "5a234fe997197a104301b137f053af9d",
+                                    "value": "Unit: IDN3001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "7d3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Industrial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/IDN3001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "IDN3001",
+                                "academic_item_name": "Industrial design studio 4",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "f93d959447f7f250448f409b136d4379",
+                                "order": "300",
+                                "abbr_name": "INDUST DES STUDIO 5",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "9475951347c03690448f409b136d43dc",
+                                    "value": "Unit: IDN3002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "7d3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Industrial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/IDN3002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "IDN3002",
+                                "academic_item_name": "Industrial design studio 5",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "12"
+                            }
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "3d3d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part C. Studio practices"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "bd3d959447f7f250448f409b136d4379",
+                        "order": "400",
+                        "title": "Spatial design",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "For this specialisation, you must complete 48 credit points, with at least 36 credit points (three units) from the following list.<br /><br />Note 1: You must complete Studio 4 and Studio 5 units in your chosen specialisation.<br />Note 2: You may replace either the Studio 2 or Studio 3 unit below with the equivalent unit from an alternative specialisation.<br />Note 3: You may replace either the Studio 4 or Studio 5 unit below with the Global design studio unit (DGN3000). Refer to the Global design studio for more information on eligibility.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "b13d959447f7f250448f409b136d4378",
+                                "order": "300",
+                                "abbr_name": "SPATDESSTUD5",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "9aa64ddc97ffae104301b137f053af68",
+                                    "value": "Unit: SDN3002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "bd3d959447f7f250448f409b136d4379",
+                                    "value": "Curriculum Structure Container: Spatial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/SDN3002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "SDN3002",
+                                "academic_item_name": "Spatial design studio 5",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "b13d959447f7f250448f409b136d437a",
+                                "order": "100",
+                                "abbr_name": "SPATDESSTUD3",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "2a4669fa47693690448f409b136d4321",
+                                    "value": "Unit: SDN2001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "bd3d959447f7f250448f409b136d4379",
+                                    "value": "Curriculum Structure Container: Spatial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/SDN2001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "SDN2001",
+                                "academic_item_name": "Spatial design studio 3",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "f53d959447f7f250448f409b136d4379",
+                                "order": "200",
+                                "abbr_name": "SPATDESSTUD4",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "4fb6adfe47693690448f409b136d432a",
+                                    "value": "Unit: SDN3001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "bd3d959447f7f250448f409b136d4379",
+                                    "value": "Curriculum Structure Container: Spatial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/SDN3001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "SDN3001",
+                                "academic_item_name": "Spatial design studio 4",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "fd3d959447f7f250448f409b136d4377",
+                                "order": "0",
+                                "abbr_name": "SPATDESSTUD2",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "2da31c9c97d7a6104301b137f053afbe",
+                                    "value": "Unit: SDN1002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "bd3d959447f7f250448f409b136d4379",
+                                    "value": "Curriculum Structure Container: Spatial design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/SDN1002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "SDN1002",
+                                "academic_item_name": "Spatial design studio 2",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "12"
+                            }
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "3d3d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part C. Studio practices"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "f53d959447f7f250448f409b136d4378",
+                        "order": "500",
+                        "title": "Global design studio",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "Global design studio (DGN3000) can be used to replace Studio 4 (COL3001/CDS3001/IDN3001/SDN3001) or Studio 5 (COL3002/CDS3002/IDN3002/SDN3002) in your chosen  specialisation. <br /><br />DGN3000 is only offered in Prato (Italy) and enrolment is via application and approval only.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "713d959447f7f250448f409b136d437a",
+                                "order": "0",
+                                "abbr_name": "Global Design Studio",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "3855460dc3326e1002fcfb777d013195",
+                                    "value": "Unit: DGN3000"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "f53d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Global design studio"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/DGN3000",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "DGN3000",
+                                "academic_item_name": "Global design studio",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01",
+                                "academic_item_credit_points": "12"
+                            }
+                        ],
+                        "credit_points": "0",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "3d3d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part C. Studio practices"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "fd3d959447f7f250448f409b136d4378",
+                        "order": "200",
+                        "title": "Communication design",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "For this specialisation, you must complete 48 credit points, with at least 36 credit points (three units) from the following list.<br /><br />Note 1: You must complete Studio 4 and Studio 5 units in your chosen specialisation.<br />Note 2: You may replace either the Studio 2 or Studio 3 unit below with the equivalent unit from an alternative specialisation.<br />Note 3: You may replace either the Studio 4 or Studio 5 unit below with the Global design studio unit (DGN3000). Refer to the Global design studio for more information on eligibility.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "353d959447f7f250448f409b136d4379",
+                                "order": "200",
+                                "abbr_name": "COMM DES STUDIO 4",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b13604d6c3e62a5040721d4bb001312b",
+                                    "value": "Unit: CDS3001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fd3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Communication design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/CDS3001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "CDS3001",
+                                "academic_item_name": "Communication design studio 4",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01RO",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "393d959447f7f250448f409b136d4378",
+                                "order": "100",
+                                "abbr_name": "COMM DES STUDIO 3",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "0d6cd007c3be26d040721d4bb001315b",
+                                    "value": "Unit: CDS2001"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fd3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Communication design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/CDS2001",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "CDS2001",
+                                "academic_item_name": "Communication design studio 3",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "b93d959447f7f250448f409b136d4378",
+                                "order": "300",
+                                "abbr_name": "COMM DES STUDIO 5",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "8bbbc17997dff2104301b137f053af19",
+                                    "value": "Unit: CDS3002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fd3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Communication design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/CDS3002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "CDS3002",
+                                "academic_item_name": "Communication design studio 5",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "bd3d959447f7f250448f409b136d4377",
+                                "order": "0",
+                                "abbr_name": "COMM DES STUDIO 2",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "d4c18c989757a6104301b137f053aff2",
+                                    "value": "Unit: CDS1002"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "fd3d959447f7f250448f409b136d4378",
+                                    "value": "Curriculum Structure Container: Communication design"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                                    "value": "2026.02.021"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/CDS1002",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "CDS1002",
+                                "academic_item_name": "Communication design studio 2",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "12"
+                            }
+                        ],
+                        "credit_points": "48",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "3d3d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part C. Studio practices"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "You must complete 60 credit points comprising:<br />- DGN1000 Design studio (12 credit points); and<br />- 48 credit points of specialisation studio units (Collaborative design, Communication design, Industrial design or Spatial design).",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "753d959447f7f250448f409b136d4378",
+                        "order": "0",
+                        "abbr_name": "DESIGNSTUDIO1",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "28340b6c47b0fe10448f409b136d437b",
+                            "value": "Unit: DGN1000"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "3d3d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part C. Studio practices"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/DGN1000",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "DGN1000",
+                        "academic_item_name": "Design studio 1",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "12"
+                    }
+                ],
+                "credit_points": "60",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                    "value": "Curriculum Structure: 2026.02.021"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "793d959447f7f250448f409b136d4379",
+                "order": "100",
+                "title": "Part A. Critical contexts",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete the following units.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "313d959447f7f250448f409b136d437a",
+                        "order": "400",
+                        "abbr_name": "STRATEGY & PROF PRAC",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "1c31f0654753ea10448f409b136d431a",
+                            "value": "Unit: TDN3002"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "793d959447f7f250448f409b136d4379",
+                            "value": "Curriculum Structure Container: Part A. Critical contexts"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/TDN3002",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "TDN3002",
+                        "academic_item_name": "Design strategy and professional practice",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "393d959447f7f250448f409b136d4379",
+                        "order": "200",
+                        "abbr_name": "SOCIOLOGIES DESIGN",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "eb457c6d4741b690448f409b136d4349",
+                            "value": "Unit: TDN2001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "793d959447f7f250448f409b136d4379",
+                            "value": "Curriculum Structure Container: Part A. Critical contexts"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/TDN2001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "TDN2001",
+                        "academic_item_name": "Sociologies of design",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "713d959447f7f250448f409b136d4379",
+                        "order": "300",
+                        "abbr_name": "RESEARCH FOR DESIGN",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "d6d8b4149737fa504301b137f053af73",
+                            "value": "Unit: TDN3001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "793d959447f7f250448f409b136d4379",
+                            "value": "Curriculum Structure Container: Part A. Critical contexts"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/TDN3001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "TDN3001",
+                        "academic_item_name": "Research for design",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.05",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "753d959447f7f250448f409b136d4379",
+                        "order": "0",
+                        "abbr_name": "INDIGAUSCREATIVEPRAC",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "dca92d8297fe7e904301b137f053af13",
+                            "value": "Unit: BLK1000"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "793d959447f7f250448f409b136d4379",
+                            "value": "Curriculum Structure Container: Part A. Critical contexts"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BLK1000",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BLK1000",
+                        "academic_item_name": "Indigenous Australian creative practice and ways of knowing",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "f13d959447f7f250448f409b136d4378",
+                        "order": "100",
+                        "abbr_name": "DES & AVANT",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "90e2164d47813690448f409b136d43f3",
+                            "value": "Unit: TDN1002"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "793d959447f7f250448f409b136d4379",
+                            "value": "Curriculum Structure Container: Part A. Critical contexts"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/TDN1002",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "TDN1002",
+                        "academic_item_name": "Design and the avant-garde",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    }
+                ],
+                "credit_points": "30",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                    "value": "Curriculum Structure: 2026.02.021"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "7d3d959447f7f250448f409b136d4379",
+                "order": "0",
+                "title": "Course rules",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "The course comprises 144 credit points, of which 96 credit points are focussed on the study of design and 48 credit points are free electives. Elective units may be at any level, however, no more than 60 credit points are to be completed at Level 1 in the Bachelor of Design.<br /><br />You must complete 144 credit points comprising:<br />- 96 credit points of study from your chosen specialisation, either Collaborative design, Communication design, Industrial design or Spatial design ; and<br />- 48 credit points of free electives.<br /><br />You must ensure that you complete no more than 10 units (60 credit points) at Level 1 and at least 24 credit points at Level 3 or higher.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "0",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                    "value": "Curriculum Structure: 2026.02.021"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "b93d959447f7f250448f409b136d4379",
+                "order": "400",
+                "title": "Part D. Free electives",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "Deepen your knowledge by selecting electives from the Faculty of Art, Design and Architecture, including gaining workplace experience by selecting an internship unit as an elective and enriching your degree by using free electives for Monash Abroad opportunities: https://www.monash.edu/mada/current-students/course-information/electives. <br /><br />Alternatively, you may choose to select electives from across the University (provided you satisfy the unit rules) to broaden your interdisciplinary perspectives.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "48",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                    "value": "Curriculum Structure: 2026.02.021"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "f13d959447f7f250448f409b136d4379",
+                "order": "500",
+                "title": "Part E. Indonesian studies - For the Indonesia offering only",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete the following unit.<br /><br />Note: the workload requirements (including contact hours) for each of these subjects is 2 hours per week. These units must be undertaking in parallel with your other units and cannot be completed outside Indonesia.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "bd3d959447f7f250448f409b136d4378",
+                        "order": "0",
+                        "abbr_name": " Indonesian Studies",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "f34df0b647b6fe90448f409b136d43f3",
+                            "value": "Unit: BEI1270"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "f13d959447f7f250448f409b136d4379",
+                            "value": "Curriculum Structure Container: Part E. Indonesian studies - For the Indonesia offering only"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BEI1270",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BEI1270",
+                        "academic_item_name": "Indonesian studies (Religion, Indonesian language, Pancasila, and Civic education)",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "0"
+                    }
+                ],
+                "credit_points": "0",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                    "value": "Curriculum Structure: 2026.02.021"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "f93d959447f7f250448f409b136d4378",
+                "order": "200",
+                "title": "Part B. Disciplinary practices",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete the following two units.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "313d959447f7f250448f409b136d4378",
+                        "order": "0",
+                        "abbr_name": "DRAWINGINTRO",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "77dc005ac36a2a5040721d4bb0013174",
+                            "value": "Unit: DWG1201"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "f93d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part B. Disciplinary practices"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/DWG1201",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "DWG1201",
+                        "academic_item_name": "Drawing: Introduction",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01RO",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "b53d959447f7f250448f409b136d4379",
+                        "order": "100",
+                        "abbr_name": "HEALTH AND SAFETY",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "11c4b5dac3ee6a5040721d4bb0013193",
+                            "value": "Unit: OHS1000"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "f93d959447f7f250448f409b136d4378",
+                            "value": "Curriculum Structure Container: Part B. Disciplinary practices"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "f93d959447f7f250448f409b136d4375",
+                            "value": "2026.02.021"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/OHS1000",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "OHS1000",
+                        "academic_item_name": "Introduction to art and design health and safety",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01RO",
+                        "academic_item_credit_points": "0"
+                    }
+                ],
+                "credit_points": "6",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "f93d959447f7f250448f409b136d4375",
+                    "value": "Curriculum Structure: 2026.02.021"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "2ffb05c3c35ed21040721d4bb00131fd",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:13:53 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "144",
+        "ai_to_cs_cl_id": "823d959447f7f250448f409b136d4387",
+        "effective_date": "",
+        "structure_cl_id": "f93d959447f7f250448f409b136d4375",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "f93d959447f7f250448f409b136d4375",
+            "value": "2026.02.021"
+        }
+    }
+}

@@ -6,6 +6,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "backfill:curriculum": "tsx src/backfill-curriculum.ts",
+    "overrides:apply": "tsx src/apply-overrides.ts",
+    "eval:curriculum": "tsx src/eval-curriculum.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --test 'src/*.test.ts'"
   },

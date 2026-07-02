@@ -123,7 +123,10 @@ async function _fetchCourseWithAoS(
 
   const rawCourseGroups =
     course.requirementGroups ??
-    extractRequirementGroups(course.curriculumStructure)
+    extractRequirementGroups(
+      course.curriculumStructure,
+      course.creditPoints ?? 0
+    )
   // Embedded specialisations are "pick one of N" sub-containers (e.g.
   // F2010 Part C studios, C2001 Part D tracks) that don't appear in the
   // course_areas_of_study table — surfaced as virtual AoS.
@@ -140,24 +143,49 @@ async function _fetchCourseWithAoS(
       for (const c of g.options) allCandidateCodes.add(c)
 
   let valid = new Set<string>()
+  let offered = new Set<string>()
   if (allCandidateCodes.size > 0) {
-    const validRows = await db
-      .select({ code: units.code })
-      .from(units)
-      .where(
-        and(eq(units.year, year), inArray(units.code, [...allCandidateCodes]))
-      )
+    const codesArr = [...allCandidateCodes]
+    const [validRows, offeredRows] = await Promise.all([
+      db
+        .select({ code: units.code })
+        .from(units)
+        .where(and(eq(units.year, year), inArray(units.code, codesArr))),
+      db
+        .selectDistinct({ code: unitOfferings.unitCode })
+        .from(unitOfferings)
+        .where(
+          and(
+            eq(unitOfferings.year, year),
+            eq(unitOfferings.offered, true),
+            inArray(unitOfferings.unitCode, codesArr)
+          )
+        ),
+    ])
     valid = new Set(validRows.map((r) => r.code))
+    offered = new Set(offeredRows.map((r) => r.code))
   }
+  // Auto-load templates must never place a unit with no offering in
+  // the plan year (it can't be scheduled); it stays visible in the
+  // requirements browser.
+  const onlyOffered = (
+    us: ReadonlyArray<{ code: string; grouping: string }>
+  ): { code: string; grouping: string }[] =>
+    us.filter((u) => offered.has(u.code))
 
   let courseRequirements: RequirementGroup[] = []
   let courseUnits: { code: string; grouping: string }[] = []
   if (rawCourseGroups.length > 0) {
     courseRequirements = filterGroups(rawCourseGroups, valid)
-    courseUnits = pickDefaultUnits(courseRequirements)
+    courseUnits = onlyOffered(pickDefaultUnits(courseRequirements))
   }
 
-  const virtualAos = buildEmbeddedAos(course.code, embeddedSpecs, valid)
+  const virtualAos = buildEmbeddedAos(
+    course.code,
+    embeddedSpecs,
+    valid,
+    offered
+  )
 
   const links = await db
     .select({
@@ -204,7 +232,10 @@ async function _fetchCourseWithAoS(
   const aosGroups = new Map<string, RequirementGroup[]>()
   for (const l of links) {
     if (aosGroups.has(l.aosCode)) continue
-    aosGroups.set(l.aosCode, extractRequirementGroups(l.curriculumStructure))
+    aosGroups.set(
+      l.aosCode,
+      extractRequirementGroups(l.curriculumStructure, l.creditPoints ?? 0)
+    )
   }
 
   const aosCodes = [...new Set(links.map((l) => l.aosCode))]
@@ -230,6 +261,27 @@ async function _fetchCourseWithAoS(
     unitsByAos.set(u.aosCode, list)
   }
 
+  // Extend the offered set to cover AoS-sourced codes so their
+  // auto-load templates get the same no-offering filter.
+  const aosCandidateCodes = new Set<string>()
+  for (const u of unitRows) aosCandidateCodes.add(u.unitCode)
+  for (const groups of aosGroups.values())
+    for (const g of groups) for (const c of g.options) aosCandidateCodes.add(c)
+  const aosUnknown = [...aosCandidateCodes].filter((c) => !offered.has(c))
+  if (aosUnknown.length > 0) {
+    const rows = await db
+      .selectDistinct({ code: unitOfferings.unitCode })
+      .from(unitOfferings)
+      .where(
+        and(
+          eq(unitOfferings.year, year),
+          eq(unitOfferings.offered, true),
+          inArray(unitOfferings.unitCode, aosUnknown)
+        )
+      )
+    for (const r of rows) offered.add(r.code)
+  }
+
   // Pre-baked map of aosCode → depth-1 ancestor title (double-degree
   // component labels). Old rows fall back to walking the tree.
   const componentLabels: ReadonlyMap<string, string> = course.componentLabels
@@ -251,10 +303,10 @@ async function _fetchCourseWithAoS(
     let requiredUnits: { code: string; grouping: string }[]
     if (groups.length > 0) {
       requirements = groups
-      requiredUnits = pickDefaultUnits(groups)
+      requiredUnits = onlyOffered(pickDefaultUnits(groups))
     } else {
       requirements = groupsFromFlat(allUnits)
-      requiredUnits = allUnits
+      requiredUnits = onlyOffered(allUnits)
     }
     byCode.set(l.aosCode, {
       code: l.aosCode,
@@ -278,7 +330,11 @@ async function _fetchCourseWithAoS(
     return a.title.localeCompare(b.title)
   })
 
-  // For double degrees, fetch core units for each referenced sub-course.
+  // For double degrees, build one component per referenced sub-course.
+  // A component is NEVER silently dropped: an empty template (e.g.
+  // D3001, whose units all come via specialisation AoS) still renders
+  // as a card with `missingTemplate` — this was the "half my double
+  // degree is invisible" bug.
   const subCourseRefs =
     course.subCourseRefs ?? extractSubCourseRefs(course.curriculumStructure)
   const componentCourses: PlannerCourseComponent[] = []
@@ -288,6 +344,7 @@ async function _fetchCourseWithAoS(
       .select({
         code: courses.code,
         title: courses.title,
+        creditPoints: courses.creditPoints,
         requirementGroups: courses.requirementGroups,
         curriculumStructure: courses.curriculumStructure,
       })
@@ -298,27 +355,49 @@ async function _fetchCourseWithAoS(
 
     for (const ref of subCourseRefs) {
       const sub = subCourseMap.get(ref.courseCode)
-      if (!sub) continue
-      const rawGroups =
-        sub.requirementGroups ??
-        extractRequirementGroups(sub.curriculumStructure)
-      if (rawGroups.length === 0) continue
-      const candidateCodes = new Set(rawGroups.flatMap((g) => g.options))
-      const validRows = await db
-        .select({ code: units.code })
-        .from(units)
-        .where(
-          and(eq(units.year, year), inArray(units.code, [...candidateCodes]))
+      const rawGroups = sub
+        ? (sub.requirementGroups ??
+          extractRequirementGroups(
+            sub.curriculumStructure,
+            sub.creditPoints ?? 0
+          ))
+        : []
+      let requirements: RequirementGroup[] = []
+      let componentUnits: { code: string; grouping: string }[] = []
+      if (rawGroups.length > 0) {
+        const candidateCodes = [...new Set(rawGroups.flatMap((g) => g.options))]
+        const [validRows, offeredRows] = await Promise.all([
+          db
+            .select({ code: units.code })
+            .from(units)
+            .where(
+              and(eq(units.year, year), inArray(units.code, candidateCodes))
+            ),
+          db
+            .selectDistinct({ code: unitOfferings.unitCode })
+            .from(unitOfferings)
+            .where(
+              and(
+                eq(unitOfferings.year, year),
+                eq(unitOfferings.offered, true),
+                inArray(unitOfferings.unitCode, candidateCodes)
+              )
+            ),
+        ])
+        const validSet = new Set(validRows.map((r) => r.code))
+        const offeredSet = new Set(offeredRows.map((r) => r.code))
+        requirements = filterGroups(rawGroups, validSet)
+        componentUnits = pickDefaultUnits(requirements).filter((u) =>
+          offeredSet.has(u.code)
         )
-      const validSet = new Set(validRows.map((r) => r.code))
-      const requirements = filterGroups(rawGroups, validSet)
-      if (requirements.length === 0) continue
+      }
       componentCourses.push({
         componentTitle: ref.componentTitle,
         courseCode: ref.courseCode,
-        courseTitle: sub.title,
-        courseUnits: pickDefaultUnits(requirements),
+        courseTitle: sub?.title ?? ref.courseCode,
+        courseUnits: componentUnits,
         courseRequirements: requirements,
+        ...(requirements.length === 0 ? { missingTemplate: true } : {}),
       })
     }
   }
@@ -348,7 +427,8 @@ export const fetchCourseWithAoS = cacheHandbook(_fetchCourseWithAoS)
 function buildEmbeddedAos(
   courseCode: string,
   specs: readonly EmbeddedSpecialisation[],
-  validCodes: ReadonlySet<string>
+  validCodes: ReadonlySet<string>,
+  offeredCodes: ReadonlySet<string>
 ): PlannerAreaOfStudy[] {
   const out: PlannerAreaOfStudy[] = []
   for (const spec of specs) {
@@ -371,7 +451,9 @@ function buildEmbeddedAos(
       relationshipLabel: spec.parentTitle,
       creditPoints: spec.creditPoints,
       units: allUnits,
-      requiredUnits: pickDefaultUnits(requirements),
+      requiredUnits: pickDefaultUnits(requirements).filter((u) =>
+        offeredCodes.has(u.code)
+      ),
       requirements,
     })
   }
@@ -386,10 +468,17 @@ function filterGroups(
   for (const g of groups) {
     const options = g.options.filter((c) => validCodes.has(c))
     if (options.length === 0) continue
+    // A group that lost options to year-validity filtering must never
+    // get PROMOTED into an auto-load ("pick 1 of 6" with 5 invalid
+    // options is still a choice, not a mandate).
+    const lostOptions = options.length < g.options.length
+    const wasAutoLoad = g.autoLoad ?? g.required === g.options.length
     out.push({
       grouping: g.grouping,
       options,
       required: Math.min(options.length, g.required),
+      autoLoad: wasAutoLoad && !lostOptions,
+      ...(g.scope ? { scope: g.scope } : {}),
     })
   }
   return out

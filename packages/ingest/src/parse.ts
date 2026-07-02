@@ -436,7 +436,9 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
       fullTime: toBool(raw["full_time"]),
       partTime: toBool(raw["part_time"]),
       curriculumStructure: structure,
-      requirementGroups: hasStructure ? extractRequirementGroups(structure) : null,
+      requirementGroups: hasStructure
+        ? extractRequirementGroups(structure, toInt(raw.credit_points) ?? 0)
+        : null,
       embeddedSpecialisations: hasStructure
         ? extractEmbeddedSpecialisations(structure)
         : null,

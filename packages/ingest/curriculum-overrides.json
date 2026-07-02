@@ -1,0 +1,13 @@
+[
+  {
+    "course": "S2000",
+    "reason": "S2000 Part A is intentionally over-budget (54cp of subs vs a 48cp budget; a level 1 sequence typically double-counts toward the Part B major), so the extractor cannot prove any sub mandatory. The handbook requires Core communication (SCI1000) of every Clayton student and it is the course's only universal unit. Supersedes migration 0008. https://handbook.monash.edu/2026/courses/S2000",
+    "ops": [
+      {
+        "op": "setAutoLoad",
+        "groupingLike": "core communication",
+        "autoLoad": true
+      }
+    ]
+  }
+]

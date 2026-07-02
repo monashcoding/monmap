@@ -1,19 +1,25 @@
 /**
  * Refresh derived curriculum data from each course's stored
  * `curriculum_structure` JSONB without needing the original raw JSON
- * files on disk. Two modes:
+ * files on disk. Modes:
  *
- *   pnpm backfill:curriculum         # only rows with NULL precomputes (idempotent)
- *   pnpm backfill:curriculum --force # re-derive every row + course_areas_of_study
+ *   pnpm backfill:curriculum               # only rows with NULL precomputes (idempotent)
+ *   pnpm backfill:curriculum --force       # re-derive every row + course_areas_of_study
+ *   pnpm backfill:curriculum --force --year 2026   # limit to one handbook year
+ *   pnpm backfill:curriculum --force --dry-run     # report changes, write nothing
  *
  * `--force` mode is what you run after changing an extractor heuristic
  * — it overwrites the precomputed columns and re-walks every course's
  * curriculum to refresh `course_areas_of_study` (kind classification,
  * relationship_label). Useful for older years where the raw JSON
  * isn't available for a full re-ingest.
+ *
+ * Checked-in curriculum overrides are re-applied after extraction, so
+ * a recompute can never wipe a hand fix.
  */
 import { and, eq, inArray, isNull, isNotNull } from "drizzle-orm";
 import {
+  applyCurriculumOverrides,
   createDb,
   areasOfStudy,
   courseAreasOfStudy,
@@ -25,8 +31,16 @@ import {
 } from "@monmap/db";
 import { DATABASE_URL } from "@monmap/db/env";
 import { extractCourseAosRefs } from "./parse.ts";
+import { loadCurriculumOverrides } from "./overrides.ts";
 
 const force = process.argv.includes("--force");
+const dryRun = process.argv.includes("--dry-run");
+const yearFlag = process.argv.indexOf("--year");
+const onlyYear = yearFlag !== -1 ? process.argv[yearFlag + 1] : undefined;
+if (yearFlag !== -1 && !/^\d{4}$/.test(onlyYear ?? ""))
+  throw new Error("--year requires a 4-digit year argument");
+
+const overrides = loadCurriculumOverrides();
 
 const db = createDb(DATABASE_URL, {
   pool: { max: 2, idle_timeout: 0, prepare: false },
@@ -36,41 +50,59 @@ const rows = await db
   .select({
     year: courses.year,
     code: courses.code,
+    creditPoints: courses.creditPoints,
     curriculumStructure: courses.curriculumStructure,
   })
   .from(courses)
   .where(
-    force
-      ? isNotNull(courses.curriculumStructure)
-      : and(
-          isNotNull(courses.curriculumStructure),
-          isNull(courses.requirementGroups),
-        ),
+    and(
+      force
+        ? isNotNull(courses.curriculumStructure)
+        : and(
+            isNotNull(courses.curriculumStructure),
+            isNull(courses.requirementGroups),
+          ),
+      ...(onlyYear ? [eq(courses.year, onlyYear)] : []),
+    ),
   );
 
 console.log(
-  `${force ? "Force-refreshing" : "Backfilling"} ${rows.length} course rows...`,
+  `${force ? "Force-refreshing" : "Backfilling"} ${rows.length} course rows` +
+    `${onlyYear ? ` (year ${onlyYear})` : ""}${dryRun ? " [dry-run]" : ""}...`,
 );
 
 let done = 0;
+let overridden = 0;
 for (const row of rows) {
   const structure = row.curriculumStructure;
-  await db
-    .update(courses)
-    .set({
-      requirementGroups: extractRequirementGroups(structure),
-      embeddedSpecialisations: extractEmbeddedSpecialisations(structure),
-      subCourseRefs: extractSubCourseRefs(structure),
-      componentLabels: extractComponentLabels(structure),
-    })
-    .where(and(eq(courses.year, row.year), eq(courses.code, row.code)));
+  const extracted = extractRequirementGroups(structure, row.creditPoints ?? 0);
+  const { groups, applied } = applyCurriculumOverrides(
+    row.code,
+    row.year,
+    extracted,
+    overrides,
+  );
+  if (applied.length > 0) overridden++;
+  if (!dryRun) {
+    await db
+      .update(courses)
+      .set({
+        requirementGroups: groups,
+        embeddedSpecialisations: extractEmbeddedSpecialisations(structure),
+        subCourseRefs: extractSubCourseRefs(structure),
+        componentLabels: extractComponentLabels(structure),
+      })
+      .where(and(eq(courses.year, row.year), eq(courses.code, row.code)));
+  }
   done++;
   if (done % 50 === 0) console.log(`  ${done}/${rows.length}`);
 }
 
-console.log(`Done. Updated ${done} courses.`);
+console.log(
+  `Done. ${dryRun ? "Would update" : "Updated"} ${done} courses (${overridden} with overrides).`,
+);
 
-if (force) {
+if (force && !dryRun) {
   // Refresh course_areas_of_study by re-walking every course's
   // curriculum_structure with the current extractor. We need the
   // per-year AoS code set to pass to extractCourseAosRefs.
@@ -85,7 +117,9 @@ if (force) {
     aosCodesByYear.set(r.year, set);
   }
 
-  const years = [...aosCodesByYear.keys()].sort();
+  const years = [...aosCodesByYear.keys()]
+    .filter((y) => !onlyYear || y === onlyYear)
+    .sort();
   for (const year of years) {
     const aosCodes = aosCodesByYear.get(year)!;
     const yearRows = rows.filter((r) => r.year === year);

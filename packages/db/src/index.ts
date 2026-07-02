@@ -5,6 +5,7 @@ import * as schema from "./schema.ts";
 export * from "./schema.ts";
 export * from "./planner-state.ts";
 export * from "./curriculum.ts";
+export * from "./overrides.ts";
 
 export type Database = ReturnType<typeof createDb>;
 

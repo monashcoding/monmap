@@ -1,0 +1,3324 @@
+{
+    "code": "B2001",
+    "year": "2026",
+    "title": "Bachelor of Commerce",
+    "sourceUrl": "https://handbook.monash.edu/2026/courses/B2001",
+    "exportedAt": "2026-07-02",
+    "creditPoints": 144,
+    "curriculumStructure": {
+        "name": "Structure",
+        "cl_id": {
+            "key": "code",
+            "cl_id": "6bb7b58847efb650448f409b136d430d",
+            "value": "B2001"
+        },
+        "links": [
+        ],
+        "source": {
+            "key": "",
+            "cl_id": "976b27874758cb10448f409b136d4339",
+            "value": "976b27874758cb10448f409b136d4339"
+        },
+        "container": [
+            {
+                "cl_id": "4e59f93f47d4cf10448f409b136d4369",
+                "order": "0",
+                "title": "Rules",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "In choosing your units, you must ensure that you complete no more than 10 units (60 credit points) at Level 1 and at least six units (36 credit points) at Level 3, including four units (24 credit points) at Level 3 offered by the Faculty of Business and Economics.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                    "value": "Curriculum Structure: 2026.04.013"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "0259f93f47d4cf10448f409b136d436a",
+                "order": "400",
+                "title": "Part D. Elective studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                        "order": "0",
+                        "title": "Minor studies",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "8659f93f47d4cf10448f409b136d436a",
+                                "order": "500",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "981994c0c359221040721d4bb001312e",
+                                    "value": "Area of study: ECONOMTR02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/ECONOMTR02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "ECONOMTR02",
+                                "academic_item_name": "Econometrics",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "8a59f93f47d4cf10448f409b136d436a",
+                                "order": "1100",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "b486d80cc319221040721d4bb00131ed",
+                                    "value": "Area of study: SSRSPMGT02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/SSRSPMGT02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "SSRSPMGT02",
+                                "academic_item_name": "Sustainability and responsible management",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "ca59f93f47d4cf10448f409b136d436a",
+                                "order": "900",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "d5d95804c359221040721d4bb0013149",
+                                    "value": "Area of study: MRKTGSCI02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/MRKTGSCI02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MRKTGSCI02",
+                                "academic_item_name": "Marketing science",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "0e59f93f47d4cf10448f409b136d436a",
+                                "order": "0",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "69dd3b37c385221040721d4bb0013177",
+                                    "value": "Area of study: ACCOUNTG02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/ACCOUNTG02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "ACCOUNTG02",
+                                "academic_item_name": "Accounting",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "4a59f93f47d4cf10448f409b136d436b",
+                                "order": "1000",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "930a5c04c359221040721d4bb0013120",
+                                    "value": "Area of study: SUPCNMGT02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/SUPCNMGT02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "SUPCNMGT02",
+                                "academic_item_name": "Supply chain management",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "8a59f93f47d4cf10448f409b136d436b",
+                                "order": "700",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "68591cc0c359221040721d4bb00131ad",
+                                    "value": "Area of study: FINANCE02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/FINANCE02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "FINANCE02",
+                                "academic_item_name": "Finance",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "8259f93f47d4cf10448f409b136d436c",
+                                "order": "100",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "065bac0047d97610448f409b136d43ca",
+                                    "value": "Area of study: ACTRLSTD02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/ACTRLSTD02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "ACTRLSTD02",
+                                "academic_item_name": "Actuarial studies",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "0259f93f47d4cf10448f409b136d436d",
+                                "order": "600",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "3029d4c0c359221040721d4bb0013173",
+                                    "value": "Area of study: ECONOMIC02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/ECONOMIC02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "ECONOMIC02",
+                                "academic_item_name": "Economics",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "4259f93f47d4cf10448f409b136d436d",
+                                "order": "300",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "921fee1247603610448f409b136d43d7",
+                                    "value": "Area of study: BUSANLYT09"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/BUSANLYT09",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BUSANLYT09",
+                                "academic_item_name": "Business analytics",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "4a59f93f47d4cf10448f409b136d436d",
+                                "order": "200",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "32781080c359221040721d4bb00131e4",
+                                    "value": "Area of study: BEHAVCOM08"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/BEHAVCOM08",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEHAVCOM08",
+                                "academic_item_name": "Behavioural commerce",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "ca59f93f47d4cf10448f409b136d436d",
+                                "order": "400",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "ea321cc0c319221040721d4bb0013164",
+                                    "value": "Area of study: BUSLAW02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/BUSLAW02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BUSLAW02",
+                                "academic_item_name": "Business law",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "8259f93f47d4cf10448f409b136d436e",
+                                "order": "800",
+                                "abbr_name": "",
+                                "child_table": "x_f5sl_cl_areas_of_study",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_areas_of_study",
+                                    "cl_id": "08991004c359221040721d4bb00131d4",
+                                    "value": "Area of study: MNGTSTUD02"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "8259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Minor studies"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/aos/MNGTSTUD02",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MNGTSTUD02",
+                                "academic_item_name": "Management studies",
+                                "academic_item_type": {
+                                    "label": "Minor",
+                                    "value": "minor"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.01AU",
+                                "academic_item_credit_points": "24"
+                            }
+                        ],
+                        "credit_points": "24",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "0259f93f47d4cf10448f409b136d436a",
+                            "value": "Curriculum Structure Container: Part D. Elective studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "You must complete 48 credit points of elective study. Electives may be selected from within the Bachelor of Commerce. These may also be used to complete a second major (as listed above) or one or more minors (as listed below). <br /><br />Elective units can also be chosen from across the University, including to complete a major or minor from another course, as long as you have the prerequisites and there are no restrictions on enrolling in the units. You should also be aware of travel and timetabling limitations.<br /><br />Notes:<br />- Enrolment in Faculty of Business and Economics units at campuses other than the campus of enrolment is subject to there being capacity after students from that campus have enrolled.<br /><br />- If you are in a double degree course, some units required for the other degree are credited as electives towards this Commerce degree.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "48",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                    "value": "Curriculum Structure: 2026.04.013"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                "order": "100",
+                "title": "Part A. Core studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "c259f93f47d4cf10448f409b136d436b",
+                        "order": "700",
+                        "title": "Specified commerce elective",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "You must complete 6 credit points (one elective unit) from the Faculty of Business and Economics<br /><br />You can enrich your degree to hone your academic and professional skills with a range of Flagship Rich Educational Experiences (FREE), including the Research, Experimentation and Discovery, Monash Innovation Guarantee, Global Immersion Guarantee and Volunteering. These flagship rich educational experience units may be credited in place of your specified commerce elective if approved by the faculty, or alternatively utilising your elective studies in Part D. There are both 6 and 12 credit point unit options available.",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                        ],
+                        "credit_points": "6",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Component",
+                            "value": "component"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "You must complete 42 credit points, comprising:<br />- 36 credit points (six units) from the following list; and <br />- 6 credit points (one unit) from specified commerce electives.<br /><br />Notes: <br />- You must complete either ACC1100 or ACC1001 (one accounting unit).<br />- If you intend to complete a major in Accounting or Actuarial Studies, you must complete ACC1100.<br />- If you are undertaking the Bachelor of Laws (Honours) and Bachelor of Commerce course (L3005), BTC1110 in Part A must be replaced with a Commerce elective.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "c259f93f47d4cf10448f409b136d436a",
+                        "order": "500",
+                        "abbr_name": "INTRO TO MGT",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "e1d8cd9d976a36104301b137f053af75",
+                            "value": "Unit: MGC1010"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/MGC1010",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "MGC1010",
+                        "academic_item_name": "Introduction to management",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.05",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "4a59f93f47d4cf10448f409b136d436a",
+                        "order": "300",
+                        "abbr_name": "PRINC OF MICRO",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "01ecc79197e7f2104301b137f053af41",
+                            "value": "Unit: ECC1000"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ECC1000",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ECC1000",
+                        "academic_item_name": "Principles of microeconomics",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.05",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "4e59f93f47d4cf10448f409b136d436c",
+                        "order": "400",
+                        "abbr_name": "BUS & EC STATS",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "c17efeb397633a504301b137f053af16",
+                            "value": "Unit: ETC1000"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ETC1000",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ETC1000",
+                        "academic_item_name": "Business and economic statistics",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.05",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "4659f93f47d4cf10448f409b136d436d",
+                        "order": "0",
+                        "abbr_name": "INTRO TO FIN ACC",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "7b6d8e3e97b0f2d04301b137f053afcb",
+                            "value": "Unit: ACC1100"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ACC1100",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ACC1100",
+                        "academic_item_name": "Introduction to financial accounting",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.03",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "8659f93f47d4cf10448f409b136d436d",
+                        "order": "100",
+                        "abbr_name": "ACC FUND",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "203574f497797ed04301b137f053af6f",
+                            "value": "Unit: ACC1001"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/ACC1001",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ACC1001",
+                        "academic_item_name": "Accounting fundamentals",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "8e59f93f47d4cf10448f409b136d436d",
+                        "order": "600",
+                        "abbr_name": "PRINC OF MKTG",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "3138d0ea97e536904301b137f053afde",
+                            "value": "Unit: MKC1200"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/MKC1200",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "MKC1200",
+                        "academic_item_name": "Principles of marketing",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.04",
+                        "academic_item_credit_points": "6"
+                    },
+                    {
+                        "cl_id": "c259f93f47d4cf10448f409b136d436e",
+                        "order": "200",
+                        "abbr_name": "COMML LAW",
+                        "child_table": "x_f5sl_cl_subjects",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_subjects",
+                            "cl_id": "da21ac2a973f7e904301b137f053af5d",
+                            "value": "Unit: BTC1110"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "8e59f93f47d4cf10448f409b136d436b",
+                            "value": "Curriculum Structure Container: Part A. Core studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/units/BTC1110",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BTC1110",
+                        "academic_item_name": "Commercial law",
+                        "academic_item_type": {
+                            "label": "Unit",
+                            "value": "subject"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.08",
+                        "academic_item_credit_points": "6"
+                    }
+                ],
+                "credit_points": "42",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                    "value": "Curriculum Structure: 2026.04.013"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "0259f93f47d4cf10448f409b136d436c",
+                "order": "300",
+                "title": "Part C. Capstone studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                    {
+                        "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                        "order": "0",
+                        "title": "Capstone units",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "0e59f93f47d4cf10448f409b136d4369",
+                                "order": "600",
+                                "abbr_name": "START UP FAST TRK 1",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "91d4e95e4739b614448f409b136d43f8",
+                                    "value": "Unit: BEX3415"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3415",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3415",
+                                "academic_item_name": "Start-up fastrack 1",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4659f93f47d4cf10448f409b136d436a",
+                                "order": "500",
+                                "abbr_name": "COMP ENTREP & INNOV",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "d3fae23b976ff6504301b137f053aff9",
+                                    "value": "Unit: BEX3414"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3414",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3414",
+                                "academic_item_name": "Company entrepreneurship and innovation",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "c659f93f47d4cf10448f409b136d436a",
+                                "order": "700",
+                                "abbr_name": "START UP FAST TRK 2",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "bdd529124779b614448f409b136d432e",
+                                    "value": "Unit: BEX3416"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3416",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3416",
+                                "academic_item_name": "Start-up fastrack 2",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4e59f93f47d4cf10448f409b136d436a",
+                                "order": "300",
+                                "abbr_name": "BUSANALYTFRGLBIMPCT",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "db621b9097397ad04301b137f053af4b",
+                                    "value": "Unit: BEX3320"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3320",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3320",
+                                "academic_item_name": "Business analytics for global impact",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "8e59f93f47d4cf10448f409b136d436a",
+                                "order": "900",
+                                "abbr_name": "GLOBAL ISSUES ACC",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "5bcc463247b7f690448f409b136d43df",
+                                    "value": "Unit: ACX3900"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/ACX3900",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "ACX3900",
+                                "academic_item_name": "Global issues in accounting",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4259f93f47d4cf10448f409b136d436c",
+                                "order": "400",
+                                "abbr_name": "BLDGSTARTUPSWTHIMPCT",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "545a74779744bad04301b137f053af82",
+                                    "value": "Unit: BEX3411"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3411",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3411",
+                                "academic_item_name": "Building start-ups with impact",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "c259f93f47d4cf10448f409b136d436c",
+                                "order": "800",
+                                "abbr_name": "PROFDEVFORCOMM",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "35d747f79700fad04301b137f053af67",
+                                    "value": "Unit: BEX3500"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3500",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3500",
+                                "academic_item_name": "Professional development for commerce",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "ce59f93f47d4cf10448f409b136d436c",
+                                "order": "200",
+                                "abbr_name": "ENTREMINDSETS&CAP",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "d1b674339744bad04301b137f053af3f",
+                                    "value": "Unit: BEX3311"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3311",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3311",
+                                "academic_item_name": "Entrepreneurial mindsets and capabilities",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "0659f93f47d4cf10448f409b136d436d",
+                                "order": "0",
+                                "abbr_name": "ENT CAP RIS START UP ECO",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "6c5f5dcd478bbe10448f409b136d4318",
+                                    "value": "Unit: BEX3120"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3120",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3120",
+                                "academic_item_name": "Entrepreneurial capital raising and the start-up ecosystem",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "0a59f93f47d4cf10448f409b136d436d",
+                                "order": "100",
+                                "abbr_name": "SUSTAIN PRAC & ORG",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "93bddd21477f3e50448f409b136d4354",
+                                    "value": "Unit: BEX3150"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436b",
+                                    "value": "Curriculum Structure Container: Capstone units"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3150",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3150",
+                                "academic_item_name": "Sustainability practice and organisations",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "6",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "0259f93f47d4cf10448f409b136d436c",
+                            "value": "Curriculum Structure Container: Part C. Capstone studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Unit",
+                            "value": "unit"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "4259f93f47d4cf10448f409b136d436a",
+                        "order": "100",
+                        "title": "Consulting projects",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "c659f93f47d4cf10448f409b136d436b",
+                                "order": "0",
+                                "abbr_name": "CONS PROJ",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "08d6e41b47ef6a90448f409b136d435f",
+                                    "value": "Unit: BEX3350"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "4259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Consulting projects"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3350",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3350",
+                                "academic_item_name": "Consulting project",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "8a59f93f47d4cf10448f409b136d436d",
+                                "order": "200",
+                                "abbr_name": "CONS PROJ",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "0fe66c1b47ef6a90448f409b136d431f",
+                                    "value": "Unit: BEX3450"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "4259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Consulting projects"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3450",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3450",
+                                "academic_item_name": "Consulting project",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "0e59f93f47d4cf10448f409b136d436d",
+                                "order": "100",
+                                "abbr_name": "CONS PROJ",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "5fd6e81b47ef6a90448f409b136d43a2",
+                                    "value": "Unit: BEX3351"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "4259f93f47d4cf10448f409b136d436a",
+                                    "value": "Curriculum Structure Container: Consulting projects"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3351",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3351",
+                                "academic_item_name": "Consulting project",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "6",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "0259f93f47d4cf10448f409b136d436c",
+                            "value": "Curriculum Structure Container: Part C. Capstone studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Unit",
+                            "value": "unit"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                        "order": "300",
+                        "title": "Internships",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "ca59f93f47d4cf10448f409b136d4369",
+                                "order": "100",
+                                "abbr_name": "IND PLACEM'T",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "7edef9a09788cfd04301b137f053af83",
+                                    "value": "Unit: BEX3012"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                                    "value": "Curriculum Structure Container: Internships"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3012",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3012",
+                                "academic_item_name": "Industry placement",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "0659f93f47d4cf10448f409b136d436a",
+                                "order": "0",
+                                "abbr_name": "IND PLACEM'T",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "263df16c9748cfd04301b137f053af75",
+                                    "value": "Unit: BEX3006"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                                    "value": "Curriculum Structure Container: Internships"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3006",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3006",
+                                "academic_item_name": "Industry placement",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.07",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "0a59f93f47d4cf10448f409b136d436a",
+                                "order": "600",
+                                "abbr_name": "MKTG INTERN",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "c167d66397c07ad04301b137f053afe5",
+                                    "value": "Unit: MKX3631"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                                    "value": "Curriculum Structure Container: Internships"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MKX3631",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MKX3631",
+                                "academic_item_name": "Marketing internship",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "8259f93f47d4cf10448f409b136d436b",
+                                "order": "200",
+                                "abbr_name": "IND PLACEM'T",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b4cfb9649788cfd04301b137f053af86",
+                                    "value": "Unit: BEX3024"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                                    "value": "Curriculum Structure Container: Internships"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3024",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3024",
+                                "academic_item_name": "Industry placement",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "24"
+                            },
+                            {
+                                "cl_id": "0a59f93f47d4cf10448f409b136d436b",
+                                "order": "400",
+                                "abbr_name": "IND PLACEM'T",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b2fd7dec9748cfd04301b137f053afa3",
+                                    "value": "Unit: BEX3106"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                                    "value": "Curriculum Structure Container: Internships"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3106",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3106",
+                                "academic_item_name": "Industry placement",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "0659f93f47d4cf10448f409b136d436c",
+                                "order": "500",
+                                "abbr_name": "IND PLACEM'T",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "f94eac739704bad04301b137f053afdc",
+                                    "value": "Unit: BEX3112"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                                    "value": "Curriculum Structure Container: Internships"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3112",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3112",
+                                "academic_item_name": "Industry placement",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "8a59f93f47d4cf10448f409b136d436c",
+                                "order": "300",
+                                "abbr_name": "Tax Clinic",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "998da9f34794cf10448f409b136d43d8",
+                                    "value": "Unit: BEX3115"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d436d",
+                                    "value": "Curriculum Structure Container: Internships"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3115",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3115",
+                                "academic_item_name": "Tax clinic",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "6",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "0259f93f47d4cf10448f409b136d436c",
+                            "value": "Curriculum Structure Container: Part C. Capstone studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Unit",
+                            "value": "unit"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    },
+                    {
+                        "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                        "order": "200",
+                        "title": "International experiences",
+                        "preface": "",
+                        "footnote": "",
+                        "map_type": "",
+                        "container": [
+                        ],
+                        "child_table": "",
+                        "description": "",
+                        "child_record": {
+                            "key": "",
+                            "type": null,
+                            "cl_id": null,
+                            "value": ""
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "relationship": [
+                            {
+                                "cl_id": "8e59f93f47d4cf10448f409b136d4369",
+                                "order": "1000",
+                                "abbr_name": "EURO ECO AND GLO BUS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "b6b7ed8297c432d04301b137f053af12",
+                                    "value": "Unit: ECX3750"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/ECX3750",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "ECX3750",
+                                "academic_item_name": "European economy and global business",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "ce59f93f47d4cf10448f409b136d436a",
+                                "order": "1200",
+                                "abbr_name": "GLB STY PROG IN MKTG",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "078c8d28970eba504301b137f053af56",
+                                    "value": "Unit: MKX3521"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MKX3521",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MKX3521",
+                                "academic_item_name": "Global study programs in marketing",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.03",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "0259f93f47d4cf10448f409b136d436b",
+                                "order": "1300",
+                                "abbr_name": "GLB STY PROG IN MKTG",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "08d688de47b4b650448f409b136d433d",
+                                    "value": "Unit: MKX3522"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MKX3522",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MKX3522",
+                                "academic_item_name": "Global study programs in marketing\t\t",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "12"
+                            },
+                            {
+                                "cl_id": "4259f93f47d4cf10448f409b136d436b",
+                                "order": "500",
+                                "abbr_name": "ENG WITH INT BUS - A",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "ae8769564779b614448f409b136d43ad",
+                                    "value": "Unit: BEX3724"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3724",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3724",
+                                "academic_item_name": "Engaging with international business ",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "8659f93f47d4cf10448f409b136d436b",
+                                "order": "200",
+                                "abbr_name": "ISS IN GLOBAL BUS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "ab7701d947dc7e90448f409b136d434a",
+                                    "value": "Unit: BEX3622"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3622",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3622",
+                                "academic_item_name": "Issues in global business",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.02",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4e59f93f47d4cf10448f409b136d436b",
+                                "order": "1100",
+                                "abbr_name": "EUROBUS&SOC",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "cfec8a04478c03d0448f409b136d43c7",
+                                    "value": "Unit: MGX3831"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/MGX3831",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "MGX3831",
+                                "academic_item_name": "European business and society",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "ce59f93f47d4cf10448f409b136d436b",
+                                "order": "900",
+                                "abbr_name": "INT STY PROG BKG&FIN",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "0b27d64547007a50448f409b136d4374",
+                                    "value": "Unit: BFX3871"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BFX3871",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BFX3871",
+                                "academic_item_name": "International study program in banking and finance",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4659f93f47d4cf10448f409b136d436c",
+                                "order": "800",
+                                "abbr_name": "ENGWITHINTBUS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "f237512d47fb3e50448f409b136d430f",
+                                    "value": "Unit: BEX3727"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3727",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3727",
+                                "academic_item_name": "Engaging with international business ",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.08",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "8659f93f47d4cf10448f409b136d436c",
+                                "order": "300",
+                                "abbr_name": "ENG WITH INT BUS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "6e7d4a2b976376504301b137f053af45",
+                                    "value": "Unit: BEX3722"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3722",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3722",
+                                "academic_item_name": "Engaging with international business",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.06",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4a59f93f47d4cf10448f409b136d436c",
+                                "order": "100",
+                                "abbr_name": "INNOV ENTRPR IN SV",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "57737bfb9728f2904301b137f053afe9",
+                                    "value": "Unit: BEX3412"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3412",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3412",
+                                "academic_item_name": "Innovation and entrepreneurship in Silicon Valley",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4e59f93f47d4cf10448f409b136d436d",
+                                "order": "400",
+                                "abbr_name": "ENGAG INT BUS ",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "08aa57c347d4cb10448f409b136d43a0",
+                                    "value": "Unit: BEX3723"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3723",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3723",
+                                "academic_item_name": "Engaging with international business",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "ce59f93f47d4cf10448f409b136d436d",
+                                "order": "0",
+                                "abbr_name": "ACC STDY TOUR",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "9ff10c4d47984710448f409b136d438e",
+                                    "value": "Unit: ACX3500"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/ACX3500",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "ACX3500",
+                                "academic_item_name": "Accounting study tour",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4259f93f47d4cf10448f409b136d436e",
+                                "order": "700",
+                                "abbr_name": "ENG WITH INT BUS",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "2de729d64779b614448f409b136d4349",
+                                    "value": "Unit: BEX3726"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3726",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3726",
+                                "academic_item_name": "Engaging with international business ",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.05",
+                                "academic_item_credit_points": "6"
+                            },
+                            {
+                                "cl_id": "4659f93f47d4cf10448f409b136d436e",
+                                "order": "600",
+                                "abbr_name": "ENGAG INT BUS - EU",
+                                "child_table": "x_f5sl_cl_subjects",
+                                "description": "",
+                                "child_record": {
+                                    "key": "code",
+                                    "type": "x_f5sl_cl_subjects",
+                                    "cl_id": "7bc7ed964779b614448f409b136d4395",
+                                    "value": "Unit: BEX3725"
+                                },
+                                "parent_table": "x_f5sl_cl_cs_container",
+                                "credit_points": "",
+                                "parent_record": {
+                                    "key": "title",
+                                    "type": "x_f5sl_cl_cs_container",
+                                    "cl_id": "0659f93f47d4cf10448f409b136d436e",
+                                    "value": "Curriculum Structure Container: International experiences"
+                                },
+                                "owning_structure": {
+                                    "key": "version_code",
+                                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                                    "value": "2026.04.013"
+                                },
+                                "parent_connector": {
+                                    "label": "AND",
+                                    "value": "AND"
+                                },
+                                "academic_item_url": "/2026/units/BEX3725",
+                                "vertical_grouping": {
+                                    "label": null,
+                                    "value": null
+                                },
+                                "academic_item_code": "BEX3725",
+                                "academic_item_name": "Engaging with international business ",
+                                "academic_item_type": {
+                                    "label": "Unit",
+                                    "value": "subject"
+                                },
+                                "abbreviated_name_and_major": null,
+                                "academic_item_version_name": "2026.04",
+                                "academic_item_credit_points": "6"
+                            }
+                        ],
+                        "credit_points": "6",
+                        "dynamic_query": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "0259f93f47d4cf10448f409b136d436c",
+                            "value": "Curriculum Structure Container: Part C. Capstone studies"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "credit_points_max": "",
+                        "vertical_grouping": {
+                            "label": "Unit",
+                            "value": "unit"
+                        },
+                        "horizontal_grouping": {
+                            "label": null,
+                            "value": null
+                        }
+                    }
+                ],
+                "child_table": "",
+                "description": "You must complete one unit (6, 12 or 24 credit points) from the Faculty’s capstone portfolio of units which includes capstone units, consulting projects, international experiences and internships (industry placements).<br /><br />Notes:<br />- If you choose a 12 or 24 credit point unit it will reduce the amount of points available for electives in Part D which may impact on your ability to complete a major using electives.<br /><br />- If you are completing a major in Accounting and seeking professional accounting accreditation you need to complete ACX3900. You can undertake more than one unit from the following lists, which will count towards your electives.",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                ],
+                "credit_points": "6",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                    "value": "Curriculum Structure: 2026.04.013"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            },
+            {
+                "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                "order": "200",
+                "title": "Part B. Major studies",
+                "preface": "",
+                "footnote": "",
+                "map_type": "",
+                "container": [
+                ],
+                "child_table": "",
+                "description": "You must complete at least one major from the list below. Depending on the major chosen, you may have already studied one of the required units as part of your core studies. If so, you must complete an additional commerce unit to bring the combined commerce study to at least 96 credit points from the Faculty of Business and Economics. <br /><br />Notes:<br />- No more than 12 credit points can be credited towards two majors, or a major and a minor, within a course. The same credit points cannot be credited towards more than one minor.<br /><br />-If you are intending to undertake an honours year, you should ensure you complete the specific units required for honours in your chosen major area of study. <br />",
+                "child_record": {
+                    "key": "",
+                    "type": null,
+                    "cl_id": null,
+                    "value": ""
+                },
+                "parent_table": "x_f5sl_cl_curriculum_structure",
+                "relationship": [
+                    {
+                        "cl_id": "ce59f93f47d4cf10448f409b136d4369",
+                        "order": "900",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "5ae99804c359221040721d4bb001314a",
+                            "value": "Area of study: MTHFNDEC01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/MTHFNDEC01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "MTHFNDEC01",
+                        "academic_item_name": "Mathematical foundations of econometrics",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01AU",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "4659f93f47d4cf10448f409b136d436b",
+                        "order": "600",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "43791004c359221040721d4bb0013137",
+                            "value": "Area of study: FINANCE07"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/FINANCE07",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "FINANCE07",
+                        "academic_item_name": "Finance",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01AU",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "ca59f93f47d4cf10448f409b136d436b",
+                        "order": "300",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "5ace2a1247603610448f409b136d433c",
+                            "value": "Area of study: BUSANLMJ01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/BUSANLMJ01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BUSANLMJ01",
+                        "academic_item_name": "Business analytics",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "0e59f93f47d4cf10448f409b136d436b",
+                        "order": "500",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "a03918c0c359221040721d4bb0013122",
+                            "value": "Area of study: ECONOMIC07"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/ECONOMIC07",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ECONOMIC07",
+                        "academic_item_name": "Economics",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01AU",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "c659f93f47d4cf10448f409b136d436c",
+                        "order": "0",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "fbeab7b79768f2904301b137f053afe2",
+                            "value": "Area of study: ACCOUNTG05"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/ACCOUNTG05",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ACCOUNTG05",
+                        "academic_item_name": "Accounting",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "0a59f93f47d4cf10448f409b136d436c",
+                        "order": "400",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "c80914c0c359221040721d4bb00131a0",
+                            "value": "Area of study: ECONOMTR05"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/ECONOMTR05",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ECONOMTR05",
+                        "academic_item_name": "Econometrics",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01AU",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "ca59f93f47d4cf10448f409b136d436c",
+                        "order": "100",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "563be80047d97610448f409b136d43fa",
+                            "value": "Area of study: ACTRLSTD07"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/ACTRLSTD07",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "ACTRLSTD07",
+                        "academic_item_name": "Actuarial studies",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "0e59f93f47d4cf10448f409b136d436c",
+                        "order": "200",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "ef88d080c359221040721d4bb001317e",
+                            "value": "Area of study: BEHAVCOM07"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/BEHAVCOM07",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "BEHAVCOM07",
+                        "academic_item_name": "Behavioural commerce",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01AU",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "8e59f93f47d4cf10448f409b136d436c",
+                        "order": "700",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "87a99404c359221040721d4bb0013190",
+                            "value": "Area of study: MNGTSTUD07"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/MNGTSTUD07",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "MNGTSTUD07",
+                        "academic_item_name": "Management studies",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01AU",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "8259f93f47d4cf10448f409b136d436d",
+                        "order": "1000",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "97a318de97d13e104301b137f053afb5",
+                            "value": "Area of study: SSRSPMGT01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/SSRSPMGT01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "SSRSPMGT01",
+                        "academic_item_name": "Sustainability and responsible management",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.02",
+                        "academic_item_credit_points": "48"
+                    },
+                    {
+                        "cl_id": "0259f93f47d4cf10448f409b136d436e",
+                        "order": "800",
+                        "abbr_name": "",
+                        "child_table": "x_f5sl_cl_areas_of_study",
+                        "description": "",
+                        "child_record": {
+                            "key": "code",
+                            "type": "x_f5sl_cl_areas_of_study",
+                            "cl_id": "23b99404c359221040721d4bb00131b0",
+                            "value": "Area of study: MRKTGSCI01"
+                        },
+                        "parent_table": "x_f5sl_cl_cs_container",
+                        "credit_points": "",
+                        "parent_record": {
+                            "key": "title",
+                            "type": "x_f5sl_cl_cs_container",
+                            "cl_id": "c259f93f47d4cf10448f409b136d436d",
+                            "value": "Curriculum Structure Container: Part B. Major studies"
+                        },
+                        "owning_structure": {
+                            "key": "version_code",
+                            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                            "value": "2026.04.013"
+                        },
+                        "parent_connector": {
+                            "label": "AND",
+                            "value": "AND"
+                        },
+                        "academic_item_url": "/2026/aos/MRKTGSCI01",
+                        "vertical_grouping": {
+                            "label": null,
+                            "value": null
+                        },
+                        "academic_item_code": "MRKTGSCI01",
+                        "academic_item_name": "Marketing science",
+                        "academic_item_type": {
+                            "label": "Major",
+                            "value": "major"
+                        },
+                        "abbreviated_name_and_major": null,
+                        "academic_item_version_name": "2026.01AU",
+                        "academic_item_credit_points": "48"
+                    }
+                ],
+                "credit_points": "48",
+                "dynamic_query": "",
+                "parent_record": {
+                    "key": "version_code",
+                    "type": "x_f5sl_cl_curriculum_structure",
+                    "cl_id": "c659f93f47d4cf10448f409b136d4368",
+                    "value": "Curriculum Structure: 2026.04.013"
+                },
+                "parent_connector": {
+                    "label": "AND",
+                    "value": "AND"
+                },
+                "credit_points_max": "",
+                "vertical_grouping": {
+                    "label": "Component",
+                    "value": "component"
+                },
+                "horizontal_grouping": {
+                    "label": null,
+                    "value": null
+                }
+            }
+        ],
+        "parent_id": {
+            "key": "",
+            "type": "x_f5sl_cl_cs_master",
+            "cl_id": "4c0c85c3c35ed21040721d4bb001311c",
+            "value": "Curriculum Structure Master Record: Created 10-Dec-2024 09:13:55 PM"
+        },
+        "parent_table": "x_f5sl_cl_cs_master",
+        "pe_remote_id": "",
+        "credit_points": "144",
+        "ai_to_cs_cl_id": "c259f93f47d4cf10448f409b136d4382",
+        "effective_date": "",
+        "structure_cl_id": "c659f93f47d4cf10448f409b136d4368",
+        "relationship_type": {
+            "label": "Working",
+            "value": "working"
+        },
+        "curriculum_structure": {
+            "key": "version_code",
+            "cl_id": "c659f93f47d4cf10448f409b136d4368",
+            "value": "2026.04.013"
+        }
+    }
+}

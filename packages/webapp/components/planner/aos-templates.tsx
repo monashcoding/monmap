@@ -74,13 +74,23 @@ export function AoSTemplates({ className }: { className?: string }) {
       </p>
       <div className="mt-2 flex flex-col gap-1.5">
         {course.componentCourses.length > 0 ? (
-          course.componentCourses.map((comp) => (
-            <CourseUnitsCard
-              key={comp.courseCode}
-              label={comp.courseTitle}
-              courseUnits={comp.courseUnits}
-            />
-          ))
+          course.componentCourses.map((comp) =>
+            comp.missingTemplate || comp.courseUnits.length === 0 ? (
+              <MissingTemplateCard
+                key={comp.courseCode}
+                label={comp.courseTitle}
+                courseCode={comp.courseCode}
+                year={course.year}
+                hasRequirements={comp.courseRequirements.length > 0}
+              />
+            ) : (
+              <CourseUnitsCard
+                key={comp.courseCode}
+                label={comp.courseTitle}
+                courseUnits={comp.courseUnits}
+              />
+            )
+          )
         ) : course.courseUnits.length > 0 ? (
           <CourseUnitsCard courseUnits={course.courseUnits} />
         ) : null}
@@ -169,6 +179,55 @@ function CourseUnitsCard({
           ))}
         </div>
       ) : null}
+    </div>
+  )
+}
+
+/**
+ * Rendered for a double-degree component whose course-level template is
+ * empty (its units come entirely from majors/specialisations, e.g.
+ * Education) or has nothing loadable this year. The card must exist so
+ * the component itself never silently disappears from the panel.
+ */
+function MissingTemplateCard({
+  label,
+  courseCode,
+  year,
+  hasRequirements,
+}: {
+  label: string
+  courseCode: string
+  year: string
+  hasRequirements: boolean
+}) {
+  return (
+    <div className="rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/30">
+      <div className="flex items-start gap-2 px-2.5 py-2">
+        <div className="min-w-0 flex-1">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">
+            Degree
+          </span>
+          <div className="mt-0.5 truncate text-xs leading-snug font-medium">
+            {label}
+          </div>
+          <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+            {hasRequirements
+              ? "No units can be auto-filled for this component this year — pick from its requirements below or add units via search."
+              : "This degree's units come from your chosen major or specialisation — pick one above, or browse the "}
+            {hasRequirements ? null : (
+              <a
+                className="underline underline-offset-2"
+                href={`https://handbook.monash.edu/${year}/courses/${courseCode}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                handbook page
+              </a>
+            )}
+            {hasRequirements ? null : "."}
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
