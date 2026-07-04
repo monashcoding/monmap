@@ -25,6 +25,14 @@ export interface CreateDbOptions {
  * cold start, and `prepare: false` is required when going through a
  * transaction-mode pooler (PgBouncer / Neon / Supabase pgbouncer).
  * Long-running consumers (the ingest CLI) can pass `{ pool: { max, ... } }`.
+ *
+ * `connect_timeout` (seconds) is the important one for serverless: under
+ * a crawl burst, many function instances open connections at once and
+ * the pooler can hit its ceiling. Without a connect timeout a stalled
+ * connect hangs until the function's execution timeout and surfaces to
+ * the client (and Googlebot) as a 504. Capping it at 10s turns that into
+ * a fast, catchable error the render can 500/notFound on instead of a
+ * silent hang — well above the <100ms a healthy connect takes.
  */
 export function createDb(
   url: string,
@@ -34,6 +42,7 @@ export function createDb(
     max: 1,
     idle_timeout: 20,
     max_lifetime: 60 * 30,
+    connect_timeout: 10,
     prepare: false,
     ...options.pool,
   });

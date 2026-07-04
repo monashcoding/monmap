@@ -11,7 +11,8 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "test": "node --test 'lib/planner/*.test.ts' 'lib/tree/*.test.ts'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "warm": "node scripts/warm-cache.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
