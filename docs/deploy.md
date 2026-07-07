@@ -37,9 +37,21 @@ that deploys from the image.
    - `NEXT_PUBLIC_POSTHOG_HOST` = `https://us.i.posthog.com`
    - `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` = _(PostHog project token)_
    The workflow has fallbacks for all but the PostHog token.
-2. **Repo Secret**: `DOKPLOY_DEPLOY_WEBHOOK` = the deploy webhook URL
-   Dokploy generates for the app (added after step 2 below). Until it
-   exists, the workflow builds/pushes but skips the redeploy trigger.
+2. **Repo Secrets** for the redeploy trigger. The Dokploy panel is bound
+   to `localhost` on the box (SSH-tunnel access only, never exposed to the
+   internet), so GitHub can't POST to it directly — CI instead SSHes into
+   the box and fires the webhook from there. Add:
+   - `DOKPLOY_DEPLOY_WEBHOOK` = the localhost URL Dokploy shows, e.g.
+     `http://localhost:3000/api/deploy/<token>` (added after Dokploy setup)
+   - `ORACLE_SSH_HOST` = the box's public IP/hostname (SSH is already open)
+   - `ORACLE_SSH_USER` = SSH login user (e.g. `ubuntu` / `opc`)
+   - `ORACLE_SSH_KEY` = a private key authorized on the box (`ssh-keygen -t
+     ed25519 -f deploy_key`, append `deploy_key.pub` to the box's
+     `~/.ssh/authorized_keys`, paste `deploy_key` into this secret)
+   Until the SSH secrets exist, the workflow builds/pushes but skips the
+   redeploy trigger. (Alternative: expose the Dokploy panel on an HTTPS
+   domain and POST the webhook directly — but that publishes the admin UI,
+   so the SSH route is preferred here.)
 3. **Make the GHCR package public** (or give Dokploy a read token) so the
    VM can pull without auth: after the first push, open the package at
    `github.com/orgs/monashcoding/packages`, → Package settings →
@@ -68,9 +80,11 @@ that deploys from the image.
 3. **Port**: container listens on `3000`.
 4. **Domains**: add `monmap.monashcoding.com` → container port `3000` →
    enable HTTPS (Let's Encrypt). Point the DNS A record at the VM.
-5. **Deploy webhook**: copy the app's deploy webhook URL into the GitHub
-   repo secret `DOKPLOY_DEPLOY_WEBHOOK` (GitHub setup step 2) so each
-   pushed image auto-redeploys.
+5. **Deploy webhook**: copy the app's deploy webhook URL (Dokploy shows it
+   as `http://localhost:3000/api/deploy/<token>`) into the GitHub repo
+   secret `DOKPLOY_DEPLOY_WEBHOOK`, and set the `ORACLE_SSH_*` secrets
+   (GitHub setup step 2). CI SSHes into the box and fires that localhost
+   URL, so each pushed image auto-redeploys without exposing the panel.
 
 ## Deploying a change
 

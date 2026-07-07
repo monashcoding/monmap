@@ -74,13 +74,29 @@ jobs:
             NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com' }}
             NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
 
-      # Tell Dokploy to pull the new image and redeploy. Create the app in
-      # Dokploy with provider "Docker" pointing at ghcr.io/monashcoding/
-      # monmap:latest, then copy its deploy webhook URL into the repo secret
-      # DOKPLOY_DEPLOY_WEBHOOK. Skipped automatically until that secret exists.
-      - name: Trigger Dokploy redeploy
+      # Tell Dokploy to pull the new image and redeploy. The Dokploy panel
+      # is bound to localhost on the Oracle box (reached only via SSH tunnel,
+      # not exposed to the internet), so GitHub can't POST to it directly.
+      # Instead we SSH into the box and fire the webhook from there, where
+      # `localhost:3000` resolves. Set these repo secrets to enable it:
+      #   ORACLE_SSH_HOST         public IP/hostname of the box (SSH is open)
+      #   ORACLE_SSH_USER         SSH login user (e.g. ubuntu / opc)
+      #   ORACLE_SSH_KEY          a private key authorized on the box
+      #   DOKPLOY_DEPLOY_WEBHOOK  the localhost webhook URL Dokploy shows,
+      #                           e.g. http://localhost:3000/api/deploy/<token>
+      # Skipped automatically until the SSH secrets exist.
+      - name: Trigger Dokploy redeploy (over SSH)
         env:
-          # Secrets can't be used directly in `if:`, so hoist into env first.
+          SSH_HOST: ${{ secrets.ORACLE_SSH_HOST }}
+          SSH_USER: ${{ secrets.ORACLE_SSH_USER }}
+          SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          # The box-local URL (localhost) — resolved on the box, not here.
           DOKPLOY_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
-        if: ${{ env.DOKPLOY_DEPLOY_WEBHOOK != '' }}
-        run: curl -fsSL -X POST "$DOKPLOY_DEPLOY_WEBHOOK"
+        if: ${{ env.SSH_HOST != '' && env.DOKPLOY_DEPLOY_WEBHOOK != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_deploy \
+            "$SSH_USER@$SSH_HOST" \
+            "curl -fsSL -X POST '$DOKPLOY_DEPLOY_WEBHOOK'"
