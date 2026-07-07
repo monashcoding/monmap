@@ -1,0 +1,86 @@
+name: Build & publish image
+
+# Build the webapp Docker image OFF the Oracle box (GitHub's runners do the
+# heavy 2-4GB build) and push it to GHCR. Dokploy then just *pulls* the
+# prebuilt image and runs it — so three apps can share one Oracle box
+# without their builds fighting over RAM/CPU. See docs/deploy.md.
+
+on:
+  push:
+    branches: [main]
+    # Only rebuild when something that affects the image changes.
+    paths:
+      - "packages/webapp/**"
+      - "packages/db/**"
+      - "packages/scraper/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch: {} # allow manual "Run workflow"
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }} # ghcr.io/monashcoding/monmap
+
+jobs:
+  build:
+    # Native ARM64 runner — Oracle Ampere is arm64, and this is free on
+    # public repos. Avoids ~5x slower QEMU cross-compilation.
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write # push to GHCR
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata (tags)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build & push (linux/arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: . # monorepo root — pnpm needs the whole workspace
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # NEXT_PUBLIC_* are inlined into the client bundle at build time.
+          # They're all browser-public values, so configure them as repo
+          # *Variables* (Settings → Secrets and variables → Actions →
+          # Variables). Fallbacks keep the build working before you set them.
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://monmap.monashcoding.com' }}
+            NEXT_PUBLIC_AUTH_URL=${{ vars.NEXT_PUBLIC_AUTH_URL || 'https://auth.monashcoding.com' }}
+            NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com' }}
+            NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${{ vars.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+
+      # Tell Dokploy to pull the new image and redeploy. Create the app in
+      # Dokploy with provider "Docker" pointing at ghcr.io/monashcoding/
+      # monmap:latest, then copy its deploy webhook URL into the repo secret
+      # DOKPLOY_DEPLOY_WEBHOOK. Skipped automatically until that secret exists.
+      - name: Trigger Dokploy redeploy
+        env:
+          # Secrets can't be used directly in `if:`, so hoist into env first.
+          DOKPLOY_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
+        if: ${{ env.DOKPLOY_DEPLOY_WEBHOOK != '' }}
+        run: curl -fsSL -X POST "$DOKPLOY_DEPLOY_WEBHOOK"
