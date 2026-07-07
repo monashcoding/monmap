@@ -4,6 +4,7 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "pnpm --filter webapp dev",
     "build": "pnpm --filter webapp build",

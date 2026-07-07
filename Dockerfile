@@ -15,6 +15,10 @@
 FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+# Corepack reads the `packageManager` field in package.json to pin the exact
+# pnpm version (must match the lockfile-generating version, else frozen
+# installs fail on config mismatch). Auto-download it without prompting.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /app
 
