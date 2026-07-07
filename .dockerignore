@@ -1,0 +1,26 @@
+# Never ship these into the build context / image.
+node_modules
+**/node_modules
+.git
+.env
+.env.*
+!.env.example
+
+# Build outputs — the image rebuilds these from source.
+**/.next
+**/dist
+.pnpm-store
+
+# Local + scraped data, backups, tarballs.
+packages/scraper/data
+data
+backups
+*.tar.gz
+*.log
+
+# Editor / OS / tooling cruft.
+.DS_Store
+.claude
+.vscode
+.idea
+.planning

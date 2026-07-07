@@ -12,6 +12,21 @@ config({ path: resolve(here, "../../.env") })
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Self-hosted deploy (Oracle Cloud + Dokploy, in a Docker container)
+  // instead of Vercel. `standalone` emits a minimal server bundle at
+  // `.next/standalone` with its own `server.js`, so the runtime image
+  // doesn't need the full node_modules or pnpm — see the repo-root
+  // Dockerfile. `outputFileTracingRoot` points at the monorepo root so
+  // the trace picks up the workspace packages (`@monmap/db`, which is
+  // raw TS and compiled in via `transpilePackages` below).
+  output: "standalone",
+  outputFileTracingRoot: resolve(here, "../.."),
+
+  // `@monmap/db` / `@monmap/scraper` ship raw `.ts` via their `exports`
+  // maps (packages/*/src/*.ts). Next must compile them like app code
+  // rather than treat them as prebuilt deps.
+  transpilePackages: ["@monmap/db", "@monmap/scraper"],
+
   // The per-entity SEO pages (/units/[code], /courses/[code]) were
   // retired — their lazy-ISR rendering blew through Vercel's free-tier
   // ISR/edge quotas. The workbench at /tree is the single SPA now;
