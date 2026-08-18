@@ -230,12 +230,12 @@ export function plannerReducer(
       const year = state.years[action.yearIndex]
       if (!year) return state
       const fySet = new Set(action.fullYearCodes)
-      // Already placed somewhere? Bail — caller should use move instead.
-      for (const y of state.years) {
-        for (const s of y.slots) {
-          if (s.unitCodes.includes(action.code)) return state
-        }
-      }
+      // Already in THIS year? Bail — caller should use move instead. A
+      // full-year unit occupies S1+S2 of one year, so a second copy in
+      // the same year is always a mistake; a copy in a *later* year is
+      // a retake after a fail, which is legitimate.
+      if (year.slots.some((s) => s.unitCodes.includes(action.code)))
+        return state
       const nextYears = state.years.map((y, yi) => {
         if (yi !== action.yearIndex) return y
         return {

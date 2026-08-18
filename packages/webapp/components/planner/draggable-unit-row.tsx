@@ -40,7 +40,10 @@ export function DraggableUnitRow({ code }: { code: string }) {
   const faculty = useMemo(() => facultyStyle(code), [code])
   // Disable drag while either popover is open so the trigger button
   // gets the click instead of dnd-kit starting a drag operation.
-  const dragDisabled = placed || addOpen || detailsOpen
+  // Being on the plan already does NOT disable it: retaking a failed
+  // unit means dragging the same code into a later semester. The
+  // reducer still refuses a duplicate inside one slot.
+  const dragDisabled = addOpen || detailsOpen
   const draggable = useDraggable({
     id: `new:${code}`,
     data: dragData,
@@ -62,9 +65,10 @@ export function DraggableUnitRow({ code }: { code: string }) {
       {...dragAttributes}
       className={cn(
         "group/row flex items-stretch overflow-hidden rounded-xl border bg-background shadow-card transition-[transform,box-shadow,opacity] duration-200",
-        placed
-          ? "opacity-50"
-          : "cursor-grab hover:-translate-y-px active:cursor-grabbing data-[dragging=true]:opacity-30"
+        "cursor-grab hover:-translate-y-px active:cursor-grabbing data-[dragging=true]:opacity-30",
+        // Dimmed as a hint that it's already somewhere on the plan —
+        // still draggable, since a retake is a legitimate second copy.
+        placed && "opacity-60"
       )}
     >
       <div aria-hidden className={cn("w-1.5 shrink-0", faculty.railClass)} />
@@ -96,7 +100,6 @@ export function DraggableUnitRow({ code }: { code: string }) {
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={placed}
                 aria-label={`Add ${code}`}
                 className="size-6 shrink-0 rounded-lg p-0"
               >
@@ -115,7 +118,10 @@ export function DraggableUnitRow({ code }: { code: string }) {
                 year.slots.map((slot, si) => {
                   const cap = slotCapacity(slot)
                   const used = slotUsedWeight(slot, units, offerings)
-                  const full = used >= cap
+                  // Blocked per slot, not per plan: the same code twice in
+                  // one slot is meaningless, in two slots it's a retake.
+                  const inSlot = slot.unitCodes.includes(code)
+                  const full = used >= cap || inSlot
                   const label =
                     slot.label ??
                     `${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yi}`
@@ -137,7 +143,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
                     >
                       <span className="truncate">{label}</span>
                       <span className="ml-2 shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                        {used}/{cap}
+                        {inSlot ? "on plan" : `${used}/${cap}`}
                       </span>
                     </button>
                   )
