@@ -97,6 +97,15 @@ export function UnitSearchDialog({
   const debounced = useDebounced(query, 180)
   const slot = state.years[yearIndex]?.slots[slotIndex]
   const slotKind = slot?.kind
+  // Adding is blocked per-SLOT, not per-plan: a student who failed a
+  // unit retakes it in a later semester, and five separate pieces of
+  // feedback called the plan-wide block out. Being on the plan
+  // elsewhere is still surfaced (a soft "on plan" chip) so an
+  // accidental double-add stays visible.
+  const slotCodes = useMemo(
+    () => new Set(slot?.unitCodes ?? []),
+    [slot?.unitCodes]
+  )
   const slotCalendarYear = useMemo(() => {
     const base = Number(state.courseYear) || new Date().getFullYear()
     return base + yearIndex
@@ -310,7 +319,7 @@ export function UnitSearchDialog({
               } else if (e.key === "Enter") {
                 e.preventDefault()
                 const picked = items[focusIndex]
-                if (picked && !plannedCodes.has(picked.code)) {
+                if (picked && !slotCodes.has(picked.code)) {
                   addAndClose(picked.code)
                 }
               }
@@ -340,18 +349,19 @@ export function UnitSearchDialog({
               <ul className="flex flex-col gap-0.5">
                 {items.map((u, i) => {
                   const offs = offerings.get(u.code) ?? []
-                  const placed = plannedCodes.has(u.code)
+                  const inSlot = slotCodes.has(u.code)
                   return (
                     <li key={u.code}>
                       <UnitRow
                         unit={u}
                         offerings={offs}
                         slotKind={slotKind}
-                        placed={placed}
+                        placed={inSlot}
+                        onPlanElsewhere={!inSlot && plannedCodes.has(u.code)}
                         focused={i === focusIndex}
                         onHover={() => setFocusIndex(i)}
                         onClick={() => {
-                          if (!placed) addAndClose(u.code)
+                          if (!inSlot) addAndClose(u.code)
                         }}
                       />
                     </li>
@@ -380,7 +390,7 @@ export function UnitSearchDialog({
                   offerings.has(focused.code) ||
                   (offerings.get(focused.code) ?? []).length > 0
                 }
-                placed={plannedCodes.has(focused.code)}
+                placed={slotCodes.has(focused.code)}
                 slotLabel={slotLabel}
                 onAdd={() => addAndClose(focused.code)}
               />
@@ -411,6 +421,7 @@ function UnitRow({
   offerings,
   slotKind,
   placed,
+  onPlanElsewhere,
   focused,
   onHover,
   onClick,
@@ -418,7 +429,10 @@ function UnitRow({
   unit: PlannerUnit
   offerings: PlannerOffering[]
   slotKind: PeriodKind | undefined
+  /** Already in THIS slot — the only hard non-action. */
   placed: boolean
+  /** Somewhere else on the plan; addable (a retake), but worth saying. */
+  onPlanElsewhere: boolean
   focused: boolean
   onHover: () => void
   onClick: () => void
@@ -440,8 +454,8 @@ function UnitRow({
         "flex w-full flex-col gap-1 rounded-xl px-3 py-2 text-left text-sm transition-colors",
         focused ? "bg-accent text-accent-foreground" : "hover:bg-muted",
         // Non-fitting units are NOT dimmed at the row level — the chip
-        // colours alone signal which period a unit runs in. Placed units
-        // still dim, since "already on plan" is a hard non-action.
+        // colours alone signal which period a unit runs in. Units already
+        // in THIS slot still dim: that's the one hard non-action.
         placed && "cursor-not-allowed opacity-45"
       )}
     >
@@ -461,6 +475,11 @@ function UnitRow({
       </div>
       <div className="flex items-center gap-1">
         {placed ? (
+          <PeriodChip>
+            <CheckIcon className="size-2.5" />
+            <span className="ml-0.5">In this slot</span>
+          </PeriodChip>
+        ) : onPlanElsewhere ? (
           <PeriodChip>
             <CheckIcon className="size-2.5" />
             <span className="ml-0.5">On plan</span>
@@ -534,7 +553,7 @@ function FocusedDetails({
         <div className="flex shrink-0 items-center gap-2 border-b bg-card px-4 py-2 text-xs">
           {placed ? (
             <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
-              <CheckIcon className="size-3" /> Already on plan
+              <CheckIcon className="size-3" /> Already in this slot
             </span>
           ) : !hasOfferingData ? (
             <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
@@ -563,7 +582,7 @@ function FocusedDetails({
           disabled={placed}
           onClick={onAdd}
         >
-          {placed ? "On plan" : `Add to ${slotLabel}`}
+          {placed ? "In this slot" : `Add to ${slotLabel}`}
         </Button>
       </div>
     </div>

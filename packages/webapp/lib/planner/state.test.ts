@@ -139,6 +139,37 @@ test("add_optional_slot appends a new slot; no-op if kind already present", () =
   assert.equal(s.years[0].slots.length, 3)
 })
 
+test("add_full_year_unit: a retake in a later year is allowed", () => {
+  // Failing a full-year unit and taking it again next year is
+  // legitimate; only a second copy inside the SAME year is a mistake
+  // (an FY unit already occupies both semesters of one year).
+  let s = defaultState("2026", "C2000")
+  s = plannerReducer(s, {
+    type: "add_full_year_unit",
+    yearIndex: 0,
+    code: "FIT3164",
+    fullYearCodes: [],
+  })
+  s = plannerReducer(s, {
+    type: "add_full_year_unit",
+    yearIndex: 1,
+    code: "FIT3164",
+    fullYearCodes: [],
+  })
+  assert.ok(s.years[1].slots[0].unitCodes.includes("FIT3164"))
+  assert.ok(s.years[1].slots[1].unitCodes.includes("FIT3164"))
+
+  // Same year twice is still a no-op.
+  const before = s
+  s = plannerReducer(s, {
+    type: "add_full_year_unit",
+    yearIndex: 1,
+    code: "FIT3164",
+    fullYearCodes: [],
+  })
+  assert.equal(s, before)
+})
+
 test("remove_slot: stripping S1 orphans FY twin from S2 of the same year", () => {
   let s = defaultState("2026", "C2000")
   s = plannerReducer(s, {

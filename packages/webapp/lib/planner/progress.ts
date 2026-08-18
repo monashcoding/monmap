@@ -15,6 +15,11 @@ export interface ProgressSummary {
   creditPointsByYear: number[]
   creditPointsBySlotKind: { S1: number; S2: number; OTHER: number }
   uniqueUnitCount: number
+  /**
+   * Codes placed in more than one slot (retakes, or accidental
+   * double-adds). Their credit points are counted once in
+   * `totalCreditPoints`.
+   */
   duplicateUnitCodes: string[]
 }
 
@@ -28,6 +33,12 @@ export function summarizePlan(
   const byYear: number[] = []
   const byKind = { S1: 0, S2: 0, OTHER: 0 }
   const seen = new Map<string, number>()
+  // Retaking a failed unit puts the same code on the plan twice. The
+  // second attempt is real workload (so it counts in byKind, which is
+  // per-semester load) but earns no extra credit toward the degree, so
+  // degree-level totals count a code once — the same treatment full-year
+  // twins already get, just scoped to the whole plan instead of a year.
+  const creditedCodes = new Set<string>()
 
   for (const year of state.years) {
     let yearTotal = 0
@@ -58,17 +69,21 @@ export function summarizePlan(
           // twin was seen — skip the degree-level bookkeeping.
           continue
         }
-
-        total += fullCp
-        yearTotal += fullCp
         if (isFY) fyAlreadyCountedThisYear.add(code)
         else seen.set(code, (seen.get(code) ?? 0) + 1)
+
+        if (creditedCodes.has(code)) continue
+        creditedCodes.add(code)
+        total += fullCp
+        yearTotal += fullCp
       }
     }
     byYear.push(yearTotal)
   }
 
-  // Flag only "real" duplicates — FY twins were already excluded above.
+  // Repeated placements — a retake after a fail, or an accidental
+  // double-add. Either way it's a note, not an error: the credit is
+  // counted once above. FY twins were already excluded.
   const duplicates = [...seen.entries()]
     .filter(([, n]) => n > 1)
     .map(([c]) => c)

@@ -128,13 +128,20 @@ test("summarizePlan: full-year twin contributes half its CP to each semester", (
   assert.equal(s.uniqueUnitCount, 1)
 })
 
-test("summarizePlan: detects duplicate unit placements", () => {
+test("summarizePlan: reports a repeated unit and credits it once", () => {
+  // Retaking a failed unit: same code in two different years. The
+  // repeat is reported so an accidental double-add stays visible, but
+  // it must not inflate the degree total — you don't earn the credit
+  // points twice.
   const state = emptyState()
   state.years[0].slots[0].unitCodes = ["FIT1045"]
   state.years[1].slots[0].unitCodes = ["FIT1045"]
 
   const s = summarizePlan(state, bit, new Map([["FIT1045", unit("FIT1045")]]))
   assert.deepEqual(s.duplicateUnitCodes, ["FIT1045"])
+  assert.equal(s.totalCreditPoints, 6, "credited once, not twice")
+  assert.equal(s.creditPointsByYear[1], 0, "the retake year earns nothing")
+  assert.equal(s.uniqueUnitCount, 1)
 })
 
 test("summarizePlan: ignores unknown codes (credit points = 0)", () => {

@@ -41,15 +41,8 @@ type ActiveDrag =
  * same context as in-grid moves and swaps.
  */
 export function PlannerDnd({ children }: { children: React.ReactNode }) {
-  const {
-    state,
-    dispatch,
-    fullYearCodes,
-    units,
-    offerings,
-    addUnit,
-    plannedCodes,
-  } = usePlanner()
+  const { state, dispatch, fullYearCodes, units, offerings, addUnit } =
+    usePlanner()
   const [active, setActive] = useState<ActiveDrag | null>(null)
 
   // 6px activation distance lets the unit-detail popover button still
@@ -80,11 +73,14 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
 
     // ── Drag from sidebar (new-unit) ───────────────────────────────
     if (a.kind === "new-unit") {
-      if (plannedCodes.has(a.code)) return
       const targetYearIdx = overData.yearIndex
       const targetSlotIdx = overData.slotIndex
       const target = state.years[targetYearIdx]?.slots[targetSlotIdx]
       if (!target || target.locked) return
+      // Rejected per slot, not per plan — dropping a code into a slot
+      // that already holds it is a no-op, but dropping it into a later
+      // semester is a retake after a fail, which students do.
+      if (target.unitCodes.includes(a.code)) return
       if (a.isFullYear) {
         // FY needs S1+S2 of one year with both halves free.
         const yr = state.years[targetYearIdx]
