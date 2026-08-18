@@ -7,6 +7,7 @@
  */
 export {
   type RequirementGroup,
+  type DegreeShape,
   type EmbeddedSpecialisation,
   type ExcludedAos,
   containerParts,

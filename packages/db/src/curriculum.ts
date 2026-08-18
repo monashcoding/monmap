@@ -56,7 +56,24 @@ export interface RequirementGroup {
    * the course also has unscoped or differently-scoped groups.
    */
   scope?: string
+  /**
+   * Cohort scope for groups the handbook addresses to one degree shape:
+   * `"single"` for "Students enrolled in the single degree
+   * Engineering", `"double"` for "Students enrolled in a double degree
+   * with Engineering" / "Double degree with engineering option".
+   * Absent means the group applies to everyone.
+   *
+   * This is how Monash states that a double degree does NOT do the
+   * specialisation's 36cp of technical electives — ECSYSENG04's Part E
+   * carries both branches side by side, the double one holding 0cp and
+   * the prose "these units are not a requirement in the double degree".
+   * Readers keep only the branch matching the course they arrived
+   * through; see `fetchCourseWithAoS`.
+   */
+  degreeShape?: DegreeShape
 }
+
+export type DegreeShape = "single" | "double"
 
 /**
  * Uncertain zero-cp unit pools ("complete 24 points from the following
@@ -82,6 +99,7 @@ export function extractRequirementGroups(
     /** All emissions into this group were on budget-proven paths. */
     certain: boolean
     scope: string | null
+    degreeShape: DegreeShape | null
     /** Depth-1 Part title, used to disambiguate colliding titles. */
     partTitle: string | null
   }
@@ -97,6 +115,7 @@ export function extractRequirementGroups(
     required: number,
     certain: boolean,
     scope: string | null,
+    degreeShape: DegreeShape | null,
     partTitle: string | null
   ) => {
     if (options.length === 0) return
@@ -120,6 +139,11 @@ export function extractRequirementGroups(
       // (E3001, L3001). A group proven mandatory via ANY path is proven.
       cur.certain = cur.certain || certain
       cur.scope = cur.scope ?? scope
+      // First non-null wins, and a group reachable both with and
+      // without a cohort label is not cohort-specific: an unlabelled
+      // path means "applies to everyone".
+      if (degreeShape === null) cur.degreeShape = null
+      else cur.degreeShape = cur.degreeShape ?? degreeShape
       return
     }
     indexByKey.set(key, groups.length)
@@ -129,6 +153,7 @@ export function extractRequirementGroups(
       options: [...options],
       certain,
       scope,
+      degreeShape,
       partTitle,
     })
   }
@@ -139,10 +164,12 @@ export function extractRequirementGroups(
     depth: number,
     certain: boolean,
     scope: string | null,
+    degreeShape: DegreeShape | null,
     partTitle: string | null
   ): void => {
     if (Array.isArray(node)) {
-      for (const x of node) walk(x, ancestor, depth, certain, scope, partTitle)
+      for (const x of node)
+        walk(x, ancestor, depth, certain, scope, degreeShape, partTitle)
       return
     }
     if (!node || typeof node !== "object") return
@@ -156,6 +183,10 @@ export function extractRequirementGroups(
           : null
     const childAncestor = title || ancestor
     const childScope = (title && detectScope(title)) || scope
+    // Inherited: a cohort label on an outer container scopes everything
+    // beneath it (ECSYSENG04 labels the Part E branch, not each leaf).
+    const childDegreeShape =
+      (title && detectDegreeShape(title)) || degreeShape
     const childPartTitle = depth === 1 ? title : partTitle
 
     // The root node usually has no credit_points of its own; fall back
@@ -265,6 +296,7 @@ export function extractRequirementGroups(
           required,
           groupCertain,
           childScope,
+          childDegreeShape,
           childPartTitle
         )
       }
@@ -275,7 +307,15 @@ export function extractRequirementGroups(
 
     if (containerCp <= 0) {
       for (const sub of subs)
-        walk(sub, childAncestor, depth + 1, certain, childScope, childPartTitle)
+        walk(
+          sub,
+          childAncestor,
+          depth + 1,
+          certain,
+          childScope,
+          childDegreeShape,
+          childPartTitle
+        )
       return
     }
 
@@ -334,6 +374,7 @@ export function extractRequirementGroups(
           Math.max(1, Math.min(needed, unique.length - 1)),
           false,
           childScope,
+          childDegreeShape,
           childPartTitle
         )
       }
@@ -351,7 +392,15 @@ export function extractRequirementGroups(
         // uncertain path whenever the subtree holds subject leaves —
         // recall-first: visible in requirements, never auto-loaded.
         if (hasSubjectLeaf(subRec)) {
-          walk(sub, childAncestor, depth + 1, false, childScope, childPartTitle)
+          walk(
+            sub,
+            childAncestor,
+            depth + 1,
+            false,
+            childScope,
+            childDegreeShape,
+            childPartTitle
+          )
         }
         continue
       }
@@ -369,12 +418,13 @@ export function extractRequirementGroups(
         depth + 1,
         certain && provenMandatory,
         childScope,
+        childDegreeShape,
         childPartTitle
       )
     }
   }
 
-  walk(structure, null, 0, true, null, null)
+  walk(structure, null, 0, true, null, null, null)
 
   // --- Scope resolution: a scoped group may only auto-load when the
   // whole course is single-scoped (e.g. C2004, the Malaysia-campus
@@ -416,8 +466,34 @@ export function extractRequirementGroups(
       options: g.options,
       autoLoad,
       ...(g.scope ? { scope: g.scope } : {}),
+      ...(g.degreeShape ? { degreeShape: g.degreeShape } : {}),
     }
   })
+}
+
+/**
+ * Cohort detection over container titles: does this container address
+ * single-degree students, double-degree students, or everyone?
+ *
+ * Monash writes the split several ways — "Students enrolled in the
+ * single degree Engineering" / "Students enrolled in a double degree
+ * with Engineering" as an explicit pair (every engineering
+ * specialisation's Part E), and one-sided labels like "Double degree
+ * with engineering option" sitting beside a generically-titled
+ * alternative ("Level 1 mathematics sequence", "Option 1") in the
+ * science majors. Only the *labelled* branch is cohort-scoped; an
+ * unlabelled sibling stays available to everyone, which is why a
+ * mismatch is the only thing readers drop.
+ */
+export function detectDegreeShape(title: string): DegreeShape | null {
+  if (!/\bdegree\b/i.test(title)) return null
+  // "single degree" and "double/dual degree" can both appear when a
+  // title contrasts them ("... not the single degree"); that's not a
+  // scope, so require exactly one to be present.
+  const single = /\bsingle\s+degree\b/i.test(title)
+  const double = /\b(?:double|dual)\s+degrees?\b/i.test(title)
+  if (single === double) return null
+  return single ? "single" : "double"
 }
 
 /**

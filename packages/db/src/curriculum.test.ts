@@ -8,6 +8,7 @@ import {
   extractSubCourseRefs,
   extractComponentLabels,
   containerParts,
+  detectDegreeShape,
   pickDefaultUnits,
 } from "./curriculum.ts"
 
@@ -254,6 +255,93 @@ test("pickDefaultUnits: drops choice groups, keeps fully-mandatory ones", () => 
   ]
   const defaults = pickDefaultUnits(groups)
   assert.deepEqual(defaults.map((d) => d.code), ["U1", "U2"])
+})
+
+/* ------------------------------------------------------------------ *
+ * Degree-shape (single vs double) cohort scoping
+ * ------------------------------------------------------------------ */
+
+test("degree shape: the two branches of a specialisation's Part E are labelled", () => {
+  // Real ECSYSENG04 shape: Part E carries a 36cp single-degree elective
+  // branch beside a 0cp double-degree branch whose prose says the units
+  // "are not a requirement in the double degree".
+  const structure = {
+    container: [
+      {
+        title: "Part E. Elective study - Specialisation",
+        credit_points: "36",
+        container: [
+          {
+            title: "Students enrolled in the single degree Engineering",
+            credit_points: "36",
+            relationship: [subjectLeaf("ECE4111", 6, 0), subjectLeaf("ECE4112", 6, 1)],
+          },
+          {
+            title: "Students enrolled in a double degree with Engineering",
+            credit_points: "0",
+            relationship: [subjectLeaf("ECE4113", 6, 0)],
+          },
+        ],
+      },
+    ],
+  }
+  const groups = extractRequirementGroups(structure, 144)
+  const single = groups.find((g) => g.degreeShape === "single")
+  const double = groups.find((g) => g.degreeShape === "double")
+  assert.ok(single, "single-degree branch is labelled")
+  assert.ok(double, "double-degree branch is labelled")
+  assert.deepEqual(single!.options, ["ECE4111", "ECE4112"])
+  assert.deepEqual(double!.options, ["ECE4113"])
+})
+
+test("degree shape: an unlabelled group stays available to everyone", () => {
+  const structure = {
+    container: [
+      {
+        title: "Level 1 units",
+        credit_points: "12",
+        container: [
+          {
+            title: "Double degree with engineering option",
+            credit_points: "12",
+            relationship: [subjectLeaf("ENG1005", 6, 0), subjectLeaf("ENG2005", 6, 1)],
+          },
+          {
+            title: "Level 1 mathematics sequence",
+            credit_points: "12",
+            relationship: [subjectLeaf("MTH1030", 6, 0), subjectLeaf("MTH1035", 6, 1)],
+          },
+        ],
+      },
+    ],
+  }
+  const groups = extractRequirementGroups(structure, 48)
+  const labelled = groups.filter((g) => g.degreeShape)
+  const unlabelled = groups.filter((g) => !g.degreeShape)
+  assert.equal(labelled.length, 1)
+  assert.equal(labelled[0]!.degreeShape, "double")
+  assert.ok(unlabelled.length >= 1, "the generic sibling is not cohort-scoped")
+})
+
+test("degree shape: detector", () => {
+  assert.equal(
+    detectDegreeShape("Students enrolled in the single degree Engineering"),
+    "single"
+  )
+  assert.equal(
+    detectDegreeShape("Students enrolled in a double degree with Engineering"),
+    "double"
+  )
+  assert.equal(detectDegreeShape("Double degree with engineering option"), "double")
+  assert.equal(detectDegreeShape("Primary education single degree"), "single")
+  // No cohort word, or both at once (a title contrasting them), is not
+  // a scope — dropping such a group would hide it from everyone.
+  assert.equal(detectDegreeShape("Part C. Specialist studies"), null)
+  assert.equal(detectDegreeShape("Bachelor degree requirements"), null)
+  assert.equal(
+    detectDegreeShape("Single degree students only, not the double degree"),
+    null
+  )
 })
 
 /* ------------------------------------------------------------------ *

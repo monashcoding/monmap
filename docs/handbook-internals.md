@@ -170,6 +170,39 @@ so always check *both* directions before calling two units equivalent.
   units directly). We don't surface this as a flat table yet; reach
   into `courses.curriculum_structure` JSONB for it.
 
+## Cohort scoping: single degree vs double degree
+
+Container titles carry a second scope axis beside campus. Every
+engineering specialisation splits its Part E in two — *"Students
+enrolled in the single degree Engineering"* (36cp of technical
+electives) and *"Students enrolled in a double degree with
+Engineering"*, the latter holding 0cp and the prose "The 36 credit
+points of specialisation technical electives … have already been
+credited towards the double degree structure. As a result, these units
+are not a requirement in the double degree." The science majors write
+it one-sided instead — a *"Double degree with engineering option"*
+container sitting beside a generically-titled sibling ("Level 1
+mathematics sequence", "Option 1") — and D3001's PRIMARY04 splits its
+**entire** structure into "Primary education single degree" and
+"Primary education double degree" branches of 204cp each.
+
+`detectDegreeShape` tags groups `single` / `double` from these titles
+(inherited down the subtree, since the label sits on the branch, not
+the leaves) and `fetchCourseWithAoS` keeps only the branch matching the
+course the AoS was reached through. 29 of 2026's 402 AoS carry a
+cohort-scoped group. Two rules matter:
+
+- **Only a labelled branch is scoped.** An unlabelled sibling applies
+  to everyone, so a double degree sees both its own branch and the
+  generic alternatives — which is the honest reading of a choice.
+- **A title naming both shapes is not a scope** ("… not the single
+  degree"), or the group would vanish for everybody.
+
+Without this, an engineering double degree demanded its
+specialisation's full technical-elective list on top of the second
+degree — 37 units for ECSYSENG04, 44 for SFTWRENG02 — which four
+students reported independently.
+
 ## Cross-year references are the norm
 
 When a requisite leaf points at `FIT1008`, its `academic_item_url`
