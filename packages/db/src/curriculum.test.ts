@@ -7,6 +7,7 @@ import {
   extractEmbeddedSpecialisations,
   extractSubCourseRefs,
   extractComponentLabels,
+  containerParts,
   pickDefaultUnits,
 } from "./curriculum.ts"
 
@@ -294,8 +295,75 @@ test("sub-course refs: deeply-nested course pointer is found (A7 regression: M60
   }
   const refs = extractSubCourseRefs(structure)
   assert.deepEqual(refs, [
-    { componentTitle: "Specialisation prerequisites", courseCode: "C6001" },
+    {
+      componentTitle: "Specialisation prerequisites",
+      courseCode: "C6001",
+      includedParts: null,
+    },
   ])
+})
+
+/* ------------------------------------------------------------------ *
+ * Part-scoped component inheritance — E3010
+ * ------------------------------------------------------------------ */
+
+test("included parts: comma-and list is parsed off the component prose", () => {
+  const structure = {
+    container: [
+      {
+        title: "Computer Science component",
+        description:
+          "<p>You must complete 96 credit points from Parts A, B, C and D " +
+          "as described in the Bachelor of Computer Science.</p>",
+        relationship: [courseLeaf("C2001")],
+      },
+    ],
+  }
+  const [ref] = extractSubCourseRefs(structure)
+  assert.deepEqual(ref!.includedParts, ["A", "B", "C", "D"])
+})
+
+test("included parts: repeated 'Part X' phrasing is parsed (E3010 engineering side)", () => {
+  const structure = {
+    container: [
+      {
+        title: "Engineering component",
+        description:
+          "You must complete 144 credit points comprising all of Part A, " +
+          "six credit points from Part B, all of Part C and all of Part D " +
+          "as described in the Bachelor of Engineering (Honours).",
+        relationship: [courseLeaf("E3001")],
+      },
+    ],
+  }
+  const [ref] = extractSubCourseRefs(structure)
+  assert.deepEqual(ref!.includedParts, ["A", "B", "C", "D"])
+})
+
+test("included parts: prose naming no Parts yields null (no signal, inherit all)", () => {
+  const structure = {
+    container: [
+      {
+        title: "Science component",
+        description: "You must complete the Bachelor of Science requirements.",
+        relationship: [courseLeaf("S2000")],
+      },
+    ],
+  }
+  const [ref] = extractSubCourseRefs(structure)
+  assert.equal(ref!.includedParts, null)
+})
+
+test("container parts: Part-numbered titles resolve, others are null", () => {
+  assert.deepEqual([...containerParts("Part C. Specialist studies")!], ["C"])
+  assert.deepEqual(
+    [...containerParts("Parts C, D and E. Specialist studies")!].sort(),
+    ["C", "D", "E"],
+  )
+  // E3001 parks its 22 minors outside the Part scheme — the signal that
+  // they are not reachable from a double degree that takes named Parts.
+  assert.equal(containerParts("Engineering minors"), null)
+  assert.equal(containerParts("Specialisations"), null)
 })
 
 test("sub-course refs: subject-typed leaves are ignored", () => {

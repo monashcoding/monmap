@@ -112,10 +112,51 @@ so always check *both* directions before calling two units equivalent.
   + `Course: C2001`); the majors/minors/specialisations are linked on
   the *component* courses, not the double. S2004 has 60 direct
   `course_areas_of_study` rows in 2020–2022 and zero in 2023–2026 —
-  every one of 2026's 110 double degrees has zero. Any query that
+  and 96 of 2026's 110 double degrees have zero. Any query that
   wants a double degree's AoS must follow `courses.sub_course_refs`
   to the component courses and read their edges (this is what
   `fetchCourseWithAoS` does).
+- **…but the 14 that DO own edges are narrowing the offer, not adding
+  to it.** A parent that enumerates AoS *underneath* a component
+  container is stating which of that component's options survive into
+  the double: E3010's "Engineering specialisations: the following are
+  specialisations available within this double-degree course" lists 3
+  of E3001's 10, and its "Specialist discipline: you must complete the
+  specialisation below" pins C2001 to `ALGSFTWR01` alone. Unioning
+  parent + component edges (what we did until 2026-08) offered E3010
+  41 AoS instead of 4 — Aerospace, Civil, Mechanical and friends all
+  selectable. `fetchCourseWithAoS` now drops a component's edges for
+  any **(component, kind)** pair the parent enumerates.
+  Narrowing is scoped per kind because an enumeration of
+  specialisations says nothing about minors. The 14 affected courses in
+  2026: D3002/D3004/D3005/D3006/D3007 (Education doubles → Primary +
+  Secondary only), E3004, E3005, E3007, E3008, E3009, E3010, E3011,
+  E3012, L3002. Join parent edge → component via
+  `courses.component_labels` (aosCode → depth-1 container title) and
+  `sub_course_refs`, never via title strings.
+- **A double degree takes only some Parts of each component, and AoS
+  in the other Parts are unreachable.** The component container's prose
+  says which ("You must complete 96 credit points from Parts A, B, C
+  and D as described in the Bachelor of Computer Science" — 42+6+36+12,
+  exactly C2001 minus its 48cp Part E). C2001's 5 discipline electives
+  live in *Part E. Free elective studies*, so E3010 cannot offer them.
+  Ingest bakes the parsed letters as `sub_course_refs[].includedParts`
+  (`parseIncludedParts`); the reader matches them against the
+  component's own container titles via `containerParts`. **Null means
+  no signal — inherit everything**, which is the majority case and what
+  every row baked before 2026-08 carries.
+  Two traps: (1) AoS under a container that is *not* Part-numbered are
+  out of scope too — E3001 parks its 22 minors in a top-level
+  "Engineering minors" sibling whose own prose ends "Minors are also
+  not available in the engineering double-degrees", which is the
+  independent confirmation that dropping them is right. (2) **Guard on
+  resolvability**: only filter when every letter the parent names maps
+  to a real container of that component. D3001 numbers Parts A–E in
+  prose but titles its containers "Specialisations", "Professional
+  studies", …; without the guard five Education doubles lose every AoS
+  they have. With both rules, 50 of 2026's 110 doubles narrow, every
+  single drop lands in an elective/free-elective container, and none
+  drops to zero AoS. E3010 goes 41 → 4.
 - **Not every sub-course ref is a degree component.** Refs sharing a
   (trimmed) `componentTitle` are "pick one of these programs"
   alternatives, not halves of a double: A6039 lists six partner

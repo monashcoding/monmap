@@ -788,15 +788,65 @@ function byOrder(
 export interface SubCourseRef {
   componentTitle: string
   courseCode: string
+  /**
+   * Part letters of the *component* course this double degree actually
+   * includes, parsed from the component container's prose ("You must
+   * complete 96 credit points from Parts A, B, C and D as described in
+   * the Bachelor of Computer Science"). Null when the prose names no
+   * Parts — the common case, and what every row baked before this
+   * field existed carries, so readers must treat it as "no signal,
+   * inherit the component's full offer".
+   *
+   * Consumers must also verify every letter here resolves to a real
+   * container of the component before acting on it (see
+   * `fetchCourseWithAoS`): D3001 numbers its Parts in prose but titles
+   * its containers "Specialisations", "Professional studies", … and a
+   * naive match would strip every AoS off five Education doubles.
+   */
+  includedParts?: string[] | null
+}
+
+/**
+ * Pull the Part letters out of a component container's prose. Handles
+ * both list styles Monash writes — "Parts A, B, C and D" and "all of
+ * Part A, six credit points from Part B, all of Part C". Over-matching
+ * is the safe direction: a stray letter only widens what's inherited.
+ */
+export function parseIncludedParts(description: unknown): string[] | null {
+  if (typeof description !== "string" || !description) return null
+  const text = description.replace(/<[^>]+>/g, " ")
+  const out = new Set<string>()
+  const re = /\bParts?\s+([A-Z](?:\s*(?:,|and|&)\s*[A-Z])*)\b/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text)) !== null) {
+    for (const letter of m[1]?.match(/[A-Z]/g) ?? []) out.add(letter)
+  }
+  return out.size > 0 ? [...out].sort() : null
+}
+
+/**
+ * The inverse of `parseIncludedParts`: which Part letters does a
+ * container *title* cover? "Part C. Specialist studies" → {C};
+ * "Parts C, D and E. Specialist studies" → {C,D,E}. Returns null for a
+ * title that isn't Part-numbered at all ("Engineering minors"), which
+ * callers read as "outside the Part scheme".
+ */
+export function containerParts(title: string): Set<string> | null {
+  const m = /^\s*Parts?\s+([A-Z](?:[\s,]+(?:and\s+)?[A-Z])*)[.\s]/.exec(title)
+  return m ? new Set(m[1]?.match(/[A-Z]/g) ?? []) : null
 }
 
 export function extractSubCourseRefs(structure: unknown): SubCourseRef[] {
   const out: SubCourseRef[] = []
   const seen = new Set<string>()
 
-  const walk = (node: unknown, ancestor: string): void => {
+  const walk = (
+    node: unknown,
+    ancestor: string,
+    ancestorDesc: unknown
+  ): void => {
     if (Array.isArray(node)) {
-      for (const x of node) walk(x, ancestor)
+      for (const x of node) walk(x, ancestor, ancestorDesc)
       return
     }
     if (!node || typeof node !== "object") return
@@ -808,6 +858,9 @@ export function extractSubCourseRefs(structure: unknown): SubCourseRef[] {
           ? (n["name"] as string)
           : null
     const childAncestor = title || ancestor
+    // The prose that scopes a component travels with the title we take
+    // as componentTitle, so the two can't drift apart.
+    const childDesc = title ? n["description"] : ancestorDesc
 
     const rels = n["relationship"]
     if (Array.isArray(rels)) {
@@ -827,13 +880,17 @@ export function extractSubCourseRefs(structure: unknown): SubCourseRef[] {
         const key = `${componentTitle}|${code}`
         if (seen.has(key)) continue
         seen.add(key)
-        out.push({ componentTitle, courseCode: code })
+        out.push({
+          componentTitle,
+          courseCode: code,
+          includedParts: parseIncludedParts(childDesc),
+        })
       }
     }
-    for (const v of Object.values(n)) walk(v, childAncestor)
+    for (const v of Object.values(n)) walk(v, childAncestor, childDesc)
   }
 
-  walk(structure, "")
+  walk(structure, "", null)
   return out
 }
 

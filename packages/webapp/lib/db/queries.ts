@@ -15,6 +15,7 @@ import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 import { getDb, HANDBOOK_YEAR } from "./client.ts"
 import { cacheHandbook } from "./memo.ts"
 import {
+  containerParts,
   extractRequirementGroups,
   pickDefaultUnits,
   type EmbeddedSpecialisation,
@@ -166,6 +167,9 @@ async function _fetchCourseWithAoS(
             creditPoints: courses.creditPoints,
             requirementGroups: courses.requirementGroups,
             embeddedSpecialisations: courses.embeddedSpecialisations,
+            // Needed to resolve the component's own AoS to the Part
+            // container they sit under — see the includedParts filter.
+            componentLabels: courses.componentLabels,
           })
           .from(courses)
           .where(
@@ -211,9 +215,89 @@ async function _fetchCourseWithAoS(
     )
   }
 
+  // Pre-baked map of aosCode → depth-1 ancestor title (double-degree
+  // component labels) for AoS linked on the course itself.
+  const componentLabels: ReadonlyMap<string, string> = new Map(
+    Object.entries(course.componentLabels ?? {})
+  )
+  // Resolve a parent-linked AoS's component *course* from its label so
+  // the UI can join AoS to components structurally instead of comparing
+  // display strings (titles differ in case and trailing whitespace —
+  // "Computer science component" vs "Computer Science component ").
+  const refCodeByTitle = new Map(
+    componentRefs.map((r) => [refTitle(r).toLowerCase(), r.courseCode])
+  )
+
+  // A double degree inherits its components' AoS wholesale, but when
+  // the parent enumerates AoS of some kind *underneath* a component
+  // container, that enumeration IS the narrowed offer — E3010 lists 3
+  // of E3001's 10 engineering specialisations ("The following are
+  // specialisations available within this double-degree course"), so
+  // Aerospace/Civil/Mechanical/... are not on the table even though
+  // E3001 links them. Anything the component links of that kind that
+  // the parent didn't name is dropped.
+  //
+  // Scoped per (component, kind) deliberately: E3010 says nothing
+  // about E3001's 22 engineering minors, and silence is not exclusion
+  // — its own prose still points at Part E electives. Only kinds the
+  // parent actually speaks to get narrowed. Courses with no component
+  // refs, and components the parent never enumerates, are untouched.
+  const narrowedByParent = new Set<string>()
+  for (const l of links) {
+    if (l.ownerCode !== code) continue
+    const label = componentLabels.get(l.aosCode)
+    const owner = label
+      ? refCodeByTitle.get(label.trim().toLowerCase())
+      : undefined
+    if (owner) narrowedByParent.add(`${owner}|${l.kind}`)
+  }
+  // Second narrowing axis: a double degree takes only *part* of each
+  // component ("You must complete 96 credit points from Parts A, B, C
+  // and D as described in the Bachelor of Computer Science" — 42+6+36+12,
+  // exactly C2001 minus its Part E). AoS parked in a Part the parent
+  // didn't take are not reachable: C2001's 5 discipline electives live
+  // in Part E. Free elective studies, and E3001's 22 minors hang off a
+  // non-Part container whose own prose says outright "Minors are also
+  // not available in the engineering double-degrees".
+  //
+  // Guard: only filter a component when EVERY Part letter the parent
+  // names resolves to a real container of that component. D3001 talks
+  // about "Parts A, B, C, D and E" in prose while titling its containers
+  // "Specialisations", "Professional studies", … — without the guard,
+  // five Education doubles would lose every AoS they have.
+  const partScoped = new Map<string, Set<string>>()
+  for (const ref of componentRefs) {
+    const parts = ref.includedParts
+    if (!parts || parts.length === 0) continue
+    const labels = subCourseMap.get(ref.courseCode)?.componentLabels
+    if (!labels) continue
+    const covered = new Set<string>()
+    for (const title of new Set(Object.values(labels)))
+      for (const letter of containerParts(title) ?? []) covered.add(letter)
+    if (!parts.every((p) => covered.has(p))) continue
+    partScoped.set(ref.courseCode, new Set(parts))
+  }
+  const inIncludedPart = (l: { ownerCode: string; aosCode: string }) => {
+    const parts = partScoped.get(l.ownerCode)
+    if (!parts) return true
+    const labels = subCourseMap.get(l.ownerCode)?.componentLabels ?? {}
+    const own = containerParts(labels[l.aosCode.toUpperCase()] ?? "")
+    return own !== null && [...own].some((p) => parts.has(p))
+  }
+
+  const offeredLinks =
+    narrowedByParent.size > 0 || partScoped.size > 0
+      ? links.filter(
+          (l) =>
+            l.ownerCode === code ||
+            (!narrowedByParent.has(`${l.ownerCode}|${l.kind}`) &&
+              inIncludedPart(l))
+        )
+      : links
+
   // Build per-AoS requirement groups from each AoS's curriculum.
   const aosGroups = new Map<string, RequirementGroup[]>()
-  for (const l of links) {
+  for (const l of offeredLinks) {
     if (aosGroups.has(l.aosCode)) continue
     aosGroups.set(
       l.aosCode,
@@ -221,7 +305,7 @@ async function _fetchCourseWithAoS(
     )
   }
 
-  const aosCodes = [...new Set(links.map((l) => l.aosCode))]
+  const aosCodes = [...new Set(offeredLinks.map((l) => l.aosCode))]
   const unitRows =
     aosCodes.length > 0
       ? await db
@@ -328,25 +412,12 @@ async function _fetchCourseWithAoS(
     }
   }
 
-  // Pre-baked map of aosCode → depth-1 ancestor title (double-degree
-  // component labels) for AoS linked on the course itself.
-  const componentLabels: ReadonlyMap<string, string> = new Map(
-    Object.entries(course.componentLabels ?? {})
-  )
-  // Resolve a parent-linked AoS's component *course* from its label so
-  // the UI can join AoS to components structurally instead of comparing
-  // display strings (titles differ in case and trailing whitespace —
-  // "Computer science component" vs "Computer Science component ").
-  const refCodeByTitle = new Map(
-    componentRefs.map((r) => [refTitle(r).toLowerCase(), r.courseCode])
-  )
-
   // De-duplicate course→AoS edges by aosCode; first edge wins. Edges
   // linked on the course itself sort first — when an AoS is reachable
   // both directly and via a component, the parent edge carries the
   // double-degree-specific context.
   const byCode = new Map<string, PlannerAreaOfStudy>()
-  const orderedLinks = [...links].sort(
+  const orderedLinks = [...offeredLinks].sort(
     (a, b) => (a.ownerCode === code ? 0 : 1) - (b.ownerCode === code ? 0 : 1)
   )
   for (const l of orderedLinks) {
