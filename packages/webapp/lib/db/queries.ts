@@ -18,6 +18,7 @@ import {
   containerParts,
   extractRequirementGroups,
   pickDefaultUnits,
+  type DegreeShape,
   type EmbeddedSpecialisation,
   type ExcludedAos,
   type RequirementGroup,
@@ -295,13 +296,28 @@ async function _fetchCourseWithAoS(
         )
       : links
 
+  // Requirement groups the handbook addresses to one degree shape are
+  // kept only for the shape the student is actually in. This is how a
+  // double degree sheds its specialisation's technical electives:
+  // ECSYSENG04's Part E holds "Students enrolled in the single degree
+  // Engineering" (36cp of electives) next to "Students enrolled in a
+  // double degree with Engineering" (0cp, "these units are not a
+  // requirement in the double degree"). Unlabelled groups apply to
+  // everyone and are never dropped.
+  const degreeShape: DegreeShape =
+    componentRefs.length > 0 ? "double" : "single"
+  const forThisShape = (groups: RequirementGroup[]): RequirementGroup[] =>
+    groups.filter((g) => !g.degreeShape || g.degreeShape === degreeShape)
+
   // Build per-AoS requirement groups from each AoS's curriculum.
   const aosGroups = new Map<string, RequirementGroup[]>()
   for (const l of offeredLinks) {
     if (aosGroups.has(l.aosCode)) continue
     aosGroups.set(
       l.aosCode,
-      extractRequirementGroups(l.curriculumStructure, l.creditPoints ?? 0)
+      forThisShape(
+        extractRequirementGroups(l.curriculumStructure, l.creditPoints ?? 0)
+      )
     )
   }
 
@@ -384,7 +400,7 @@ async function _fetchCourseWithAoS(
   let courseRequirements: RequirementGroup[] = []
   let courseUnits: { code: string; grouping: string }[] = []
   if (rawCourseGroups.length > 0) {
-    courseRequirements = filterGroups(rawCourseGroups, valid)
+    courseRequirements = filterGroups(forThisShape(rawCourseGroups), valid)
     courseUnits = onlyOffered(pickDefaultUnits(courseRequirements))
   }
 
@@ -500,7 +516,7 @@ async function _fetchCourseWithAoS(
   const componentCourses: PlannerCourseComponent[] = []
   for (const ref of componentRefs) {
     const sub = subCourseMap.get(ref.courseCode)
-    const rawGroups = componentRawGroups.get(ref.courseCode) ?? []
+    const rawGroups = forThisShape(componentRawGroups.get(ref.courseCode) ?? [])
     let requirements: RequirementGroup[] = []
     let componentUnits: { code: string; grouping: string }[] = []
     if (rawGroups.length > 0) {

@@ -38,6 +38,8 @@ const CASES: ReadonlyArray<[code: string, year: string, why: string]> = [
   ["B2008", "2026", "plain modern double degree"],
   ["C2001", "2026", "single degree with embedded specialisations"],
   ["S2000", "2026", "single degree with many majors"],
+  ["E3010", "2026", "engineering double: narrowed AoS, no technical electives"],
+  ["E3001", "2026", "same specialisations as a single degree: electives kept"],
   ["0047", "2026", "research program: no tree, no data at all"],
   ["C6001", "2026", "groups but zero AoS"],
 ]
@@ -54,10 +56,18 @@ async function summarize(code: string, year: string): Promise<Summary | null> {
   if (!c) return null
   const byKind: Record<string, number> = {}
   const byComponent: Record<string, number> = {}
+  // Requirement groups summed across every AoS. Without this the
+  // snapshot only sees which AoS are offered, not what each one
+  // demands — so cohort-scoped changes (a double degree shedding its
+  // specialisation's technical electives) would drift silently.
+  let aosGroups = 0
+  let aosGroupOptions = 0
   for (const a of c.areasOfStudy) {
     byKind[a.kind] = (byKind[a.kind] ?? 0) + 1
     const k = a.componentCourseCode ?? a.componentLabel ?? "(course)"
     byComponent[k] = (byComponent[k] ?? 0) + 1
+    aosGroups += a.requirements.length
+    for (const g of a.requirements) aosGroupOptions += g.options.length
   }
   return {
     title: c.title,
@@ -73,6 +83,8 @@ async function summarize(code: string, year: string): Promise<Summary | null> {
     aosTotal: c.areasOfStudy.length,
     aosByKind: byKind,
     aosByComponent: byComponent,
+    aosGroups,
+    aosGroupOptions,
   }
 }
 

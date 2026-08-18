@@ -30,7 +30,9 @@
     "aosByComponent": {
       "S2000": 80,
       "C2001": 14
-    }
+    },
+    "aosGroups": 279,
+    "aosGroupOptions": 1289
   },
   "S2004@2025": {
     "title": "Bachelor of Science and Bachelor of Computer Science",
@@ -62,7 +64,9 @@
     "aosByComponent": {
       "S2000": 77,
       "C2001": 16
-    }
+    },
+    "aosGroups": 273,
+    "aosGroupOptions": 1335
   },
   "S2004@2022": {
     "title": "Bachelor of Science and Bachelor of Computer Science",
@@ -80,7 +84,9 @@
       "Science component": 58,
       "Computer science component": 2,
       "(course)": 11
-    }
+    },
+    "aosGroups": 224,
+    "aosGroupOptions": 1157
   },
   "D3002@2026": {
     "title": "Bachelor of Education (Honours) and Bachelor of Arts",
@@ -102,17 +108,19 @@
         "missingTemplate": true
       }
     ],
-    "aosTotal": 69,
+    "aosTotal": 64,
     "aosByKind": {
       "major": 29,
       "extended_major": 1,
-      "specialisation": 7,
+      "specialisation": 2,
       "elective": 32
     },
     "aosByComponent": {
       "A2000": 62,
-      "D3001": 7
-    }
+      "D3001": 2
+    },
+    "aosGroups": 261,
+    "aosGroupOptions": 1853
   },
   "A6039@2026": {
     "title": "Master of Marketing and Digital Communications",
@@ -121,7 +129,9 @@
     "components": [],
     "aosTotal": 0,
     "aosByKind": {},
-    "aosByComponent": {}
+    "aosByComponent": {},
+    "aosGroups": 0,
+    "aosGroupOptions": 0
   },
   "A6011@2026": {
     "title": "Master of International Relations and Master of Journalism",
@@ -145,7 +155,9 @@
     ],
     "aosTotal": 0,
     "aosByKind": {},
-    "aosByComponent": {}
+    "aosByComponent": {},
+    "aosGroups": 0,
+    "aosGroupOptions": 0
   },
   "F2016@2026": {
     "title": "Bachelor of Architectural Studies and Bachelor of Business",
@@ -160,15 +172,16 @@
         "missingTemplate": false
       }
     ],
-    "aosTotal": 29,
+    "aosTotal": 18,
     "aosByKind": {
       "major": 14,
-      "specialisation": 4,
-      "minor": 11
+      "specialisation": 4
     },
     "aosByComponent": {
-      "B2000": 29
-    }
+      "B2000": 18
+    },
+    "aosGroups": 34,
+    "aosGroupOptions": 258
   },
   "B2008@2026": {
     "title": "Bachelor of Commerce and Bachelor of Computer Science",
@@ -190,17 +203,17 @@
         "missingTemplate": false
       }
     ],
-    "aosTotal": 41,
+    "aosTotal": 24,
     "aosByKind": {
       "major": 11,
-      "specialisation": 13,
-      "minor": 12,
-      "elective": 5
+      "specialisation": 13
     },
     "aosByComponent": {
-      "B2001": 27,
-      "C2001": 14
-    }
+      "B2001": 15,
+      "C2001": 9
+    },
+    "aosGroups": 48,
+    "aosGroupOptions": 327
   },
   "C2001@2026": {
     "title": "Bachelor of Computer Science",
@@ -216,7 +229,9 @@
       "Part C. Specialist studies": 4,
       "(course)": 5,
       "Part E. Free elective studies": 5
-    }
+    },
+    "aosGroups": 21,
+    "aosGroupOptions": 73
   },
   "S2000@2026": {
     "title": "Bachelor of Science",
@@ -233,7 +248,57 @@
     "aosByComponent": {
       "Part B. Science listed major": 76,
       "(course)": 8
-    }
+    },
+    "aosGroups": 249,
+    "aosGroupOptions": 1232
+  },
+  "E3010@2026": {
+    "title": "Bachelor of Engineering (Honours) and Bachelor of Computer Science",
+    "courseRequirements": 0,
+    "courseUnits": 0,
+    "components": [
+      {
+        "code": "C2001",
+        "title": "Computer Science component",
+        "groups": 4,
+        "units": 7,
+        "missingTemplate": false
+      },
+      {
+        "code": "E3001",
+        "title": "Engineering component",
+        "groups": 4,
+        "units": 7,
+        "missingTemplate": false
+      }
+    ],
+    "aosTotal": 9,
+    "aosByKind": {
+      "specialisation": 9
+    },
+    "aosByComponent": {
+      "C2001": 6,
+      "E3001": 3
+    },
+    "aosGroups": 18,
+    "aosGroupOptions": 115
+  },
+  "E3001@2026": {
+    "title": "Bachelor of Engineering (Honours)",
+    "courseRequirements": 4,
+    "courseUnits": 7,
+    "components": [],
+    "aosTotal": 32,
+    "aosByKind": {
+      "specialisation": 10,
+      "minor": 22
+    },
+    "aosByComponent": {
+      "Parts C, D and E. Specialist studies": 10,
+      "Engineering minors": 22
+    },
+    "aosGroups": 78,
+    "aosGroupOptions": 714
   },
   "0047@2026": {
     "title": "Doctor of Philosophy",
@@ -242,7 +307,9 @@
     "components": [],
     "aosTotal": 0,
     "aosByKind": {},
-    "aosByComponent": {}
+    "aosByComponent": {},
+    "aosGroups": 0,
+    "aosGroupOptions": 0
   },
   "C6001@2026": {
     "title": "Master of Information Technology",
@@ -251,6 +318,8 @@
     "components": [],
     "aosTotal": 0,
     "aosByKind": {},
-    "aosByComponent": {}
+    "aosByComponent": {},
+    "aosGroups": 0,
+    "aosGroupOptions": 0
   }
 }
