@@ -663,15 +663,29 @@ function hasSubjectLeaf(node: Record<string, unknown>): boolean {
  * Choice groups ("pick 1 of 2", elective pools, etc.) are skipped so the
  * template never auto-places an optional unit.
  */
+/**
+ * Is every option in this group actually required? The one definition
+ * of "mandatory" shared by the auto-load template and the planner's
+ * "Core" badge — they used to disagree, the badge matching any
+ * grouping whose *title* contained "core", which decorated
+ * ECSYSENG04's "Core List B" (pick 1 of 22) and E3001's 1-of-21 first
+ * year breadth list. Students noticed: "core unit tags were getting
+ * applied to units seemingly at random, couldn't pin down the logic".
+ *
+ * `autoLoad` is the explicit precision-first signal; rows baked before
+ * that field existed fall back to the legacy credit-point rule.
+ */
+export function groupIsMandatory(g: RequirementGroup): boolean {
+  return g.autoLoad ?? g.required === g.options.length
+}
+
 export function pickDefaultUnits(
   groups: readonly RequirementGroup[]
 ): Array<{ code: string; grouping: string }> {
   const out: Array<{ code: string; grouping: string }> = []
   const seen = new Set<string>()
   for (const g of groups) {
-    // `autoLoad` is the explicit precision-first signal; rows baked
-    // before the field existed fall back to the legacy rule.
-    if (!(g.autoLoad ?? g.required === g.options.length)) continue
+    if (!groupIsMandatory(g)) continue
     for (const code of g.options) {
       const key = `${code}|${g.grouping}`
       if (seen.has(key)) continue

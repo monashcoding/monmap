@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
-    "./env": "./src/env.ts"
+    "./env": "./src/env.ts",
+    "./curriculum": "./src/curriculum.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
