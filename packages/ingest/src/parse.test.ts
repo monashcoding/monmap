@@ -285,3 +285,38 @@ test("enrolment refs: de-dupes a unit repeated within the same section", () => {
   )
   assert.deepEqual(refs.map(erKey), ["prerequisite:MTH1030"])
 })
+
+test("course→AoS: campus scope is read off the ancestor path", () => {
+  // E3001's shape: the minors container splits by campus, and the kind
+  // classifier deliberately looks *past* those splits (it needs
+  // "Engineering minors" to classify the kind), so scope is read on its
+  // own pass over the same ancestors.
+  const structure = {
+    container: [
+      {
+        title: "Engineering minors",
+        container: [
+          { title: "Clayton offerings", description: "CIVENMNR03" },
+          { title: "Malaysia offerings", description: "IOTMNR01" },
+        ],
+      },
+      {
+        title: "Parts C, D and E. Specialist studies",
+        description: "ECSYSENG04",
+      },
+    ],
+  }
+  const rows = extractCourseAosRefs(
+    "2026",
+    "E3001",
+    structure,
+    new Set(["CIVENMNR03", "IOTMNR01", "ECSYSENG04"]),
+  )
+  const byCode = new Map(rows.map((r) => [r.aosCode, r]))
+  assert.equal(byCode.get("CIVENMNR03")?.scope, "Clayton")
+  assert.equal(byCode.get("IOTMNR01")?.scope, "Malaysia")
+  assert.equal(byCode.get("ECSYSENG04")?.scope, null, "unscoped stays null")
+  // The campus container must not swallow the kind classification.
+  assert.equal(byCode.get("CIVENMNR03")?.kind, "minor")
+  assert.equal(byCode.get("ECSYSENG04")?.kind, "specialisation")
+})

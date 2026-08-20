@@ -113,6 +113,15 @@ export interface PlannerAreaOfStudy {
     | "other"
   relationshipLabel: string
   /**
+   * Campus this option is offered at, when the handbook scopes it —
+   * E3001 splits its 22 engineering minors into "Malaysia offerings"
+   * and "Clayton offerings", and until this was surfaced a Clayton
+   * student saw nine Malaysia-only minors in the picker with nothing
+   * to distinguish them. Null/absent means offered regardless of
+   * campus.
+   */
+  scope?: string | null
+  /**
    * For double degrees, the top-level component title from the curriculum
    * tree (e.g. "Computer Science component", "Engineering component").
    * Present only when the AoS is nested at least 2 levels deep under a

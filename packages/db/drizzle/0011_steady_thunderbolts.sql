@@ -1,0 +1,1 @@
+ALTER TABLE "course_areas_of_study" ADD COLUMN "scope" text;

@@ -154,7 +154,7 @@ whose includedParts exclude E*. Requires threading the component's
 `fetchCourseWithAoS`, and a golden-fixture test on ECSYSENG04-in-E3010
 versus ECSYSENG04-in-E3001.~~
 
-### B4 — Campus scoping *(4 reports: #4, #16, #55, #87)*
+### B4 — Campus scoping *(4 reports: #4, #16, #55, #87)* — **PARTLY FIXED**
 
 > "Ability to choose a campus, so malaysia units don't appear in the list maybe?"
 > "the engineering minors dont show Malaysia minors"
@@ -169,11 +169,20 @@ asks sit under this heading:
 - **Plan-level campus preference** (feature): persist a campus on
   `PlannerState`, then filter scoped requirement groups and the unit
   search to it. Needs a new state field + migration of saved plans.
-- **Malaysia minors missing** (bug): E3001 splits its minors into
-  "Malaysia offerings" / "Clayton offerings" sub-containers, but all 22
-  minor edges land with `relationship_label = "Engineering minors"`.
-  Check whether the Malaysia branch's AoS survive extraction at all, or
-  whether both branches collapse onto the same codes.
+- **Malaysia minors missing** (bug) — **investigated, not what was
+  reported.** All 9 Malaysia minors *are* extracted (DCBNZMNR01,
+  ELCVLTMR01, FMOSYMNR01, INTMFMNR01, IOTMNR01, SEMICDMR01,
+  SNSYSMNR01, SUENTMNR01, plus AIENGMNR03 shared with Clayton); several
+  carry `01` version suffixes, i.e. they were added to the handbook
+  after the May feedback. The real defect was that **the campus split
+  was invisible**: every minor landed with
+  `relationship_label = "Engineering minors"`, so a Clayton student
+  browsed nine Malaysia-only options that looked identical to theirs.
+  **FIXED 2026-08-21**: `course_areas_of_study.scope` (migration 0011)
+  captures the campus from the ancestor path at ingest, and the AoS
+  picker shows it as a chip. 66 of 2026's 718 edges are scoped.
+  The *filtering* half — hiding other-campus options outright — still
+  needs the plan-level campus preference above.
 
 ### B5 — "Core" tagging looks arbitrary *(3 reports: #33, #83, #9)* — **FIXED**
 
@@ -274,4 +283,5 @@ inventing cross-component prohibition math.
    be written, and nobody has run it yet.
 5. **Prior credit** (feature 1) — highest demand, and it retires a
    cluster of false-positive bug reports.
-6. **B4**, **B6**, then the B7 singles.
+6. ~~**B4**~~ display half done; the campus *preference* remains.
+7. **B6**, then the B7 singles.

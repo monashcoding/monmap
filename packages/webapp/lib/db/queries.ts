@@ -184,6 +184,10 @@ async function _fetchCourseWithAoS(
         aosYear: courseAreasOfStudy.aosYear,
         kind: courseAreasOfStudy.kind,
         relationshipLabel: courseAreasOfStudy.relationshipLabel,
+        // Read via to_jsonb so the query degrades to NULL rather than
+        // erroring on a database that hasn't applied migration 0011
+        // yet — this deploys before or after the column exists.
+        scope: sql<string | null>`to_jsonb(${courseAreasOfStudy}) ->> 'scope'`,
         title: areasOfStudy.title,
         creditPoints: areasOfStudy.creditPoints,
         curriculumStructure: areasOfStudy.curriculumStructure,
@@ -470,6 +474,7 @@ async function _fetchCourseWithAoS(
       title: l.title ?? l.aosCode,
       kind: l.kind,
       relationshipLabel: l.relationshipLabel,
+      scope: l.scope,
       componentLabel,
       componentCourseCode,
       creditPoints: l.creditPoints,
