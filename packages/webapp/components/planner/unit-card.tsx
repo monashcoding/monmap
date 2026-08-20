@@ -17,6 +17,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { pickedAosEntries } from "@/lib/planner/aos-slots"
+import { unitIsCore } from "@/lib/planner/core-units"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { perSlotCreditPoints } from "@/lib/planner/full-year"
 import { GRADE_STYLES, markToGrade } from "@/lib/planner/grades"
@@ -80,7 +82,21 @@ export function UnitCard({
     : (unit?.creditPoints ?? 0)
   const validation = validations.get(keyFor(yearIndex, slotIndex, code))
   const faculty = useMemo(() => facultyStyle(code), [code])
-  const isCore = useMemo(() => unitIsCore(code, course), [code, course])
+  // Only the AoS the student actually picked count toward "core" — a
+  // unit that is core in a major they didn't choose isn't core for them.
+  const pickedAosCodes = useMemo(
+    () =>
+      course
+        ? new Set(
+            pickedAosEntries(course, state.selectedAos).map((p) => p.aos.code)
+          )
+        : new Set<string>(),
+    [course, state.selectedAos]
+  )
+  const isCore = useMemo(
+    () => unitIsCore(code, course, pickedAosCodes),
+    [code, course, pickedAosCodes]
+  )
   const [menuOpen, setMenuOpen] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const gradeEntry = grades.get(code)
@@ -320,40 +336,6 @@ function UnitMenu({
 }
 
 type CardStatus = "ok" | "warn" | "error" | "loading"
-
-function unitIsCore(
-  code: string,
-  course: PlannerCourseWithAoS | null
-): boolean {
-  if (!course) return false
-
-  // Any unit appearing in course-level requirements is "core" regardless of
-  // the grouping name — these are required by the degree itself, not an AoS.
-  const courseReqs = [
-    ...course.courseRequirements,
-    ...course.componentCourses.flatMap((c) => c.courseRequirements),
-  ]
-  if (courseReqs.some((g) => g.options.includes(code))) return true
-
-  // For AoS requirements, only mark core if the grouping name says so.
-  const aosReqs = course.areasOfStudy.flatMap((a) => a.requirements)
-  if (
-    aosReqs.some(
-      (g) =>
-        g.grouping.toLowerCase().includes("core") && g.options.includes(code)
-    )
-  )
-    return true
-
-  // Also check the flat area_of_study_units table (separate data source).
-  return (
-    course.areasOfStudy
-      .flatMap((a) => a.units)
-      .find((u) => u.code === code)
-      ?.grouping.toLowerCase()
-      .includes("core") ?? false
-  )
-}
 
 function CoreBadge() {
   return (

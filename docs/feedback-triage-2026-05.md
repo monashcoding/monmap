@@ -36,7 +36,7 @@ Verified against the DB / code as of 2026-08-19.
 
 Ordered by number of independent reports.
 
-### B1 — A failed unit can't be repeated *(5 reports: #38, #42, #43, #56, #84)*
+### B1 — A failed unit can't be repeated *(5 reports: #38, #42, #43, #56, #84)* — **FIXED** (`c2ba139`)
 
 > "inability to use the same unit twice when planning due to a failure"
 > "Ability to add a unit twice, some of us failed ;-;"
@@ -131,7 +131,18 @@ groupings ("Engineering design", "Engineering fundamentals", "First
 year engineering breadth studies", "Foundational studies"); everything
 specialist arrives via the AoS.
 
-**Fix sketch.** The parent's component prose states the real budget
+**FIXED 2026-08-19** (`e02d5e1`), and more cleanly than the sketch
+below: the AoS tree states the rule itself. Every engineering
+specialisation's Part E splits into "Students enrolled in the single
+degree Engineering" (36cp of electives) and "Students enrolled in a
+double degree with Engineering" (0cp, "these units are not a
+requirement in the double degree"). `detectDegreeShape` tags
+requirement groups by cohort; `fetchCourseWithAoS` keeps the matching
+branch. ECSYSENG04 in E3001 keeps its 37-unit technical electives
+group, the same AoS in E3010 does not. See `handbook-internals.md`,
+"Cohort scoping".
+
+~~**Fix sketch.** The parent's component prose states the real budget
 ("144 credit points comprising all of Part A, six credit points from
 Part B, all of Part C and all of Part D") — Part E is excluded, and
 `sub_course_refs[].includedParts` now records exactly that. The AoS's
@@ -141,7 +152,7 @@ Part E groups from an AoS *when it is reached through a component
 whose includedParts exclude E*. Requires threading the component's
 `includedParts` into the per-AoS `extractRequirementGroups` call in
 `fetchCourseWithAoS`, and a golden-fixture test on ECSYSENG04-in-E3010
-versus ECSYSENG04-in-E3001.
+versus ECSYSENG04-in-E3001.~~
 
 ### B4 — Campus scoping *(4 reports: #4, #16, #55, #87)*
 
@@ -164,7 +175,7 @@ asks sit under this heading:
   Check whether the Malaysia branch's AoS survive extraction at all, or
   whether both branches collapse onto the same codes.
 
-### B5 — "Core" tagging looks arbitrary *(3 reports: #33, #83, #9)*
+### B5 — "Core" tagging looks arbitrary *(3 reports: #33, #83, #9)* — **FIXED**
 
 > "ENG1014 (definitely a core unit) is not labeled as core, but ECE5882 (a 5th year elective) is"
 > "core unit tags were getting applied to units seemingly at random, couldn't pin down the logic"
@@ -176,10 +187,27 @@ arriving as "core" and ENG1014 not is the signature of an *umbrella*
 container (E3001 exposes a full-budget "Course requirements" container
 next to per-Part containers — documented in `handbook-internals.md`).
 
-**Fix.** Drive the "core" badge off `RequirementGroup.autoLoad` — the
-precision-first flag that only fires when credit-point math proves
-every option mandatory — instead of raw group membership, and audit the
-E3001 umbrella case with `pnpm eval:curriculum`.
+**FIXED 2026-08-19.** Root cause confirmed: `unitIsCore` meant two
+loose things at once. *Any* course-level group counted, so E3001's
+"First year engineering breadth studies" — a 1-of-21 choice — badged 21
+units; and any AoS group whose title merely *contained* "core"
+counted, so ECSYSENG04's "Core List B" (pick 1 of 22, and where
+ECE5882 lives) and "Materials engineering core elective" did too.
+Meanwhile auto-load used the strict `autoLoad` rule, so the badge and
+the template openly disagreed.
+
+Both now call one shared predicate, `groupIsMandatory` — the badge
+means exactly "auto-fill would place this". Areas of study also count
+only once picked: a unit that is core in a major the student didn't
+choose isn't core for them. Verified against the live corpus for every
+unit students named: ECE5882 loses the badge, ENG1014 keeps it, and
+ENG2005/MMA2005 *gain* it for mechatronics — which is what #83 asked
+for.
+
+Known limitation: ENG1090 and PHS1001 stay core via E3001's
+"Foundational studies", which is conditional prose ("If you have not
+completed VCE Physics…"). The extractor can't evaluate that, and the
+badge is at least consistent with what auto-load places.
 
 ### B6 — Law/Commerce can never reach 100% *(2 reports: #69, #80)*
 
@@ -239,10 +267,11 @@ inventing cross-component prohibition math.
 
 ## 3. Suggested order
 
-1. **B1** — most reports, self-contained, unit-testable.
-2. **B3** — same territory as the AoS narrowing, cheapest while that
-   context is fresh.
-3. **B2** — needs one browser confirmation before writing the fix.
-4. **Prior credit** (feature 1) — highest demand, and it retires a
+1. ~~**B1**~~ — done, `c2ba139`.
+2. ~~**B3**~~ — done, `e02d5e1`.
+3. ~~**B5**~~ — done.
+4. **B2** — parked: needs one browser confirmation before the fix can
+   be written, and nobody has run it yet.
+5. **Prior credit** (feature 1) — highest demand, and it retires a
    cluster of false-positive bug reports.
-5. **B5**, **B4**, **B6**, then B7 singles.
+6. **B4**, **B6**, then the B7 singles.
