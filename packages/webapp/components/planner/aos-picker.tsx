@@ -118,6 +118,7 @@ function RoleSelect({
                         <span className="min-w-0 flex-1 truncate">
                           {sel.title}
                         </span>
+                        {sel.scope ? <CampusChip scope={sel.scope} /> : null}
                       </>
                     )
                   })()
@@ -139,6 +140,7 @@ function RoleSelect({
                       </span>
                     )}
                     <span className="whitespace-normal">{a.title}</span>
+                    {a.scope ? <CampusChip scope={a.scope} /> : null}
                   </span>
                 </SelectItem>
               ))}
@@ -168,5 +170,24 @@ function RoleSelect({
         ) : null}
       </div>
     </div>
+  )
+}
+
+/**
+ * Campus marker on an option the handbook offers at one campus only.
+ * E3001 splits its 22 engineering minors into "Malaysia offerings" and
+ * "Clayton offerings"; without this a Clayton student browses nine
+ * Malaysia-only minors that look exactly like the ones they can take,
+ * and a Malaysia student wonders where theirs went ("the engineering
+ * minors dont show Malaysia minors").
+ *
+ * Yellow tint pairs with `text-primary-foreground`, never `text-primary`
+ * — see the brand rule in CLAUDE.md.
+ */
+function CampusChip({ scope }: { scope: string }) {
+  return (
+    <span className="shrink-0 rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
+      {scope}
+    </span>
   )
 }

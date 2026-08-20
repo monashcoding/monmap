@@ -310,6 +310,16 @@ export const courseAreasOfStudy = pgTable(
     aosCode: text().notNull(),
     kind: aosRelationshipKindEnum().notNull(),
     relationshipLabel: text().notNull(),
+    /**
+     * Campus/offering scope of the container this AoS hangs under, when
+     * the handbook states one — E3001 splits its 22 engineering minors
+     * into "Malaysia offerings" and "Clayton offerings", and 67 of
+     * 2026's 719 course→AoS edges carry a scope like this. There is no
+     * structured campus field upstream; it lives only in container
+     * titles, so `detectScope` reads it off the ancestor path at
+     * ingest. Null means the AoS is offered regardless of campus.
+     */
+    scope: text(),
   },
   (t) => [
     primaryKey({

@@ -16,6 +16,7 @@ import type {
   UnitOffering,
 } from "@monmap/scraper/types";
 import {
+  detectScope,
   extractExcludedAos,
   extractRequirementGroups,
   extractEmbeddedSpecialisations,
@@ -489,6 +490,7 @@ export function extractCourseAosRefs(
   aosCode: string;
   kind: AosKind;
   relationshipLabel: string;
+  scope: string | null;
 }> {
   const out = new Map<
     string,
@@ -499,6 +501,7 @@ export function extractCourseAosRefs(
       aosCode: string;
       kind: AosKind;
       relationshipLabel: string;
+      scope: string | null;
     }
   >();
   const walk = (node: unknown, ancestors: readonly string[]): void => {
@@ -529,6 +532,7 @@ export function extractCourseAosRefs(
               aosCode: upper,
               kind,
               relationshipLabel: label,
+              scope: campusScope(childAncestors),
             });
           }
         }
@@ -539,6 +543,21 @@ export function extractCourseAosRefs(
   };
   walk(curriculumStructure, []);
   return [...out.values()];
+}
+
+/**
+ * Campus scope of the nearest ancestor that states one. The kind
+ * classifier deliberately looks *past* campus containers (a Malaysia
+ * split nested inside "Parts C, D and E. Engineering specialisation"
+ * must still classify as a specialisation), so the scope is read on a
+ * separate pass — deepest first, since the innermost campus wins.
+ */
+function campusScope(ancestors: readonly string[]): string | null {
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    const scope = detectScope(ancestors[i]!);
+    if (scope) return scope;
+  }
+  return null;
 }
 
 /**

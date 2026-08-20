@@ -378,6 +378,16 @@ disciplinary container override an outer one.
 (so display can show "Parts C, D and E. Engineering specialisation"
 rather than the campus name).
 
+`course_areas_of_study.scope` carries the campus the edge sits under
+(`detectScope` over the same ancestor path, deepest first) — E3001
+splits its 22 engineering minors into "Malaysia offerings" and "Clayton
+offerings", and 66 of 2026's 718 edges are scoped this way (33 Clayton,
+18 Malaysia, 15 Caulfield and Clayton). It is read on a **separate
+pass** from `kind`: the classifier deliberately looks past campus
+containers so a Malaysia split nested inside "Parts C, D and E.
+Engineering specialisation" still classifies as a specialisation, which
+means the same walk can't produce both.
+
 `other` rows are genuinely structural containers — honours research
 streams, generic "Course requirements" buckets, or AoS references
 sitting under un-keyworded prose. They are not specialisations.
