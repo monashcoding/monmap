@@ -14,8 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  computeAosSlots,
+  MAX_PICKS_PER_SLOT,
+  computeAosSlotsWithRepeats,
   legacyKeyServing,
+  repeatSlotKey,
   resolveSlotSelection,
 } from "@/lib/planner/aos-slots"
 import { isOutOfCampusScope, optionsForCampus } from "@/lib/planner/campus"
@@ -34,7 +36,9 @@ export function AoSPicker() {
   const { course, campuses, state, dispatch } = usePlanner()
   if (!course) return null
 
-  const slots = computeAosSlots(course)
+  // Repeat slots ("major#2") appear one at a time as the student fills
+  // the one before — see lib/planner/aos-slots.ts.
+  const slots = computeAosSlotsWithRepeats(course, state.selectedAos)
   if (slots.length === 0 && campuses.length === 0) return null
 
   return (
@@ -89,11 +93,16 @@ export function AoSPicker() {
               // A legacy fixed-role value serving this slot must clear in
               // the same step, or it resurfaces as the slot's fallback.
               const legacy = legacyKeyServing(state.selectedAos, slot)
+              // Clearing a pick must also clear the repeat slots above
+              // it, or a higher pick ("major#3") is orphaned behind an
+              // empty one and stops rendering while staying in state.
+              const orphaned = code ? [] : higherRepeatKeys(slot.key)
+              const alsoClear = [...(legacy ? [legacy] : []), ...orphaned]
               dispatch({
                 type: "set_aos",
                 role: slot.key,
                 code,
-                ...(legacy ? { alsoClear: [legacy] } : {}),
+                ...(alsoClear.length > 0 ? { alsoClear } : {}),
               })
             }}
           />
@@ -153,6 +162,21 @@ function CampusSelect({
 
 /** Sentinel: Base UI selects can't hold an empty value as a real choice. */
 const ALL_CAMPUSES = "__all__"
+
+/**
+ * Repeat-slot keys ranked above `key`, so clearing a pick takes the
+ * picks that depended on it. "major" yields major#2..#N; "major#2"
+ * yields major#3..#N.
+ */
+function higherRepeatKeys(key: string): string[] {
+  const hash = key.lastIndexOf("#")
+  const base = hash === -1 ? key : key.slice(0, hash)
+  const from = hash === -1 ? 2 : Number(key.slice(hash + 1)) + 1
+  const out: string[] = []
+  for (let n = from; n <= MAX_PICKS_PER_SLOT; n++)
+    out.push(repeatSlotKey(base, n))
+  return out
+}
 
 function RoleSelect({
   label,

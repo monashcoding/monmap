@@ -336,3 +336,16 @@ test("a 60-option slot (2020 S2006 minors) repeats without losing options", () =
   assert.equal(repeat.options.length, 59)
   assert.ok(!repeat.options.some((o) => o.code === "MN1"))
 })
+
+test("clearing a base pick strands nothing: higher slots stop being offered", () => {
+  // Pairs with higherRepeatKeys() in aos-picker.tsx, which clears them
+  // from state. Without that, "major#3" would sit in selectedAos
+  // invisible behind an empty "major#2".
+  const c = repeatCourse("major", ["M1", "M2", "M3"])
+  const full = { major: "M1", "major#2": "M2", "major#3": "M3" }
+  assert.equal(computeAosSlotsWithRepeats(c, full).length, 3)
+
+  const cleared = { ...full, major: undefined }
+  const keys = computeAosSlotsWithRepeats(c, cleared).map((s) => s.key)
+  assert.deepEqual(keys, ["major"], "no repeat slots survive an empty base")
+})
