@@ -96,6 +96,29 @@ satisfies a prerequisite that names the other. Note prohibitions are
 often **asymmetric** (1,557 of 3,041 edges in 2026 are one-directional),
 so always check *both* directions before calling two units equivalent.
 
+### Prohibitions decide what a course can still ask for
+
+A requirement group's `required` is not always achievable. B2001's
+Part A is "6 of these 7", but inside L3005 (Laws + Commerce) the law
+half makes LAW2102 compulsory and `BTC1110` — one of the seven —
+prohibits it, so six was never reachable and the degree could not read
+100%. The handbook says none of this in L3005's own prose; the only
+evidence is the unit-level prohibition edge.
+
+`fetchCourseWithAoS` therefore ships a `conflicts` map (prohibition
+edges among the course's own option units) and the progress views cap
+each group's target at what the student can still reach
+(`lib/planner/reachable.ts`). Two properties matter:
+
+- **Symmetrise.** `BTC1110` names LAW2102; LAW2102 names nothing. Half
+  the corpus's prohibition edges are one-directional, so an unsymmetrised
+  lookup finds the conflict from one side only.
+- **The cap only ever lowers, and only in response to units actually on
+  the plan.** An untouched plan is unchanged, so this can't quietly
+  shrink a degree nobody has started. It also resolves pick-one pairs
+  for free: placing ACC1100 makes ACC1001 unreachable, dropping the
+  target by one without any pick-one detection.
+
 ## Graph shape: what references what
 
 - **Unit requisites only reference units** (`academic_item_type.value

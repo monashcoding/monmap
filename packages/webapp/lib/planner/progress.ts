@@ -1,4 +1,5 @@
 import { isFullYearUnit, perSlotCreditPoints } from "./full-year.ts"
+import { effectiveRequired, reachableOptions } from "./reachable.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
@@ -142,7 +143,13 @@ export interface AoSProgress {
 export function summarizeAoSProgress(
   aos: PlannerAreaOfStudy,
   plannedCodes: ReadonlySet<string>,
-  unitsByCode: ReadonlyMap<string, PlannerUnit>
+  unitsByCode: ReadonlyMap<string, PlannerUnit>,
+  /**
+   * Prohibition edges among the course's options. Optional: without
+   * them every group keeps its full target, which is the old
+   * behaviour.
+   */
+  conflicts?: Readonly<Record<string, string[]>>
 ): AoSProgress {
   // Group-wise counting: each grouping contributes
   // `min(placed_in_group, required)` to the satisfied count. Choice
@@ -156,7 +163,12 @@ export function summarizeAoSProgress(
   const cpSeen = new Set<string>()
 
   for (const group of aos.requirements) {
-    totalRequired += group.required
+    // Target is capped at what's still reachable: an option prohibited
+    // by something already on the plan can never be taken, and asking
+    // for it makes the AoS permanently incomplete.
+    const required = effectiveRequired(group, plannedCodes, conflicts)
+    const reachable = new Set(reachableOptions(group, plannedCodes, conflicts))
+    totalRequired += required
     let placedInGroup = 0
     for (const code of group.options) {
       if (plannedCodes.has(code)) {
@@ -166,12 +178,13 @@ export function summarizeAoSProgress(
           cpSeen.add(code)
           plannedCp += unitsByCode.get(code)?.creditPoints ?? 0
         }
-      } else if (placedInGroup < group.required) {
-        // Surface the first `required` unplaced options as "remaining".
+      } else if (placedInGroup < required && reachable.has(code)) {
+        // Surface the first `required` unplaced options as "remaining"
+        // — never one the student can no longer take.
         remaining.push({ code, grouping: group.grouping })
       }
     }
-    satisfied += Math.min(placedInGroup, group.required)
+    satisfied += Math.min(placedInGroup, required)
   }
 
   remaining.sort((a, b) =>

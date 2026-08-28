@@ -32,7 +32,8 @@
       "C2001": 14
     },
     "aosGroups": 279,
-    "aosGroupOptions": 1289
+    "aosGroupOptions": 1289,
+    "conflictCodes": 226
   },
   "S2004@2025": {
     "title": "Bachelor of Science and Bachelor of Computer Science",
@@ -66,7 +67,8 @@
       "C2001": 16
     },
     "aosGroups": 273,
-    "aosGroupOptions": 1335
+    "aosGroupOptions": 1335,
+    "conflictCodes": 216
   },
   "S2004@2022": {
     "title": "Bachelor of Science and Bachelor of Computer Science",
@@ -86,7 +88,8 @@
       "(course)": 11
     },
     "aosGroups": 224,
-    "aosGroupOptions": 1157
+    "aosGroupOptions": 1157,
+    "conflictCodes": 131
   },
   "D3002@2026": {
     "title": "Bachelor of Education (Honours) and Bachelor of Arts",
@@ -120,7 +123,8 @@
       "D3001": 2
     },
     "aosGroups": 261,
-    "aosGroupOptions": 1853
+    "aosGroupOptions": 1853,
+    "conflictCodes": 295
   },
   "A6039@2026": {
     "title": "Master of Marketing and Digital Communications",
@@ -131,7 +135,8 @@
     "aosByKind": {},
     "aosByComponent": {},
     "aosGroups": 0,
-    "aosGroupOptions": 0
+    "aosGroupOptions": 0,
+    "conflictCodes": 22
   },
   "A6011@2026": {
     "title": "Master of International Relations and Master of Journalism",
@@ -157,7 +162,8 @@
     "aosByKind": {},
     "aosByComponent": {},
     "aosGroups": 0,
-    "aosGroupOptions": 0
+    "aosGroupOptions": 0,
+    "conflictCodes": 61
   },
   "F2016@2026": {
     "title": "Bachelor of Architectural Studies and Bachelor of Business",
@@ -181,7 +187,8 @@
       "B2000": 18
     },
     "aosGroups": 34,
-    "aosGroupOptions": 258
+    "aosGroupOptions": 258,
+    "conflictCodes": 291
   },
   "B2008@2026": {
     "title": "Bachelor of Commerce and Bachelor of Computer Science",
@@ -213,7 +220,8 @@
       "C2001": 9
     },
     "aosGroups": 48,
-    "aosGroupOptions": 327
+    "aosGroupOptions": 327,
+    "conflictCodes": 311
   },
   "C2001@2026": {
     "title": "Bachelor of Computer Science",
@@ -231,7 +239,8 @@
       "Part E. Free elective studies": 5
     },
     "aosGroups": 21,
-    "aosGroupOptions": 73
+    "aosGroupOptions": 73,
+    "conflictCodes": 59
   },
   "S2000@2026": {
     "title": "Bachelor of Science",
@@ -250,7 +259,8 @@
       "(course)": 8
     },
     "aosGroups": 249,
-    "aosGroupOptions": 1232
+    "aosGroupOptions": 1232,
+    "conflictCodes": 184
   },
   "E3010@2026": {
     "title": "Bachelor of Engineering (Honours) and Bachelor of Computer Science",
@@ -281,7 +291,8 @@
       "E3001": 3
     },
     "aosGroups": 18,
-    "aosGroupOptions": 115
+    "aosGroupOptions": 115,
+    "conflictCodes": 238
   },
   "E3001@2026": {
     "title": "Bachelor of Engineering (Honours)",
@@ -298,7 +309,40 @@
       "Engineering minors": 22
     },
     "aosGroups": 78,
-    "aosGroupOptions": 714
+    "aosGroupOptions": 714,
+    "conflictCodes": 336
+  },
+  "L3005@2026": {
+    "title": "Bachelor of Laws (Honours) and Bachelor of Commerce",
+    "courseRequirements": 0,
+    "courseUnits": 0,
+    "components": [
+      {
+        "code": "B2001",
+        "title": "Commerce component",
+        "groups": 2,
+        "units": 0,
+        "missingTemplate": false
+      },
+      {
+        "code": "L3001",
+        "title": "Law component",
+        "groups": 3,
+        "units": 17,
+        "missingTemplate": false
+      }
+    ],
+    "aosTotal": 15,
+    "aosByKind": {
+      "major": 11,
+      "specialisation": 4
+    },
+    "aosByComponent": {
+      "B2001": 15
+    },
+    "aosGroups": 35,
+    "aosGroupOptions": 278,
+    "conflictCodes": 280
   },
   "0047@2026": {
     "title": "Doctor of Philosophy",
@@ -309,7 +353,8 @@
     "aosByKind": {},
     "aosByComponent": {},
     "aosGroups": 0,
-    "aosGroupOptions": 0
+    "aosGroupOptions": 0,
+    "conflictCodes": 0
   },
   "C6001@2026": {
     "title": "Master of Information Technology",
@@ -320,6 +365,7 @@
     "aosByKind": {},
     "aosByComponent": {},
     "aosGroups": 0,
-    "aosGroupOptions": 0
+    "aosGroupOptions": 0,
+    "conflictCodes": 44
   }
 }

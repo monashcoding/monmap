@@ -40,6 +40,7 @@ const CASES: ReadonlyArray<[code: string, year: string, why: string]> = [
   ["S2000", "2026", "single degree with many majors"],
   ["E3010", "2026", "engineering double: narrowed AoS, no technical electives"],
   ["E3001", "2026", "same specialisations as a single degree: electives kept"],
+  ["L3005", "2026", "cross-component prohibition: BTC1110 vs compulsory LAW2102"],
   ["0047", "2026", "research program: no tree, no data at all"],
   ["C6001", "2026", "groups but zero AoS"],
 ]
@@ -85,6 +86,9 @@ async function summarize(code: string, year: string): Promise<Summary | null> {
     aosByComponent: byComponent,
     aosGroups,
     aosGroupOptions,
+    // Prohibition edges shipped for the reachability cap — drifts if
+    // the conflict query or the candidate set changes shape.
+    conflictCodes: Object.keys(c.conflicts ?? {}).length,
   }
 }
 
