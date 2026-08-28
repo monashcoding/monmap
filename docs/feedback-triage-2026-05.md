@@ -245,14 +245,14 @@ pick-one pair for free, with no pick-one detection anywhere.
 
 | Report | Bug | Note |
 |---|---|---|
-| #54 | Unit detail pulls the *start* year's handbook, not the current one | Deliberate: `use-unit-data-hydration.ts` fetches year-N data from handbook `courseYear + N`. The complaint is that the *popover* should show current-year info. Split display year from validation year. |
-| #57 | Tree shows FIT9xxx postgrad + other-faculty units | Tree is course-agnostic; scope the graph to units reachable from the plan's course. |
-| #58 | WAM counts units outside the course | Filter the WAM input by course membership, or let the user exclude a unit. |
-| #17 | ATS2146/ATS3146 prohibition fires one way only | Expected — 1,557 of 3,041 prohibition edges are one-directional. Validation should check both directions before clearing. |
+| #17 | ATS2146/ATS3146 prohibition fires one way only | **FIXED 2026-08-29.** Confirmed: `ATS2146` names `ATS3146`, not the reverse, and 1,557 of 2026's 3,041 prohibition edges are one-directional. Validation only ever evaluated a unit's *own* rule, so the conflict lit up on one card and not the other. `validatePlan` now builds a reverse index — planned units whose rules name this one — and merges both directions into a single error per card, so a mutual pair isn't reported twice. |
+| #54 | Unit detail pulls the *start* year's handbook, not the current one | **Working as designed, no change.** `use-unit-data-hydration.ts` deliberately fetches year-N data from handbook `courseYear + N`, because validating a 2028 slot against 2026 requisites would be wrong. The detail popover already offers an opt-in year switcher that fetches a one-off snapshot, which covers the "what does it look like now?" case. |
+| #57 | Tree shows FIT9xxx postgrad + other-faculty units | Not a single — this is tree scoping, a feature. The tree is course-agnostic by design; limiting it to units reachable from the plan's course is real work with its own UX questions. |
+| #58 | "WAM - units in my course too" | **Needs clarification, not actionable.** The WAM already counts only units on the plan that have a mark entered (`wam-context.tsx`), so it can't be pulling in units from outside the course. The report is one line and reads equally as "include my course units too" or "it's including things it shouldn't". Worth asking the reporter before guessing. |
+| #49 | ENG4099 required but unaddable, replaced by 480X | **Resolved by data refresh.** `ENG4099` is gone from 2026 (replaced by ENG4801–4804 "Professional practice") and appears in no requirement group, AoS unit list, or curriculum tree. |
+| #82 | AEH2001/2002/3001 marked as not running in S2 | **Resolved.** All three carry two S2 offerings ("Second semester (Northern)", "(extended)"), and `classifyTeachingPeriod` prefix-matches those to S2, so the planner reads them correctly. |
 | #63 | Adding a 5th unit / a semester is hard to find | UX: inline "+" affordance instead of the capacity control ported from MonPlan. |
 | #77 | July (mid-year) intake can't be represented | Plan starts at S1; needs a start-semester option. |
-| #82 | AEH2001/2002/3001 marked as not running in S2 | Data check against `unit_offerings`. |
-| #49 | ENG4099 required but unaddable, replaced by 480X | Data currency check. |
 | #60 | Unit search is laggy | Server action per keystroke, debounced; consider client-side prefilter. |
 
 ---
@@ -302,4 +302,6 @@ pick-one pair for free, with no pick-one detection anywhere.
 5. ~~**Prior credit**~~ — done.
 6. ~~**B4**~~ display half done; the campus *preference* remains.
 7. ~~**B6**~~ — done.
-8. The B7 singles.
+8. ~~The B7 singles~~ — swept 2026-08-29: #17 fixed; #49 and #82
+   resolved by data refresh; #54 working as designed; #58 needs the
+   reporter; #57, #63 and #77 are features, not singles.

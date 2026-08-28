@@ -90,6 +90,19 @@ function evaluateLeaf(
   return completed.has(leaf.academic_item_code)
 }
 
+/**
+ * Every unit code a rule tree names, ignoring AND/OR structure. Used
+ * to answer "which units does this rule talk about?" — for
+ * prohibitions that is the whole rule, since any named unit conflicts.
+ */
+export function referencedCodes(
+  rule: RequisiteRule | null | undefined
+): Set<string> {
+  const out = new Set<string>()
+  if (rule?.length) collectReferencedCodes(rule, out)
+  return out
+}
+
 function collectReferencedCodes(
   nodes: (RequisiteContainer | RequisiteLeaf)[],
   out: Set<string>
