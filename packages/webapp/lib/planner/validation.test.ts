@@ -725,3 +725,133 @@ test("credit: a credited unit still trips a prohibition", () => {
     "prohibition_conflict"
   )
 })
+
+/* ------------------------------------------------------------------ *
+ * One-directional prohibitions
+ * ------------------------------------------------------------------ */
+
+test("validatePlan: a one-directional prohibition flags BOTH units", () => {
+  // Real 2026 shape: ATS2146 prohibits ATS3146, and ATS3146 says
+  // nothing back — 1,557 of the corpus's 3,041 prohibition edges are
+  // one-directional like this. Reported as: "when i put ats 3146 and
+  // ats 2146 only 2146 showed a prohibition but 3146 didnt".
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "A2000",
+    selectedAos: {},
+    years: [
+      {
+        label: "Year 1",
+        slots: [{ kind: "S1", unitCodes: ["ATS2146", "ATS3146"] }],
+      },
+    ],
+  }
+  const units = new Map([
+    ["ATS2146", unit("ATS2146")],
+    ["ATS3146", unit("ATS3146")],
+  ])
+  const offerings = new Map([
+    ["ATS2146", [offering("ATS2146", "S1")]],
+    ["ATS3146", [offering("ATS3146", "S1")]],
+  ])
+  const requisites = new Map<string, RequisiteBlock[]>([
+    [
+      "ATS2146",
+      [
+        {
+          requisiteType: "prohibition",
+          rule: [
+            {
+              parent_connector: { value: "OR" },
+              relationships: [{ academic_item_code: "ATS3146" }],
+            },
+          ],
+        },
+      ],
+    ],
+    // ATS3146 has no requisites at all — the asymmetry.
+  ])
+
+  const out = validatePlan(state, units, offerings, requisites)
+  const a = out.get(keyFor(0, 0, "ATS2146"))!
+  const b = out.get(keyFor(0, 0, "ATS3146"))!
+  assert.equal(a.errors[0]?.kind, "prohibition_conflict", "the naming unit")
+  assert.equal(b.errors[0]?.kind, "prohibition_conflict", "the named unit")
+  assert.deepEqual(a.errors[0]?.relatedCodes, ["ATS3146"])
+  assert.deepEqual(b.errors[0]?.relatedCodes, ["ATS2146"])
+})
+
+test("validatePlan: a mutual prohibition reports once per unit, not twice", () => {
+  // Both directions recorded. Each card should still show a single
+  // merged error naming the other unit.
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    years: [
+      {
+        label: "Year 1",
+        slots: [{ kind: "S1", unitCodes: ["FIT1045", "FIT1053"] }],
+      },
+    ],
+  }
+  const units = new Map([
+    ["FIT1045", unit("FIT1045")],
+    ["FIT1053", unit("FIT1053")],
+  ])
+  const offerings = new Map([
+    ["FIT1045", [offering("FIT1045", "S1")]],
+    ["FIT1053", [offering("FIT1053", "S1")]],
+  ])
+  const prohibits = (other: string): RequisiteBlock[] => [
+    {
+      requisiteType: "prohibition",
+      rule: [
+        {
+          parent_connector: { value: "OR" },
+          relationships: [{ academic_item_code: other }],
+        },
+      ],
+    },
+  ]
+  const requisites = new Map<string, RequisiteBlock[]>([
+    ["FIT1045", prohibits("FIT1053")],
+    ["FIT1053", prohibits("FIT1045")],
+  ])
+
+  const out = validatePlan(state, units, offerings, requisites)
+  const a = out.get(keyFor(0, 0, "FIT1045"))!
+  assert.equal(a.errors.length, 1, "one merged error, not one per direction")
+  assert.deepEqual(a.errors[0]?.relatedCodes, ["FIT1053"])
+})
+
+test("validatePlan: a prohibited unit that isn't on the plan is ignored", () => {
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "A2000",
+    selectedAos: {},
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["ATS2146"] }] },
+    ],
+  }
+  const units = new Map([["ATS2146", unit("ATS2146")]])
+  const offerings = new Map([["ATS2146", [offering("ATS2146", "S1")]]])
+  const requisites = new Map<string, RequisiteBlock[]>([
+    [
+      "ATS2146",
+      [
+        {
+          requisiteType: "prohibition",
+          rule: [
+            {
+              parent_connector: { value: "OR" },
+              relationships: [{ academic_item_code: "ATS3146" }],
+            },
+          ],
+        },
+      ],
+    ],
+  ])
+  const out = validatePlan(state, units, offerings, requisites)
+  assert.deepEqual(out.get(keyFor(0, 0, "ATS2146"))!.errors, [])
+})

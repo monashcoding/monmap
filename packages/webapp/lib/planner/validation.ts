@@ -1,6 +1,10 @@
 import { creditedCodes } from "./credit.ts"
 import { perSlotCreditPoints } from "./full-year.ts"
-import { evaluateProhibition, evaluateRequisiteTree } from "./requisites.ts"
+import {
+  evaluateProhibition,
+  evaluateRequisiteTree,
+  referencedCodes,
+} from "./requisites.ts"
 import type {
   PeriodKind,
   PlannerOffering,
@@ -37,6 +41,13 @@ export interface ValidationInput {
   yearIndex: number
   slotIndex: number
   completedBefore: ReadonlySet<string>
+  /**
+   * Other units on the plan whose own prohibition rules name this one.
+   * Covers the direction this unit's rules don't state; see the
+   * prohibition block below. Optional — omitting it restores the
+   * one-directional behaviour.
+   */
+  prohibitedBy?: readonly string[]
   concurrentWith: ReadonlySet<string>
   allPlannedCodes: ReadonlySet<string>
   offerings: PlannerOffering[]
@@ -117,18 +128,28 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     }
   }
 
-  const prohibitions = input.requisites.filter(
-    (r) => r.requisiteType === "prohibition"
-  )
-  for (const block of prohibitions) {
+  // Prohibitions are mutual in practice but recorded one-directionally
+  // about half the time — 1,557 of 2026's 3,041 edges name a unit that
+  // doesn't name them back. Checking only this unit's own rule means
+  // the conflict lights up on one card and not the other: "when i put
+  // ats 3146 and ats 2146 only 2146 showed a prohibition but 3146
+  // didnt". So the reverse direction (units on the plan whose rules
+  // name *this* unit) counts too, merged into one error rather than
+  // reported twice for a mutual pair.
+  const conflicts = new Set<string>()
+  for (const block of input.requisites) {
+    if (block.requisiteType !== "prohibition") continue
     const res = evaluateProhibition(block.rule, input.allPlannedCodes)
-    if (!res.satisfied) {
-      errors.push({
-        kind: "prohibition_conflict",
-        message: `Can't take with ${formatCodeList(res.conflictingCodes)}.`,
-        relatedCodes: res.conflictingCodes,
-      })
-    }
+    for (const c of res.conflictingCodes) conflicts.add(c)
+  }
+  for (const c of input.prohibitedBy ?? []) conflicts.add(c)
+  if (conflicts.size > 0) {
+    const codes = [...conflicts].sort()
+    errors.push({
+      kind: "prohibition_conflict",
+      message: `Can't take with ${formatCodeList(codes)}.`,
+      relatedCodes: codes,
+    })
   }
 
   if (input.slotCreditLoad > MAX_CREDIT_LOAD_PER_SLOT) {
@@ -222,6 +243,25 @@ export function validatePlan(
   for (const yr of state.years)
     for (const s of yr.slots) for (const c of s.unitCodes) allPlanned.add(c)
 
+  // Reverse prohibition index: code -> units on the plan whose own
+  // rules prohibit it. Built once over the plan rather than per slot,
+  // since it depends only on what's placed. `allPlanned` includes
+  // credited units, so credit for a unit conflicts with its twin from
+  // this direction too — consistent with credit counting as a literal
+  // enrolment for prohibitions.
+  const prohibitedBy = new Map<string, Set<string>>()
+  for (const owner of allPlanned) {
+    for (const block of requisitesByCode.get(owner) ?? []) {
+      if (block.requisiteType !== "prohibition") continue
+      for (const target of referencedCodes(block.rule)) {
+        if (target === owner || !allPlanned.has(target)) continue
+        const set = prohibitedBy.get(target) ?? new Set<string>()
+        set.add(owner)
+        prohibitedBy.set(target, set)
+      }
+    }
+  }
+
   // Seeded with credit, so year 1 sees it as already completed —
   // expanded through equivalents like any other completion, so credit
   // for FIT1053 satisfies a prerequisite naming FIT1045.
@@ -283,6 +323,7 @@ export function validatePlan(
           slotIndex: s,
           completedBefore: completed,
           concurrentWith: concurrentWithoutSelf,
+          prohibitedBy: [...(prohibitedBy.get(code) ?? [])],
           allPlannedCodes: new Set([...allPlanned].filter((c) => c !== code)),
           offerings: offeringsByCode.get(code) ?? [],
           requisites: requisitesByCode.get(code) ?? [],
