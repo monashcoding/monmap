@@ -855,3 +855,46 @@ test("validatePlan: a prohibited unit that isn't on the plan is ignored", () => 
   const out = validatePlan(state, units, offerings, requisites)
   assert.deepEqual(out.get(keyFor(0, 0, "ATS2146"))!.errors, [])
 })
+
+test("validatePlan: credit prohibits a placed unit from the reverse direction", () => {
+  // The interaction the two features create together, which neither
+  // covered alone: the student holds *credit* for ATS2146, which
+  // prohibits ATS3146 and is not named back by it. ATS2146 never
+  // occupies a slot, so it has no card of its own — the conflict can
+  // only surface on ATS3146, and only via the reverse index.
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "A2000",
+    selectedAos: {},
+    credit: [{ code: "ATS2146", creditPoints: 6, label: "transfer" }],
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["ATS3146"] }] },
+    ],
+  }
+  const units = new Map([
+    ["ATS2146", unit("ATS2146")],
+    ["ATS3146", unit("ATS3146")],
+  ])
+  const offerings = new Map([["ATS3146", [offering("ATS3146", "S1")]]])
+  const requisites = new Map<string, RequisiteBlock[]>([
+    [
+      "ATS2146",
+      [
+        {
+          requisiteType: "prohibition",
+          rule: [
+            {
+              parent_connector: { value: "OR" },
+              relationships: [{ academic_item_code: "ATS3146" }],
+            },
+          ],
+        },
+      ],
+    ],
+  ])
+
+  const out = validatePlan(state, units, offerings, requisites)
+  const v = out.get(keyFor(0, 0, "ATS3146"))!
+  assert.equal(v.errors[0]?.kind, "prohibition_conflict")
+  assert.deepEqual(v.errors[0]?.relatedCodes, ["ATS2146"])
+})
