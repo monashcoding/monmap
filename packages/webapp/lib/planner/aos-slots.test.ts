@@ -2,7 +2,9 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  MAX_PICKS_PER_SLOT,
   computeAosSlots,
+  computeAosSlotsWithRepeats,
   legacyKeyServing,
   pickedAosEntries,
   resolveSlotSelection,
@@ -178,4 +180,159 @@ test("pickedAosEntries: stale keys from an older picker layout still surface", (
   assert.equal(entries.length, 1)
   assert.equal(entries[0]!.aos.code, "ATINTELL02")
   assert.equal(entries[0]!.label, "Specialisation")
+})
+
+/* ------------------------------------------------------------------ *
+ * Repeat slots — multiple majors/minors.
+ * docs/plan-multiple-aos.md §1, §2.
+ * ------------------------------------------------------------------ */
+
+function repeatCourse(
+  kind: PlannerAreaOfStudy["kind"],
+  codes: string[]
+): PlannerCourseWithAoS {
+  return {
+    year: "2026",
+    code: "A2000",
+    title: "Arts",
+    creditPoints: 144,
+    aqfLevel: null,
+    type: null,
+    overview: null,
+    areasOfStudy: codes.map((c) => ({
+      code: c,
+      title: c,
+      kind,
+      relationshipLabel: "Arts majors",
+      creditPoints: null,
+      units: [],
+      requiredUnits: [],
+      requirements: [],
+    })),
+    courseUnits: [],
+    courseRequirements: [],
+    componentCourses: [],
+  }
+}
+
+test("no repeat slot until the base slot is filled", () => {
+  const c = repeatCourse("major", ["M1", "M2", "M3"])
+  const keys = computeAosSlotsWithRepeats(c, {}).map((s) => s.key)
+  assert.deepEqual(keys, ["major"])
+})
+
+test("filling the base slot earns exactly one repeat slot", () => {
+  const c = repeatCourse("major", ["M1", "M2", "M3"])
+  const slots = computeAosSlotsWithRepeats(c, { major: "M1" })
+  assert.deepEqual(
+    slots.map((s) => s.key),
+    ["major", "major#2"]
+  )
+  // …and not a third until the second is used.
+  assert.deepEqual(
+    computeAosSlotsWithRepeats(c, { major: "M1", "major#2": "M2" }).map(
+      (s) => s.key
+    ),
+    ["major", "major#2", "major#3"]
+  )
+})
+
+test("sibling picks are excluded — the same major can't be taken twice", () => {
+  const c = repeatCourse("major", ["M1", "M2", "M3"])
+  const slots = computeAosSlotsWithRepeats(c, { major: "M1" })
+  const repeat = slots.find((s) => s.key === "major#2")!
+  assert.deepEqual(
+    repeat.options.map((o) => o.code),
+    ["M2", "M3"]
+  )
+  const third = computeAosSlotsWithRepeats(c, {
+    major: "M1",
+    "major#2": "M2",
+  }).find((s) => s.key === "major#3")!
+  assert.deepEqual(
+    third.options.map((o) => o.code),
+    ["M3"]
+  )
+})
+
+test("the soft cap stops at MAX_PICKS_PER_SLOT", () => {
+  const c = repeatCourse("major", ["M1", "M2", "M3", "M4", "M5"])
+  const slots = computeAosSlotsWithRepeats(c, {
+    major: "M1",
+    "major#2": "M2",
+    "major#3": "M3",
+  })
+  assert.equal(MAX_PICKS_PER_SLOT, 3)
+  assert.deepEqual(
+    slots.map((s) => s.key),
+    ["major", "major#2", "major#3"]
+  )
+})
+
+test("no empty repeat slot when the options run out", () => {
+  const c = repeatCourse("major", ["M1", "M2"])
+  const slots = computeAosSlotsWithRepeats(c, { major: "M1", "major#2": "M2" })
+  assert.deepEqual(
+    slots.map((s) => s.key),
+    ["major", "major#2"]
+  )
+})
+
+test("minors and extended majors repeat; specialisations never do", () => {
+  for (const kind of ["minor", "extended_major"] as const) {
+    const c = repeatCourse(kind, ["X1", "X2"])
+    const base = computeAosSlotsWithRepeats(c, {})[0]!
+    const withPick = computeAosSlotsWithRepeats(c, { [base.key]: "X1" })
+    assert.equal(withPick.length, 2, kind)
+  }
+  const spec = repeatCourse("specialisation", ["S1", "S2"])
+  const base = computeAosSlotsWithRepeats(spec, {})[0]!
+  assert.deepEqual(
+    computeAosSlotsWithRepeats(spec, { [base.key]: "S1" }).map((s) => s.key),
+    [base.key]
+  )
+})
+
+test("a legacy fixed-role value never serves a repeat slot", () => {
+  // "major" already holds it; if legacyKeys leaked through, the same
+  // pick would render in both dropdowns.
+  const c = repeatCourse("major", ["M1", "M2"])
+  const repeat = computeAosSlotsWithRepeats(c, { major: "M1" }).find(
+    (s) => s.key === "major#2"
+  )!
+  assert.deepEqual(repeat.legacyKeys, [])
+  assert.equal(resolveSlotSelection({ major: "M1" }, repeat), undefined)
+})
+
+test("REGRESSION: a saved plan's primary pick keeps its original key", () => {
+  // The whole reason for "#2" suffixes over widening selectedAos to
+  // arrays — plans saved before this feature must not migrate.
+  const c = repeatCourse("major", ["M1", "M2"])
+  const slots = computeAosSlotsWithRepeats(c, { major: "M1" })
+  assert.equal(slots[0]!.key, "major")
+  assert.equal(resolveSlotSelection({ major: "M1" }, slots[0]!), "M1")
+})
+
+test("repeat picks surface in pickedAosEntries", () => {
+  const c = repeatCourse("major", ["M1", "M2"])
+  const picked = pickedAosEntries(c, { major: "M1", "major#2": "M2" })
+  assert.deepEqual(
+    picked.map((p) => p.aos.code),
+    ["M1", "M2"]
+  )
+  assert.deepEqual(
+    picked.map((p) => p.slotKey),
+    ["major", "major#2"]
+  )
+})
+
+test("a 60-option slot (2020 S2006 minors) repeats without losing options", () => {
+  const codes = Array.from({ length: 60 }, (_, i) => `MN${i + 1}`)
+  const c = repeatCourse("minor", codes)
+  const base = computeAosSlotsWithRepeats(c, {})[0]!
+  assert.equal(base.options.length, 60)
+  const slots = computeAosSlotsWithRepeats(c, { [base.key]: "MN1" })
+  const repeat = slots.find((s) => s.key === `${base.key}#2`)!
+  assert.equal(repeat.options.length, 59)
+  assert.ok(!repeat.options.some((o) => o.code === "MN1"))
 })
