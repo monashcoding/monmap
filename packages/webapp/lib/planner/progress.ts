@@ -1,3 +1,4 @@
+import { creditedCodes, creditPointsFromCredit } from "./credit.ts"
 import { isFullYearUnit, perSlotCreditPoints } from "./full-year.ts"
 import { effectiveRequired, reachableOptions } from "./reachable.ts"
 import type {
@@ -31,6 +32,9 @@ export function summarizePlan(
   offeringsByCode?: ReadonlyMap<string, PlannerOffering[]>
 ): ProgressSummary {
   let total = 0
+  // Codes counted from slots, so a unit somehow both credited and
+  // placed doesn't earn its credit points twice.
+  const creditedInSlots = new Set<string>()
   const byYear: number[] = []
   const byKind = { S1: 0, S2: 0, OTHER: 0 }
   const seen = new Map<string, number>()
@@ -39,7 +43,7 @@ export function summarizePlan(
   // per-semester load) but earns no extra credit toward the degree, so
   // degree-level totals count a code once — the same treatment full-year
   // twins already get, just scoped to the whole plan instead of a year.
-  const creditedCodes = new Set<string>()
+  const countedCodes = new Set<string>()
 
   for (const year of state.years) {
     let yearTotal = 0
@@ -73,8 +77,9 @@ export function summarizePlan(
         if (isFY) fyAlreadyCountedThisYear.add(code)
         else seen.set(code, (seen.get(code) ?? 0) + 1)
 
-        if (creditedCodes.has(code)) continue
-        creditedCodes.add(code)
+        if (countedCodes.has(code)) continue
+        countedCodes.add(code)
+        creditedInSlots.add(code)
         total += fullCp
         yearTotal += fullCp
       }
@@ -102,8 +107,13 @@ export function summarizePlan(
     fyCount = fyPlaced.size
   }
 
+  // Advanced standing contributes credit points but no semester load,
+  // so it lands in the degree total only — never in byKind or byYear,
+  // which describe actual teaching periods.
+  const creditCp = creditPointsFromCredit(state, creditedInSlots)
+
   return {
-    totalCreditPoints: total,
+    totalCreditPoints: total + creditCp,
     targetCreditPoints: course?.creditPoints ?? 144,
     creditPointsByYear: byYear,
     creditPointsBySlotKind: byKind,
@@ -204,8 +214,14 @@ export function summarizeAoSProgress(
 }
 
 /** All codes placed anywhere in the plan. */
+/**
+ * Everything the student has, for requirement-satisfaction purposes:
+ * units placed in slots *plus* units they hold advanced standing for.
+ * Credit ticks off requirement groups exactly as a placement does —
+ * that is what having credit means.
+ */
 export function plannedUnitCodes(state: PlannerState): Set<string> {
-  const s = new Set<string>()
+  const s = creditedCodes(state)
   for (const y of state.years)
     for (const sl of y.slots) for (const c of sl.unitCodes) s.add(c)
   return s

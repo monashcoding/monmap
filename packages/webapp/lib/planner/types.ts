@@ -14,6 +14,7 @@
 import type { PeriodKind, PlannerSlot } from "@monmap/db"
 export type {
   PeriodKind,
+  PlannerCreditEntry,
   PlannerSlot,
   PlannerState,
   PlannerYear,

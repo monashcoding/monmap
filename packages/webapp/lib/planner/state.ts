@@ -3,6 +3,7 @@ import {
   MAX_SLOT_CAPACITY,
   slotCapacity,
   type PeriodKind,
+  type PlannerCreditEntry,
   type PlannerSlot,
   type PlannerState,
   type PlannerYear,
@@ -54,6 +55,8 @@ export type PlannerAction =
        */
       alsoClear?: readonly string[]
     }
+  | { type: "add_credit"; entry: PlannerCreditEntry }
+  | { type: "remove_credit"; index: number }
   | { type: "add_unit"; yearIndex: number; slotIndex: number; code: string }
   | { type: "remove_unit"; yearIndex: number; slotIndex: number; code: string }
   | {
@@ -160,6 +163,30 @@ export function plannerReducer(
       if (!action.code) delete next[action.role]
       else next[action.role] = action.code
       return { ...state, selectedAos: next }
+    }
+
+    case "add_credit": {
+      const entry = action.entry
+      // A code can only be credited once, and crediting a unit the
+      // student has also placed in a slot is a contradiction we resolve
+      // by ignoring the credit — the placement is the more specific
+      // statement, and validation already reasons about it.
+      if (entry.code) {
+        if (state.credit?.some((c) => c.code === entry.code)) return state
+        const placed = state.years.some((y) =>
+          y.slots.some((s) => s.unitCodes.includes(entry.code!))
+        )
+        if (placed) return state
+      }
+      return { ...state, credit: [...(state.credit ?? []), entry] }
+    }
+
+    case "remove_credit": {
+      const credit = state.credit
+      if (!credit || action.index < 0 || action.index >= credit.length)
+        return state
+      const next = credit.filter((_, i) => i !== action.index)
+      return { ...state, credit: next }
     }
 
     case "add_unit":

@@ -53,22 +53,33 @@ export function useUnitDataHydration({
     const codesByYear = new Map<string, string[]>()
     const seen = new Set<string>()
 
+    // Credited units are hydrated too, from the plan's own handbook
+    // year: they never sit in a slot, but their `equivalents` decide
+    // whether credit for FIT1053 satisfies a prerequisite naming
+    // FIT1045.
+    const want = (code: string, hYear: string) => {
+      if (seen.has(code)) return
+      seen.add(code)
+      const cached = unitsMap.get(code)
+      if (
+        cached?.year === hYear &&
+        offeringsMap.has(code) &&
+        requisitesMap.has(code)
+      )
+        return
+      const list = codesByYear.get(hYear) ?? []
+      list.push(code)
+      codesByYear.set(hYear, list)
+    }
+
+    const creditYear = handbookYearFor(0, state.courseYear, availableYears)
+    for (const entry of state.credit ?? [])
+      if (entry.code) want(entry.code, creditYear)
+
     for (let yi = 0; yi < state.years.length; yi++) {
       const hYear = handbookYearFor(yi, state.courseYear, availableYears)
       for (const slot of state.years[yi]?.slots ?? []) {
-        for (const code of slot.unitCodes) {
-          if (seen.has(code)) continue
-          seen.add(code)
-          const cached = unitsMap.get(code)
-          const correct =
-            cached?.year === hYear &&
-            offeringsMap.has(code) &&
-            requisitesMap.has(code)
-          if (correct) continue
-          const list = codesByYear.get(hYear) ?? []
-          list.push(code)
-          codesByYear.set(hYear, list)
-        }
+        for (const code of slot.unitCodes) want(code, hYear)
       }
     }
 
@@ -105,6 +116,7 @@ export function useUnitDataHydration({
     })
   }, [
     state.years,
+    state.credit,
     state.courseYear,
     unitsMap,
     offeringsMap,

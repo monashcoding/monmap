@@ -1,3 +1,4 @@
+import { creditedCodes } from "./credit.ts"
 import { perSlotCreditPoints } from "./full-year.ts"
 import { evaluateProhibition, evaluateRequisiteTree } from "./requisites.ts"
 import type {
@@ -17,8 +18,8 @@ const MAX_CREDIT_LOAD_PER_SLOT = 24
  * warnings (amber).
  *
  * Chronology model: a unit placed in slot (yearIndex, period) has
- *   completed   = every unit in earlier years + earlier periods of the
- *                 same year
+ *   completed   = advanced standing + every unit in earlier years +
+ *                 earlier periods of the same year
  *   concurrent  = every other unit in the same slot
  * Prereqs are satisfied iff their rule is met by `completed`.
  * Coreqs are satisfied iff their rule is met by `completed ∪ concurrent`.
@@ -208,11 +209,23 @@ export function validatePlan(
 ): Map<string, SlotUnitValidation> {
   const out = new Map<string, SlotUnitValidation>()
 
-  const allPlanned = new Set<string>()
+  // Advanced standing counts as study already done, before Year 1.
+  // This is the whole point of the feature: a student credited with
+  // FIT1045 must stop seeing "prerequisite not met" on FIT1008, and a
+  // student who accelerated into ENG2005 must stop being told ENG1005
+  // is missing. Credited codes are literal enrolments for prohibition
+  // purposes too — holding credit for a unit conflicts with its twin
+  // exactly as taking it would.
+  const credited = creditedCodes(state)
+
+  const allPlanned = new Set<string>(credited)
   for (const yr of state.years)
     for (const s of yr.slots) for (const c of s.unitCodes) allPlanned.add(c)
 
-  const completed = new Set<string>()
+  // Seeded with credit, so year 1 sees it as already completed —
+  // expanded through equivalents like any other completion, so credit
+  // for FIT1053 satisfies a prerequisite naming FIT1045.
+  const completed = withEquivalents(credited, unitsByCode)
 
   // Used to derive the expected handbook year per study-year so the
   // validator can compare against the actually-loaded `unit.year`.
