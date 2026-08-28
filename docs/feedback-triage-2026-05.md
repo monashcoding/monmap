@@ -80,13 +80,34 @@ should never auto-place a second copy.
 *flagged*; extend it to assert the total counts the unit once. Add a
 `state.test.ts` case for the FY retake-in-a-later-year path.
 
-### B2 — Changing the starting year appears to do nothing *(4 reports: #35, #57, #75, #85)*
+### B2 — Changing the starting year appears to do nothing *(4 reports: #35, #57, #75, #85)* — **CLOSED, not reproducible**
 
 > "Starting year button does not work."
 > "I couldn't seem to change the start year on the plan page (tried 2025, 2023, 2022 and none of them worked)"
 > "when trying to change the starting year back to 2025 it didnt do anything"
 
-**Status: root cause unconfirmed.** `components/planner/starting-year-picker.tsx`
+**CLOSED 2026-08-28 — not reproducible, no code change made.**
+Confirmed working in a browser against the dev server: the picker
+opens, listing every available year with the current one disabled, and
+choosing one raises the confirm dialog.
+
+Why it was reported is not fully explained, but it is *not* the code:
+`handleChange` and the dialog wiring are byte-identical to the
+pre-split version that predates the feedback (the 2026-05-15 superfile
+split moved this code out of `plan-grid.tsx` without changing it), so
+no fix of ours could have been responsible. Two environmental
+explanations fit the reports and neither is actionable now: the
+trigger is a small pill that is genuinely easy to miss — during
+testing, three separate coordinate-clicks and a keyboard attempt all
+failed to activate a menu item — and a year whose course data was not
+yet ingested would clear the course and toast rather than switch,
+which reads as "nothing happened".
+
+If it resurfaces, the thing to capture is whether the *dropdown* opens
+at all, which separates a hit-target problem from a dialog problem.
+
+**Superseded — original analysis below.** Status was: root cause
+unconfirmed. `components/planner/starting-year-picker.tsx`
 was last modified 2026-05-15 — *three days before* the feedback — and
 nothing has touched it since, so whatever they hit is still there.
 
@@ -297,8 +318,7 @@ pick-one pair for free, with no pick-one detection anywhere.
 1. ~~**B1**~~ — done, `c2ba139`.
 2. ~~**B3**~~ — done, `e02d5e1`.
 3. ~~**B5**~~ — done.
-4. **B2** — parked: needs one browser confirmation before the fix can
-   be written, and nobody has run it yet.
+4. ~~**B2**~~ — closed, not reproducible.
 5. ~~**Prior credit**~~ — done.
 6. ~~**B4**~~ display half done; the campus *preference* remains.
 7. ~~**B6**~~ — done.
