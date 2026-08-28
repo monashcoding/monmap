@@ -5,6 +5,7 @@ import {
   CalculatorIcon,
   DownloadIcon,
   FileTextIcon,
+  GraduationCapIcon,
   PlusCircleIcon,
   PrinterIcon,
   Redo2Icon,
@@ -19,6 +20,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import type { PlannerState } from "@/lib/planner/types"
 
+import { CreditDialog } from "./credit-dialog"
 import { usePlanner } from "./planner-context"
 import { useWam } from "./wam-context"
 
@@ -70,6 +72,8 @@ export function LeftSidebar() {
   }, [activePlan?.name])
   const { wamMode, showGrade, toggleWamMode, toggleShowGrade } = useWam()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [creditOpen, setCreditOpen] = useState(false)
+  const creditCount = state.credit?.length ?? 0
 
   const errorCount = useMemo(() => {
     let n = 0
@@ -175,6 +179,13 @@ export function LeftSidebar() {
           />
 
           <ActionButton
+            icon={<GraduationCapIcon />}
+            label="Credit"
+            tone={creditCount > 0 ? "active" : undefined}
+            onClick={() => setCreditOpen(true)}
+          />
+
+          <ActionButton
             icon={<UploadIcon />}
             label="Export"
             onClick={onExport}
@@ -277,6 +288,7 @@ export function LeftSidebar() {
           </span>
         </a>
       </aside>
+      <CreditDialog open={creditOpen} onOpenChangeAction={setCreditOpen} />
     </div>
   )
 }

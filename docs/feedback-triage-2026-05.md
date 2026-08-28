@@ -259,13 +259,21 @@ pick-one pair for free, with no pick-one detection anywhere.
 
 ## 2. Feature requests, by demand
 
-1. **Prior credit / advanced standing / exemptions — 11 requests**
-   (#0, #1, #14, #23, #36, #39, #45, #47, #53, #65, #86). Far the
-   biggest theme, and the root cause of several *bug* reports: students
-   fake credit with a junk year and then get false prerequisite errors.
-   Design: a "Credit" pseudo-year whose units satisfy prerequisites,
-   count toward credit-point totals, and are exempt from offering and
-   prerequisite validation.
+1. ~~**Prior credit / advanced standing / exemptions — 11 requests**~~
+   (#0, #1, #14, #23, #36, #39, #45, #47, #53, #65, #86) —
+   **SHIPPED 2026-08-28.** `PlannerState.credit` holds two flavours in
+   one shape: *specified* credit naming a unit (satisfies prerequisites,
+   ticks off requirement groups, counts as a literal enrolment for
+   prohibitions, expands through equivalents so credit for FIT1053
+   satisfies a prereq naming FIT1045) and *block* credit with no code,
+   which moves the credit-point total only.
+
+   Not modelled as the pseudo-year the sketch proposed: a credited unit
+   has no teaching period, campus or offering, so a slot means inventing
+   all three and then suppressing the validation they'd trigger — which
+   is exactly the hand-rolled workaround students described. The field
+   is optional, so plans saved before it existed stay valid with no
+   migration.
 2. **Multiple majors / minors — 9** (#15, #24, #34, #41, #50, #63, #67,
    #77, #81). Per-component AoS selection already exists; this asks for
    *n* picks per component rather than one.
@@ -291,8 +299,7 @@ pick-one pair for free, with no pick-one detection anywhere.
 3. ~~**B5**~~ — done.
 4. **B2** — parked: needs one browser confirmation before the fix can
    be written, and nobody has run it yet.
-5. **Prior credit** (feature 1) — highest demand, and it retires a
-   cluster of false-positive bug reports.
+5. ~~**Prior credit**~~ — done.
 6. ~~**B4**~~ display half done; the campus *preference* remains.
 7. ~~**B6**~~ — done.
 8. The B7 singles.

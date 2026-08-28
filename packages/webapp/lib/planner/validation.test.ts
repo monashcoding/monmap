@@ -587,3 +587,141 @@ test("validatePlan: unknown unit yields an unknown_unit error", () => {
   assert.ok(v)
   assert.equal(v.errors[0].kind, "unknown_unit")
 })
+
+/* ------------------------------------------------------------------ *
+ * Advanced standing
+ * ------------------------------------------------------------------ */
+
+const prereqOn = (code: string, requires: string) =>
+  new Map<string, RequisiteBlock[]>([
+    [
+      code,
+      [
+        {
+          requisiteType: "prerequisite",
+          rule: [
+            {
+              parent_connector: { value: "OR" },
+              relationships: [{ academic_item_code: requires }],
+            },
+          ],
+        },
+      ],
+    ],
+  ])
+
+test("credit: a credited prerequisite satisfies a unit in year 1", () => {
+  // The exact complaint: "I got credit for intro to programming from
+  // VCE Algorithmics and i cannot make the prereq for fit1008 go away".
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    credit: [{ code: "FIT1045", creditPoints: 6, label: "VCE Algorithmics" }],
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1008"] }] },
+    ],
+  }
+  const units = new Map([["FIT1008", unit("FIT1008")]])
+  const offerings = new Map([["FIT1008", [offering("FIT1008", "S1")]]])
+
+  const out = validatePlan(
+    state,
+    units,
+    offerings,
+    prereqOn("FIT1008", "FIT1045")
+  )
+  const v = out.get(keyFor(0, 0, "FIT1008"))
+  assert.ok(v)
+  assert.deepEqual(v.errors, [], "credit counts as completed before year 1")
+})
+
+test("credit: without the credit the same plan still errors", () => {
+  // Guards the test above against passing for the wrong reason.
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1008"] }] },
+    ],
+  }
+  const units = new Map([["FIT1008", unit("FIT1008")]])
+  const offerings = new Map([["FIT1008", [offering("FIT1008", "S1")]]])
+
+  const out = validatePlan(
+    state,
+    units,
+    offerings,
+    prereqOn("FIT1008", "FIT1045")
+  )
+  assert.equal(
+    out.get(keyFor(0, 0, "FIT1008"))!.errors[0]?.kind,
+    "prereq_unmet"
+  )
+})
+
+test("credit: an equivalent twin held as credit satisfies the prerequisite", () => {
+  // Credit for the advanced twin FIT1053 must satisfy a prereq naming
+  // FIT1045, exactly as taking it would.
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    credit: [{ code: "FIT1053", creditPoints: 6 }],
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1008"] }] },
+    ],
+  }
+  const units = new Map([
+    ["FIT1008", unit("FIT1008")],
+    ["FIT1053", unit("FIT1053", { equivalents: ["FIT1045"] })],
+  ])
+  const offerings = new Map([["FIT1008", [offering("FIT1008", "S1")]]])
+
+  const out = validatePlan(
+    state,
+    units,
+    offerings,
+    prereqOn("FIT1008", "FIT1045")
+  )
+  assert.deepEqual(out.get(keyFor(0, 0, "FIT1008"))!.errors, [])
+})
+
+test("credit: a credited unit still trips a prohibition", () => {
+  // Credit is a literal enrolment for prohibition purposes — holding
+  // credit for a unit conflicts with its twin just as taking it would.
+  const state: PlannerState = {
+    courseYear: "2026",
+    courseCode: "C2000",
+    selectedAos: {},
+    credit: [{ code: "FIT1045", creditPoints: 6 }],
+    years: [
+      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1053"] }] },
+    ],
+  }
+  const units = new Map([["FIT1053", unit("FIT1053")]])
+  const offerings = new Map([["FIT1053", [offering("FIT1053", "S1")]]])
+  const requisites = new Map<string, RequisiteBlock[]>([
+    [
+      "FIT1053",
+      [
+        {
+          requisiteType: "prohibition",
+          rule: [
+            {
+              parent_connector: { value: "OR" },
+              relationships: [{ academic_item_code: "FIT1045" }],
+            },
+          ],
+        },
+      ],
+    ],
+  ])
+
+  const out = validatePlan(state, units, offerings, requisites)
+  assert.equal(
+    out.get(keyFor(0, 0, "FIT1053"))!.errors[0]?.kind,
+    "prohibition_conflict"
+  )
+})

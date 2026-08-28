@@ -316,3 +316,83 @@ test("historyReducer: new edit clears the redo stack", () => {
   // Branching off the timeline must drop the orphaned future.
   assert.equal(h.future.length, 0)
 })
+
+/* ------------------------------------------------------------------ *
+ * Advanced standing
+ * ------------------------------------------------------------------ */
+
+test("add_credit: records specified and block credit side by side", () => {
+  let s = defaultState("2026", "C2000")
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: "FIT1045", creditPoints: 6, label: "VCE Algorithmics" },
+  })
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: null, creditPoints: 24, label: "Deakin transfer" },
+  })
+  assert.equal(s.credit?.length, 2)
+  assert.equal(s.credit?.[0]?.code, "FIT1045")
+  assert.equal(s.credit?.[1]?.code, null)
+})
+
+test("add_credit: the same unit can't be credited twice", () => {
+  let s = defaultState("2026", "C2000")
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: "FIT1045", creditPoints: 6 },
+  })
+  const before = s
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: "FIT1045", creditPoints: 6 },
+  })
+  assert.equal(s, before)
+  // Block credit has no code, so it never collides with itself.
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: null, creditPoints: 6 },
+  })
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: null, creditPoints: 6 },
+  })
+  assert.equal(s.credit?.length, 3)
+})
+
+test("add_credit: crediting a unit already placed in the plan is ignored", () => {
+  // Contradictory: the placement is the more specific statement, and
+  // counting both would double its credit points.
+  let s = defaultState("2026", "C2000")
+  s = plannerReducer(s, {
+    type: "add_unit",
+    yearIndex: 0,
+    slotIndex: 0,
+    code: "FIT1045",
+  })
+  const before = s
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: "FIT1045", creditPoints: 6 },
+  })
+  assert.equal(s, before)
+})
+
+test("remove_credit: drops by index and ignores out-of-range", () => {
+  let s = defaultState("2026", "C2000")
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: "A1000", creditPoints: 6 },
+  })
+  s = plannerReducer(s, {
+    type: "add_credit",
+    entry: { code: "B1000", creditPoints: 6 },
+  })
+  s = plannerReducer(s, { type: "remove_credit", index: 0 })
+  assert.deepEqual(
+    s.credit?.map((c) => c.code),
+    ["B1000"]
+  )
+  const before = s
+  assert.equal(plannerReducer(s, { type: "remove_credit", index: 9 }), before)
+})

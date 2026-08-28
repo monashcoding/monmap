@@ -203,3 +203,30 @@ test("summarizeAoSProgress: splits placed vs remaining", () => {
     ["FIT2081", "FIT3077"]
   )
 })
+
+test("summarizePlan: advanced standing adds credit points but no semester load", () => {
+  const state = emptyState()
+  state.years[0].slots[0].unitCodes = ["FIT1045"]
+  state.credit = [
+    { code: "FIT1008", creditPoints: 6, label: "transfer" },
+    { code: null, creditPoints: 24, label: "unspecified elective credit" },
+  ]
+  const s = summarizePlan(state, bit, new Map([["FIT1045", unit("FIT1045")]]))
+  assert.equal(s.totalCreditPoints, 36, "6 placed + 6 credited + 24 block")
+  assert.equal(
+    s.creditPointsBySlotKind.S1,
+    6,
+    "credit carries no teaching load"
+  )
+  assert.equal(s.creditPointsByYear[0], 6)
+})
+
+test("plannedUnitCodes: credited units count as held", () => {
+  const state = emptyState()
+  state.years[0].slots[0].unitCodes = ["FIT1045"]
+  state.credit = [
+    { code: "FIT1008", creditPoints: 6 },
+    { code: null, creditPoints: 24 },
+  ]
+  assert.deepEqual([...plannedUnitCodes(state)].sort(), ["FIT1008", "FIT1045"])
+})

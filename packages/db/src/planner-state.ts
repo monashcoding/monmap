@@ -65,4 +65,37 @@ export interface PlannerState {
    */
   selectedAos: Record<string, string | undefined>
   years: PlannerYear[]
+  /**
+   * Advanced standing: study the student already holds credit for,
+   * before Year 1 of this plan. Absent on plans saved before the
+   * feature existed, which is why it's optional — the shape is
+   * additive and old plans stay readable.
+   *
+   * The single biggest thing students asked for (11 of 88 responses to
+   * the May 2026 feedback form), and the cause of several *bug*
+   * reports: without it they fake credit with a junk year and then
+   * fight the validator ("I got credit for intro to programming from
+   * VCE Algorithmics and i cannot make the prereq for fit1008 go
+   * away!!!").
+   */
+  credit?: PlannerCreditEntry[]
+}
+
+/**
+ * One piece of advanced standing. Two flavours in one shape:
+ *
+ *   - **Specified** — `code` names a Monash unit the student is
+ *     credited with (VCE extension study, an advanced-twin they took
+ *     elsewhere, a unit from a degree they transferred out of). It
+ *     satisfies prerequisites and ticks off requirement groups.
+ *   - **Block** — `code` is null and only the credit points count
+ *     ("24 points of unspecified elective credit from Deakin"). It
+ *     moves the credit-point total and nothing else, because there is
+ *     no unit to reason about.
+ */
+export interface PlannerCreditEntry {
+  code: string | null
+  creditPoints: number
+  /** Free-text provenance, e.g. "VCE Algorithmics", "Deakin transfer". */
+  label?: string
 }
