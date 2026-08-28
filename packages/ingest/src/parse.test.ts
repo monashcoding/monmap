@@ -320,3 +320,63 @@ test("course→AoS: campus scope is read off the ancestor path", () => {
   assert.equal(byCode.get("CIVENMNR03")?.kind, "minor")
   assert.equal(byCode.get("ECSYSENG04")?.kind, "specialisation")
 })
+
+/* ------------------------------------------------------------------ *
+ * Whitespace-padded codes
+ *
+ * CourseLoop occasionally emits `academic_item_code` values padded
+ * with spaces or tabs — observed in the live corpus as "ETW2001 ",
+ * " AMU1312" and "BFF5525\t\t". Consumers that filter against a known
+ * code set (AoS unit refs, course→AoS refs) dropped these silently,
+ * which is why area_of_study_units showed zero padded rows. Requisite
+ * refs are stored verbatim, so an untrimmed code was written straight
+ * into requisite_refs, matched no unit row, and surfaced as a
+ * prerequisite the student could never satisfy.
+ * ------------------------------------------------------------------ */
+
+test("collectCodeRefs trims padded academic_item_code values", () => {
+  const refs = collectCodeRefs({
+    container: [
+      {
+        title: "Prerequisites",
+        relationships: [
+          { academic_item_code: "ETW2001 ", academic_item_type: { value: "subject" } },
+          { academic_item_code: " AMU1312", academic_item_type: { value: "subject" } },
+          { academic_item_code: "BFF5525\t\t", academic_item_type: { value: "subject" } },
+          { academic_item_code: "\n FIT1045 \n", academic_item_type: { value: "subject" } },
+        ],
+      },
+    ],
+  })
+  assert.deepEqual(
+    refs.map((r) => r.code),
+    ["ETW2001", "AMU1312", "BFF5525", "FIT1045"]
+  )
+})
+
+test("trimming does not disturb codes that were already clean", () => {
+  const refs = collectCodeRefs({
+    relationships: [
+      { academic_item_code: "FIT1008", academic_item_type: { value: "subject" } },
+    ],
+  })
+  assert.deepEqual(refs, [
+    { code: "FIT1008", type: "subject", ancestor: null },
+  ])
+})
+
+test("a padded requisite code resolves to the same ref as its clean twin", () => {
+  // The bug's actual shape: two spellings of one unit must collapse to
+  // one requisite ref, not two, one of which never matches a unit row.
+  const padded = collectCodeRefs({
+    relationships: [
+      { academic_item_code: "MTE2544 ", academic_item_type: { value: "subject" } },
+    ],
+  })
+  const clean = collectCodeRefs({
+    relationships: [
+      { academic_item_code: "MTE2544", academic_item_type: { value: "subject" } },
+    ],
+  })
+  assert.deepEqual(padded, clean)
+})
