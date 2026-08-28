@@ -6,75 +6,112 @@ majors / minors (9 requests — #15, #24, #34, #41, #50, #63, #67, #77,
 folded in because both change the persisted state shape and doing them
 together means reasoning about saved-plan compatibility once.
 
-Written against the 2026 corpus and the code as of `818d67a`.
+Written against **all seven ingested handbook years (2020–2026)** and
+the code as of `818d67a`.
 
 ---
 
 ## 0. What the data says (checked, not assumed)
 
-**Multi-option courses are a minority, and concentrated.** Courses
-offering more than one option of a kind in 2026:
+Checked across **all seven ingested years (2020–2026)**, not just the
+current one — the planner lets students switch handbook year, so
+anything built here runs against every year in the corpus.
 
-| kind | courses | edges | distinct AoS |
-|---|---|---|---|
-| specialisation | 30 | 162 | 80 |
-| major | 14 | 195 | 101 |
-| minor | 8 | 129 | 79 |
-| other | 8 | 90 | 81 |
-| elective | 6 | 80 | 42 |
-| extended major | 3 | 62 | 24 |
+### 0.1 The corpus changed shape in 2022–23
 
-The heavy hitters are S2000 (29 majors, 24 minors, 23 extended
-majors), A2000 (29 majors), S3001/S3002 (24 majors, 22 minors each),
-E3001 (22 minors), A0502 (21 majors) and B2000 (14 majors). Anything
-we build is exercised by roughly a dozen courses — but they are the
-biggest, most-planned degrees in the corpus.
+| year | AoS edges | courses with >1 major | >1 minor | >1 specialisation | largest single slot |
+|---|---|---|---|---|---|
+| 2020 | 2,112 | **50** | **21** | 35 | **60** (S2006 minor) |
+| 2021 | 1,635 | 42 | 11 | 36 | 49 (S2006 major) |
+| 2022 | 1,068 | 23 | 10 | 29 | 49 (S2006 major) |
+| 2023 | 648 | 14 | 4 | 29 | 29 (A2000 ext. major) |
+| 2024 | 658 | 13 | 4 | 29 | 29 (A2000 ext. major) |
+| 2025 | 667 | 13 | 7 | 28 | 29 (A2000 ext. major) |
+| 2026 | 718 | 14 | 8 | 30 | 29 (S2000 major) |
 
-**There is no structured cardinality anywhere.** `relationship_label`
-never states how many picks are allowed: a query for count words
-(`one|two|three|1|2|3|select|choose|complete`) across all 2026
-`course_areas_of_study` rows returns **zero** matches. The number of
-majors a student may take is not a field we can read.
+Two consequences the 2026-only view missed:
 
-**It exists only as free English prose**, in the `description` of
-curriculum-tree containers, for **37 of 2026's courses**:
+- **The audience is much larger in the early years.** 50 courses offer
+  multiple majors in 2020 versus 14 in 2026, and 21 offer multiple
+  minors versus 8. Describing this feature as "roughly a dozen courses"
+  is true of 2026 and wrong for the corpus.
+- **A slot can carry 60 options** (S2006's 2020 minors), not the 29 the
+  current years top out at. Anything quadratic in options-per-slot, or
+  any UI that assumes a short list, has to survive double that.
 
-> B2008 — "You will complete your Bachelor of Computer Science
-> specialisation and **one major** in the Bachelor of Commerce. Where
-> you have space in your degree you may complete **a second major**…"
+Whether the drop from 2,112 to ~650 edges is a genuine Monash
+restructure or an artefact of how older years were ingested is **not
+answerable from the corpus** and is worth knowing before trusting
+early-year plans generally. It does not block this work: the numbers
+above are the ones the planner will actually render.
 
-> B2020 — "You will complete **one major** from Bachelor of Commerce
-> and **one major** from Bachelor of Arts."
+### 0.2 There is still no structured cardinality — in any year
+
+`relationship_label` never states how many picks are allowed. Across
+all seven years the only match for count words is **D0501 in 2025**
+(7 rows), and it is a false positive:
+
+> "b.  One level-one unit from one of the following majors"
+
+That is a *unit* count inside a major, not a count of majors. So the
+finding holds corpus-wide: **the number of majors a student may take is
+not a field we can read.**
+
+It exists only as free English in curriculum-tree `description` prose,
+in 18–42 courses per year (37 in 2026):
+
+> B2008 — "…and **one major** in the Bachelor of Commerce. Where you
+> have space in your degree you may complete **a second major**…"
 
 Note the modality: a second major is *permitted where you have space*,
-not mandated and not hard-capped. So the ceiling is a **budget
-question, not a rule question** — which is the single most important
-input to this design.
+not mandated and not hard-capped. The ceiling is a **budget question,
+not a rule question** — the most important input to this design.
 
-### 0.1 The rule that actually bites
+### 0.3 The double-counting rule is broad and stable
 
-Two courses state a constraint we currently model nowhere:
+Two courses' worth of prose looked like a local quirk at 2026-only
+scope. Across years it is neither:
 
-> A2000 — "no more than **two units (12 credit points)** can be
-> credited towards two majors, or a major and a minor. **The same
-> credit points cannot be credited towards more than one minor.**"
+| years | courses stating it |
+|---|---|
+| 2020–2022 | 11 per year |
+| 2023–2026 | **27, 28, 27, 28** |
 
-> B2042 — "No more than two units can contribute towards two majors,
-> or a major and a minor, in the same course (including a double
-> degree course)."
+(Counted with a tight pattern requiring both "no more than two units"
+*and* a majors clause. A looser pattern also catches "no more than two
+units **at first year level**", a level rule that has nothing to do
+with double counting — 2–9 courses a year.)
 
-This is a double-counting cap, and `summarizeAoSProgress`
-(`progress.ts:153`) is called **once per AoS, independently**, with no
-cross-AoS awareness. Today that is harmless because a student holds at
-most one pick per slot. The moment they hold two majors that share
-units, a shared unit counts **fully toward both** while the degree
-credit total counts it **once** (`summarizePlan` de-dupes via
-`countedCodes`).
+It steps up sharply at 2023 and then holds, spanning Business, Arts and
+Science (A2000, B2000-series, C2000, S2000, S3002). Wording is
+near-identical, 19 of 2026's 28 sharing one phrasing:
 
-The visible failure: both majors race toward 100% while the credit
-ring lags, and the plan claims completion Monash would reject. That is
-the same class of "the tool told me I was done and I wasn't" bug the
-May feedback was full of, so it must not ship as a known defect.
+> "…you may complete a second major with **no more than two units
+> contributing towards both of your chosen majors**…"
+
+> B2042 — "**No more than two units can contribute towards two
+> majors, or a major and a minor**, in the same course (including a
+> double degree course)."
+
+A second, stricter rule appears only from 2023 and only in a handful
+(4 courses 2023–2025, 6 in 2026):
+
+> A2000 — "The same credit points cannot be credited towards more
+> than one minor."
+
+### 0.4 Why this is the part that needs care
+
+`summarizeAoSProgress` (`progress.ts:153`) is called **once per AoS,
+independently**, with no cross-AoS awareness. Today that is harmless —
+a student holds at most one pick per slot. The moment they hold two
+majors that share units, a shared unit counts **fully toward both**
+while the degree credit total counts it **once** (`summarizePlan`
+de-dupes via `countedCodes`).
+
+The visible failure: both majors race toward 100% while the credit ring
+lags, and the plan claims a completion Monash would reject. That is the
+same class of "the tool told me I was done and I wasn't" bug the May
+feedback was full of, so it must not ship as a known defect.
 
 ---
 
@@ -145,6 +182,10 @@ Offer instead:
 - Only when the slot actually has spare options
   (`options.length > picks`).
 
+Sibling exclusion must be a set membership test, not a nested scan:
+2020's S2006 minor slot carries **60 options**, and three sibling
+slots over 60 options is where a naive O(n²) filter starts to show.
+
 A repeat slot must exclude codes already picked in a sibling slot of
 the same kind, or a student can pick the same major twice.
 
@@ -167,9 +208,18 @@ backwards on an AoS they didn't touch.
    toward both Economics and Finance. Monash allows at most 2 units
    (12 cp) to be shared between two majors."*
 4. Escalate to a warning past 2 shared placed units, and for **any**
-   sharing between two minors (A2000: "the same credit points cannot
-   be credited towards more than one minor" — a stricter, separate
-   rule).
+   sharing between two minors (the stricter, separate rule — see
+   §0.3).
+
+Apply the shared-unit note **corpus-wide, in every year**. The rule is
+stated by 27–28 courses a year from 2023 and 11 a year before that
+(§0.3), and its absence from a given course's prose is far more likely
+to be Monash not repeating boilerplate than a deliberate exemption. A
+note that warns rather than blocks is safe under that uncertainty.
+
+The two-minor rule is different: it appears only from **2023**, in 4–6
+courses. Gate that one on the course actually stating it, or it will
+fire on 2020–2022 plans against a rule that did not yet exist.
 
 Keep `summarizeAoSProgress` per-AoS and honest about listed
 membership. Overlap is a **plan-level** concern and belongs beside the
@@ -196,15 +246,19 @@ migration and no change for existing plans**.
 Two consumers:
 
 - **AoS options** — filter `computeAosSlots` options by
-  `aos.scope` (67 of 719 2026 edges carry one). This is the filtering
+  `aos.scope` (58–71 edges carry one in every year, 66 of 718 in
+  2026 — the coverage is remarkably stable). This is the filtering
   half B4 left open: the chip already tells a Clayton student which
   minors are Malaysia-only, but they still scroll past all nine.
 - **Requirement groups** — `RequirementGroup.scope` already exists and
   already suppresses auto-load; filtering display is the same predicate.
 
-Campus values come from the corpus (`Clayton`, `Malaysia`,
-`Caulfield and Clayton`, …) — read the distinct set rather than
-hardcoding, and always offer "All campuses".
+Campus values are a **closed set of exactly three across all seven
+years** — `Clayton` (213 edges), `Caulfield and Clayton` (131) and
+`Malaysia` (109). Still read the distinct set rather than hardcoding,
+so a new campus appears on its own, but the picker can be a plain
+select rather than a search: it will never be long. Always offer "All
+campuses".
 
 Scoped-out picks must **not** be deleted from `selectedAos`. A student
 who sets campus after picking should see a "this pick is Malaysia-only"
@@ -241,6 +295,15 @@ the failure mode the feedback complained about.
   **unchanged** by the presence of a second pick.
 - Campus — scoped options filter; unscoped always show; a pick that
   falls out of scope survives in state.
+- **Cross-year** — fixture a 2020 course with a 60-option slot (S2006
+  minor) so the picker and sibling exclusion are exercised at twice the
+  current years' width, and assert the two-minor rule stays silent on a
+  2020 plan (§0.3: it doesn't exist before 2023).
+- Year switching needs no new handling — `set_year` already resets
+  `selectedAos` wholesale (`state.ts:153`), so repeat keys clear with
+  everything else. Worth a test pinning that, since only 113 of 2026's
+  393 AoS codes exist in 2020 and a surviving pick would usually be
+  invalid.
 - `pnpm --filter webapp verify:resolver` — snapshot must not drift;
   none of this touches the resolver, so any drift is a bug.
 
@@ -257,15 +320,23 @@ Run tests with `node --experimental-strip-types --test` (plain
 | Key proliferation in saved plans | Soft cap; `pickedAosEntries` already tolerates unknown keys |
 | A hard cap blocks a legitimate plan | No parsed cap; student-driven with a soft ceiling |
 | Campus filter hides a pick a student already made | Filter options, never delete state; annotate out-of-scope picks |
-| Prose thresholds drift year to year | Single named constant, handbook quotes inline |
+| Prose thresholds drift year to year | Single named constant, handbook quotes inline; the two-minor rule is gated on the course stating it, since it postdates 2022 |
+| Early years are wider than current ones (60-option slots, 50 multi-major courses in 2020) | Set-based sibling exclusion; fixture the widest real slot rather than a current-year one |
 
 ---
 
-## 8. Open question
+## 8. Open questions
 
-The two overlap rules are quoted from **A2000 and B2042 only**. Whether
-"max 2 shared units" is a university-wide policy or those two courses'
-local rule is not answerable from the corpus — no other 2026 course
-states it. Applying it globally is the safer default (it warns rather
-than blocks), but it is worth confirming with the faculty before the
-wording implies more authority than we have.
+**Mostly resolved.** The shared-unit rule is not a two-course quirk:
+27–28 courses state it every year from 2023, 11 a year before that,
+across three faculties and in near-identical wording (§0.3). Applying
+the note corpus-wide is well founded. What remains unconfirmed is
+whether courses *silent* on it are exempt or merely not repeating
+boilerplate — which is why it warns rather than blocks.
+
+**Still genuinely open:** the corpus drops from 2,112 AoS edges in 2020
+to ~650 from 2023 (§0.1). If that is an ingest artefact rather than a
+Monash restructure, early-year plans are built on partial data and this
+feature would be the most visible place that shows — 2020 is exactly
+where multi-major courses are most common. Worth answering before
+promoting year switching, though it does not block this work.
