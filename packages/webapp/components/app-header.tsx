@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { LogOutIcon, MenuIcon, NotebookPenIcon } from "lucide-react"
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 
 import { AnonymousBadge } from "@/components/anonymous-badge"
 import { MyGradesDialog } from "@/components/my-grades-dialog"
@@ -150,12 +150,41 @@ function MobileNavTrigger() {
   )
 }
 
+const subscribeToNothing = () => () => {}
+
+/**
+ * False during SSR and on the hydrating render, true forever after.
+ *
+ * `getServerSnapshot` (the third argument) is what React uses both on
+ * the server and while hydrating on the client, so this reports false
+ * on exactly the renders that must agree with the server HTML, with no
+ * effect and no extra render pass.
+ */
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false
+  )
+}
+
 function UserMenu() {
   const { data, isPending } = useSession()
   const router = useRouter()
   const [gradesOpen, setGradesOpen] = useState(false)
+  const hydrated = useHydrated()
 
-  if (isPending) {
+  // Hold the skeleton until after hydration, even if the session has
+  // already resolved. Better Auth's `useStore` passes its *live client*
+  // getter as `useSyncExternalStore`'s `getServerSnapshot`, so React
+  // reads current atom state while hydrating rather than a frozen
+  // server value. The session request resolves fast when it fails —
+  // which it always does on localhost, where the shared
+  // `.monashcoding.com` cookie doesn't exist — so it routinely beat
+  // hydration of this page and React found the badge where the server
+  // had written the skeleton. Gating on `hydrated` makes the first
+  // client render match the server unconditionally.
+  if (!hydrated || isPending) {
     return <div className="size-10 animate-pulse rounded-full bg-muted" />
   }
 
