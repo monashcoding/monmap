@@ -55,6 +55,7 @@ export type PlannerAction =
        */
       alsoClear?: readonly string[]
     }
+  | { type: "set_campus"; campus: string | null }
   | { type: "add_credit"; entry: PlannerCreditEntry }
   | { type: "remove_credit"; index: number }
   | { type: "add_unit"; yearIndex: number; slotIndex: number; code: string }
@@ -163,6 +164,17 @@ export function plannerReducer(
       if (!action.code) delete next[action.role]
       else next[action.role] = action.code
       return { ...state, selectedAos: next }
+    }
+
+    case "set_campus": {
+      if ((state.campus ?? null) === action.campus) return state
+      const next = { ...state }
+      // Deliberately does not touch selectedAos: a pick that falls out
+      // of scope is flagged in the picker, not deleted. Clearing it
+      // would silently discard a decision the student made.
+      if (!action.campus) delete next.campus
+      else next.campus = action.campus
+      return next
     }
 
     case "add_credit": {

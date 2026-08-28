@@ -26,6 +26,7 @@ import {
   saveMyPlanAction,
 } from "@/app/actions"
 import type { PlanSummary } from "@/lib/db/queries"
+import { courseForCampus } from "@/lib/planner/campus"
 import { distribute } from "@/lib/planner/distribute"
 import { isFullYearUnit } from "@/lib/planner/full-year"
 import {
@@ -913,6 +914,15 @@ export function PlannerProvider({
     ]
   )
 
+  // Narrow the course to the student's campus before anything
+  // downstream sees it, so the requirements panel, the progress ring
+  // and the core badge all agree. Identity is preserved when no campus
+  // is set, so this is free for the majority of plans.
+  const scopedCourse = useMemo(
+    () => (course ? courseForCampus(course, state.campus) : null),
+    [course, state.campus]
+  )
+
   // Memoize the context value so a fresh object identity is only
   // produced when one of the underlying state slices actually changes.
   // Every callback below is already wrapped in useCallback and every
@@ -935,7 +945,7 @@ export function PlannerProvider({
       renamePlan,
       deletePlan,
       courses,
-      course,
+      course: scopedCourse,
       availableYears,
       units: unitsMap,
       offerings: offeringsMap,
@@ -971,7 +981,7 @@ export function PlannerProvider({
       renamePlan,
       deletePlan,
       courses,
-      course,
+      scopedCourse,
       availableYears,
       unitsMap,
       offeringsMap,

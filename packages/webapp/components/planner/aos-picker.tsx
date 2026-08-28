@@ -18,6 +18,11 @@ import {
   legacyKeyServing,
   resolveSlotSelection,
 } from "@/lib/planner/aos-slots"
+import {
+  availableCampuses,
+  isOutOfCampusScope,
+  optionsForCampus,
+} from "@/lib/planner/campus"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
@@ -34,54 +39,124 @@ export function AoSPicker() {
   if (!course) return null
 
   const slots = computeAosSlots(course)
-  if (slots.length === 0) return null
+  const campuses = availableCampuses(course)
+  if (slots.length === 0 && campuses.length === 0) return null
 
   return (
     <div className="flex flex-col gap-2 border-t pt-2">
-      {slots.map((slot) => (
-        <RoleSelect
-          key={slot.key}
-          label={slot.label}
-          options={slot.options}
-          current={resolveSlotSelection(state.selectedAos, slot)}
-          year={course.year}
-          onChange={(code) => {
-            if (code) {
-              const selected = slot.options.find((o) => o.code === code)
-              posthog.capture("area_of_study_selected", {
-                aos_code: code,
-                aos_title: selected?.title,
-                aos_kind: slot.kind,
-                aos_role: slot.key,
-                course_code: course.code,
-              })
-            }
-            // A legacy fixed-role value serving this slot must clear in
-            // the same step, or it resurfaces as the slot's fallback.
-            const legacy = legacyKeyServing(state.selectedAos, slot)
-            dispatch({
-              type: "set_aos",
-              role: slot.key,
-              code,
-              ...(legacy ? { alsoClear: [legacy] } : {}),
+      {campuses.length > 0 ? (
+        <CampusSelect
+          campuses={campuses}
+          current={state.campus}
+          onChange={(campus) => {
+            posthog.capture("campus_selected", {
+              campus,
+              course_code: course.code,
             })
+            dispatch({ type: "set_campus", campus })
           }}
         />
-      ))}
+      ) : null}
+      {slots.map((slot) => {
+        const current = resolveSlotSelection(state.selectedAos, slot)
+        return (
+          <RoleSelect
+            key={slot.key}
+            label={slot.label}
+            // Filtered to the chosen campus, but never dropping the
+            // student's own pick — see lib/planner/campus.ts.
+            options={optionsForCampus(slot.options, state.campus, current)}
+            current={current}
+            campus={state.campus}
+            year={course.year}
+            onChange={(code) => {
+              if (code) {
+                const selected = slot.options.find((o) => o.code === code)
+                posthog.capture("area_of_study_selected", {
+                  aos_code: code,
+                  aos_title: selected?.title,
+                  aos_kind: slot.kind,
+                  aos_role: slot.key,
+                  course_code: course.code,
+                })
+              }
+              // A legacy fixed-role value serving this slot must clear in
+              // the same step, or it resurfaces as the slot's fallback.
+              const legacy = legacyKeyServing(state.selectedAos, slot)
+              dispatch({
+                type: "set_aos",
+                role: slot.key,
+                code,
+                ...(legacy ? { alsoClear: [legacy] } : {}),
+              })
+            }}
+          />
+        )
+      })}
     </div>
   )
 }
+
+/**
+ * Plan-level campus preference. Only rendered when the course actually
+ * scopes something by campus — most courses don't, and an inert
+ * control would just be noise.
+ */
+function CampusSelect({
+  campuses,
+  current,
+  onChange,
+}: {
+  campuses: string[]
+  current: string | undefined
+  onChange: (campus: string | null) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="px-1 text-[10px] leading-tight font-semibold text-muted-foreground uppercase">
+        Campus
+      </label>
+      <Select
+        value={current ?? ALL_CAMPUSES}
+        onValueChange={(v) =>
+          onChange(typeof v === "string" && v !== ALL_CAMPUSES ? v : null)
+        }
+      >
+        <SelectTrigger className="min-w-0 flex-1 items-center py-2.5 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem value={ALL_CAMPUSES} className="py-2.5">
+              All campuses
+            </SelectItem>
+            {campuses.map((c) => (
+              <SelectItem key={c} value={c} className="py-2.5">
+                {c}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+/** Sentinel: Base UI selects can't hold an empty value as a real choice. */
+const ALL_CAMPUSES = "__all__"
 
 function RoleSelect({
   label,
   options,
   current,
+  campus,
   year,
   onChange,
 }: {
   label: string
   options: PlannerAreaOfStudy[]
   current: string | undefined
+  campus?: string | undefined
   year: string
   onChange: (code: string | null) => void
 }) {
@@ -89,6 +164,11 @@ function RoleSelect({
     () => [...options].sort((a, b) => a.title.localeCompare(b.title)),
     [options]
   )
+  // A pick made before the campus was chosen (or before switching it)
+  // stays selected — flagged rather than deleted, so the student
+  // decides what to do about it.
+  const selected = current ? options.find((a) => a.code === current) : undefined
+  const outOfScope = selected ? isOutOfCampusScope(selected, campus) : false
 
   return (
     <div className="flex flex-col gap-1">
@@ -169,6 +249,11 @@ function RoleSelect({
           </>
         ) : null}
       </div>
+      {outOfScope && selected ? (
+        <p className="px-1 text-[10px] leading-tight text-muted-foreground">
+          Not offered at {campus} — {selected.scope} only.
+        </p>
+      ) : null}
     </div>
   )
 }
