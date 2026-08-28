@@ -208,6 +208,17 @@ export interface PlannerCourseWithAoS extends PlannerCourse {
    * card per component instead of the single course card.
    */
   componentCourses: PlannerCourseComponent[]
+  /**
+   * Prohibition edges among this course's own option units, symmetrised
+   * (Monash records about half of them one-directionally). Lets the
+   * requirements view tell which options a student has locked
+   * themselves out of: in L3005 the law half makes LAW2102 compulsory,
+   * and BTC1110 prohibits it, so the commerce "6 of these 7" group was
+   * never satisfiable and the degree could not reach 100%.
+   *
+   * Absent on payloads from before this shipped — treat as empty.
+   */
+  conflicts?: Record<string, string[]>
 }
 
 export const DEFAULT_SLOT_CAPACITY = 4

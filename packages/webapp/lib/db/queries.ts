@@ -4,6 +4,7 @@ import {
   courseAreasOfStudy,
   courses,
   enrolmentRules,
+  requisiteRefs,
   requisites,
   unitOfferings,
   units,
@@ -372,9 +373,18 @@ async function _fetchCourseWithAoS(
 
   let valid = new Set<string>()
   let offered = new Set<string>()
+  // Prohibition edges *among the course's own options*, so the client
+  // can tell which requirements a student has locked themselves out
+  // of. L3005 (Laws + Commerce) is the motivating case: the commerce
+  // Part A group is "6 of these 7", but BTC1110 prohibits LAW2102,
+  // which the law half makes compulsory — so six was never reachable
+  // and the degree could not read 100%. Edges are symmetrised here
+  // because Monash records prohibitions one-directionally about half
+  // the time (BTC1110 names LAW2102; LAW2102 says nothing).
+  const conflicts = new Map<string, Set<string>>()
   if (allCandidateCodes.size > 0) {
     const codesArr = [...allCandidateCodes]
-    const [validRows, offeredRows] = await Promise.all([
+    const [validRows, offeredRows, prohibitionRows] = await Promise.all([
       db
         .select({ code: units.code })
         .from(units)
@@ -389,9 +399,32 @@ async function _fetchCourseWithAoS(
             inArray(unitOfferings.unitCode, codesArr)
           )
         ),
+      db
+        .select({
+          unitCode: requisiteRefs.unitCode,
+          requiresUnitCode: requisiteRefs.requiresUnitCode,
+        })
+        .from(requisiteRefs)
+        .where(
+          and(
+            eq(requisiteRefs.year, year),
+            eq(requisiteRefs.requisiteType, "prohibition"),
+            inArray(requisiteRefs.unitCode, codesArr)
+          )
+        ),
     ])
     valid = new Set(validRows.map((r) => r.code))
     offered = new Set(offeredRows.map((r) => r.code))
+    const link = (a: string, b: string) => {
+      const set = conflicts.get(a) ?? new Set<string>()
+      set.add(b)
+      conflicts.set(a, set)
+    }
+    for (const r of prohibitionRows) {
+      if (r.unitCode === r.requiresUnitCode) continue
+      link(r.unitCode, r.requiresUnitCode)
+      link(r.requiresUnitCode, r.unitCode)
+    }
   }
   // Auto-load templates must never place a unit with no offering in
   // the plan year (it can't be scheduled); it stays visible in the
@@ -550,6 +583,12 @@ async function _fetchCourseWithAoS(
     courseUnits,
     courseRequirements,
     componentCourses,
+    // Only edges that touch an option of this course — one entry per
+    // code, so the client can answer "is this option still reachable?"
+    // without hydrating requisites for every unit in the handbook.
+    conflicts: Object.fromEntries(
+      [...conflicts].map(([code, set]) => [code, [...set].sort()])
+    ),
   }
 }
 export const fetchCourseWithAoS = cacheHandbook(_fetchCourseWithAoS)

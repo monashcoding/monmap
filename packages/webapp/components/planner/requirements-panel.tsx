@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
+import { effectiveRequired } from "@/lib/planner/reachable"
 import { summarizeAoSProgress, type AoSProgress } from "@/lib/planner/progress"
 import type { PlannerAreaOfStudy, RequirementGroup } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
@@ -19,6 +20,7 @@ import { UnitDetailPopover } from "./unit-detail-popover"
  */
 export function RequirementsPanel({ className }: { className?: string }) {
   const { course, state, units, plannedCodes } = usePlanner()
+  const conflicts = course?.conflicts
 
   // Map each placed code to where it sits in the plan so the chip's
   // popover can surface slot-specific validation.
@@ -44,9 +46,9 @@ export function RequirementsPanel({ className }: { className?: string }) {
     () =>
       pickedAos.map((p) => ({
         ...p,
-        progress: summarizeAoSProgress(p.aos, plannedCodes, units),
+        progress: summarizeAoSProgress(p.aos, plannedCodes, units, conflicts),
       })),
-    [pickedAos, plannedCodes, units]
+    [pickedAos, plannedCodes, units, conflicts]
   )
 
   return (
@@ -69,6 +71,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                 requirements={course.courseRequirements}
                 plannedCodes={plannedCodes}
                 placements={placements}
+                conflicts={conflicts}
               />
             ) : null}
             {course.componentCourses.map((comp) => {
@@ -82,6 +85,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                     requirements={comp.courseRequirements}
                     plannedCodes={plannedCodes}
                     placements={placements}
+                    conflicts={conflicts}
                   />
                   {compAos.map(({ slotKey, label, aos, progress }) => (
                     <AoSBlock
@@ -121,6 +125,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
               requirements={course.courseRequirements}
               plannedCodes={plannedCodes}
               placements={placements}
+              conflicts={conflicts}
             />
             {withProgress.map(({ slotKey, label, aos, progress }) => (
               <AoSBlock
@@ -187,16 +192,18 @@ function CourseBlock({
   requirements,
   plannedCodes,
   placements,
+  conflicts,
   title = "Course requirements",
 }: {
   requirements: RequirementGroup[]
   plannedCodes: ReadonlySet<string>
   placements: ReadonlyMap<string, { yearIndex: number; slotIndex: number }>
+  conflicts: Readonly<Record<string, string[]>> | undefined
   title?: string
 }) {
   const totals = useMemo(
-    () => computeTotals(requirements, plannedCodes),
-    [requirements, plannedCodes]
+    () => computeTotals(requirements, plannedCodes, conflicts),
+    [requirements, plannedCodes, conflicts]
   )
   const completionPct =
     totals.total === 0 ? 0 : Math.round((totals.satisfied / totals.total) * 100)
@@ -327,15 +334,18 @@ function AoSBlock({
 
 function computeTotals(
   requirements: ReadonlyArray<RequirementGroup>,
-  plannedCodes: ReadonlySet<string>
+  plannedCodes: ReadonlySet<string>,
+  conflicts: Readonly<Record<string, string[]>> | undefined
 ): { satisfied: number; total: number } {
   let satisfied = 0
   let total = 0
   for (const g of requirements) {
-    total += g.required
+    // Capped at what the student can still reach — see reachable.ts.
+    const required = effectiveRequired(g, plannedCodes, conflicts)
+    total += required
     let placed = 0
     for (const c of g.options) if (plannedCodes.has(c)) placed++
-    satisfied += Math.min(placed, g.required)
+    satisfied += Math.min(placed, required)
   }
   return { satisfied, total }
 }

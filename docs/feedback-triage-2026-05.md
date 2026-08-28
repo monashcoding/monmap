@@ -218,18 +218,28 @@ Known limitation: ENG1090 and PHS1001 stay core via E3001's
 completed VCE Physics…"). The extractor can't evaluate that, and the
 badge is at least consistent with what auto-load places.
 
-### B6 — Law/Commerce can never reach 100% *(2 reports: #69, #80)*
+### B6 — Law/Commerce can never reach 100% *(2 reports: #69, #80)* — **FIXED**
 
 > "webpage states to pick 6 out of 7 of the units, however with laws/commerce 2 of the 7 units … cannot be completed"
 > "BTC1100 is a pre-req for commerce but is prohibited by LAW2102 Contract B"
 
-B2001 Part A is the documented "42cp = 7 × 6cp listed units + a 6cp
-specified elective ⇒ 6-of-7" case. Inside L3005 the law component
-prohibits two of the seven, so the achievable count drops again. This
-is the same family as B3: a component's requirements need narrowing by
-what the *other* component prohibits. Cheapest correct move is a
-`curriculum-overrides.json` entry for B2001-in-L3005 rather than
-inventing cross-component prohibition math.
+**FIXED 2026-08-28**, and the override wasn't needed — the prohibition
+edges already say it. B2001's Part A is the documented "6 of these 7";
+inside L3005 the law half makes LAW2102 compulsory and `BTC1110`
+prohibits it, so six was never reachable. L3005's own prose says
+nothing about this, so the only evidence is the unit-level edge.
+
+`fetchCourseWithAoS` now ships a `conflicts` map (prohibition edges
+among the course's own options, symmetrised — `BTC1110` names LAW2102
+but not the reverse, and half the corpus's edges are one-directional),
+and both progress paths cap a group's target at what the student can
+still reach. Verified on the real payload: with LAW2102 and the four
+remaining cores placed, Part A goes from **5/6 = 83%** to **5/5 =
+100%**, while a standalone B2001 plan is untouched at 6.
+
+The cap only ever lowers the target, and only in response to units
+actually on the plan — so it also resolves the ACC1100/ACC1001
+pick-one pair for free, with no pick-one detection anywhere.
 
 ### B7 — Singles
 
@@ -284,4 +294,5 @@ inventing cross-component prohibition math.
 5. **Prior credit** (feature 1) — highest demand, and it retires a
    cluster of false-positive bug reports.
 6. ~~**B4**~~ display half done; the campus *preference* remains.
-7. **B6**, then the B7 singles.
+7. ~~**B6**~~ — done.
+8. The B7 singles.
