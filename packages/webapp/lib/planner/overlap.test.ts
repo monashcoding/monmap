@@ -1,7 +1,11 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { MAX_SHARED_UNITS_BETWEEN_AOS, detectAosOverlaps } from "./overlap.ts"
+import {
+  MAX_SHARED_UNITS_BETWEEN_AOS,
+  detectAosOverlaps,
+  summarizeAosCreditBudget,
+} from "./overlap.ts"
 import type { PickedAosEntry } from "./aos-slots.ts"
 import type { PlannerAreaOfStudy } from "./types.ts"
 
@@ -134,4 +138,154 @@ test("shared codes are sorted and deduplicated", () => {
   ]
   const [o] = detectAosOverlaps(picked, new Set(["A", "M", "Z"]))
   assert.deepEqual(o!.sharedCodes, ["A", "M", "Z"])
+})
+
+/* ------------------------------------------------------------------ *
+ * Same discipline as both a major and an extended major.
+ *
+ * Reported from the browser on A2000 2026: the picker happily held
+ * PSYCHOL07 "Psychology" (major) and PSYCHOL09 "Psychology" (extended
+ * major) at once. They list the identical 10 units — an extended major
+ * extends the major of the same name rather than sitting beside it —
+ * so holding both is redundant, not a double count.
+ * ------------------------------------------------------------------ */
+
+test("a major and an extended major of the same discipline warn on sight", () => {
+  const major = aos("PSYCHOL07", ["PSY1011", "PSY1023"], "major")
+  major.title = "Psychology"
+  const ext = aos("PSYCHOL09", ["PSY1011", "PSY1023"], "extended_major")
+  ext.title = "Psychology"
+
+  // No units placed at all: the redundancy is structural, so waiting
+  // for a placement would let the student build on a contradiction.
+  const [o] = detectAosOverlaps([pick(major), pick(ext)], new Set())
+  assert.ok(o, "must fire with nothing placed")
+  assert.equal(o.severity, "warning")
+  assert.match(o.message, /already includes/)
+  assert.match(o.message, /pick one/)
+})
+
+test("the message names the extended major as the one that subsumes", () => {
+  const major = aos("EUROPLAN01", ["X"], "major")
+  major.title = "European languages"
+  const ext = aos("EUROPLAN03", ["X"], "extended_major")
+  ext.title = "European languages"
+  // Order of picks must not change which is described as subsuming.
+  for (const picks of [
+    [major, ext],
+    [ext, major],
+  ]) {
+    const [o] = detectAosOverlaps(picks.map(pick), new Set())
+    assert.match(
+      o!.message,
+      /European languages extended major already includes/
+    )
+  }
+})
+
+test("two different disciplines are not redundant", () => {
+  const a = aos("ANTHROPL11", ["U1"], "major")
+  a.title = "Anthropology"
+  const b = aos("PSYCHOL09", ["U1"], "extended_major")
+  b.title = "Psychology"
+  const [o] = detectAosOverlaps([pick(a), pick(b)], new Set())
+  // They share a placed unit or nothing — never the redundancy message.
+  assert.ok(!o || !/already includes/.test(o.message))
+})
+
+test("two majors of the same title are not the extended-major case", () => {
+  const a = aos("X1", ["U1"], "major")
+  a.title = "History"
+  const b = aos("X2", ["U1"], "major")
+  b.title = "History"
+  const [o] = detectAosOverlaps([pick(a), pick(b)], new Set(["U1"]))
+  assert.ok(o)
+  assert.ok(
+    !/already includes/.test(o.message),
+    "that rule is major vs extended only"
+  )
+})
+
+test("titles differing only by case or spacing still match", () => {
+  const major = aos("M", ["U"], "major")
+  major.title = "  european   languages "
+  const ext = aos("E", ["U"], "extended_major")
+  ext.title = "European languages"
+  const [o] = detectAosOverlaps([pick(major), pick(ext)], new Set())
+  assert.ok(o)
+  assert.match(o.message, /already includes/)
+})
+
+/* ------------------------------------------------------------------ *
+ * Credit budget — "where you have space in your degree" is the only
+ * limit the handbook states, so it needs to be visible.
+ * ------------------------------------------------------------------ */
+
+function withCp(
+  code: string,
+  cp: number,
+  kind: PlannerAreaOfStudy["kind"] = "major"
+) {
+  const a = aos(code, [], kind)
+  a.creditPoints = cp
+  return pick(a)
+}
+
+test("no budget line without a course credit-point total", () => {
+  assert.equal(summarizeAosCreditBudget([withCp("A", 48)], null), null)
+  assert.equal(summarizeAosCreditBudget([withCp("A", 48)], 0), null)
+})
+
+test("no budget line when nothing is picked", () => {
+  assert.equal(summarizeAosCreditBudget([], 144), null)
+})
+
+test("one major of a 144 point degree is well within budget", () => {
+  const b = summarizeAosCreditBudget([withCp("A", 48)], 144)!
+  assert.equal(b.pickedCreditPoints, 48)
+  assert.equal(b.overCommitted, false)
+  assert.match(b.message, /48 of the degree's 144/)
+})
+
+test("two majors still fit", () => {
+  const b = summarizeAosCreditBudget([withCp("A", 48), withCp("B", 48)], 144)!
+  assert.equal(b.pickedCreditPoints, 96)
+  assert.equal(b.overCommitted, false)
+})
+
+test("picks exceeding the degree are flagged", () => {
+  const b = summarizeAosCreditBudget(
+    [withCp("A", 48), withCp("B", 48), withCp("C", 72)],
+    144
+  )!
+  assert.equal(b.pickedCreditPoints, 168)
+  assert.equal(b.overCommitted, true)
+  assert.match(b.message, /more than the degree's 144/)
+})
+
+test("a course that IS one area of study is not flagged", () => {
+  // B3701 and P3701 are 48cp courses with a single 48cp specialisation,
+  // D3001 is 204/204. A sweep of all 2,768 course-years found this is
+  // the only way the check misfires, which is why the threshold is
+  // strictly-over rather than reaches.
+  for (const [picked, total] of [
+    [48, 48],
+    [204, 204],
+  ] as const) {
+    const b = summarizeAosCreditBudget([withCp("A", picked)], total)!
+    assert.equal(b.overCommitted, false, `${picked}/${total}`)
+    assert.doesNotMatch(b.message, /more than/)
+  }
+})
+
+test("the same area reached through two slots is counted once", () => {
+  const one = withCp("A", 48)
+  const b = summarizeAosCreditBudget([one, { ...one, slotKey: "minor" }], 144)!
+  assert.equal(b.pickedCreditPoints, 48)
+})
+
+test("areas with no credit points contribute nothing rather than NaN", () => {
+  const noCp = pick(aos("X", []))
+  const b = summarizeAosCreditBudget([withCp("A", 48), noCp], 144)!
+  assert.equal(b.pickedCreditPoints, 48)
 })

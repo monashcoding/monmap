@@ -171,9 +171,18 @@ Offer instead:
 - Render the base slot exactly as today.
 - Once it is filled, render an **"Add another major"** affordance
   beneath it, per kind, per component.
-- Soft-cap at **3 per kind per component**. Not a handbook rule —
-  a guard against unbounded key growth. Nothing in the corpus suggests
-  a fourth simultaneous major is real.
+- Cap at **2 per kind per component**, which is what the handbook
+  describes. "second major" or "double major" appears in 9-29 courses
+  in every year; **"third major" and "three majors" appear nowhere, in
+  any year**. A2000 states the mechanism: "You may use your Arts
+  electives in Part B. and C. to complete a double major" — one major
+  in Part A, a second funded from elective space. Three majors would
+  also consume 144 of a 144-point degree, leaving nothing for the rest
+  of the course.
+
+  (This was initially 3, picked as a guard against unbounded key growth
+  rather than from evidence. Surfacing three major slots on A2000 is
+  what showed the guess was wrong.)
 - Only offer it for kinds where it is meaningful: `major`, `minor`,
   `extended_major`. **Not** `specialisation` — those slots are already
   split per component *and* per relationship label (Part C vs Part D),

@@ -32,6 +32,18 @@ export interface AosSlot {
   options: PlannerAreaOfStudy[]
   /** Fixed-role keys consulted (in order) when `key` itself is unset. */
   legacyKeys: string[]
+  /**
+   * The container title that distinguishes this slot from its siblings
+   * ("Clayton option", "Part D. Applied studies"). Present only on
+   * slots that have siblings to be distinguished from.
+   */
+  subLabel?: string
+  /**
+   * The label to use when `subLabel` carries no information the student
+   * needs — e.g. it names a campus they have already chosen. Falls back
+   * to the component plus the kind ("Computer Science specialisation").
+   */
+  genericLabel?: string
 }
 
 const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
@@ -195,6 +207,10 @@ function specialisationSlots(
         label: multiGroup ? `${cleaned} specialisation` : "Specialisation",
         options: g.options,
         legacyKeys,
+        subLabel: g.subLabel,
+        // No component name to fall back on here, so the bare kind is
+        // the most this slot can say once its campus qualifier goes.
+        genericLabel: KIND_LABEL.specialisation,
       }
     }
     const componentLabel = g.options[0]?.componentLabel
@@ -211,19 +227,28 @@ function specialisationSlots(
           : `${cleanedComponent} specialisation`,
       options: g.options,
       legacyKeys,
+      subLabel: g.subLabel,
+      genericLabel: `${cleanedComponent} specialisation`,
     }
   })
 }
 
 /**
- * Soft ceiling on picks of one kind in one component. Not a handbook
- * rule — the handbook states no cardinality anywhere in seven years of
- * corpus (see docs/plan-multiple-aos.md §0.2), and says only that a
- * second major is possible "where you have space in your degree". This
- * is a guard against unbounded key growth; nothing in the corpus
- * suggests a fourth simultaneous major is real.
+ * Ceiling on picks of one kind in one component.
+ *
+ * Two, because that is the most the handbook ever describes. Across all
+ * seven ingested years "second major" or "double major" appears in
+ * 9-29 courses, and **"third major" / "three majors" appears nowhere at
+ * all**. A2000 is explicit about the mechanism: "You may use your Arts
+ * electives in Part B. and C. to complete a double major", i.e. one
+ * major in Part A and a second funded out of elective space — and
+ * three majors would consume 144 of the degree's 144 credit points,
+ * leaving nothing for the rest of the course.
+ *
+ * This was 3 initially, chosen as a guard against unbounded key growth
+ * rather than from evidence. The corpus does not support it.
  */
-export const MAX_PICKS_PER_SLOT = 3
+export const MAX_PICKS_PER_SLOT = 2
 
 /**
  * Kinds that can be taken more than once. Specialisations are

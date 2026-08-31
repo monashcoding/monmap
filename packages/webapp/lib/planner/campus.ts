@@ -158,3 +158,38 @@ export function courseForCampus(
     })),
   }
 }
+
+/**
+ * Does this container title say nothing but a campus?
+ *
+ * Monash sometimes names a choice by where it is offered rather than
+ * what it is: E3010's 2025 Computer Science pickers are titled
+ * "Clayton option" and "Malaysia option", where 2026 titles the same
+ * pick "Part D. Applied studies". Once the student has chosen a
+ * campus, a slot headed "Clayton option" tells them where, immediately
+ * after they said Clayton — so the label should fall back to what the
+ * pick actually is.
+ *
+ * Only campuses the course already demonstrates count, and the title
+ * must be *only* a campus plus filler ("option", "offerings"): a real
+ * title that merely mentions a campus keeps its name.
+ */
+const CAMPUS_LABEL_FILLER =
+  /\b(option|options|offering|offerings|only|students?|studies)\b/gi
+
+export function isCampusOnlyLabel(
+  subLabel: string | undefined,
+  knownCampuses: readonly string[]
+): boolean {
+  if (!subLabel) return false
+  let rest = subLabel.toLowerCase()
+  let matchedCampus = false
+  for (const c of knownCampuses) {
+    const before = rest
+    rest = rest.split(c.toLowerCase()).join(" ")
+    if (rest !== before) matchedCampus = true
+  }
+  if (!matchedCampus) return false
+  rest = rest.replace(CAMPUS_LABEL_FILLER, " ").replace(/[^a-z]+/gi, "")
+  return rest.length === 0
+}

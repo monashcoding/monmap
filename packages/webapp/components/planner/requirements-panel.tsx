@@ -5,7 +5,12 @@ import { useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
-import { detectAosOverlaps, type AosOverlap } from "@/lib/planner/overlap"
+import {
+  detectAosOverlaps,
+  summarizeAosCreditBudget,
+  type AosOverlap,
+  type CreditBudget,
+} from "@/lib/planner/overlap"
 import { effectiveRequired } from "@/lib/planner/reachable"
 import { summarizeAoSProgress, type AoSProgress } from "@/lib/planner/progress"
 import type { PlannerAreaOfStudy, RequirementGroup } from "@/lib/planner/types"
@@ -51,6 +56,13 @@ export function RequirementsPanel({ className }: { className?: string }) {
     [pickedAos, plannedCodes]
   )
 
+  // "Where you have space in your degree" is the handbook's only limit
+  // on extra majors, so show the space.
+  const budget = useMemo(
+    () => summarizeAosCreditBudget(pickedAos, course?.creditPoints),
+    [pickedAos, course?.creditPoints]
+  )
+
   const withProgress = useMemo<(PickedAosEntry & { progress: AoSProgress })[]>(
     () =>
       pickedAos.map((p) => ({
@@ -70,7 +82,9 @@ export function RequirementsPanel({ className }: { className?: string }) {
         </h2>
       </div>
 
-      {overlaps.length > 0 ? <OverlapNotice overlaps={overlaps} /> : null}
+      {overlaps.length > 0 || budget ? (
+        <OverlapNotice overlaps={overlaps} budget={budget} />
+      ) : null}
 
       <div className="flex flex-col divide-y">
         {course && course.componentCourses.length > 0 ? (
@@ -463,9 +477,27 @@ function GroupList({
  * yellow tint pairs with `text-primary-foreground`, never
  * `text-primary` — see the brand rule in CLAUDE.md.
  */
-function OverlapNotice({ overlaps }: { overlaps: AosOverlap[] }) {
+function OverlapNotice({
+  overlaps,
+  budget,
+}: {
+  overlaps: AosOverlap[]
+  budget: CreditBudget | null
+}) {
   return (
     <div className="flex flex-col gap-1.5 border-b px-4 py-2.5">
+      {budget ? (
+        <p
+          className={cn(
+            "rounded-lg px-2.5 py-1.5 text-[11px] leading-snug",
+            budget.overCommitted
+              ? "bg-primary/40 text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+          )}
+        >
+          {budget.message}
+        </p>
+      ) : null}
       {overlaps.map((o) => (
         <p
           key={`${o.a.code}/${o.b.code}`}

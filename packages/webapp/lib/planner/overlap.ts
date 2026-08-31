@@ -58,6 +58,29 @@ export interface AosOverlap {
   message: string
 }
 
+/**
+ * Two picks that are the same discipline in different guises.
+ *
+ * An extended major *extends* the major of the same name rather than
+ * sitting beside it: A2000's PSYCHOL09 (extended) and PSYCHOL07
+ * (major) are both titled "Psychology" and list the identical 10
+ * units, so holding both is redundant, not a double count. Same for
+ * EUROPLAN03/EUROPLAN01.
+ *
+ * Reported from *membership*, not from placed units — unlike the
+ * shared-unit cap below. The redundancy is structural: it is already
+ * true the moment both are picked, and waiting for the student to
+ * place a unit before saying so would let them build the whole plan on
+ * a contradiction.
+ */
+function sameDiscipline(a: PlannerAreaOfStudy, b: PlannerAreaOfStudy): boolean {
+  const norm = (t: string) => t.trim().toLowerCase().replace(/\s+/g, " ")
+  if (!a.title || !b.title) return false
+  if (norm(a.title) !== norm(b.title)) return false
+  const kinds = new Set([a.kind, b.kind])
+  return kinds.has("major") && kinds.has("extended_major")
+}
+
 /** Every unit the AoS lists, as a set. */
 function membership(aos: PlannerAreaOfStudy): Set<string> {
   const out = new Set<string>()
@@ -96,6 +119,22 @@ export function detectAosOverlaps(
     const aMembers = membership(a)
     for (let j = i + 1; j < entries.length; j++) {
       const b = entries[j]!
+      // Structural redundancy first: it does not depend on placement,
+      // and reporting it as a shared-unit count would understate it.
+      if (sameDiscipline(a, b)) {
+        const [major, extended] = a.kind === "extended_major" ? [b, a] : [a, b]
+        out.push({
+          a,
+          b,
+          sharedCodes: [...membership(a)]
+            .filter((c) => membership(b).has(c))
+            .sort(),
+          severity: "warning",
+          message: `The ${label(extended)} extended major already includes the ${label(major)} major — pick one, not both.`,
+        })
+        continue
+      }
+
       const shared: string[] = []
       for (const code of membership(b))
         if (aMembers.has(code) && plannedCodes.has(code)) shared.push(code)
@@ -128,4 +167,58 @@ export function detectAosOverlaps(
 function formatCodes(codes: readonly string[]): string {
   if (codes.length === 1) return codes[0]!
   return `${codes.slice(0, -1).join(", ")} and ${codes[codes.length - 1]}`
+}
+
+/**
+ * What the student's picks commit, against what the degree has.
+ *
+ * The handbook never states how many majors a course allows — it says
+ * only that a second is possible "where you have space in your
+ * degree". Space is therefore the real constraint, and it is one we
+ * can actually measure: every area of study in the corpus carries
+ * credit points (a major is 48 of a 144-point degree), so three majors
+ * would consume the entire degree and leave nothing for its core or
+ * electives.
+ *
+ * Reported as a plain total rather than a hard block. The sum ignores
+ * units shared between areas — Monash permits up to two — so the true
+ * cost can be slightly lower, which is why the message says "list"
+ * rather than "cost", and why this warns only once the picks reach or
+ * exceed the whole degree.
+ */
+export interface CreditBudget {
+  pickedCreditPoints: number
+  courseCreditPoints: number
+  overCommitted: boolean
+  message: string
+}
+
+export function summarizeAosCreditBudget(
+  picked: readonly PickedAosEntry[],
+  courseCreditPoints: number | null | undefined
+): CreditBudget | null {
+  if (!courseCreditPoints || courseCreditPoints <= 0) return null
+  const seen = new Set<string>()
+  let total = 0
+  for (const p of picked) {
+    if (seen.has(p.aos.code)) continue
+    seen.add(p.aos.code)
+    total += p.aos.creditPoints ?? 0
+  }
+  if (total === 0) return null
+  // Strictly over, not "reaches". Some courses *are* one area of study
+  // — B3701 and P3701 are 48 credit points with a single 48-point
+  // specialisation, D3001 is 204/204 — and telling those students they
+  // have left no room for the rest of the course is simply wrong. A
+  // sweep of all 2,768 course-years found this is the only way the
+  // check misfires.
+  const overCommitted = total > courseCreditPoints
+  return {
+    pickedCreditPoints: total,
+    courseCreditPoints,
+    overCommitted,
+    message: overCommitted
+      ? `Your areas of study list ${total} credit points, more than the degree's ${courseCreditPoints}.`
+      : `Your areas of study list ${total} of the degree's ${courseCreditPoints} credit points.`,
+  }
 }
