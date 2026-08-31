@@ -190,7 +190,13 @@ export function collectCodeRefs(root: unknown): CodeRef[] {
       // .value is the internal code ("subject" / "course" / ...), not
       // .label ("Unit" / ...). Consumers filter on the code.
       out.push({
-        code,
+        // Trimmed at the source: CourseLoop occasionally pads these
+        // with spaces or tabs ("ETW2001 ", "BFF5525\t\t"). Consumers
+        // that filter against a known code set silently dropped the
+        // padded ones, but requisite refs are stored verbatim, so an
+        // untrimmed code became a prerequisite that could never be
+        // satisfied — it matches no unit row.
+        code: code.trim(),
         type: clValue(typeRef as CLReference | undefined),
         ancestor: childAncestor,
       });

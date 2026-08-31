@@ -216,6 +216,87 @@ function specialisationSlots(
 }
 
 /**
+ * Soft ceiling on picks of one kind in one component. Not a handbook
+ * rule — the handbook states no cardinality anywhere in seven years of
+ * corpus (see docs/plan-multiple-aos.md §0.2), and says only that a
+ * second major is possible "where you have space in your degree". This
+ * is a guard against unbounded key growth; nothing in the corpus
+ * suggests a fourth simultaneous major is real.
+ */
+export const MAX_PICKS_PER_SLOT = 3
+
+/**
+ * Kinds that can be taken more than once. Specialisations are
+ * deliberately excluded: their slots are already split per component
+ * *and* per relationship label (C2001's Part C vs its Part D studio),
+ * so a repeat there would mean "a second Part C specialisation", which
+ * the handbook never describes.
+ */
+const REPEATABLE_KINDS: ReadonlySet<PlannerAreaOfStudy["kind"]> = new Set([
+  "major",
+  "minor",
+  "extended_major",
+])
+
+/**
+ * Key for the nth pick of a slot, n >= 2. The base key keeps its
+ * current spelling, so every plan saved before this existed keeps its
+ * primary pick with no migration — an absent "#2" simply reads as
+ * unset.
+ */
+export function repeatSlotKey(baseKey: string, n: number): string {
+  return `${baseKey}#${n}`
+}
+
+/**
+ * Base slots plus the repeat slots a course currently offers.
+ *
+ * A repeat slot appears only once the slot before it is filled, so the
+ * picker grows one step at a time instead of showing three empty
+ * dropdowns. Options exclude codes already taken in a sibling slot —
+ * membership-tested against a Set because 2020's S2006 minor slot
+ * carries 60 options and three siblings over that is where a nested
+ * scan starts to hurt.
+ */
+export function computeAosSlotsWithRepeats(
+  course: PlannerCourseWithAoS,
+  selectedAos: PlannerState["selectedAos"]
+): AosSlot[] {
+  const out: AosSlot[] = []
+  for (const base of computeAosSlots(course)) {
+    out.push(base)
+    if (!REPEATABLE_KINDS.has(base.kind)) continue
+
+    const taken = new Set<string>()
+    const first = resolveSlotSelection(selectedAos, base)
+    if (!first) continue
+    taken.add(first)
+
+    for (let n = 2; n <= MAX_PICKS_PER_SLOT; n++) {
+      const options = base.options.filter((o) => !taken.has(o.code))
+      // Nothing left to choose: don't offer an empty dropdown.
+      if (options.length === 0) break
+      const slot: AosSlot = {
+        key: repeatSlotKey(base.key, n),
+        kind: base.kind,
+        label: `${base.label} ${n}`,
+        options,
+        // A fixed-role value already serves the base slot; letting it
+        // fall through here would show the same pick twice.
+        legacyKeys: [],
+      }
+      out.push(slot)
+      const picked = selectedAos[slot.key]
+      // Stop at the first unfilled slot — the next one is only earned
+      // once this one is used.
+      if (!picked) break
+      taken.add(picked)
+    }
+  }
+  return out
+}
+
+/**
  * The code currently selected for a slot: the slot's own key wins;
  * otherwise a legacy fixed-role value counts when it names one of this
  * slot's options.
@@ -269,7 +350,7 @@ export function pickedAosEntries(
   const out: PickedAosEntry[] = []
   const seenCodes = new Set<string>()
 
-  for (const slot of computeAosSlots(course)) {
+  for (const slot of computeAosSlotsWithRepeats(course, selectedAos)) {
     const code = resolveSlotSelection(selectedAos, slot)
     if (!code || seenCodes.has(code)) continue
     const aos = course.areasOfStudy.find((a) => a.code === code)

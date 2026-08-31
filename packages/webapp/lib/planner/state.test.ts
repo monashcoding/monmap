@@ -396,3 +396,72 @@ test("remove_credit: drops by index and ignores out-of-range", () => {
   const before = s
   assert.equal(plannerReducer(s, { type: "remove_credit", index: 9 }), before)
 })
+
+/* ------------------------------------------------------------------ *
+ * set_campus — docs/plan-multiple-aos.md §4
+ * ------------------------------------------------------------------ */
+
+test("set_campus stores the campus", () => {
+  const s = plannerReducer(defaultState("2026", "E3001"), {
+    type: "set_campus",
+    campus: "Malaysia",
+  })
+  assert.equal(s.campus, "Malaysia")
+})
+
+test("set_campus with null removes the key rather than storing null", () => {
+  // The field is optional; a literal null would serialise into every
+  // saved plan and read differently from "never set".
+  const withCampus = plannerReducer(defaultState("2026", "E3001"), {
+    type: "set_campus",
+    campus: "Clayton",
+  })
+  const cleared = plannerReducer(withCampus, {
+    type: "set_campus",
+    campus: null,
+  })
+  assert.equal(cleared.campus, undefined)
+  assert.ok(!("campus" in cleared))
+})
+
+test("set_campus to the current value is a no-op by identity", () => {
+  const s = plannerReducer(defaultState("2026", "E3001"), {
+    type: "set_campus",
+    campus: "Clayton",
+  })
+  assert.equal(
+    plannerReducer(s, { type: "set_campus", campus: "Clayton" }),
+    s,
+    "same value must not produce a new object (avoids a re-render)"
+  )
+})
+
+test("clearing an already-unset campus is a no-op by identity", () => {
+  const s = defaultState("2026", "E3001")
+  assert.equal(plannerReducer(s, { type: "set_campus", campus: null }), s)
+})
+
+test("set_campus NEVER clears selectedAos", () => {
+  // Plan §4: a pick that falls out of scope is flagged in the picker,
+  // not deleted — clearing it would silently discard the student's
+  // decision.
+  const base = plannerReducer(defaultState("2026", "E3001"), {
+    type: "set_aos",
+    role: "minor",
+    code: "MALMNR01",
+  })
+  const switched = plannerReducer(base, {
+    type: "set_campus",
+    campus: "Clayton",
+  })
+  assert.deepEqual(switched.selectedAos, { minor: "MALMNR01" })
+})
+
+test("set_campus leaves years and credit untouched", () => {
+  const base = defaultState("2026", "E3001")
+  base.years[0]!.slots[0]!.unitCodes = ["ENG1001"]
+  base.credit = [{ code: "FIT1045", creditPoints: 6 }]
+  const s = plannerReducer(base, { type: "set_campus", campus: "Clayton" })
+  assert.deepEqual(s.years[0]!.slots[0]!.unitCodes, ["ENG1001"])
+  assert.deepEqual(s.credit, [{ code: "FIT1045", creditPoints: 6 }])
+})

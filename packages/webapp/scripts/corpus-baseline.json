@@ -1,0 +1,93 @@
+{
+  "2020": {
+    "danglingAosUnitCodes": 0,
+    "brokenCourseAosEdges": 0,
+    "reachableAosWithNoUnits": 1,
+    "ugCoursesRenderingEmptyPlanner": 2,
+    "ugDoublesWithoutComponents": 47,
+    "danglingComponentRefs": 1,
+    "paddedRequisiteCodes": 0,
+    "duplicateCourseAosEdges": 20,
+    "templateUnitsWithNoSatisfiablePrereq": 0,
+    "unplaceableTemplateUnits": 42,
+    "ugCoursesWithNullCreditPoints": 0
+  },
+  "2021": {
+    "danglingAosUnitCodes": 0,
+    "brokenCourseAosEdges": 0,
+    "reachableAosWithNoUnits": 2,
+    "ugCoursesRenderingEmptyPlanner": 0,
+    "ugDoublesWithoutComponents": 36,
+    "danglingComponentRefs": 4,
+    "paddedRequisiteCodes": 14,
+    "duplicateCourseAosEdges": 18,
+    "templateUnitsWithNoSatisfiablePrereq": 6,
+    "unplaceableTemplateUnits": 47,
+    "ugCoursesWithNullCreditPoints": 0
+  },
+  "2022": {
+    "danglingAosUnitCodes": 0,
+    "brokenCourseAosEdges": 0,
+    "reachableAosWithNoUnits": 3,
+    "ugCoursesRenderingEmptyPlanner": 0,
+    "ugDoublesWithoutComponents": 14,
+    "danglingComponentRefs": 0,
+    "paddedRequisiteCodes": 15,
+    "duplicateCourseAosEdges": 10,
+    "templateUnitsWithNoSatisfiablePrereq": 10,
+    "unplaceableTemplateUnits": 66,
+    "ugCoursesWithNullCreditPoints": 0
+  },
+  "2023": {
+    "danglingAosUnitCodes": 0,
+    "brokenCourseAosEdges": 0,
+    "reachableAosWithNoUnits": 4,
+    "ugCoursesRenderingEmptyPlanner": 0,
+    "ugDoublesWithoutComponents": 6,
+    "danglingComponentRefs": 0,
+    "paddedRequisiteCodes": 13,
+    "duplicateCourseAosEdges": 8,
+    "templateUnitsWithNoSatisfiablePrereq": 7,
+    "unplaceableTemplateUnits": 75,
+    "ugCoursesWithNullCreditPoints": 0
+  },
+  "2024": {
+    "danglingAosUnitCodes": 0,
+    "brokenCourseAosEdges": 0,
+    "reachableAosWithNoUnits": 4,
+    "ugCoursesRenderingEmptyPlanner": 6,
+    "ugDoublesWithoutComponents": 2,
+    "danglingComponentRefs": 0,
+    "paddedRequisiteCodes": 9,
+    "duplicateCourseAosEdges": 8,
+    "templateUnitsWithNoSatisfiablePrereq": 4,
+    "unplaceableTemplateUnits": 69,
+    "ugCoursesWithNullCreditPoints": 0
+  },
+  "2025": {
+    "danglingAosUnitCodes": 0,
+    "brokenCourseAosEdges": 0,
+    "reachableAosWithNoUnits": 5,
+    "ugCoursesRenderingEmptyPlanner": 6,
+    "ugDoublesWithoutComponents": 2,
+    "danglingComponentRefs": 0,
+    "paddedRequisiteCodes": 13,
+    "duplicateCourseAosEdges": 7,
+    "templateUnitsWithNoSatisfiablePrereq": 2,
+    "unplaceableTemplateUnits": 69,
+    "ugCoursesWithNullCreditPoints": 1
+  },
+  "2026": {
+    "danglingAosUnitCodes": 0,
+    "brokenCourseAosEdges": 0,
+    "reachableAosWithNoUnits": 6,
+    "ugCoursesRenderingEmptyPlanner": 6,
+    "ugDoublesWithoutComponents": 3,
+    "danglingComponentRefs": 0,
+    "paddedRequisiteCodes": 13,
+    "duplicateCourseAosEdges": 0,
+    "templateUnitsWithNoSatisfiablePrereq": 2,
+    "unplaceableTemplateUnits": 76,
+    "ugCoursesWithNullCreditPoints": 2
+  }
+}
