@@ -168,3 +168,51 @@ function formatCodes(codes: readonly string[]): string {
   if (codes.length === 1) return codes[0]!
   return `${codes.slice(0, -1).join(", ")} and ${codes[codes.length - 1]}`
 }
+
+/**
+ * What the student's picks commit, against what the degree has.
+ *
+ * The handbook never states how many majors a course allows — it says
+ * only that a second is possible "where you have space in your
+ * degree". Space is therefore the real constraint, and it is one we
+ * can actually measure: every area of study in the corpus carries
+ * credit points (a major is 48 of a 144-point degree), so three majors
+ * would consume the entire degree and leave nothing for its core or
+ * electives.
+ *
+ * Reported as a plain total rather than a hard block. The sum ignores
+ * units shared between areas — Monash permits up to two — so the true
+ * cost can be slightly lower, which is why the message says "list"
+ * rather than "cost", and why this warns only once the picks reach or
+ * exceed the whole degree.
+ */
+export interface CreditBudget {
+  pickedCreditPoints: number
+  courseCreditPoints: number
+  overCommitted: boolean
+  message: string
+}
+
+export function summarizeAosCreditBudget(
+  picked: readonly PickedAosEntry[],
+  courseCreditPoints: number | null | undefined
+): CreditBudget | null {
+  if (!courseCreditPoints || courseCreditPoints <= 0) return null
+  const seen = new Set<string>()
+  let total = 0
+  for (const p of picked) {
+    if (seen.has(p.aos.code)) continue
+    seen.add(p.aos.code)
+    total += p.aos.creditPoints ?? 0
+  }
+  if (total === 0) return null
+  const overCommitted = total >= courseCreditPoints
+  return {
+    pickedCreditPoints: total,
+    courseCreditPoints,
+    overCommitted,
+    message: overCommitted
+      ? `Your areas of study list ${total} of the degree's ${courseCreditPoints} credit points, leaving no room for the rest of the course.`
+      : `Your areas of study list ${total} of the degree's ${courseCreditPoints} credit points.`,
+  }
+}

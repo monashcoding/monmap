@@ -1,7 +1,11 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { MAX_SHARED_UNITS_BETWEEN_AOS, detectAosOverlaps } from "./overlap.ts"
+import {
+  MAX_SHARED_UNITS_BETWEEN_AOS,
+  detectAosOverlaps,
+  summarizeAosCreditBudget,
+} from "./overlap.ts"
 import type { PickedAosEntry } from "./aos-slots.ts"
 import type { PlannerAreaOfStudy } from "./types.ts"
 
@@ -210,4 +214,65 @@ test("titles differing only by case or spacing still match", () => {
   const [o] = detectAosOverlaps([pick(major), pick(ext)], new Set())
   assert.ok(o)
   assert.match(o.message, /already includes/)
+})
+
+/* ------------------------------------------------------------------ *
+ * Credit budget — "where you have space in your degree" is the only
+ * limit the handbook states, so it needs to be visible.
+ * ------------------------------------------------------------------ */
+
+function withCp(
+  code: string,
+  cp: number,
+  kind: PlannerAreaOfStudy["kind"] = "major"
+) {
+  const a = aos(code, [], kind)
+  a.creditPoints = cp
+  return pick(a)
+}
+
+test("no budget line without a course credit-point total", () => {
+  assert.equal(summarizeAosCreditBudget([withCp("A", 48)], null), null)
+  assert.equal(summarizeAosCreditBudget([withCp("A", 48)], 0), null)
+})
+
+test("no budget line when nothing is picked", () => {
+  assert.equal(summarizeAosCreditBudget([], 144), null)
+})
+
+test("one major of a 144 point degree is well within budget", () => {
+  const b = summarizeAosCreditBudget([withCp("A", 48)], 144)!
+  assert.equal(b.pickedCreditPoints, 48)
+  assert.equal(b.overCommitted, false)
+  assert.match(b.message, /48 of the degree's 144/)
+})
+
+test("two majors still fit", () => {
+  const b = summarizeAosCreditBudget([withCp("A", 48), withCp("B", 48)], 144)!
+  assert.equal(b.pickedCreditPoints, 96)
+  assert.equal(b.overCommitted, false)
+})
+
+test("three majors consume the whole degree and are flagged", () => {
+  // 3 x 48 = 144 of 144: nothing left for the rest of the course. This
+  // is the case the screenshot showed, and why the pick cap is 2.
+  const b = summarizeAosCreditBudget(
+    [withCp("A", 48), withCp("B", 48), withCp("C", 48)],
+    144
+  )!
+  assert.equal(b.pickedCreditPoints, 144)
+  assert.equal(b.overCommitted, true)
+  assert.match(b.message, /leaving no room/)
+})
+
+test("the same area reached through two slots is counted once", () => {
+  const one = withCp("A", 48)
+  const b = summarizeAosCreditBudget([one, { ...one, slotKey: "minor" }], 144)!
+  assert.equal(b.pickedCreditPoints, 48)
+})
+
+test("areas with no credit points contribute nothing rather than NaN", () => {
+  const noCp = pick(aos("X", []))
+  const b = summarizeAosCreditBudget([withCp("A", 48), noCp], 144)!
+  assert.equal(b.pickedCreditPoints, 48)
 })

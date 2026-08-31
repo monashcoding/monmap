@@ -228,12 +228,12 @@ test("filling the base slot earns exactly one repeat slot", () => {
     slots.map((s) => s.key),
     ["major", "major#2"]
   )
-  // …and not a third until the second is used.
+  // …and the cap holds once the second is used.
   assert.deepEqual(
     computeAosSlotsWithRepeats(c, { major: "M1", "major#2": "M2" }).map(
       (s) => s.key
     ),
-    ["major", "major#2", "major#3"]
+    ["major", "major#2"]
   )
 })
 
@@ -245,27 +245,25 @@ test("sibling picks are excluded — the same major can't be taken twice", () =>
     repeat.options.map((o) => o.code),
     ["M2", "M3"]
   )
-  const third = computeAosSlotsWithRepeats(c, {
-    major: "M1",
-    "major#2": "M2",
-  }).find((s) => s.key === "major#3")!
-  assert.deepEqual(
-    third.options.map((o) => o.code),
-    ["M3"]
+  assert.equal(
+    computeAosSlotsWithRepeats(c, { major: "M1", "major#2": "M2" }).find(
+      (s) => s.key === "major#3"
+    ),
+    undefined,
+    "capped at two"
   )
 })
 
-test("the soft cap stops at MAX_PICKS_PER_SLOT", () => {
+test("the cap stops at MAX_PICKS_PER_SLOT, which the corpus puts at 2", () => {
+  // "second major"/"double major" appears in 9-29 courses every year;
+  // "third major"/"three majors" appears in none, in any year.
   const c = repeatCourse("major", ["M1", "M2", "M3", "M4", "M5"])
-  const slots = computeAosSlotsWithRepeats(c, {
-    major: "M1",
-    "major#2": "M2",
-    "major#3": "M3",
-  })
-  assert.equal(MAX_PICKS_PER_SLOT, 3)
+  assert.equal(MAX_PICKS_PER_SLOT, 2)
+  const slots = computeAosSlotsWithRepeats(c, { major: "M1", "major#2": "M2" })
   assert.deepEqual(
     slots.map((s) => s.key),
-    ["major", "major#2", "major#3"]
+    ["major", "major#2"],
+    "no third slot even with options left"
   )
 })
 
@@ -342,8 +340,8 @@ test("clearing a base pick strands nothing: higher slots stop being offered", ()
   // from state. Without that, "major#3" would sit in selectedAos
   // invisible behind an empty "major#2".
   const c = repeatCourse("major", ["M1", "M2", "M3"])
-  const full = { major: "M1", "major#2": "M2", "major#3": "M3" }
-  assert.equal(computeAosSlotsWithRepeats(c, full).length, 3)
+  const full = { major: "M1", "major#2": "M2" }
+  assert.equal(computeAosSlotsWithRepeats(c, full).length, 2)
 
   const cleared = { ...full, major: undefined }
   const keys = computeAosSlotsWithRepeats(c, cleared).map((s) => s.key)
