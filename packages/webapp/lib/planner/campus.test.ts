@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import {
   availableCampuses,
   courseForCampus,
+  effectiveScope,
   campusTokens,
   isOutOfCampusScope,
   optionsForCampus,
@@ -263,4 +264,73 @@ test("no campus set returns the identical object — free for most plans", () =>
   })
   assert.equal(courseForCampus(c, undefined), c)
   assert.equal(courseForCampus(c, null), c)
+})
+
+/* ------------------------------------------------------------------ *
+ * effectiveScope — campus that survives only in the relationship
+ * label. Virtual areas of study (synthesised from embedded
+ * specialisations) have no scope column: C2001's "Clayton options" and
+ * "Malaysia options" specialisation pickers are exactly this, and were
+ * both shown to every student until this fallback existed.
+ * ------------------------------------------------------------------ */
+
+function labelled(
+  code: string,
+  relationshipLabel: string,
+  scope: string | null = null
+) {
+  const a = aos(code, scope)
+  a.relationshipLabel = relationshipLabel
+  return a
+}
+
+test("effectiveScope prefers the real scope column when present", () => {
+  const a = labelled("X", "Clayton options", "Malaysia")
+  assert.equal(effectiveScope(a, ["Clayton", "Malaysia"]), "Malaysia")
+})
+
+test("effectiveScope falls back to a campus named in the relationship label", () => {
+  const a = labelled("X", "Clayton options")
+  assert.equal(effectiveScope(a, ["Clayton", "Malaysia"]), "Clayton")
+})
+
+test("effectiveScope only trusts campuses the course already demonstrates", () => {
+  // Guards against an unrelated label inventing a scope.
+  const a = labelled("X", "Clayton options")
+  assert.equal(effectiveScope(a, ["Malaysia"]), null)
+  assert.equal(effectiveScope(a, []), null)
+})
+
+test("effectiveScope returns null for an ordinary label", () => {
+  const a = labelled("X", "Part C. Specialist discipline knowledge")
+  assert.equal(effectiveScope(a, ["Clayton", "Malaysia"]), null)
+})
+
+test("a label naming two campuses matches both", () => {
+  const a = labelled("X", "Caulfield and Clayton offerings")
+  assert.equal(
+    effectiveScope(a, ["Caulfield", "Clayton"]),
+    "Caulfield and Clayton"
+  )
+  assert.ok(
+    scopeMatchesCampus(effectiveScope(a, ["Caulfield", "Clayton"]), "Clayton")
+  )
+})
+
+test("label-scoped options are filtered like column-scoped ones", () => {
+  const opts = [
+    labelled("CLAY", "Clayton options"),
+    labelled("MAL", "Malaysia options"),
+    labelled("ANY", "Part C. Specialist discipline knowledge"),
+  ]
+  const known = ["Clayton", "Malaysia"]
+  assert.deepEqual(
+    optionsForCampus(opts, "Malaysia", undefined, known).map((o) => o.code),
+    ["MAL", "ANY"]
+  )
+})
+
+test("without knownCampuses the fallback is inert — old behaviour preserved", () => {
+  const opts = [labelled("CLAY", "Clayton options")]
+  assert.equal(optionsForCampus(opts, "Malaysia").length, 1)
 })

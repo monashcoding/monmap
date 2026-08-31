@@ -63,6 +63,32 @@ export function availableCampuses(course: PlannerCourseWithAoS): string[] {
 }
 
 /**
+ * The campus an option really belongs to.
+ *
+ * `scope` is populated at ingest from the ancestor path, but only for
+ * rows in `course_areas_of_study`. Virtual areas of study — the ones
+ * the resolver synthesises from embedded specialisations — carry no
+ * scope column, and their campus survives only in the relationship
+ * label ("Clayton options", "Malaysia options"). Without this fallback
+ * a Malaysia student is still shown a picker headed
+ * "Clayton options specialisation".
+ *
+ * Matching is restricted to campuses the course already demonstrates
+ * elsewhere, so an unrelated label that happens to contain a place
+ * name cannot invent a scope.
+ */
+export function effectiveScope(
+  aos: Pick<PlannerAreaOfStudy, "scope" | "relationshipLabel">,
+  knownCampuses: readonly string[]
+): string | null {
+  if (aos.scope) return aos.scope
+  const label = (aos.relationshipLabel ?? "").toLowerCase()
+  if (!label) return null
+  const hits = knownCampuses.filter((c) => label.includes(c.toLowerCase()))
+  return hits.length > 0 ? hits.join(" and ") : null
+}
+
+/**
  * Options to show for a slot at this campus.
  *
  * `keepCode` is the student's current pick and is always retained even
@@ -73,20 +99,24 @@ export function availableCampuses(course: PlannerCourseWithAoS): string[] {
 export function optionsForCampus(
   options: readonly PlannerAreaOfStudy[],
   campus: string | null | undefined,
-  keepCode?: string | undefined
+  keepCode?: string | undefined,
+  knownCampuses: readonly string[] = []
 ): PlannerAreaOfStudy[] {
   if (!campus) return [...options]
   return options.filter(
-    (o) => o.code === keepCode || scopeMatchesCampus(o.scope, campus)
+    (o) =>
+      o.code === keepCode ||
+      scopeMatchesCampus(effectiveScope(o, knownCampuses), campus)
   )
 }
 
 /** True when a picked AoS isn't offered at the chosen campus. */
 export function isOutOfCampusScope(
-  aos: Pick<PlannerAreaOfStudy, "scope">,
-  campus: string | null | undefined
+  aos: Pick<PlannerAreaOfStudy, "scope" | "relationshipLabel">,
+  campus: string | null | undefined,
+  knownCampuses: readonly string[] = []
 ): boolean {
-  return !scopeMatchesCampus(aos.scope, campus)
+  return !scopeMatchesCampus(effectiveScope(aos, knownCampuses), campus)
 }
 
 /**

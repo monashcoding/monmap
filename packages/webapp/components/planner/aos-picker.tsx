@@ -59,15 +59,26 @@ export function AoSPicker() {
       ) : null}
       {slots.map((slot) => {
         const current = resolveSlotSelection(state.selectedAos, slot)
+        const options = optionsForCampus(
+          slot.options,
+          state.campus,
+          current,
+          campuses
+        )
+        // A slot whose options are entirely other-campus has nothing to
+        // offer — an empty dropdown headed "Clayton options
+        // specialisation" is worse than no dropdown at all.
+        if (options.length === 0) return null
         return (
           <RoleSelect
             key={slot.key}
             label={slot.label}
             // Filtered to the chosen campus, but never dropping the
             // student's own pick — see lib/planner/campus.ts.
-            options={optionsForCampus(slot.options, state.campus, current)}
+            options={options}
             current={current}
             campus={state.campus}
+            knownCampuses={campuses}
             year={course.year}
             onChange={(code) => {
               if (code) {
@@ -122,8 +133,11 @@ function CampusSelect({
           onChange(typeof v === "string" && v !== ALL_CAMPUSES ? v : null)
         }
       >
-        <SelectTrigger className="min-w-0 flex-1 items-center py-2.5 text-xs">
-          <SelectValue />
+        <SelectTrigger className="w-full min-w-0 items-center py-2.5 text-xs">
+          {/* Explicit children: Base UI renders the raw value string
+              otherwise, which surfaced the ALL_CAMPUSES sentinel to
+              the user as "__all__". */}
+          <SelectValue>{current ?? "All campuses"}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
@@ -150,6 +164,7 @@ function RoleSelect({
   options,
   current,
   campus,
+  knownCampuses,
   year,
   onChange,
 }: {
@@ -157,6 +172,7 @@ function RoleSelect({
   options: PlannerAreaOfStudy[]
   current: string | undefined
   campus?: string | undefined
+  knownCampuses: string[]
   year: string
   onChange: (code: string | null) => void
 }) {
@@ -168,7 +184,9 @@ function RoleSelect({
   // stays selected — flagged rather than deleted, so the student
   // decides what to do about it.
   const selected = current ? options.find((a) => a.code === current) : undefined
-  const outOfScope = selected ? isOutOfCampusScope(selected, campus) : false
+  const outOfScope = selected
+    ? isOutOfCampusScope(selected, campus, knownCampuses)
+    : false
 
   return (
     <div className="flex flex-col gap-1">
