@@ -13,17 +13,24 @@ zero-indexed rows of the CSV.
 
 ## 0. Already fixed — do not re-work
 
-Verified against the DB / code as of 2026-08-19.
+Verified against the DB / code as of 2026-08-19, and **re-verified
+across all seven ingested years (2020-2026) on 2026-08-31** after the
+A2000 entry below turned out to have been true of 2026 only. The
+per-year column records what is actually true, not what 2026 implies.
+
+A "missing" entity in an early year is usually Monash not having
+created it yet, not a broken fix — those are marked *n/a*, and are
+distinguished from cases where the fix genuinely failed to apply.
 
 | Report | Claim | Why it's closed |
 |---|---|---|
 | #35 | PHS3302's tree shows no prerequisites | `requisite_refs` now carries PHS3101 + PHS3201, pulled out of `enrolment_rules` prose (2026-05-21) |
-| #26, #39 | FIT1053 doesn't satisfy a FIT1045 prerequisite | Mutual prohibition exists both ways and titles match after the `(Advanced)` strip, so the equivalence rule fires (2026-06-04) |
+| #26, #39 | FIT1053 doesn't satisfy a FIT1045 prerequisite | **Fixed 2023-2026; genuinely unfixable 2020-2022.** The rule needed a *mutual* prohibition, but Monash records half its edges one-directionally, and the `(Advanced)` strip missed 2023's colon spelling ("Introduction to programming: Advanced"). Both fixed 2026-08-31 — equivalence is now symmetrised and the suffix strip covers `:`/`-`. 2020-2022 stay unmatched because the titles genuinely differ ("Algorithms and programming **fundamentals** in python" vs "Algorithms and programming in python (advanced)"), which no title rule can bridge |
 | #7 | FIT3144 takes two slots per semester instead of 6+6 | FY credit split (2026-05-19) + `slotUsedWeight` offerings fix (2026-06-12) |
-| #66, #74, #70 | Arts majors and extended majors are swapped; psychology is the only major | A2000 now exposes 29 majors (Gender studies, Philosophy, …) and 1 extended major |
-| #40, #21 | L3014 / Master of IT can't be selected | Both present in 2026; course-picker limit raised 300 → 500 (2026-06-12) |
-| #61 | ACC1001 missing | Present 2024–2026 |
-| #44, #73, #83 | MTE3103 → MTE2204, MMA units stale | MTE2204 and MMA2005 both in the 2026 corpus |
+| #66, #74, #70 | Arts majors and extended majors are swapped; psychology is the only major | **Was 2026-only; fixed for all years 2026-08-31.** The classifier read "Part A. Arts listed majors and extended major" (2022-2025) as wholly extended, inverting 27-29 areas, and missed "Psychology extended  major" on a double space — so psychology really was the only major. Both fixed in `classifyAosRelationship`, backfilled all years: A2000 is now 26-31 majors / 1-2 extended everywhere |
+| #40, #21 | L3014 / Master of IT can't be selected | Present 2025-2026 (L3014 is newer than 2024, so earlier years are n/a); course-picker limit raised 300 → 500 (2026-06-12) |
+| #61 | ACC1001 missing | Present 2024-2026; absent 2020-2023 because the unit did not exist yet (n/a, not a defect) |
+| #44, #73, #83 | MTE3103 → MTE2204, MMA units stale | MTE2204 and MMA2005 exist in 2026 only — they are new units, so earlier years are n/a rather than broken |
 | #25, #53, #59, #20, #51 | Can't choose majors/minors on a double degree | Per-component AoS selection (2026-07-02) |
 | #9 | A random psychology specialisation is offered | `excluded_aos` prose handling (2026-07-02) |
 | #3 | F2012 has no autofill/tree | Double-degree component templates fixed (2026-06-19) |
@@ -271,7 +278,7 @@ pick-one pair for free, with no pick-one detection anywhere.
 | #57 | Tree shows FIT9xxx postgrad + other-faculty units | Not a single — this is tree scoping, a feature. The tree is course-agnostic by design; limiting it to units reachable from the plan's course is real work with its own UX questions. |
 | #58 | "WAM - units in my course too" | **Needs clarification, not actionable.** The WAM already counts only units on the plan that have a mark entered (`wam-context.tsx`), so it can't be pulling in units from outside the course. The report is one line and reads equally as "include my course units too" or "it's including things it shouldn't". Worth asking the reporter before guessing. |
 | #49 | ENG4099 required but unaddable, replaced by 480X | **Resolved by data refresh.** `ENG4099` is gone from 2026 (replaced by ENG4801–4804 "Professional practice") and appears in no requirement group, AoS unit list, or curriculum tree. |
-| #82 | AEH2001/2002/3001 marked as not running in S2 | **Resolved.** All three carry two S2 offerings ("Second semester (Northern)", "(extended)"), and `classifyTeachingPeriod` prefix-matches those to S2, so the planner reads them correctly. |
+| #82 | AEH2001/2002/3001 marked as not running in S2 | **Resolved for the years they run.** In 2020 and 2025 these units genuinely have no S2 offering (First semester / Winter / Summer only), so the planner is right to say so — verified across all years 2026-08-31. Otherwise: All three carry two S2 offerings ("Second semester (Northern)", "(extended)"), and `classifyTeachingPeriod` prefix-matches those to S2, so the planner reads them correctly. |
 | #63 | Adding a 5th unit / a semester is hard to find | UX: inline "+" affordance instead of the capacity control ported from MonPlan. |
 | #77 | July (mid-year) intake can't be represented | Plan starts at S1; needs a start-semester option. |
 | #60 | Unit search is laggy | Server action per keystroke, debounced; consider client-side prefilter. |
