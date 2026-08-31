@@ -206,13 +206,19 @@ export function summarizeAosCreditBudget(
     total += p.aos.creditPoints ?? 0
   }
   if (total === 0) return null
-  const overCommitted = total >= courseCreditPoints
+  // Strictly over, not "reaches". Some courses *are* one area of study
+  // — B3701 and P3701 are 48 credit points with a single 48-point
+  // specialisation, D3001 is 204/204 — and telling those students they
+  // have left no room for the rest of the course is simply wrong. A
+  // sweep of all 2,768 course-years found this is the only way the
+  // check misfires.
+  const overCommitted = total > courseCreditPoints
   return {
     pickedCreditPoints: total,
     courseCreditPoints,
     overCommitted,
     message: overCommitted
-      ? `Your areas of study list ${total} of the degree's ${courseCreditPoints} credit points, leaving no room for the rest of the course.`
+      ? `Your areas of study list ${total} credit points, more than the degree's ${courseCreditPoints}.`
       : `Your areas of study list ${total} of the degree's ${courseCreditPoints} credit points.`,
   }
 }

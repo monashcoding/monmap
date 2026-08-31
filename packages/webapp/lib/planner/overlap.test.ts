@@ -253,16 +253,29 @@ test("two majors still fit", () => {
   assert.equal(b.overCommitted, false)
 })
 
-test("three majors consume the whole degree and are flagged", () => {
-  // 3 x 48 = 144 of 144: nothing left for the rest of the course. This
-  // is the case the screenshot showed, and why the pick cap is 2.
+test("picks exceeding the degree are flagged", () => {
   const b = summarizeAosCreditBudget(
-    [withCp("A", 48), withCp("B", 48), withCp("C", 48)],
+    [withCp("A", 48), withCp("B", 48), withCp("C", 72)],
     144
   )!
-  assert.equal(b.pickedCreditPoints, 144)
+  assert.equal(b.pickedCreditPoints, 168)
   assert.equal(b.overCommitted, true)
-  assert.match(b.message, /leaving no room/)
+  assert.match(b.message, /more than the degree's 144/)
+})
+
+test("a course that IS one area of study is not flagged", () => {
+  // B3701 and P3701 are 48cp courses with a single 48cp specialisation,
+  // D3001 is 204/204. A sweep of all 2,768 course-years found this is
+  // the only way the check misfires, which is why the threshold is
+  // strictly-over rather than reaches.
+  for (const [picked, total] of [
+    [48, 48],
+    [204, 204],
+  ] as const) {
+    const b = summarizeAosCreditBudget([withCp("A", picked)], total)!
+    assert.equal(b.overCommitted, false, `${picked}/${total}`)
+    assert.doesNotMatch(b.message, /more than/)
+  }
 })
 
 test("the same area reached through two slots is counted once", () => {
