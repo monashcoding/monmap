@@ -135,3 +135,79 @@ test("shared codes are sorted and deduplicated", () => {
   const [o] = detectAosOverlaps(picked, new Set(["A", "M", "Z"]))
   assert.deepEqual(o!.sharedCodes, ["A", "M", "Z"])
 })
+
+/* ------------------------------------------------------------------ *
+ * Same discipline as both a major and an extended major.
+ *
+ * Reported from the browser on A2000 2026: the picker happily held
+ * PSYCHOL07 "Psychology" (major) and PSYCHOL09 "Psychology" (extended
+ * major) at once. They list the identical 10 units — an extended major
+ * extends the major of the same name rather than sitting beside it —
+ * so holding both is redundant, not a double count.
+ * ------------------------------------------------------------------ */
+
+test("a major and an extended major of the same discipline warn on sight", () => {
+  const major = aos("PSYCHOL07", ["PSY1011", "PSY1023"], "major")
+  major.title = "Psychology"
+  const ext = aos("PSYCHOL09", ["PSY1011", "PSY1023"], "extended_major")
+  ext.title = "Psychology"
+
+  // No units placed at all: the redundancy is structural, so waiting
+  // for a placement would let the student build on a contradiction.
+  const [o] = detectAosOverlaps([pick(major), pick(ext)], new Set())
+  assert.ok(o, "must fire with nothing placed")
+  assert.equal(o.severity, "warning")
+  assert.match(o.message, /already includes/)
+  assert.match(o.message, /pick one/)
+})
+
+test("the message names the extended major as the one that subsumes", () => {
+  const major = aos("EUROPLAN01", ["X"], "major")
+  major.title = "European languages"
+  const ext = aos("EUROPLAN03", ["X"], "extended_major")
+  ext.title = "European languages"
+  // Order of picks must not change which is described as subsuming.
+  for (const picks of [
+    [major, ext],
+    [ext, major],
+  ]) {
+    const [o] = detectAosOverlaps(picks.map(pick), new Set())
+    assert.match(
+      o!.message,
+      /European languages extended major already includes/
+    )
+  }
+})
+
+test("two different disciplines are not redundant", () => {
+  const a = aos("ANTHROPL11", ["U1"], "major")
+  a.title = "Anthropology"
+  const b = aos("PSYCHOL09", ["U1"], "extended_major")
+  b.title = "Psychology"
+  const [o] = detectAosOverlaps([pick(a), pick(b)], new Set())
+  // They share a placed unit or nothing — never the redundancy message.
+  assert.ok(!o || !/already includes/.test(o.message))
+})
+
+test("two majors of the same title are not the extended-major case", () => {
+  const a = aos("X1", ["U1"], "major")
+  a.title = "History"
+  const b = aos("X2", ["U1"], "major")
+  b.title = "History"
+  const [o] = detectAosOverlaps([pick(a), pick(b)], new Set(["U1"]))
+  assert.ok(o)
+  assert.ok(
+    !/already includes/.test(o.message),
+    "that rule is major vs extended only"
+  )
+})
+
+test("titles differing only by case or spacing still match", () => {
+  const major = aos("M", ["U"], "major")
+  major.title = "  european   languages "
+  const ext = aos("E", ["U"], "extended_major")
+  ext.title = "European languages"
+  const [o] = detectAosOverlaps([pick(major), pick(ext)], new Set())
+  assert.ok(o)
+  assert.match(o.message, /already includes/)
+})

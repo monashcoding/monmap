@@ -58,6 +58,29 @@ export interface AosOverlap {
   message: string
 }
 
+/**
+ * Two picks that are the same discipline in different guises.
+ *
+ * An extended major *extends* the major of the same name rather than
+ * sitting beside it: A2000's PSYCHOL09 (extended) and PSYCHOL07
+ * (major) are both titled "Psychology" and list the identical 10
+ * units, so holding both is redundant, not a double count. Same for
+ * EUROPLAN03/EUROPLAN01.
+ *
+ * Reported from *membership*, not from placed units — unlike the
+ * shared-unit cap below. The redundancy is structural: it is already
+ * true the moment both are picked, and waiting for the student to
+ * place a unit before saying so would let them build the whole plan on
+ * a contradiction.
+ */
+function sameDiscipline(a: PlannerAreaOfStudy, b: PlannerAreaOfStudy): boolean {
+  const norm = (t: string) => t.trim().toLowerCase().replace(/\s+/g, " ")
+  if (!a.title || !b.title) return false
+  if (norm(a.title) !== norm(b.title)) return false
+  const kinds = new Set([a.kind, b.kind])
+  return kinds.has("major") && kinds.has("extended_major")
+}
+
 /** Every unit the AoS lists, as a set. */
 function membership(aos: PlannerAreaOfStudy): Set<string> {
   const out = new Set<string>()
@@ -96,6 +119,22 @@ export function detectAosOverlaps(
     const aMembers = membership(a)
     for (let j = i + 1; j < entries.length; j++) {
       const b = entries[j]!
+      // Structural redundancy first: it does not depend on placement,
+      // and reporting it as a shared-unit count would understate it.
+      if (sameDiscipline(a, b)) {
+        const [major, extended] = a.kind === "extended_major" ? [b, a] : [a, b]
+        out.push({
+          a,
+          b,
+          sharedCodes: [...membership(a)]
+            .filter((c) => membership(b).has(c))
+            .sort(),
+          severity: "warning",
+          message: `The ${label(extended)} extended major already includes the ${label(major)} major — pick one, not both.`,
+        })
+        continue
+      }
+
       const shared: string[] = []
       for (const code of membership(b))
         if (aMembers.has(code) && plannedCodes.has(code)) shared.push(code)
