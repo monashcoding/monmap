@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
+import { detectAosOverlaps, type AosOverlap } from "@/lib/planner/overlap"
 import { effectiveRequired } from "@/lib/planner/reachable"
 import { summarizeAoSProgress, type AoSProgress } from "@/lib/planner/progress"
 import type { PlannerAreaOfStudy, RequirementGroup } from "@/lib/planner/types"
@@ -42,6 +43,14 @@ export function RequirementsPanel({ className }: { className?: string }) {
     [course, state.selectedAos]
   )
 
+  // Cross-AoS double counting. summarizeAoSProgress is per-AoS by
+  // design, so this is the only place that can see a unit counting
+  // toward two picks at once.
+  const overlaps = useMemo(
+    () => detectAosOverlaps(pickedAos, plannedCodes),
+    [pickedAos, plannedCodes]
+  )
+
   const withProgress = useMemo<(PickedAosEntry & { progress: AoSProgress })[]>(
     () =>
       pickedAos.map((p) => ({
@@ -60,6 +69,8 @@ export function RequirementsPanel({ className }: { className?: string }) {
           Requirements progress
         </h2>
       </div>
+
+      {overlaps.length > 0 ? <OverlapNotice overlaps={overlaps} /> : null}
 
       <div className="flex flex-col divide-y">
         {course && course.componentCourses.length > 0 ? (
@@ -440,6 +451,34 @@ function GroupList({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/**
+ * Units counting toward two picks at once.
+ *
+ * Rendered above the per-AoS cards because it is a plan-level fact: no
+ * single card is wrong, but together they overstate completion. The
+ * yellow tint pairs with `text-primary-foreground`, never
+ * `text-primary` — see the brand rule in CLAUDE.md.
+ */
+function OverlapNotice({ overlaps }: { overlaps: AosOverlap[] }) {
+  return (
+    <div className="flex flex-col gap-1.5 border-b px-4 py-2.5">
+      {overlaps.map((o) => (
+        <p
+          key={`${o.a.code}/${o.b.code}`}
+          className={cn(
+            "rounded-lg px-2.5 py-1.5 text-[11px] leading-snug",
+            o.severity === "warning"
+              ? "bg-primary/40 text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+          )}
+        >
+          {o.message}
+        </p>
+      ))}
     </div>
   )
 }

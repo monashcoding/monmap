@@ -79,6 +79,22 @@ export interface PlannerState {
    * away!!!").
    */
   credit?: PlannerCreditEntry[]
+  /**
+   * Campus the student is planning at, e.g. "Clayton" or "Malaysia".
+   * Filters campus-scoped area-of-study options and requirement groups
+   * down to what is actually offered there.
+   *
+   * There is no structured campus field upstream — scope lives only in
+   * container titles, which ingest reads into
+   * `course_areas_of_study.scope` and `RequirementGroup.scope`. Absent
+   * means "show everything", which is the behaviour that predates this
+   * field, so plans saved before it stay valid with no migration.
+   *
+   * A pick that falls outside the chosen campus is deliberately *not*
+   * cleared — the student sees it flagged rather than silently
+   * emptied.
+   */
+  campus?: string
 }
 
 /**

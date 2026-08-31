@@ -173,7 +173,6 @@ if (process.argv.includes("--update")) {
   process.exit(0)
 }
 
-const why = new Map(METRICS.map((m) => [m.key, m.why]))
 const expected: Record<string, Record<string, number>> = JSON.parse(
   readFileSync(baselinePath, "utf8")
 )
