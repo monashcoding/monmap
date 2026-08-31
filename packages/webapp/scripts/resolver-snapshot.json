@@ -113,8 +113,8 @@
     ],
     "aosTotal": 64,
     "aosByKind": {
-      "major": 29,
-      "extended_major": 1,
+      "major": 28,
+      "extended_major": 2,
       "specialisation": 2,
       "elective": 32
     },
@@ -367,5 +367,43 @@
     "aosGroups": 0,
     "aosGroupOptions": 0,
     "conflictCodes": 44
+  },
+  "A2000@2022": {
+    "title": "Bachelor of Arts",
+    "courseRequirements": 4,
+    "courseUnits": 0,
+    "components": [],
+    "aosTotal": 60,
+    "aosByKind": {
+      "major": 26,
+      "extended_major": 2,
+      "elective": 32
+    },
+    "aosByComponent": {
+      "Part A. Arts listed majors and extended major": 28,
+      "Part B. Arts specified study": 32
+    },
+    "aosGroups": 229,
+    "aosGroupOptions": 1573,
+    "conflictCodes": 210
+  },
+  "A2000@2026": {
+    "title": "Bachelor of Arts",
+    "courseRequirements": 4,
+    "courseUnits": 0,
+    "components": [],
+    "aosTotal": 62,
+    "aosByKind": {
+      "major": 28,
+      "extended_major": 2,
+      "elective": 32
+    },
+    "aosByComponent": {
+      "Part A. Major studies": 30,
+      "Part B. Specified studies": 32
+    },
+    "aosGroups": 253,
+    "aosGroupOptions": 1810,
+    "conflictCodes": 222
   }
 }

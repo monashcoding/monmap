@@ -956,7 +956,13 @@ export async function fetchEnrolmentRulesForCodes(
  * the given table alias's `title` column.
  */
 function normalizedTitleExpr(alias: string): string {
-  return `lower(regexp_replace(regexp_replace(btrim(${alias}.title), '\\s*\\((advanced|honours|hons)\\)\\s*$', '', 'i'), '\\s+', ' ', 'g'))`
+  // Strips an "advanced twin" suffix in either spelling Monash uses:
+  // parenthesised ("Introduction to programming (Advanced)", 2024-2026)
+  // or delimited by a colon or dash ("Introduction to programming:
+  // Advanced", 2023). Handling only the parenthesised form meant
+  // FIT1053 stopped counting as equivalent to FIT1045 in 2023 purely
+  // because the punctuation changed that year.
+  return `lower(regexp_replace(regexp_replace(btrim(${alias}.title), '\\s*(\\((advanced|honours|hons)\\)|[:\u2013-]\\s*(advanced|honours|hons))\\s*$', '', 'i'), '\\s+', ' ', 'g'))`
 }
 
 async function _fetchEquivalentsRows(
@@ -969,26 +975,40 @@ async function _fetchEquivalentsRows(
     codes.map((c) => sql`(${c})`),
     sql`, `
   )
-  // Two units are equivalent when they *mutually* prohibit each other
-  // (a ⟂ b AND b ⟂ a) AND share a normalised title. Mutual prohibition
-  // alone conflates genuine equivalents (cross-listings, advanced twins)
-  // with pick-one alternatives (e.g. two different final-year design
-  // capstones); the title match is what separates them.
+  // Two units are equivalent when a prohibition links them in *either*
+  // direction AND they share a normalised title.
+  //
+  // This used to demand a mutual prohibition (a ⟂ b AND b ⟂ a), on the
+  // theory that mutuality was needed to separate genuine equivalents
+  // from pick-one alternatives. It isn't: the title match is what
+  // separates them, as it always was, and Monash records about half of
+  // its prohibition edges one-directionally (1,557 of 2026's 3,041).
+  // Requiring both directions therefore silently dropped genuine
+  // cross-listings — FIT1053 stopped satisfying a FIT1045 prerequisite
+  // in 2020-2022 for no reason but a missing reverse edge, which is
+  // exactly what students reported (#26, #39).
+  //
+  // Symmetrising adds ~190-270 pairs a year, and they are the expected
+  // shape: ACX5903/ACM5903 "Accounting for business",
+  // ATI5067/APG5067 "Sustainable cultural development" — faculty
+  // cross-listings under two codes.
   const rows = await db.execute(sql`
-    WITH input(code) AS (VALUES ${valuesClause})
-    SELECT a.unit_code AS code, a.requires_unit_code AS equivalent
-    FROM requisite_refs a
-    JOIN requisite_refs b
-      ON b.year = a.year
-     AND b.unit_code = a.requires_unit_code
-     AND b.requires_unit_code = a.unit_code
-     AND b.requisite_type = 'prohibition'
-    JOIN input i ON i.code = a.unit_code
-    JOIN units uc ON uc.year = a.year AND uc.code = a.unit_code
-    JOIN units ue ON ue.year = a.year AND ue.code = a.requires_unit_code
-    WHERE a.year = ${year}
-      AND a.requisite_type = 'prohibition'
-      AND ${sql.raw(normalizedTitleExpr("uc"))} = ${sql.raw(normalizedTitleExpr("ue"))}
+    WITH input(code) AS (VALUES ${valuesClause}),
+    edges AS (
+      SELECT a.unit_code AS x, a.requires_unit_code AS y
+      FROM requisite_refs a
+      WHERE a.year = ${year} AND a.requisite_type = 'prohibition'
+      UNION
+      SELECT a.requires_unit_code AS x, a.unit_code AS y
+      FROM requisite_refs a
+      WHERE a.year = ${year} AND a.requisite_type = 'prohibition'
+    )
+    SELECT e.x AS code, e.y AS equivalent
+    FROM edges e
+    JOIN input i ON i.code = e.x
+    JOIN units uc ON uc.year = ${year} AND uc.code = e.x
+    JOIN units ue ON ue.year = ${year} AND ue.code = e.y
+    WHERE ${sql.raw(normalizedTitleExpr("uc"))} = ${sql.raw(normalizedTitleExpr("ue"))}
   `)
   return (rows as unknown as Array<{ code: string; equivalent: string }>).map(
     (r) => ({ code: r.code, equivalent: r.equivalent })

@@ -104,8 +104,26 @@ type AosKind =
  * "other". The original label is preserved separately for display.
  */
 function classifyAosRelationship(label: string): AosKind {
-  const l = label.toLowerCase();
-  if (l.includes("extended major")) return "extended_major";
+  // Collapse whitespace runs before matching. Monash's titles contain
+  // stray double spaces — "APAC  - Psychology extended  major" is real
+  // — and an exact "extended major" test misses them, which is how a
+  // genuine extended major came to be the *only* thing A2000 called a
+  // major ("psychology is the only major", feedback #66/#74/#70).
+  const l = label.toLowerCase().replace(/\s+/g, " ").trim();
+
+  // A container can list both kinds at once: 2022-2025 A2000 uses
+  // "Part A. Arts listed majors and extended major" for 26-28 areas
+  // that 2026 splits into "Part A. Major studies" plus one separate
+  // extended major. Testing for "extended major" first labelled the
+  // whole list extended, inverting the course. When both appear, the
+  // plain (plural) listing is the container's subject and the extended
+  // one is the aside, so the bulk are majors — which is exactly what
+  // 2026 resolves them to, code for code.
+  if (l.includes("extended major")) {
+    const withoutExtended = l.replaceAll("extended major", " ");
+    if (withoutExtended.includes("major")) return "major";
+    return "extended_major";
+  }
   if (l.includes("specialisation") || l.includes("specialization") || l.includes("specialist"))
     return "specialisation";
   if (l.includes("minor")) return "minor";
