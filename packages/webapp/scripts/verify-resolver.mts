@@ -43,6 +43,8 @@ const CASES: ReadonlyArray<[code: string, year: string, why: string]> = [
   ["L3005", "2026", "cross-component prohibition: BTC1110 vs compulsory LAW2102"],
   ["0047", "2026", "research program: no tree, no data at all"],
   ["C6001", "2026", "groups but zero AoS"],
+  ["A2000", "2022", "majors vs extended majors in one container (was inverted)"],
+  ["A2000", "2026", "same course, the year Monash split that container"],
 ]
 
 const snapshotPath = resolve(
