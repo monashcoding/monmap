@@ -380,3 +380,62 @@ test("a padded requisite code resolves to the same ref as its clean twin", () =>
   })
   assert.deepEqual(padded, clean)
 })
+
+/* ------------------------------------------------------------------ *
+ * Majors vs extended majors.
+ *
+ * A2000 was inverted in every year but 2026: 1 major and 27-29
+ * extended majors in 2022-2025, against 29 majors and 1 extended major
+ * in 2026 — for the same AoS codes. Two separate defects, both
+ * reachable from the real corpus labels below, and together they are
+ * feedback #66/#74/#70 ("Arts majors and extended majors are swapped;
+ * psychology is the only major").
+ * ------------------------------------------------------------------ */
+
+function aosRef(label: string, code = "ANTHROPL11") {
+  const structure = {
+    container: [
+      { title: label, relationship: [{ academic_item_code: code }] },
+    ],
+  }
+  return extractCourseAosRefs("2022", "A2000", structure, new Set([code]))[0]!
+}
+
+test("a container listing both kinds classifies as major, not extended", () => {
+  // The real 2022-2025 A2000 label. 2026 splits the same codes into
+  // "Part A. Major studies", so major is the verdict this must reach.
+  assert.equal(
+    aosRef("Part A. Arts listed majors and extended major").kind,
+    "major"
+  )
+})
+
+test("a container naming only an extended major still classifies extended", () => {
+  assert.equal(aosRef("European languages extended major").kind, "extended_major")
+  assert.equal(aosRef("Science extended majors").kind, "extended_major")
+})
+
+test("stray double spaces no longer defeat the extended-major match", () => {
+  // Verbatim from the corpus, double spaces and all. This used to fall
+  // through to plain "major" — making a genuine extended major the only
+  // thing A2000 called a major.
+  assert.equal(
+    aosRef("APAC  - Psychology extended  major").kind,
+    "extended_major"
+  )
+})
+
+test("the 2026 spelling is unaffected", () => {
+  assert.equal(aosRef("Part A. Major studies").kind, "major")
+})
+
+test("minors, electives and specialisations are untouched by the change", () => {
+  assert.equal(aosRef("Engineering minors").kind, "minor")
+  assert.equal(aosRef("Arts elective units").kind, "elective")
+  assert.equal(aosRef("Discipline elective studies").kind, "elective")
+  assert.equal(aosRef("Engineering specialisations").kind, "specialisation")
+})
+
+test("leading and trailing whitespace is trimmed before matching", () => {
+  assert.equal(aosRef("  Part A. Major studies  ").kind, "major")
+})
