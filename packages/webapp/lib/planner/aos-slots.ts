@@ -32,6 +32,18 @@ export interface AosSlot {
   options: PlannerAreaOfStudy[]
   /** Fixed-role keys consulted (in order) when `key` itself is unset. */
   legacyKeys: string[]
+  /**
+   * The container title that distinguishes this slot from its siblings
+   * ("Clayton option", "Part D. Applied studies"). Present only on
+   * slots that have siblings to be distinguished from.
+   */
+  subLabel?: string
+  /**
+   * The label to use when `subLabel` carries no information the student
+   * needs — e.g. it names a campus they have already chosen. Falls back
+   * to the component plus the kind ("Computer Science specialisation").
+   */
+  genericLabel?: string
 }
 
 const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
@@ -195,6 +207,10 @@ function specialisationSlots(
         label: multiGroup ? `${cleaned} specialisation` : "Specialisation",
         options: g.options,
         legacyKeys,
+        subLabel: g.subLabel,
+        // No component name to fall back on here, so the bare kind is
+        // the most this slot can say once its campus qualifier goes.
+        genericLabel: KIND_LABEL.specialisation,
       }
     }
     const componentLabel = g.options[0]?.componentLabel
@@ -211,6 +227,8 @@ function specialisationSlots(
           : `${cleanedComponent} specialisation`,
       options: g.options,
       legacyKeys,
+      subLabel: g.subLabel,
+      genericLabel: `${cleanedComponent} specialisation`,
     }
   })
 }

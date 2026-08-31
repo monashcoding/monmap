@@ -5,6 +5,7 @@ import {
   availableCampuses,
   courseForCampus,
   effectiveScope,
+  isCampusOnlyLabel,
   campusTokens,
   isOutOfCampusScope,
   optionsForCampus,
@@ -357,4 +358,48 @@ test("REGRESSION: the campus vocabulary must be read before narrowing", () => {
   assert.deepEqual(availableCampuses(courseForCampus(c, "Clayton")), [
     "Clayton",
   ])
+})
+
+/* ------------------------------------------------------------------ *
+ * Slot headings that name only a campus.
+ *
+ * E3010's 2025 Computer Science pickers are titled "Clayton option"
+ * and "Malaysia option"; 2026 titles the same pick "Part D. Applied
+ * studies". Once a campus is chosen, "Clayton option" tells the
+ * student where, right after they said Clayton.
+ * ------------------------------------------------------------------ */
+
+test("a heading that is only a campus plus filler is campus-only", () => {
+  const known = ["Clayton", "Malaysia", "Caulfield"]
+  for (const l of [
+    "Clayton option",
+    "Malaysia options",
+    "Clayton offerings",
+    "Malaysia only",
+    "Clayton",
+  ]) {
+    assert.ok(isCampusOnlyLabel(l, known), l)
+  }
+})
+
+test("a real title keeps its name even when it mentions a campus", () => {
+  const known = ["Clayton", "Malaysia"]
+  for (const l of [
+    "Part D. Applied studies",
+    "Part C. Specialist discipline knowledge",
+    "Clayton engineering design specialisations",
+    "Advanced studies in Malaysia and beyond",
+  ]) {
+    assert.ok(!isCampusOnlyLabel(l, known), l)
+  }
+})
+
+test("campuses the course doesn't demonstrate can't trigger it", () => {
+  assert.ok(!isCampusOnlyLabel("Clayton option", ["Malaysia"]))
+  assert.ok(!isCampusOnlyLabel("Clayton option", []))
+})
+
+test("no sub-label is not campus-only", () => {
+  assert.ok(!isCampusOnlyLabel(undefined, ["Clayton"]))
+  assert.ok(!isCampusOnlyLabel("", ["Clayton"]))
 })

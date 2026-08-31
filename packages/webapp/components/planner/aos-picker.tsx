@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import type { AosSlot } from "@/lib/planner/aos-slots"
 import {
   MAX_PICKS_PER_SLOT,
   computeAosSlotsWithRepeats,
@@ -20,7 +21,11 @@ import {
   repeatSlotKey,
   resolveSlotSelection,
 } from "@/lib/planner/aos-slots"
-import { isOutOfCampusScope, optionsForCampus } from "@/lib/planner/campus"
+import {
+  isCampusOnlyLabel,
+  isOutOfCampusScope,
+  optionsForCampus,
+} from "@/lib/planner/campus"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
@@ -39,6 +44,36 @@ export function AoSPicker() {
   // Repeat slots ("major#2") appear one at a time as the student fills
   // the one before — see lib/planner/aos-slots.ts.
   const slots = computeAosSlotsWithRepeats(course, state.selectedAos)
+
+  // Slots whose heading names only a campus lose that qualifier once a
+  // campus is chosen — but only if the shorter name stays unique, or
+  // two pickers would end up sharing a title.
+  const visibleLabels = new Map<string, number>()
+  if (state.campus) {
+    const shown = slots.filter(
+      (s) =>
+        optionsForCampus(
+          s.options,
+          state.campus,
+          resolveSlotSelection(state.selectedAos, s),
+          campuses
+        ).length > 0
+    )
+    for (const s of shown) {
+      const generic =
+        s.genericLabel && isCampusOnlyLabel(s.subLabel, campuses)
+          ? s.genericLabel
+          : s.label
+      visibleLabels.set(generic, (visibleLabels.get(generic) ?? 0) + 1)
+    }
+  }
+
+  const labelFor = (slot: AosSlot, counts: Map<string, number>): string => {
+    if (!state.campus) return slot.label
+    if (!slot.genericLabel || !isCampusOnlyLabel(slot.subLabel, campuses))
+      return slot.label
+    return counts.get(slot.genericLabel) === 1 ? slot.genericLabel : slot.label
+  }
   if (slots.length === 0 && campuses.length === 0) return null
 
   return (
@@ -64,6 +99,7 @@ export function AoSPicker() {
           current,
           campuses
         )
+        const label = labelFor(slot, visibleLabels)
         // A slot whose options are entirely other-campus has nothing to
         // offer — an empty dropdown headed "Clayton options
         // specialisation" is worse than no dropdown at all.
@@ -71,7 +107,7 @@ export function AoSPicker() {
         return (
           <RoleSelect
             key={slot.key}
-            label={slot.label}
+            label={label}
             // Filtered to the chosen campus, but never dropping the
             // student's own pick — see lib/planner/campus.ts.
             options={options}
