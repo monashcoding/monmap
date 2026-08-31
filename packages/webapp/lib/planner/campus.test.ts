@@ -334,3 +334,27 @@ test("without knownCampuses the fallback is inert — old behaviour preserved", 
   const opts = [labelled("CLAY", "Clayton options")]
   assert.equal(optionsForCampus(opts, "Malaysia").length, 1)
 })
+
+test("REGRESSION: the campus vocabulary must be read before narrowing", () => {
+  // Reported bug: after picking Malaysia the student could only switch
+  // back to "All campuses" — Clayton had vanished from the dropdown.
+  // Cause: availableCampuses was being fed the *narrowed* course, which
+  // by definition no longer contains other-campus groups. The context
+  // now derives it from the raw course; this pins why.
+  const c = course({
+    courseRequirements: [
+      group("Core - Clayton", "Clayton"),
+      group("Core - Malaysia", "Malaysia"),
+    ],
+  })
+  assert.deepEqual(availableCampuses(c), ["Clayton", "Malaysia"])
+
+  // Narrowing is lossy — this is the trap, asserted so nobody re-wires
+  // the picker to the narrowed course.
+  assert.deepEqual(availableCampuses(courseForCampus(c, "Malaysia")), [
+    "Malaysia",
+  ])
+  assert.deepEqual(availableCampuses(courseForCampus(c, "Clayton")), [
+    "Clayton",
+  ])
+})

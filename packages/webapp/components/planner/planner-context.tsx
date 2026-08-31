@@ -26,7 +26,7 @@ import {
   saveMyPlanAction,
 } from "@/app/actions"
 import type { PlanSummary } from "@/lib/db/queries"
-import { courseForCampus } from "@/lib/planner/campus"
+import { availableCampuses, courseForCampus } from "@/lib/planner/campus"
 import { distribute } from "@/lib/planner/distribute"
 import { isFullYearUnit } from "@/lib/planner/full-year"
 import {
@@ -94,6 +94,14 @@ export interface PlannerContextValue {
 
   courses: PlannerCourse[]
   course: PlannerCourseWithAoS | null
+  /**
+   * Campuses this course scopes anything by, read from the course
+   * *before* it is narrowed. Deriving it from the narrowed course
+   * instead is self-referential: picking Malaysia drops every
+   * Clayton-scoped group, Clayton disappears from the vocabulary, and
+   * the student can no longer switch back.
+   */
+  campuses: string[]
   /** Years that actually exist in the database. */
   availableYears: string[]
 
@@ -923,6 +931,13 @@ export function PlannerProvider({
     [course, state.campus]
   )
 
+  // From the raw course, never the narrowed one — see `campuses` on
+  // PlannerContextValue.
+  const campuses = useMemo(
+    () => (course ? availableCampuses(course) : []),
+    [course]
+  )
+
   // Memoize the context value so a fresh object identity is only
   // produced when one of the underlying state slices actually changes.
   // Every callback below is already wrapped in useCallback and every
@@ -946,6 +961,7 @@ export function PlannerProvider({
       deletePlan,
       courses,
       course: scopedCourse,
+      campuses,
       availableYears,
       units: unitsMap,
       offerings: offeringsMap,
@@ -982,6 +998,7 @@ export function PlannerProvider({
       deletePlan,
       courses,
       scopedCourse,
+      campuses,
       availableYears,
       unitsMap,
       offeringsMap,

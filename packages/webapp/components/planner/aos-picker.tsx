@@ -18,11 +18,7 @@ import {
   legacyKeyServing,
   resolveSlotSelection,
 } from "@/lib/planner/aos-slots"
-import {
-  availableCampuses,
-  isOutOfCampusScope,
-  optionsForCampus,
-} from "@/lib/planner/campus"
+import { isOutOfCampusScope, optionsForCampus } from "@/lib/planner/campus"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
@@ -35,11 +31,10 @@ import { usePlanner } from "./planner-context"
  * independent picks (see lib/planner/aos-slots.ts).
  */
 export function AoSPicker() {
-  const { course, state, dispatch } = usePlanner()
+  const { course, campuses, state, dispatch } = usePlanner()
   if (!course) return null
 
   const slots = computeAosSlots(course)
-  const campuses = availableCampuses(course)
   if (slots.length === 0 && campuses.length === 0) return null
 
   return (
