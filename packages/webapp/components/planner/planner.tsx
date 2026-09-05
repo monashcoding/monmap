@@ -17,6 +17,7 @@ import { SaveStatusBadge } from "./save-status-badge"
 import { LeftSidebar } from "./left-sidebar"
 import { PlanGrid, PlannerDnd } from "./plan-grid"
 import { PlannerProvider, type PlannerCurrentUser } from "./planner-context"
+import { PrintSheet } from "./print-sheet"
 import { RightSidebar } from "./right-sidebar"
 import { SummaryBar } from "./summary-bar"
 import { WamProvider } from "./wam-context"
@@ -65,21 +66,28 @@ export function Planner(props: PlannerProps) {
         signedIn={props.currentUser !== null}
         initialGrades={props.initialGrades}
       >
-        <AppHeader>
-          <SaveStatusBadge />
-        </AppHeader>
+        {/* `contents` keeps the screen layout flat inside <main>'s flex
+            column; `print:hidden` swaps the whole interactive app out
+            for <PrintSheet /> on paper. */}
+        <div className="contents print:hidden">
+          <AppHeader>
+            <SaveStatusBadge />
+          </AppHeader>
 
-        <PlannerDnd>
-          <div className="grid flex-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="flex min-w-0 flex-col gap-3 sm:gap-5">
-              <LeftSidebar />
-              <SummaryBar />
-              <PlanGrid />
+          <PlannerDnd>
+            <div className="grid flex-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="flex min-w-0 flex-col gap-3 sm:gap-5">
+                <LeftSidebar />
+                <SummaryBar />
+                <PlanGrid />
+              </div>
+
+              <RightSidebar />
             </div>
+          </PlannerDnd>
+        </div>
 
-            <RightSidebar />
-          </div>
-        </PlannerDnd>
+        <PrintSheet />
       </WamProvider>
 
       <Toaster position="bottom-right" richColors closeButton />

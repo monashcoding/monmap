@@ -11,117 +11,117 @@
  */
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-warning: oklch(0.72 0.16 70);
-    --color-warning-foreground: oklch(0.38 0.10 55);
-    --color-warning-soft: oklch(0.93 0.10 88);
-    --color-success: oklch(0.62 0.14 155);
-    --color-success-foreground: oklch(0.34 0.09 155);
-    --color-success-soft: oklch(0.93 0.08 160);
-    --color-info: oklch(0.60 0.16 245);
-    --color-info-foreground: oklch(0.32 0.11 245);
-    --color-info-soft: oklch(0.93 0.07 245);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-warning: oklch(0.72 0.16 70);
+  --color-warning-foreground: oklch(0.38 0.1 55);
+  --color-warning-soft: oklch(0.93 0.1 88);
+  --color-success: oklch(0.62 0.14 155);
+  --color-success-foreground: oklch(0.34 0.09 155);
+  --color-success-soft: oklch(0.93 0.08 160);
+  --color-info: oklch(0.6 0.16 245);
+  --color-info-foreground: oklch(0.32 0.11 245);
+  --color-info-soft: oklch(0.93 0.07 245);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
-    /* Brand anchors. Used directly by components that opt into the
+  /* Brand anchors. Used directly by components that opt into the
        Monash palette (the app icon, the Course Progression Guide
        pill, the rails on FIT unit cards). */
-    --monash-yellow: #ffe330;
-    --monash-yellow-ink: #1d1300;
-    --monash-purple: #5b2d90;
-    --monash-purple-deep: #3a1a63;
-    --monash-purple-soft: #f4eef9;
+  --monash-yellow: #ffe330;
+  --monash-yellow-ink: #1d1300;
+  --monash-purple: #5b2d90;
+  --monash-purple-deep: #3a1a63;
+  --monash-purple-soft: #f4eef9;
 
-    /* Semantic tokens — what shadcn/base-ui pull from. */
-    --background: oklch(0.995 0.004 300);   /* paper white, a drop of lavender */
-    --foreground: oklch(0.17 0.02 295);     /* near-black, purple undertone */
+  /* Semantic tokens — what shadcn/base-ui pull from. */
+  --background: oklch(0.995 0.004 300); /* paper white, a drop of lavender */
+  --foreground: oklch(0.17 0.02 295); /* near-black, purple undertone */
 
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.17 0.02 295);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.02 295);
 
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.17 0.02 295);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.02 295);
 
-    --primary: var(--monash-yellow);
-    --primary-foreground: var(--monash-yellow-ink);
+  --primary: var(--monash-yellow);
+  --primary-foreground: var(--monash-yellow-ink);
 
-    /* Secondary = soft lavender surface — used for chips, badges,
+  /* Secondary = soft lavender surface — used for chips, badges,
        and the low-contrast card zebra rows. */
-    --secondary: var(--monash-purple-soft);
-    --secondary-foreground: var(--monash-purple-deep);
+  --secondary: var(--monash-purple-soft);
+  --secondary-foreground: var(--monash-purple-deep);
 
-    --muted: oklch(0.965 0.01 300);
-    --muted-foreground: oklch(0.50 0.03 295);
+  --muted: oklch(0.965 0.01 300);
+  --muted-foreground: oklch(0.5 0.03 295);
 
-    /* Accent = Monash purple. This is the hover/press colour for
+  /* Accent = Monash purple. This is the hover/press colour for
        buttons, combobox items, and interactive list rows. Yellow
        stays as the *brand* mark; purple is the *interaction* mark. */
-    --accent: var(--monash-purple);
-    --accent-foreground: #ffffff;
+  --accent: var(--monash-purple);
+  --accent-foreground: #ffffff;
 
-    --destructive: oklch(0.58 0.22 27);
+  --destructive: oklch(0.58 0.22 27);
 
-    --border: oklch(0.92 0.015 300);
-    --input: oklch(0.94 0.01 300);
-    --ring: var(--monash-purple);
+  --border: oklch(0.92 0.015 300);
+  --input: oklch(0.94 0.01 300);
+  --ring: var(--monash-purple);
 
-    /* Chart palette — purple-leaning so data viz stays on-brand. */
-    --chart-1: #5b2d90;
-    --chart-2: #7b4ab5;
-    --chart-3: #a57fd4;
-    --chart-4: #ffe330;
-    --chart-5: #c99c00;
+  /* Chart palette — purple-leaning so data viz stays on-brand. */
+  --chart-1: #5b2d90;
+  --chart-2: #7b4ab5;
+  --chart-3: #a57fd4;
+  --chart-4: #ffe330;
+  --chart-5: #c99c00;
 
-    --radius: 0.625rem;
+  --radius: 0.625rem;
 
-    --sidebar: oklch(0.985 0.008 300);
-    --sidebar-foreground: oklch(0.17 0.02 295);
-    --sidebar-primary: var(--monash-yellow);
-    --sidebar-primary-foreground: var(--monash-yellow-ink);
-    --sidebar-accent: oklch(0.95 0.015 300);
-    --sidebar-accent-foreground: var(--monash-purple-deep);
-    --sidebar-border: oklch(0.92 0.015 300);
-    --sidebar-ring: var(--monash-purple);
+  --sidebar: oklch(0.985 0.008 300);
+  --sidebar-foreground: oklch(0.17 0.02 295);
+  --sidebar-primary: var(--monash-yellow);
+  --sidebar-primary-foreground: var(--monash-yellow-ink);
+  --sidebar-accent: oklch(0.95 0.015 300);
+  --sidebar-accent-foreground: var(--monash-purple-deep);
+  --sidebar-border: oklch(0.92 0.015 300);
+  --sidebar-ring: var(--monash-purple);
 }
 
 /*
@@ -134,7 +134,7 @@
 @utility shadow-card {
   box-shadow:
     0 1px 0 rgba(17, 12, 30, 0.02),
-    0 4px 10px -4px rgba(17, 12, 30, 0.10),
+    0 4px 10px -4px rgba(17, 12, 30, 0.1),
     0 6px 14px -8px rgba(89, 45, 144, 0.16);
 }
 
@@ -144,7 +144,8 @@
  * to catch the eye; any longer feels like an alarm.
  */
 @keyframes validation-flash {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
     transform: scale(1);
   }
@@ -159,8 +160,8 @@
 
 /* Selection tint — picks up the brand yellow instead of system blue. */
 ::selection {
-    background: color-mix(in oklch, var(--monash-yellow) 60%, transparent);
-    color: var(--monash-yellow-ink);
+  background: color-mix(in oklch, var(--monash-yellow) 60%, transparent);
+  color: var(--monash-yellow-ink);
 }
 
 /*
@@ -170,22 +171,31 @@
  * as "shadcn default on white" without tinting any actual surface.
  */
 body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -10;
-    background:
-        radial-gradient(60rem 40rem at -10% -10%, color-mix(in oklch, var(--monash-yellow) 25%, transparent) 0%, transparent 55%),
-        radial-gradient(50rem 50rem at 110% 20%, color-mix(in oklch, var(--monash-purple) 18%, transparent) 0%, transparent 60%),
-        linear-gradient(180deg, var(--monash-purple-soft) 0%, #ffffff 60%);
-    pointer-events: none;
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  background:
+    radial-gradient(
+      60rem 40rem at -10% -10%,
+      color-mix(in oklch, var(--monash-yellow) 25%, transparent) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      50rem 50rem at 110% 20%,
+      color-mix(in oklch, var(--monash-purple) 18%, transparent) 0%,
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--monash-purple-soft) 0%, #ffffff 60%);
+  pointer-events: none;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  html, body {
+  html,
+  body {
     color-scheme: light;
   }
   body {
@@ -194,5 +204,34 @@ body::before {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/*
+ * Print: the interactive planner is hidden by `print:hidden` in
+ * planner.tsx and <PrintSheet /> takes over, so all that is left here
+ * is the page itself — kill the decorative gradient, the on-screen
+ * padding <main> reserves for the mobile FAB, and any live toast.
+ */
+@page {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
+@media print {
+  body::before {
+    display: none;
+  }
+  body {
+    background: #fff;
+  }
+  main {
+    max-width: none;
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+  }
+  [data-sonner-toaster] {
+    display: none !important;
   }
 }
