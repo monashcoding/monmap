@@ -15,7 +15,7 @@
     "years": [
       "2027"
     ],
-    "reason": "Part C. Practice studies says: 'You must complete FIT2119 and either the AI in practice project units (18 credit points) or the Industry-based Learning placement units (18 credit points).' FIT2119 appears only in that prose, so the extractor cannot see it. The two 18cp streams are alternatives, but the budget math treats each as mandatory (two subs fall below the three-sub choice test), which auto-loaded both. IBL placement is also by selection only (Part C prose). https://handbook.monash.edu/2027/courses/C2005",
+    "reason": "Part C. Practice studies says: 'You must complete FIT2119 and either the AI in practice project units (18 credit points) or the Industry-based Learning placement units (18 credit points).' FIT2119 appears only in that prose, so the extractor cannot see it. The extractor reads the two 18cp streams as a two-way choice from the same prose and does not auto-load either. IBL placement is also by selection only (Part C prose). https://handbook.monash.edu/2027/courses/C2005",
     "ops": [
       {
         "op": "addGroup",
@@ -27,16 +27,6 @@
           ],
           "autoLoad": true
         }
-      },
-      {
-        "op": "setAutoLoad",
-        "groupingLike": "industry-based learning placement units",
-        "autoLoad": false
-      },
-      {
-        "op": "setAutoLoad",
-        "groupingLike": "ai in practice project units",
-        "autoLoad": false
       }
     ]
   },
@@ -56,30 +46,6 @@
         "op": "setAutoLoad",
         "groupingLike": "core studies",
         "autoLoad": true
-      }
-    ]
-  },
-  {
-    "course": "C3001",
-    "years": [
-      "2027"
-    ],
-    "reason": "Part D. Research studies says: 'You must complete the following unit and either the Computing research project or Computing in practice: Advanced project.' The unit is FIT5125. The two 12cp projects are alternatives, but the budget math treats each as mandatory (two subs fall below the three-sub choice test) and auto-loaded both, while FIT5125 itself was not auto-loaded. https://handbook.monash.edu/2027/courses/C3001",
-    "ops": [
-      {
-        "op": "setAutoLoad",
-        "groupingLike": "part d. research studies",
-        "autoLoad": true
-      },
-      {
-        "op": "setAutoLoad",
-        "groupingLike": "computing research project",
-        "autoLoad": false
-      },
-      {
-        "op": "setAutoLoad",
-        "groupingLike": "computing in practice: advanced project",
-        "autoLoad": false
       }
     ]
   }

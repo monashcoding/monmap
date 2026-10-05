@@ -248,6 +248,204 @@ test("requirement groups: choice container flattens to a single never-auto-load 
   )
 })
 
+test("requirement groups: choice container with prose still flattens when it has ≥ 3 subs", () => {
+  // The prose tiebreak only reads two-sub containers. A three-sub
+  // pick-one-of-N flattens exactly as before, wording or not.
+  const structure = {
+    container: [
+      {
+        title: "Pick one part",
+        description: "You must complete either A, B or C",
+        credit_points: "12",
+        container: [
+          { title: "A", credit_points: "12", relationship: [subjectLeaf("U1", 12)] },
+          { title: "B", credit_points: "12", relationship: [subjectLeaf("U2", 12)] },
+          { title: "C", credit_points: "12", relationship: [subjectLeaf("U3", 12)] },
+        ],
+      },
+    ],
+  }
+  const groups = extractRequirementGroups(structure)
+  assert.equal(groups.length, 1)
+  assert.deepEqual(groups[0]!.options, ["U1", "U2", "U3"])
+  assert.equal(extractEmbeddedSpecialisations(structure).length, 3)
+})
+
+/* ------------------------------------------------------------------ *
+ * Two-sub "either A or B" containers: the prose tiebreak
+ * ------------------------------------------------------------------ */
+
+/**
+ * Minimised 2027 C3001 Part D: 18cp = FIT5125 (6cp leaf) plus one of
+ * two 12cp project pairs. The budget test alone cannot tell this from
+ * a "do both" pair (24 > 18, each ≥ 9).
+ */
+const researchStudies = (description: string) => ({
+  container: [
+    {
+      title: "Part D. Research studies",
+      description,
+      credit_points: "18",
+      relationship: [subjectLeaf("FIT5125", 6)],
+      container: [
+        {
+          title: "Computing research project",
+          description: "You must complete the following units",
+          credit_points: "12",
+          relationship: [subjectLeaf("FIT4045", 6, 0), subjectLeaf("FIT4046", 6, 100)],
+        },
+        {
+          title: "Computing in practice: Advanced project",
+          description: "You must complete the following units",
+          credit_points: "12",
+          relationship: [subjectLeaf("FIT4048", 6, 0), subjectLeaf("FIT4049", 6, 100)],
+        },
+      ],
+    },
+  ],
+})
+
+test("two-sub choice: 'either … or' prose makes the pair a choice (C3001 2027 Part D)", () => {
+  const structure = researchStudies(
+    "Note: To progress to Honours you are required to maintain at least a distinction average.<br /><br />You must complete the following unit and either the Computing research project or Computing in practice: Advanced project."
+  )
+  const groups = extractRequirementGroups(structure)
+  const byTitle = new Map(groups.map((g) => [g.grouping, g]))
+  // The parent's own leaf keeps its group and fits the budget left
+  // after one alternative (18 − 12 = 6).
+  assert.equal(byTitle.get("Part D. Research studies")?.autoLoad, true)
+  assert.deepEqual(byTitle.get("Part D. Research studies")?.options, ["FIT5125"])
+  // Each alternative stays visible under its own title, never auto-loaded.
+  assert.equal(byTitle.get("Computing research project")?.autoLoad, false)
+  assert.equal(byTitle.get("Computing in practice: Advanced project")?.autoLoad, false)
+  assert.deepEqual(
+    pickDefaultUnits(groups).map((u) => u.code),
+    ["FIT5125"]
+  )
+  // The structured picker offers the pair.
+  const specs = extractEmbeddedSpecialisations(structure)
+  assert.deepEqual(
+    specs.map((s) => s.title),
+    ["Computing research project", "Computing in practice: Advanced project"]
+  )
+  assert.equal(specs[0]!.parentTitle, "Part D. Research studies")
+})
+
+test("two-sub choice: 'one of the following options' over two full-budget subs", () => {
+  const structure = {
+    container: [
+      {
+        title: "Part C. Advanced practice",
+        description: "You must complete one of the following options",
+        credit_points: "24",
+        container: [
+          { title: "a. Minor thesis research option", credit_points: "24", relationship: [subjectLeaf("FIT5126", 12), subjectLeaf("FIT5127", 12, 1)] },
+          { title: "b. Industry experience option", credit_points: "24", relationship: [subjectLeaf("FIT5120", 12), subjectLeaf("FIT5122", 12, 1)] },
+        ],
+      },
+    ],
+  }
+  assert.equal(extractEmbeddedSpecialisations(structure).length, 2)
+  assert.deepEqual(pickDefaultUnits(extractRequirementGroups(structure)), [])
+})
+
+test("two-sub choice: the same pair without choice wording stays mandatory", () => {
+  const structure = researchStudies("You must complete the following units")
+  const groups = extractRequirementGroups(structure)
+  const byTitle = new Map(groups.map((g) => [g.grouping, g]))
+  assert.equal(byTitle.get("Computing research project")?.autoLoad, true)
+  assert.equal(byTitle.get("Computing in practice: Advanced project")?.autoLoad, true)
+  assert.deepEqual(extractEmbeddedSpecialisations(structure), [])
+})
+
+test("two-sub choice: E3001 2022/2023 Part A prose ('the two … units and any required …') stays mandatory", () => {
+  const structure = {
+    container: [
+      {
+        title: "Part A. Engineering fundamentals and foundational skills",
+        description:
+          "You must complete the two engineering fundamentals units and any required foundational skills units.",
+        credit_points: "12",
+        container: [
+          { title: "Engineering fundamentals", credit_points: "12", relationship: [subjectLeaf("ENG1011", 6), subjectLeaf("ENG1012", 6, 1)] },
+          { title: "Foundational skills", credit_points: "12", relationship: [subjectLeaf("ENG1090", 6), subjectLeaf("PHS1001", 6, 1)] },
+        ],
+      },
+    ],
+  }
+  assert.deepEqual(extractEmbeddedSpecialisations(structure), [])
+})
+
+test("two-sub choice: wording that is not a pick-one does not count", () => {
+  const pair = (description: string, titles = ["Option 1", "Option 2"]) => ({
+    container: [
+      {
+        title: "Part C",
+        description,
+        credit_points: "24",
+        container: titles.map((t, i) => ({
+          title: t,
+          credit_points: "24",
+          relationship: [subjectLeaf(`U${i}`, 24)],
+        })),
+      },
+    ],
+  })
+  const fires = (s: unknown) => extractEmbeddedSpecialisations(s).length > 0
+  // Sanity: the positive form fires.
+  assert.equal(fires(pair("You must complete either Option 1 or Option 2")), true)
+  // Both allowed (A6004 2020).
+  assert.equal(fires(pair("You must complete either Option 1 or 2, or a combination of both")), false)
+  // "at least one" is not exclusive (S2000 Part B).
+  assert.equal(fires(pair("You must complete at least one of the following options")), false)
+  // A count of credit points, not alternatives (E3002 2023 Part A).
+  assert.equal(fires(pair("You complete either 12, 18 or 24 credit points, depending on whether you require foundation skills.")), false)
+  // "one of" a unit list refers to the parent's leaves (ACCOUNTG05).
+  assert.equal(fires(pair("If you are considering BFC2140 or BFX2140, you may only choose to complete one of the two units.")), false)
+  // No verb: a prerequisite note, not a requirement.
+  assert.equal(fires(pair("You may have satisfied this by successfully completing either ECC1550 or ETC1000.")), false)
+  // "or" without "either" is left alone (strict).
+  assert.equal(fires(pair("You must complete the Coursework pathway or Research pathway")), false)
+  // A note elsewhere does not veto the sentence that states the choice.
+  assert.equal(fires(pair("You must complete one of the following options. Note: you could replace MTH1030 and/or MTH2010 with their advanced versions.")), true)
+  // Campus variants are scope, not choice (E3001 Parts C-E).
+  assert.equal(fires(pair("You must complete one of the following specialisations in your home campus.", ["Malaysia", "Clayton"])), false)
+  // Cohort branches keep their labels (MTHSTAT07 2026).
+  assert.equal(fires(pair("You must complete 12 credit points from one of the following sequence options.", ["Level 1 sequence", "Double degree with engineering option"])), false)
+})
+
+test("two-sub choice: a pair yields to a picker nested inside it (M6001)", () => {
+  // "either the Research stream or Coursework stream", with the
+  // coursework stream itself a pick-one-of-3 specialisation list.
+  const structure = {
+    container: [
+      {
+        title: "Part B. Advanced specialist study",
+        description: "You must complete either the Research stream or Coursework stream as detailed below.",
+        credit_points: "48",
+        container: [
+          { title: "Research", credit_points: "48", relationship: [subjectLeaf("MAP5000", 24), subjectLeaf("MAP5010", 24, 1)] },
+          {
+            title: "Coursework",
+            credit_points: "48",
+            container: [
+              { title: "Midwifery", credit_points: "48", relationship: [subjectLeaf("MID1", 48)] },
+              { title: "Paramedic", credit_points: "48", relationship: [subjectLeaf("PAR1", 48)] },
+              { title: "Radiation therapy", credit_points: "48", relationship: [subjectLeaf("RAD1", 48)] },
+            ],
+          },
+        ],
+      },
+    ],
+  }
+  assert.deepEqual(
+    extractEmbeddedSpecialisations(structure).map((s) => s.title),
+    ["Midwifery", "Paramedic", "Radiation therapy"]
+  )
+  // The walker still treats the pair as alternatives: nothing auto-loads.
+  assert.deepEqual(pickDefaultUnits(extractRequirementGroups(structure)), [])
+})
+
 test("pickDefaultUnits: drops choice groups, keeps fully-mandatory ones", () => {
   const groups = [
     { grouping: "Core", options: ["U1", "U2"], required: 2 },

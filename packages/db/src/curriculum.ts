@@ -28,6 +28,9 @@
  *   2. **Pick-one-of-N containers** (e.g. S2000's Level 1 science
  *      sequences, 8 × 12cp under a 24cp budget) collapse into a
  *      single choice group over the union of their subject leaves.
+ *      **Two-way choices** ("either A or B", which needs the parent's
+ *      prose to confirm; see `isTwoWayChoice`) are walked instead,
+ *      with both alternatives on the uncertain path.
  *
  *   3. **Leaf-level choice** ("FIT1049 OR FIT1055"): for each leaf
  *      group, budget accumulation over ordered leaves decides
@@ -224,7 +227,11 @@ export function extractRequirementGroups(
       0
     )
     const subsAreChoice =
-      containerCp > 0 && isChoiceContainer(containerCp, competing)
+      containerCp > 0 && isChoiceContainer(n, containerCp, competing)
+    // Only pick-one-of-N (≥ 3 subs) flattens into one choice group. A
+    // two-way "either A or B" choice is walked instead, with both
+    // alternatives on the uncertain path (see the sub loop below).
+    const flattenChoice = subsAreChoice && competing.length >= 3
 
     // --- Direct subject leaves: emit as one requirement group
     const rels = n["relationship"]
@@ -335,7 +342,7 @@ export function extractRequirementGroups(
     )
     const umbrellaSub = fullBudgetSubs.length === 1 ? fullBudgetSubs[0] : null
 
-    if (subsAreChoice) {
+    if (flattenChoice) {
       const choiceSubs = [
         ...contributing,
         ...subs.filter(
@@ -410,8 +417,17 @@ export function extractRequirementGroups(
       // themselves can never be proven mandatory this way.
       const competes = competing.includes(subRec)
       const sumOthers = totalCompeting - (competes ? subCp : 0)
+      // A two-way choice proves neither alternative mandatory. Walking
+      // them (rather than flattening like pick-one-of-N) keeps each
+      // alternative visible as its own group under its own title, and
+      // keeps the parent's direct leaves in a separate group: C3001
+      // 2027 Part D's FIT5125 would otherwise share a key with the
+      // flattened choice group and merge into a "3 of 5" pool.
+      // `extractEmbeddedSpecialisations` offers the pair as a picker.
       const provenMandatory =
-        competes && (subRec === umbrellaSub || sumOthers < containerCp)
+        !subsAreChoice &&
+        competes &&
+        (subRec === umbrellaSub || sumOthers < containerCp)
       walk(
         sub,
         childAncestor,
@@ -582,24 +598,154 @@ function effectiveSiblingSubCp(container: unknown): number {
 
 /**
  * Pick-one-of-N sub-container shape shared by the requirement-group
- * walker and `extractEmbeddedSpecialisations`: at least three
- * contributing subs, each at least half the parent budget, together
- * exceeding it (so they cannot all be required simultaneously). See
- * the `extractEmbeddedSpecialisations` header for why ≥ 3, not ≥ 2.
+ * walker and `extractEmbeddedSpecialisations`. Two routes qualify:
+ *
+ * - **≥ 3 subs, numbers alone**: at least three contributing subs,
+ *   each at least half the parent budget, together exceeding it (so
+ *   they cannot all be required simultaneously).
+ * - **Exactly 2 subs, numbers plus prose**: the same budget test, and
+ *   the parent's own title/description says it is a choice ("either
+ *   … or", "one of the following"). See `isTwoWayChoice`.
+ *
+ * See the `extractEmbeddedSpecialisations` header for why two subs
+ * need the prose tiebreak.
  */
 function isChoiceContainer(
+  parent: Record<string, unknown>,
   parentCp: number,
   contributing: ReadonlyArray<Record<string, unknown>>
 ): boolean {
-  if (parentCp <= 0 || contributing.length < 3) return false
-  const total = contributing.reduce(
-    (acc, s) => acc + numeric(s["credit_points"]),
-    0
-  )
+  if (parentCp <= 0) return false
+  if (contributing.length >= 3)
+    return fitsChoiceBudget(parentCp, contributing)
+  return isTwoWayChoice(parent, parentCp)
+}
+
+function fitsChoiceBudget(
+  parentCp: number,
+  subs: ReadonlyArray<Record<string, unknown>>
+): boolean {
+  const total = subs.reduce((acc, s) => acc + numeric(s["credit_points"]), 0)
   return (
     total > parentCp &&
-    contributing.every((s) => numeric(s["credit_points"]) >= parentCp / 2)
+    subs.every((s) => numeric(s["credit_points"]) >= parentCp / 2)
   )
+}
+
+/**
+ * Two-sub tiebreak. The budget test alone cannot tell "do both" from
+ * "pick one" when there are only two subs (E3001 2022/2023 Part A is
+ * 12cp over two 12cp subs and means "do both"; C2005 2027 Part C is
+ * 24cp over two 18cp subs and means "pick one"). The handbook states
+ * the rule in the parent's prose, so the parent counts as a choice
+ * only when all of these hold:
+ *
+ * - the parent has exactly two cp-bearing subs and both hold subject
+ *   leaves. The pair is read off the parent itself, so the walker and
+ *   `extractEmbeddedSpecialisations` judge the same pair. Elective
+ *   pools count here, unlike in the walker's mandatory test: the
+ *   prose is what proves the choice ("either the Fastrack units or
+ *   Elective units"), and `FLEXIBLE_TITLE` also matches "Minor
+ *   thesis" (C6001 "either the Minor thesis research option or the
+ *   Industry experience option");
+ * - neither sub is a campus variant ("Malaysia" / "Clayton") or a
+ *   cohort branch ("Double degree with engineering option",
+ *   MTHSTAT07 2026 "Level 1 units"). Scope and degree-shape detection
+ *   already keep only the branch that applies to the student, so the
+ *   pair is not a pick for the student to make; as a choice, the
+ *   matching branch would stop auto-loading and the picker would
+ *   offer the other campus or cohort;
+ * - the pair passes the ≥ 3 route's budget test;
+ * - the parent's title or description has choice wording
+ *   (`hasChoiceProse`).
+ *
+ * The parent's title and `description` are the only container fields
+ * that carry prose in the 2020-2027 corpus (`preface` and `footnote`
+ * are always empty).
+ */
+function isTwoWayChoice(
+  parent: Record<string, unknown>,
+  parentCp: number
+): boolean {
+  const subs = Array.isArray(parent["container"])
+    ? (parent["container"] as unknown[])
+    : []
+  const pair = subs.filter(
+    (s): s is Record<string, unknown> =>
+      !!s &&
+      typeof s === "object" &&
+      numeric((s as Record<string, unknown>)["credit_points"]) > 0
+  )
+  if (pair.length !== 2) return false
+  for (const s of pair) {
+    if (!hasSubjectLeaf(s)) return false
+    const t = s["title"]
+    if (typeof t === "string" && (detectScope(t) || detectDegreeShape(t)))
+      return false
+  }
+  if (!fitsChoiceBudget(parentCp, pair)) return false
+  const title = typeof parent["title"] === "string" ? parent["title"] : ""
+  const description =
+    typeof parent["description"] === "string" ? parent["description"] : ""
+  return hasChoiceProse(`${title}. ${description}`)
+}
+
+/**
+ * Wording that makes a container's sub-containers alternatives. Every
+ * pattern needs a "complete" / "choose" / "select" / "undertake" verb
+ * in the same clause, so incidental uses don't count ("successfully
+ * completing either ECC1550 or …" in a prerequisite note, "If you have
+ * completed one of the following pairs …").
+ */
+const CHOICE_PROSE: RegExp[] = [
+  // "You must complete FIT2119 and either the AI in practice project
+  // units … or the Industry-based Learning placement units …",
+  // "You must complete the following units and either a. or b. below"
+  // "either" followed by a number counts credit points, not
+  // alternatives: E3002 2023 Part A "You complete either 12, 18 or 24
+  // credit points, depending on whether you require foundation
+  // skills" means fundamentals plus optional foundation units.
+  /\b(?:complete|choose|select|undertake)\b[^.;]{0,120}?\beither\b(?!\s*\d)[\s\S]{1,200}?\bor\b/i,
+  // "You must complete one of the following options", "12 credit
+  // points from one of the options below", "choose one of the
+  // specialisations". A unit noun after "one of" refers to the
+  // parent's own leaves ("one of the two units"), not its subs.
+  /\b(?:complete|choose|select|undertake)\b[^.;]{0,80}?\bone\s+of\s+(?!(?:(?:the|these)\s+)?(?:(?:following|two)\s+)?units?\b)\w/i,
+  // "You must complete Option 1 or Option 2 below"
+  /\b(?:complete|choose|select|undertake)\b[^.;]{0,60}?\boption\s*(?:1|one|a)\b[^.;]{0,60}?\bor\s+(?:option\s*)?(?:2|two|b)\b/i,
+]
+
+/**
+ * Wording that allows taking both alternatives, or more than one —
+ * not a pick-one ("either Option 1 or 2, or a combination of both",
+ * "at least one of the following majors"). Checked per sentence, so a
+ * note elsewhere in the description ("you could replace the units
+ * MTH1030 and/or MTH1035") does not veto a plain "one of the following
+ * options".
+ */
+const NOT_EXCLUSIVE_PROSE =
+  /\bat\s+least\s+one\b|\bor\s+both\b|\bcombination\b|\bone\s+or\s+more\b|\band\s*\/\s*or\b/i
+
+/**
+ * Sentence break: terminal punctuation after a word of two or more
+ * characters, then a capital. The two-character guard keeps list
+ * markers together ("either a. Research pathway or b. Coursework
+ * pathway").
+ */
+const SENTENCE_BREAK = /(?<=[A-Za-z0-9)]{2}[.!?])\s+(?=[A-Z])/
+
+function hasChoiceProse(raw: string): boolean {
+  const text = raw
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/\s+/g, " ")
+  return text
+    .split(SENTENCE_BREAK)
+    .some(
+      (sentence) =>
+        !NOT_EXCLUSIVE_PROSE.test(sentence) &&
+        CHOICE_PROSE.some((re) => re.test(sentence))
+    )
 }
 
 /**
@@ -718,26 +864,39 @@ export function extractUnitRefs(
  * if ≥ 3 non-zero sub-containers each have `cp ≥ parent.cp / 2` AND
  * the total subs CP exceeds parent CP, treat the parent as a "pick
  * one" choice and emit each sub as a separate `EmbeddedSpecialisation`.
+ * With exactly two such subs, the parent must also say so in its own
+ * prose (`isTwoWayChoice`).
  *
- * Why ≥ 3, not ≥ 2: when only two sub-containers each equal the
- * parent's CP, the math is ambiguous — the handbook could mean "pick
- * one" or "do both" depending on whether the author put the parent
- * budget at the per-component value or the total. We've observed both
- * patterns (E3001 2022/2023 Part A is the false-positive case;
- * masters specialisations are the true-choice case). When in doubt,
- * fall through to the standard requirement-group walker, which treats
- * them as mandatory — the user sees both, which beats silently hiding
- * one.
+ * Why two subs need prose: the budget test cannot tell "pick one" from
+ * "do both" when there are only two subs, because the author may have
+ * set the parent budget at the per-component value or at the total.
+ * Both readings occur. E3001 2022/2023 Part A (12cp over two 12cp
+ * subs) says "You must complete the two engineering fundamentals units
+ * and any required foundational skills units" and means "do both".
+ * C2005 2027 Part C (24cp over two 18cp subs) says "You must complete
+ * FIT2119 and either the AI in practice project units … or the
+ * Industry-based Learning placement units" and means "pick one". The
+ * numbers stay the gate; the prose ("either … or", "one of the
+ * following") breaks the tie. Without that wording the pair falls
+ * through to the standard requirement-group walker, which treats it
+ * as mandatory — the user sees both, which beats silently hiding one.
+ *
+ * A two-way pair also yields to any choice container nested inside it
+ * (M6001: "either the Research stream or Coursework stream", where
+ * Coursework holds six specialisations), so the deeper picker wins.
  *
  * Patterns this catches:
  *  - F2010 Part C (60cp) → 5 studios at 48cp each → 5 specialisations
  *  - C2001 Part D (12cp) → 5 tracks at 12cp each → 5 specialisations
+ *  - C3001 2027 Part D (18cp) → "either the Computing research project
+ *    or Computing in practice: Advanced project", 2 × 12cp → 2
+ *    specialisations
  * Patterns it correctly skips:
  *  - B2029 Part B (72cp) → 6cp pools → not specialisations
  *  - E3002 Engineering (144cp) → mandatory parts summing to 144 → not
  *    specialisations
- *  - E3001 (2022/2023) Part A (12cp) → 2 mandatory 12cp sub-pairs →
- *    treated as mandatory, not as alternatives.
+ *  - E3001 (2022/2023) Part A (12cp) → 2 mandatory 12cp sub-pairs, no
+ *    choice wording → treated as mandatory, not as alternatives.
  */
 export interface EmbeddedSpecialisation {
   /** Sub-container title (e.g. "Communication design"). */
@@ -792,10 +951,24 @@ export function extractEmbeddedSpecialisations(
             typeof s === "object" &&
             numeric((s as Record<string, unknown>)["credit_points"]) > 0
         )
-        // Shared with extractRequirementGroups, which emits the same
-        // shape as a single flattened choice group. See header comment
-        // for why the predicate requires ≥ 3 contributors, not ≥ 2.
-        if (isChoiceContainer(parentCp, contributing)) {
+        // Shared with extractRequirementGroups, which flattens a
+        // pick-one-of-N into one choice group and walks a two-way
+        // choice as two uncertain alternatives. See the header comment
+        // for why two subs need the prose tiebreak.
+        //
+        // A two-way pair yields to any choice container nested inside
+        // it: M6001's "either the Research stream or Coursework stream"
+        // wraps six coursework specialisations, and offering
+        // "Coursework" as one opaque pick would hide that picker.
+        const isChoice =
+          isChoiceContainer(n, parentCp, contributing) &&
+          (contributing.length >= 3 ||
+            !contributing.some(
+              (sub) =>
+                extractEmbeddedSpecialisations({ container: [sub] }).length >
+                0
+            ))
+        if (isChoice) {
           const parentSlug = slugify(title ?? parentTitle ?? "")
           for (const sub of contributing) {
             const subTitle =

@@ -372,7 +372,35 @@ of these; if you write another tree consumer, don't rediscover them:
   complete 42 credit points, comprising 36 credit points (six units)
   from the following list; and 6 credit points…") and is the best
   ground truth for validating extraction — used by the golden fixture
-  tests and `pnpm eval:curriculum`.
+  tests and `pnpm eval:curriculum`. A container's `title` and
+  `description` are the only fields that carry prose; `preface` and
+  `footnote` are empty in every 2020-2027 course and AoS tree.
+- **Two subs over a smaller budget can mean "do both" or "pick one".**
+  The numbers are identical in both readings. E3001 2022/2023 Part A
+  is 12cp over two 12cp subs and says "You must complete the two
+  engineering fundamentals units and any required foundational skills
+  units" (do both). C2005 2027 Part C is 24cp over two 18cp subs and
+  says "You must complete FIT2119 and either the AI in practice
+  project units … or the Industry-based Learning placement units"
+  (pick one). With three or more such subs the numbers alone decide.
+  With exactly two, the extractor (`isTwoWayChoice`) also requires
+  choice wording in the parent's own prose: "either … or", "one of
+  the following …" or "Option 1 or Option 2", governed by "complete",
+  "choose", "select" or "undertake". It rejects "or both", "a
+  combination", "at least one", "either 12, 18 or 24 credit points",
+  "one of the two units", and a bare "A or B" without "either". Campus
+  pairs ("Malaysia" / "Clayton") and cohort pairs ("Double degree with
+  engineering option") are left to scope detection. Most masters
+  courses write their research-or-coursework split this way: 2020-2027
+  has 618 such two-sub container-years. The rule changed the
+  requirement groups of 50 course-years and added embedded
+  specialisations to 239 more; no AoS requirement group changed. A
+  two-way choice is walked as two uncertain
+  alternatives, not flattened, so the parent's own leaves keep their
+  group (C3001 2027 Part D's FIT5125 auto-loads; the two project pairs
+  do not). `extractEmbeddedSpecialisations` offers the pair as a
+  picker unless a picker is nested inside it (M6001's coursework
+  stream holds six specialisations).
 
 - **Units "under development" are empty containers, not unit
   links.** A handbook that is still being written lists a unit as a
