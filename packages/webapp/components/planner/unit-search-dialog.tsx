@@ -31,6 +31,10 @@ import type {
 } from "@/lib/planner/types"
 import { isOfferedInPeriod } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
+import {
+  slotCalendarYear,
+  slotLabel as timelineSlotLabel,
+} from "@/lib/planner/timeline"
 
 import { usePlanner } from "./planner-context"
 import { UnitDetailView } from "./unit-detail-popover"
@@ -106,23 +110,21 @@ export function UnitSearchDialog({
     () => new Set(slot?.unitCodes ?? []),
     [slot?.unitCodes]
   )
-  const slotCalendarYear = useMemo(() => {
-    const base = Number(state.courseYear) || new Date().getFullYear()
-    return base + yearIndex
-  }, [state.courseYear, yearIndex])
-  const slotLabel =
-    slot?.label ??
-    (slotKind
-      ? `${PERIOD_KIND_LABEL[slotKind]}, ${slotCalendarYear}`
-      : "this slot")
+  const slotLabel = slot
+    ? timelineSlotLabel(state, yearIndex, slot)
+    : slotKind
+      ? timelineSlotLabel(state, yearIndex, { kind: slotKind })
+      : "this slot"
 
   // Use the handbook year that corresponds to this study year, falling
   // back to the latest available if the exact year isn't in the DB.
   const handbookYear = useMemo(() => {
-    const target = String(Number(state.courseYear) + yearIndex)
+    const target = String(
+      slotCalendarYear(state, yearIndex, slot?.kind ?? slotKind ?? "S1")
+    )
     if (availableYears.includes(target)) return target
     return [...availableYears].sort().at(-1) ?? state.courseYear
-  }, [state.courseYear, yearIndex, availableYears])
+  }, [state, yearIndex, slot?.kind, slotKind, availableYears])
 
   // Personalisation signals — derived from the plan + course graph
   // once per plan change. Cheap O(units-in-plan); we memoise so a

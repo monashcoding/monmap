@@ -9,15 +9,15 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
-import { PlusIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import { slotLabel } from "@/lib/planner/timeline"
 
 import { usePlanner } from "./planner-context"
 import { SemesterRow } from "./semester-row"
+import { ContinueMenu } from "./continue-menu"
 import { UnitCard } from "./unit-card"
 import { YearHeader } from "./year-header"
 
@@ -303,16 +303,13 @@ function NewUnitDragOverlay({ code }: { code: string }) {
  * unit slot below). On desktop, the label sits in a 180px left column.
  */
 export function PlanGrid() {
-  const { state, course, dispatch } = usePlanner()
-  const startYear = Number(state.courseYear) || new Date().getFullYear()
-
+  const { state, course } = usePlanner()
   return (
     <div className="flex min-w-0 flex-col gap-0">
       {state.years.map((year, yearIndex) => (
         <div key={yearIndex} className="flex flex-col">
           <YearHeader
             yearIndex={yearIndex}
-            calYear={startYear + yearIndex}
             yearLabel={year.label}
             yearSlotKinds={year.slots.map((s) => s.kind)}
             removableYear={state.years.length > 1}
@@ -324,7 +321,7 @@ export function PlanGrid() {
               yearIndex={yearIndex}
               slotIndex={slotIndex}
               slot={slot}
-              yearLabel={`${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yearIndex}`}
+              yearLabel={slotLabel(state, yearIndex, slot)}
             />
           ))}
         </div>
@@ -335,14 +332,7 @@ export function PlanGrid() {
           Pick a course on the right to get started.
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => dispatch({ type: "add_year" })}
-          className="flex items-center justify-center gap-1.5 border-t border-dashed bg-muted/20 px-4 py-3 text-[11px] font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:bg-muted/40 hover:text-foreground"
-        >
-          <PlusIcon className="size-3.5" />
-          Add year
-        </button>
+        <ContinueMenu variant="footer" />
       )}
     </div>
   )

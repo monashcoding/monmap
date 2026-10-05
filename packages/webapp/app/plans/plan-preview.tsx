@@ -1,7 +1,7 @@
 "use client"
 
 import { facultyStyle } from "@/lib/planner/faculty-color"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import { slotLabel } from "@/lib/planner/timeline"
 import { DEFAULT_SLOT_CAPACITY, type PlannerState } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
@@ -11,8 +11,6 @@ import { cn } from "@/lib/utils"
  * more slots than fit; vertical scroll if there are many years.
  */
 export function PlanPreview({ state }: { state: PlannerState }) {
-  const startYear = Number(state.courseYear) || new Date().getFullYear()
-
   const maxCols = state.years.reduce(
     (max, year) =>
       year.slots.reduce(
@@ -34,8 +32,7 @@ export function PlanPreview({ state }: { state: PlannerState }) {
       <div className="flex min-w-max flex-col gap-1">
         {state.years.map((year, yi) =>
           year.slots.map((slot, si) => {
-            const label =
-              slot.label ?? `${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yi}`
+            const label = slotLabel(state, yi, slot)
             return (
               <div key={`${yi}:${si}`} className="flex items-center gap-1.5">
                 <div

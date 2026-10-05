@@ -11,9 +11,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { facultyStyle } from "@/lib/planner/faculty-color"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
 import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
+import { slotLabel } from "@/lib/planner/timeline"
 
 import { usePlanner } from "./planner-context"
 import { UnitDetailPopover } from "./unit-detail-popover"
@@ -31,7 +31,6 @@ export function DraggableUnitRow({ code }: { code: string }) {
   const placed = plannedCodes.has(code)
   const unit = units.get(code)
   const fy = isFullYear(code)
-  const startYear = Number(state.courseYear) || new Date().getFullYear()
 
   const dragData = useMemo(
     () => ({ kind: "new-unit" as const, code, isFullYear: fy }),
@@ -122,9 +121,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
                   // one slot is meaningless, in two slots it's a retake.
                   const inSlot = slot.unitCodes.includes(code)
                   const full = used >= cap || inSlot
-                  const label =
-                    slot.label ??
-                    `${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yi}`
+                  const label = slotLabel(state, yi, slot)
                   return (
                     <button
                       key={`${yi}:${si}`}

@@ -18,19 +18,27 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import { startLabel, startPeriodOf } from "@/lib/planner/timeline"
 
 import { usePlanner } from "./planner-context"
 
 /**
- * Compact pill that lets the student switch the handbook year for the
- * whole plan, gated by a confirm dialog (year-switch wipes the plan).
- * Lives in the Year 1 header strip; renders as just a calendar icon on
- * narrow screens so the strip's title still fits.
+ * "Starts Semester 1, 2027" pill in the Year 1 header strip. It sets
+ * the intake (Semester 1 or 2), which only reorders the study years and
+ * keeps every unit, and the handbook year, which is gated by a confirm
+ * dialog because switching it clears the plan. Renders as just a
+ * calendar icon on narrow screens so the strip's title still fits.
  */
 export function StartingYearPicker() {
-  const { state, availableYears, switchYear } = usePlanner()
+  const { state, dispatch, availableYears, switchYear } = usePlanner()
+  const start = startPeriodOf(state)
   const [pendingYear, setPendingYear] = useState<string | null>(null)
 
   function handleChange(v: unknown) {
@@ -73,15 +81,42 @@ export function StartingYearPicker() {
             <Button
               variant="ghost"
               size="sm"
-              aria-label="Change starting year"
+              aria-label={`Starts ${startLabel(state)}. Change intake or handbook year`}
               className="h-6 gap-1.5 rounded-control bg-primary px-2 text-[10px] font-semibold tracking-wide text-primary-foreground uppercase hover:bg-primary/85 hover:text-primary-foreground sm:px-2.5"
             />
           }
         >
           <CalendarIcon className="size-3" />
-          <span className="hidden sm:inline">Change starting year</span>
+          <span className="hidden sm:inline">Starts {startLabel(state)}</span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            Intake
+          </DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={start}
+            onValueChange={(v) =>
+              dispatch({
+                type: "set_start_period",
+                period: v === "S2" ? "S2" : "S1",
+              })
+            }
+          >
+            <DropdownMenuRadioItem value="S1">
+              {PERIOD_KIND_LABEL.S1}
+              <span className="ml-auto text-xs text-muted-foreground">Feb</span>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="S2">
+              {PERIOD_KIND_LABEL.S2}
+              <span className="ml-auto text-xs text-muted-foreground">
+                Mid-year
+              </span>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            Starting year (handbook)
+          </DropdownMenuLabel>
           {availableYears.map((y) => (
             <DropdownMenuItem
               key={y}

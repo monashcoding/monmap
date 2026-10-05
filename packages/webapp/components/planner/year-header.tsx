@@ -11,6 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import {
+  slotCalendarYear,
+  sortSlots,
+  startPeriodOf,
+  studyYearSpan,
+} from "@/lib/planner/timeline"
 import type { PeriodKind } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
@@ -31,20 +37,27 @@ const ADDABLE_SLOT_KINDS: PeriodKind[] = [
  */
 export function YearHeader({
   yearIndex,
-  calYear,
   yearLabel,
   yearSlotKinds,
   removableYear,
   yearHasUnits,
 }: {
   yearIndex: number
-  calYear: number
   yearLabel: string
   yearSlotKinds: PeriodKind[]
   removableYear: boolean
   yearHasUnits: boolean
 }) {
-  const { dispatch } = usePlanner()
+  const { state, dispatch } = usePlanner()
+  const span = studyYearSpan(state, yearIndex)
+  // Menu in time order for this intake, each with its real calendar year.
+  const addable = sortSlots(
+    ADDABLE_SLOT_KINDS.map((kind) => ({ kind })),
+    startPeriodOf(state)
+  ).map(({ kind }) => ({
+    kind,
+    label: `${PERIOD_KIND_LABEL[kind]}, ${slotCalendarYear(state, yearIndex, kind)}`,
+  }))
   return (
     <div className="relative flex items-center justify-between gap-2 border-b border-white/10 bg-year-strip px-3 py-2.5 text-white sm:px-4">
       <h3 className="flex min-w-0 items-center truncate text-[11px] font-semibold tracking-[0.12em] text-white uppercase sm:text-xs">
@@ -53,7 +66,7 @@ export function YearHeader({
           className="mr-2 size-1.5 shrink-0 rounded-full bg-primary"
         />
         {yearLabel}
-        <span className="ml-1.5">({calYear})</span>
+        <span className="ml-1.5">({span})</span>
       </h3>
       <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
         {yearIndex === 0 ? <StartingYearPicker /> : null}
@@ -81,7 +94,7 @@ export function YearHeader({
             <PlusIcon />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {ADDABLE_SLOT_KINDS.map((kind) => (
+            {addable.map(({ kind, label }) => (
               <DropdownMenuItem
                 key={kind}
                 disabled={yearSlotKinds.includes(kind)}
@@ -89,7 +102,7 @@ export function YearHeader({
                   dispatch({ type: "add_optional_slot", yearIndex, kind })
                 }
               >
-                {PERIOD_KIND_LABEL[kind]}, {calYear}
+                {label}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
@@ -99,11 +112,11 @@ export function YearHeader({
                   type: "add_optional_slot",
                   yearIndex,
                   kind: "OTHER",
-                  label: `Untitled, ${calYear}`,
+                  label: `Untitled, ${span}`,
                 })
               }
             >
-              Untitled, {calYear}
+              Untitled, {span}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

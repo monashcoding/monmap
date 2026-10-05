@@ -35,6 +35,16 @@ export interface PlannerSlot {
   label?: string
   /** When true, units in this slot cannot be moved in or out via drag-and-drop. */
   locked?: boolean
+  /**
+   * A teaching period the student is not studying units in:
+   *   - "leave": intermission. Holds no units; time still passes.
+   *   - "exchange": a semester abroad, counted as a block of credit
+   *     (`creditPoints`) rather than Monash units.
+   * Absent means an ordinary study period.
+   */
+  status?: "leave" | "exchange"
+  /** Credit points an exchange period counts for (default 24). */
+  creditPoints?: number
 }
 
 export interface PlannerYear {
@@ -45,6 +55,14 @@ export interface PlannerYear {
 
 export interface PlannerState {
   courseYear: string
+  /**
+   * Intake: the teaching period the student starts in, in `courseYear`.
+   * A study year runs twelve months from here, so a mid-year starter's
+   * Year 1 is Semester 2 of `courseYear` then Semester 1 of the next
+   * year. Absent means "S1", which is how every plan saved before this
+   * field behaves.
+   */
+  startPeriod?: "S1" | "S2"
   courseCode: string | null
   /**
    * Picked AoS codes keyed by selection slot.

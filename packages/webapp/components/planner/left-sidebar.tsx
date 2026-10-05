@@ -8,7 +8,6 @@ import {
   GraduationCapIcon,
   NotebookPenIcon,
   PencilIcon,
-  PlusIcon,
   PrinterIcon,
   Redo2Icon,
   RotateCcwIcon,
@@ -28,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { PlannerState } from "@/lib/planner/types"
 
+import { ContinueMenu } from "./continue-menu"
 import { CreditDialog } from "./credit-dialog"
 import { usePlanner } from "./planner-context"
 import { useWam } from "./wam-context"
@@ -232,14 +232,7 @@ export function LeftSidebar() {
 
         <div aria-hidden className="mx-1 h-5 w-px bg-border" />
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => dispatch({ type: "add_year" })}
-        >
-          <PlusIcon />
-          Add year
-        </Button>
+        <ContinueMenu variant="toolbar" />
 
         <DropdownMenu>
           <DropdownMenuTrigger

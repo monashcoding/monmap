@@ -1,4 +1,4 @@
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import { slotCalendarYear, slotLabel } from "@/lib/planner/timeline"
 import type { PlannerState } from "@/lib/planner/types"
 
 /** All unit codes anywhere in the plan, deduplicated. */
@@ -12,14 +12,14 @@ export function allCodesFlat(state: PlannerState): string[] {
 
 /** Build a CSV with one row per placed unit. */
 export function buildCsv(state: PlannerState, planName: string): string {
-  const startYear = Number(state.courseYear) || new Date().getFullYear()
   const rows: string[][] = [["Plan", "Year", "Semester", "Unit Code"]]
   for (let yi = 0; yi < state.years.length; yi++) {
     const year = state.years[yi]!
     for (const slot of year.slots) {
-      const sem = `${PERIOD_KIND_LABEL[slot.kind]}, ${startYear + yi}`
+      const sem = slotLabel(state, yi, slot)
+      const calendarYear = String(slotCalendarYear(state, yi, slot.kind))
       for (const code of slot.unitCodes) {
-        rows.push([planName, String(startYear + yi), sem, code])
+        rows.push([planName, calendarYear, sem, code])
       }
     }
   }

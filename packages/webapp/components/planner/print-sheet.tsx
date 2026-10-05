@@ -3,11 +3,10 @@
 import { useMemo } from "react"
 
 import { summarizePlan } from "@/lib/planner/progress"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import { slotLabel, studyYearSpan } from "@/lib/planner/timeline"
 import type {
   PlannerCourseWithAoS,
   PlannerOffering,
-  PlannerSlot,
   PlannerState,
   PlannerUnit,
 } from "@/lib/planner/types"
@@ -75,8 +74,6 @@ export function PrintSheetView({
     [state, course, units, offerings]
   )
 
-  const startYear = Number(state.courseYear) || new Date().getFullYear()
-
   // A Mark column is dead weight for the majority who never enter
   // grades, so it only appears once at least one planned unit has one.
   const showMarks = useMemo(
@@ -134,7 +131,6 @@ export function PrintSheetView({
       </header>
 
       {state.years.map((year, yearIndex) => {
-        const calYear = startYear + yearIndex
         const slots = year.slots.filter((s) => s.unitCodes.length > 0)
         const yearCp = summary.creditPointsByYear[yearIndex] ?? 0
         return (
@@ -143,7 +139,7 @@ export function PrintSheetView({
             className="mb-4 w-full border-collapse break-inside-avoid text-[10px]"
           >
             <caption className="mb-1 text-left text-[11px] font-bold">
-              {year.label} · {calYear}
+              {year.label} · {studyYearSpan(state, yearIndex)}
               <span className="float-right font-normal text-neutral-600">
                 {yearCp} cp
               </span>
@@ -184,7 +180,7 @@ export function PrintSheetView({
                             rowSpan={slot.unitCodes.length}
                             className="py-1 pr-2 font-semibold whitespace-nowrap"
                           >
-                            {slotLabel(slot, calYear)}
+                            {slotLabel(state, yearIndex, slot)}
                           </td>
                         ) : null}
                         <td className="py-1 pr-2 font-semibold tabular-nums">
@@ -272,6 +268,3 @@ function Th({
 }
 
 /** The row's period name — the user's own slot label wins when set. */
-function slotLabel(slot: PlannerSlot, calYear: number): string {
-  return slot.label ?? `${PERIOD_KIND_LABEL[slot.kind]}, ${calYear}`
-}

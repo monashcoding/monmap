@@ -8,7 +8,12 @@ import {
   type PlannerState,
   type PlannerYear,
 } from "./types.ts"
-import { PRIMARY_SLOT_KINDS } from "./teaching-period.ts"
+import {
+  primaryOrder,
+  sortSlots,
+  startPeriodOf,
+  type StartPeriod,
+} from "./timeline.ts"
 
 /**
  * Pure reducer + factory functions for PlannerState. Keeping these
@@ -29,10 +34,19 @@ export function defaultState(
   }
 }
 
-export function defaultYear(nth: number): PlannerYear {
+/**
+ * A study year with its two semesters in intake order. `only: "first"`
+ * gives just the first semester, for a plan that finishes mid-year.
+ */
+export function defaultYear(
+  nth: number,
+  start: StartPeriod = "S1",
+  only?: "first"
+): PlannerYear {
+  const kinds = primaryOrder(start).slice(0, only === "first" ? 1 : 2)
   return {
     label: `Year ${nth}`,
-    slots: PRIMARY_SLOT_KINDS.map((kind) => ({
+    slots: kinds.map((kind) => ({
       kind,
       unitCodes: [],
       capacity: DEFAULT_SLOT_CAPACITY,
@@ -108,7 +122,20 @@ export type PlannerAction =
       }>
       mode: "merge" | "replace"
     }
-  | { type: "add_year" }
+  | { type: "add_year"; only?: "first" }
+  | { type: "set_start_period"; period: StartPeriod }
+  | {
+      type: "set_slot_status"
+      yearIndex: number
+      slotIndex: number
+      status: "leave" | "exchange" | null
+    }
+  | {
+      type: "set_slot_credit"
+      yearIndex: number
+      slotIndex: number
+      creditPoints: number
+    }
   | { type: "remove_year"; yearIndex: number }
   | { type: "set_year_count"; count: number }
   | {
@@ -362,7 +389,10 @@ export function plannerReducer(
       while (next.years.length <= maxYi) {
         next = {
           ...next,
-          years: [...next.years, defaultYear(next.years.length + 1)],
+          years: [
+            ...next.years,
+            defaultYear(next.years.length + 1, startPeriodOf(next)),
+          ],
         }
       }
       const grouped = new Map<string, string[]>()
@@ -397,8 +427,81 @@ export function plannerReducer(
     case "add_year":
       return {
         ...state,
-        years: [...state.years, defaultYear(state.years.length + 1)],
+        years: [
+          ...state.years,
+          defaultYear(
+            state.years.length + 1,
+            startPeriodOf(state),
+            action.only
+          ),
+        ],
       }
+
+    case "set_start_period": {
+      if (startPeriodOf(state) === action.period) return state
+      // Units stay in their slots (an S1 unit is still an S1 unit); only
+      // the order within each study year and the calendar years change.
+      return {
+        ...state,
+        startPeriod: action.period === "S2" ? "S2" : undefined,
+        years: state.years.map((y) => ({
+          ...y,
+          slots: sortSlots(y.slots, action.period),
+        })),
+      }
+    }
+
+    case "set_slot_status": {
+      const year = state.years[action.yearIndex]
+      const target = year?.slots[action.slotIndex]
+      if (!year || !target) return state
+      const status = action.status ?? undefined
+      if (target.status === status) return state
+      // Leave and exchange periods hold no units. Clearing a semester
+      // also drops the other half of any full-year unit in it.
+      const cleared = status ? new Set(target.unitCodes) : null
+      return {
+        ...state,
+        years: state.years.map((y, yi) =>
+          yi !== action.yearIndex
+            ? y
+            : {
+                ...y,
+                slots: y.slots.map((s, si) => {
+                  if (si === action.slotIndex) {
+                    const next: PlannerSlot = {
+                      ...s,
+                      status,
+                      unitCodes: status ? [] : s.unitCodes,
+                    }
+                    if (status === "exchange")
+                      next.creditPoints = s.creditPoints ?? 24
+                    else delete next.creditPoints
+                    if (!status) delete next.status
+                    return next
+                  }
+                  if (!cleared || cleared.size === 0) return s
+                  const isTwin =
+                    (target.kind === "S1" && s.kind === "S2") ||
+                    (target.kind === "S2" && s.kind === "S1")
+                  if (!isTwin) return s
+                  return {
+                    ...s,
+                    unitCodes: s.unitCodes.filter((c) => !cleared.has(c)),
+                  }
+                }),
+              }
+        ),
+      }
+    }
+
+    case "set_slot_credit":
+      return withSlot(state, action.yearIndex, action.slotIndex, (slot) => {
+        if (slot.status !== "exchange") return slot
+        const cp = Math.min(48, Math.max(0, Math.round(action.creditPoints)))
+        if (slot.creditPoints === cp) return slot
+        return { ...slot, creditPoints: cp }
+      })
 
     case "remove_year":
       if (state.years.length <= 1) return state
@@ -415,7 +518,8 @@ export function plannerReducer(
       if (state.years.length < target) {
         const added = Array.from(
           { length: target - state.years.length },
-          (_, i) => defaultYear(state.years.length + i + 1)
+          (_, i) =>
+            defaultYear(state.years.length + i + 1, startPeriodOf(state))
         )
         return { ...state, years: [...state.years, ...added] }
       }
@@ -439,7 +543,12 @@ export function plannerReducer(
       return {
         ...state,
         years: state.years.map((y, i) =>
-          i === action.yearIndex ? { ...y, slots: [...y.slots, newSlot] } : y
+          i === action.yearIndex
+            ? {
+                ...y,
+                slots: sortSlots([...y.slots, newSlot], startPeriodOf(state)),
+              }
+            : y
         ),
       }
     }
@@ -533,12 +642,14 @@ export function plannerReducer(
       const yearCount = action.yearCount ?? state.years.length
       return {
         ...state,
-        years: Array.from({ length: yearCount }, (_, i) => defaultYear(i + 1)),
+        years: Array.from({ length: yearCount }, (_, i) =>
+          defaultYear(i + 1, startPeriodOf(state))
+        ),
       }
     }
 
     case "hydrate":
-      return action.state
+      return normalizeTimeline(action.state)
   }
 }
 
@@ -598,7 +709,7 @@ export function historyReducer(
       }
     }
     case "hydrate": {
-      return initialHistory(action.state)
+      return initialHistory(normalizeTimeline(action.state))
     }
     default: {
       const next = plannerReducer(history.present, action)
@@ -651,4 +762,22 @@ function withSlot(
           }
     ),
   }
+}
+
+/**
+ * Put every year's slots in chronological order for the plan's intake.
+ * Plans saved before the timeline model appended Winter and Summer
+ * after Semester 2; this moves Winter between the semesters, where it
+ * runs. Returns the same object when nothing moves.
+ */
+export function normalizeTimeline(state: PlannerState): PlannerState {
+  const start = startPeriodOf(state)
+  let changed = false
+  const years = state.years.map((y) => {
+    const sorted = sortSlots(y.slots, start)
+    if (sorted.every((s, i) => s === y.slots[i])) return y
+    changed = true
+    return { ...y, slots: sorted }
+  })
+  return changed ? { ...state, years } : state
 }
