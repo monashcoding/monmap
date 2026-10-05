@@ -6,8 +6,11 @@ data/
 *.log
 .claude
 *.tar.gz
-.env
+# Every env file except the documented example.
+.env*
+!.env.example
+*.pem
 .mcp.json
 backups/
 # Local HTTPS certificates from `next dev --experimental-https` (pnpm dev:sso)
-certificates/
+**/certificates/

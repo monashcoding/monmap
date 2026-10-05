@@ -19,6 +19,8 @@
     "db:migrate": "pnpm --filter @monmap/db migrate",
     "db:studio": "pnpm --filter @monmap/db studio",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm --filter webapp lint",
     "package": "tar -czf monmap-handbook-$(date +%Y%m%d).tar.gz -C packages/scraper/data raw manifest.json && ls -lh monmap-handbook-*.tar.gz",
     "prepare": "husky"
   },

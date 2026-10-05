@@ -25,7 +25,33 @@ env:
   IMAGE: ghcr.io/${{ github.repository }} # ghcr.io/monashcoding/monmap
 
 jobs:
+  # Lint, typecheck, tests and a critical-advisory audit. The image is
+  # built only when this passes.
+  verify:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The pnpm version comes from packageManager in package.json.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22 # matches the node:22-slim runtime image
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm audit --prod --audit-level=critical
+
   build:
+    needs: verify
     # Native ARM64 runner — Oracle Ampere is arm64, and this is free on
     # public repos. Avoids ~5x slower QEMU cross-compilation.
     runs-on: ubuntu-24.04-arm
@@ -33,12 +59,14 @@ jobs:
       contents: read
       packages: write # push to GHCR
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -46,7 +74,7 @@ jobs:
 
       - name: Image metadata (tags)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.IMAGE }}
           tags: |
@@ -54,7 +82,7 @@ jobs:
             type=sha,format=long
 
       - name: Build & push (linux/arm64)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: . # monorepo root — pnpm needs the whole workspace
           file: ./Dockerfile

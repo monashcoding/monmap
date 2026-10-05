@@ -5,6 +5,9 @@ node_modules
 .env
 .env.*
 !.env.example
+# Local HTTPS keys from `pnpm dev:sso`.
+**/certificates
+**/*.pem
 
 # Build outputs — the image rebuilds these from source.
 **/.next

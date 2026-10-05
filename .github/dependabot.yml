@@ -1,0 +1,15 @@
+# Weekly update PRs for npm packages and the workflow's pinned actions.
+# pnpm's 7-day minimum release age still applies when the PRs install.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
