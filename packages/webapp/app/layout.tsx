@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     template: "%s · MonMap",
-    default: "MonMap — Monash course planner & unit explorer",
+    default: "MonMap - Monash course planner & unit explorer",
   },
   description: SITE_DESCRIPTION,
   applicationName: "MonMap",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "MonMap — Monash course planner & unit explorer",
+    title: "MonMap - Monash course planner & unit explorer",
     description: SITE_DESCRIPTION,
     siteName: "MonMap",
     type: "website",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MonMap — Monash course planner & unit explorer",
+    title: "MonMap - Monash course planner & unit explorer",
     description: SITE_DESCRIPTION,
   },
   robots: {
@@ -82,7 +82,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: "MonMap",
-    alternateName: "MonMap — Monash course planner",
+    alternateName: "MonMap - Monash course planner",
     description: SITE_DESCRIPTION,
     url: siteUrl,
     applicationCategory: "EducationalApplication",

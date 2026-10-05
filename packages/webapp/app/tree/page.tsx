@@ -21,18 +21,18 @@ const TREE_DESCRIPTION =
   "Explore the Monash prerequisite graph: visualise every unit your course unlocks, trace prereq chains upstream and downstream, and see which units a course's specialisation requires."
 
 export const metadata: Metadata = {
-  title: "Unit tree — prereq graph explorer",
+  title: "Unit tree - prereq graph explorer",
   description: TREE_DESCRIPTION,
   alternates: { canonical: "/tree" },
   openGraph: {
-    title: "Unit tree — Monash prereq graph explorer",
+    title: "Unit tree - Monash prereq graph explorer",
     description: TREE_DESCRIPTION,
     type: "website",
     url: "/tree",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Unit tree — Monash prereq graph explorer",
+    title: "Unit tree - Monash prereq graph explorer",
     description: TREE_DESCRIPTION,
   },
 }
