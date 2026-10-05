@@ -11,6 +11,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import posthog from "posthog-js"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,7 +76,7 @@ export function UnitCard({
   } = usePlanner()
   const slot = state.years[yearIndex]?.slots[slotIndex]
   const slotLocked = !!slot?.locked
-  const { wamMode, showGrade, grades, setGrade } = useWam()
+  const { showResults, grades, setGrade } = useWam()
   const isFY = isFullYear(code)
   const unit = units.get(code)
   // What this card contributes to its slot — full CP for normal units;
@@ -100,7 +106,6 @@ export function UnitCard({
   const [menuOpen, setMenuOpen] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const gradeEntry = grades.get(code)
-  const gradeLetter = gradeEntry !== undefined ? markToGrade(gradeEntry) : null
 
   const dragId = unitDragId(yearIndex, slotIndex, code)
   const dragData = useMemo(
@@ -222,9 +227,6 @@ export function UnitCard({
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tabular-nums">{code}</span>
             {isCore ? <CoreBadge /> : null}
-            {showGrade && gradeLetter ? (
-              <GradeBadge grade={gradeLetter} />
-            ) : null}
             <StatusIcon status={status} />
             {isFY ? (
               <span className="ml-auto rounded-tag bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
@@ -240,38 +242,22 @@ export function UnitCard({
           <div className="mt-auto flex h-4 items-center gap-1.5">
             <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
               {unit
-                ? wamMode
+                ? showResults
                   ? `${displayCp}cp`
                   : `${displayCp} Credit Points`
                 : ""}
             </span>
-            {wamMode ? (
-              <div className="ml-auto flex items-center gap-1">
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={gradeEntry ?? ""}
-                  placeholder="—"
-                  onChange={(e) => {
-                    const v = e.target.value
-                    setGrade(
-                      code,
-                      v === "" ? null : Math.max(0, Math.min(100, Number(v)))
-                    )
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
-                  className="h-4 w-10 rounded-tag border border-border bg-background px-1 py-0 text-center text-[10px] leading-none font-semibold text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
-                />
-                <span className="text-[9px] leading-none text-muted-foreground">
-                  /100
-                </span>
-              </div>
-            ) : null}
           </div>
         </button>
       </UnitDetailPopover>
+
+      {showResults && !isDragOverlay ? (
+        <MarkChip
+          code={code}
+          mark={gradeEntry}
+          onSave={(mark) => setGrade(code, mark)}
+        />
+      ) : null}
 
       {isDragOverlay ? null : (
         <UnitMenu
@@ -363,17 +349,135 @@ function StatusIcon({ status }: { status: CardStatus }) {
   return null
 }
 
-function GradeBadge({ grade }: { grade: ReturnType<typeof markToGrade> }) {
-  const s = GRADE_STYLES[grade]
+/**
+ * Results-mode control in a card's bottom-right corner: the grade and
+ * mark when one is recorded ("HD 85"), otherwise "+ Mark". Clicking
+ * opens a small editor with a live grade preview. Pointer and key
+ * events stop here so editing never starts a drag.
+ */
+function MarkChip({
+  code,
+  mark,
+  onSave,
+}: {
+  code: string
+  mark: number | undefined
+  onSave: (mark: number | null) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState("")
+  const grade = mark !== undefined ? markToGrade(mark) : null
+  const parsed = draft.trim() === "" ? null : Number(draft)
+  const valid =
+    parsed === null || (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100)
+  const preview = parsed !== null && valid ? markToGrade(parsed) : null
+
+  const commit = () => {
+    if (!valid) return
+    onSave(parsed)
+    setOpen(false)
+  }
+
   return (
-    <span
-      className={cn(
-        "rounded-tag px-1 py-0.5 text-[9px] leading-none font-bold tabular-nums",
-        s.bg,
-        s.text
-      )}
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setDraft(mark !== undefined ? String(mark) : "")
+        setOpen(next)
+      }}
     >
-      {grade}
-    </span>
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            aria-label={
+              mark !== undefined
+                ? `Edit mark for ${code}: ${mark}`
+                : `Add a mark for ${code}`
+            }
+            className={cn(
+              "absolute right-1.5 bottom-1.5 z-10 inline-flex h-5 items-center gap-1 rounded-tag px-1.5 text-[10px] leading-none font-semibold tabular-nums transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              grade
+                ? cn(GRADE_STYLES[grade].bg, GRADE_STYLES[grade].text)
+                : "border border-dashed border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground"
+            )}
+          />
+        }
+      >
+        {grade ? (
+          <>
+            <span>{grade}</span>
+            <span className="font-medium">{mark}</span>
+          </>
+        ) : (
+          "+ Mark"
+        )}
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-56 gap-3 p-3"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <label htmlFor={`mark-${code}`} className="text-xs font-medium">
+          Mark for {code}
+        </label>
+        <div className="flex items-center gap-2">
+          <Input
+            id={`mark-${code}`}
+            autoFocus
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={100}
+            placeholder="0–100"
+            value={draft}
+            aria-invalid={!valid}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit()
+            }}
+            className="h-8 w-20 tabular-nums"
+          />
+          <span className="text-xs text-muted-foreground">/ 100</span>
+          {preview ? (
+            <span
+              className={cn(
+                "ml-auto rounded-tag px-1.5 py-0.5 text-[10px] font-bold",
+                GRADE_STYLES[preview].bg,
+                GRADE_STYLES[preview].text
+              )}
+            >
+              {preview}
+            </span>
+          ) : null}
+        </div>
+        {!valid ? (
+          <p className="text-xs text-destructive">
+            Enter a mark from 0 to 100.
+          </p>
+        ) : null}
+        <div className="flex items-center justify-between">
+          {mark !== undefined ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onSave(null)
+                setOpen(false)
+              }}
+            >
+              Clear
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Button size="sm" onClick={commit} disabled={!valid}>
+            Save
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

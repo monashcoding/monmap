@@ -2,17 +2,16 @@
 
 import {
   BadgeCheckIcon,
-  CalculatorIcon,
   CircleAlertIcon,
   DownloadIcon,
   EllipsisIcon,
   GraduationCapIcon,
+  NotebookPenIcon,
   PencilIcon,
   PlusIcon,
   PrinterIcon,
   Redo2Icon,
   RotateCcwIcon,
-  TagIcon,
   Undo2Icon,
   UploadIcon,
 } from "lucide-react"
@@ -35,8 +34,8 @@ import { useWam } from "./wam-context"
 
 /**
  * Plan header above the grid: the plan's name (click to rename) and
- * its validation status on the left; undo/redo, the WAM and grade
- * toggles, Add year and a More menu on the right. State-only
+ * its validation status on the left; undo/redo, the Results toggle,
+ * Add year and a More menu on the right. State-only
  * operations (no server round-trip).
  */
 export function LeftSidebar() {
@@ -80,7 +79,7 @@ export function LeftSidebar() {
     setNameDraft(activePlan?.name ?? "")
     setEditingName(false)
   }, [activePlan?.name])
-  const { wamMode, showGrade, toggleWamMode, toggleShowGrade } = useWam()
+  const { showResults, toggleShowResults } = useWam()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [creditOpen, setCreditOpen] = useState(false)
   const creditCount = state.credit?.length ?? 0
@@ -225,16 +224,10 @@ export function LeftSidebar() {
         <div aria-hidden className="mx-1 h-5 w-px bg-border" />
 
         <ToggleButton
-          icon={<CalculatorIcon />}
-          label="WAM"
-          pressed={wamMode}
-          onClick={toggleWamMode}
-        />
-        <ToggleButton
-          icon={<TagIcon />}
-          label="Grades"
-          pressed={showGrade}
-          onClick={toggleShowGrade}
+          icon={<NotebookPenIcon />}
+          label="Results"
+          pressed={showResults}
+          onClick={toggleShowResults}
         />
 
         <div aria-hidden className="mx-1 h-5 w-px bg-border" />

@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import {
@@ -212,8 +213,6 @@ function TabButton({
 
 function ProgressTab() {
   const { state, course, units, offerings } = usePlanner()
-  const { wam } = useWam()
-
   const summary = useMemo(
     () => summarizePlan(state, course, units, offerings),
     [state, course, units, offerings]
@@ -240,12 +239,113 @@ function ProgressTab() {
             value={`${summary.totalCreditPoints} / ${summary.targetCreditPoints}`}
           />
           <GaugeStat label="Units" value={String(summary.uniqueUnitCount)} />
-          {wam !== null ? (
-            <GaugeStat label="WAM" value={wam.toFixed(3)} hidable />
-          ) : null}
         </div>
       </div>
+      <ResultsSection />
       <RequirementsPanel className={FLAT} />
+    </div>
+  )
+}
+
+/**
+ * WAM and GPA over the units in the plan that have a mark, with a hide
+ * toggle for screen-sharing and a shortcut to the full results list.
+ * Marks are entered on unit cards in Results mode.
+ */
+function ResultsSection() {
+  const {
+    wam,
+    gpa,
+    gradedUnitCount,
+    gradedCreditPoints,
+    showResults,
+    toggleShowResults,
+  } = useWam()
+  const [hidden, setHidden] = useState(false)
+  const [listOpen, setListOpen] = useState(false)
+
+  return (
+    <section className="flex flex-col gap-3 px-4 py-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Results</h3>
+        <div className="flex items-center gap-1">
+          {gradedUnitCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setHidden((v) => !v)}
+              aria-label={hidden ? "Show WAM and GPA" : "Hide WAM and GPA"}
+              title={hidden ? "Show" : "Hide"}
+            >
+              {hidden ? <EyeOffIcon /> : <EyeIcon />}
+            </Button>
+          ) : null}
+          <Button variant="ghost" size="xs" onClick={() => setListOpen(true)}>
+            All results
+          </Button>
+        </div>
+      </div>
+
+      {gradedUnitCount > 0 ? (
+        <>
+          <dl className="grid grid-cols-2 gap-2">
+            <ResultStat
+              label="WAM"
+              value={wam !== null ? wam.toFixed(3) : "—"}
+              hidden={hidden}
+            />
+            <ResultStat
+              label="GPA"
+              value={gpa !== null ? gpa.toFixed(3) : "—"}
+              hidden={hidden}
+            />
+          </dl>
+          <p className="text-[11px] text-muted-foreground">
+            From {gradedUnitCount} graded unit{gradedUnitCount === 1 ? "" : "s"}{" "}
+            ({gradedCreditPoints} credit points). First-year units count half
+            toward WAM; GPA uses Monash&apos;s 4-point scale.
+          </p>
+        </>
+      ) : (
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-xs text-muted-foreground">
+            Add marks to your units to see your WAM and GPA.
+          </p>
+          {!showResults ? (
+            <Button variant="outline" size="sm" onClick={toggleShowResults}>
+              Enter marks
+            </Button>
+          ) : null}
+        </div>
+      )}
+
+      <MyGradesDialog open={listOpen} onOpenChange={setListOpen} />
+    </section>
+  )
+}
+
+function ResultStat({
+  label,
+  value,
+  hidden,
+}: {
+  label: string
+  value: string
+  hidden: boolean
+}) {
+  return (
+    <div className="rounded-control bg-field px-3 py-2">
+      <dt className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          "text-lg font-semibold tabular-nums",
+          hidden && "tracking-widest select-none"
+        )}
+      >
+        {hidden ? "••••" : value}
+      </dd>
     </div>
   )
 }
@@ -259,46 +359,13 @@ function AddUnitsTab() {
   )
 }
 
-function GaugeStat({
-  label,
-  value,
-  hidable = false,
-}: {
-  label: string
-  value: string
-  /** When true, render an inline eye toggle that masks the value. */
-  hidable?: boolean
-}) {
-  const [hidden, setHidden] = useState(false)
+function GaugeStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <div className="flex items-center gap-1">
-        <span className="text-[9px] tracking-wide text-muted-foreground uppercase">
-          {label}
-        </span>
-        {hidable ? (
-          <button
-            type="button"
-            onClick={() => setHidden((v) => !v)}
-            aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
-            className="rounded-tag text-muted-foreground transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-ring"
-          >
-            {hidden ? (
-              <EyeOffIcon className="size-3" />
-            ) : (
-              <EyeIcon className="size-3" />
-            )}
-          </button>
-        ) : null}
-      </div>
-      <span
-        className={cn(
-          "text-sm font-semibold tabular-nums",
-          hidden && "tracking-widest select-none"
-        )}
-      >
-        {hidden ? "••••" : value}
+      <span className="text-[9px] tracking-wide text-muted-foreground uppercase">
+        {label}
       </span>
+      <span className="text-sm font-semibold tabular-nums">{value}</span>
     </div>
   )
 }
