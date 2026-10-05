@@ -99,6 +99,13 @@
       "when": 1791188353979,
       "tag": "0013_drop_better_auth_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791195684254,
+      "tag": "0014_add_search_indexes",
+      "breakpoints": true
     }
   ]
 }

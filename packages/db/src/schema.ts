@@ -25,6 +25,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -49,6 +50,29 @@ import type {
   RequirementGroup,
   SubCourseRef,
 } from "./curriculum.ts";
+
+/* ------------------------------------------------------------------ *
+ * Search
+ * ------------------------------------------------------------------ */
+
+/** Postgres full-text vector; drizzle has no built-in type for it. */
+const tsvector = customType<{ data: string }>({
+  dataType: () => "tsvector",
+});
+
+/**
+ * A weighted full-text vector for /search: the code and title count
+ * most (A), the handbook prose least (C). Tags are stripped first so
+ * markup isn't indexed. Stored and kept current by Postgres, so ingest
+ * needs no change.
+ */
+function searchVector(strong: string[], prose: string) {
+  const a = strong.map((c) => `coalesce(${c}, '')`).join(` || ' ' || `);
+  return sql.raw(
+    `setweight(to_tsvector('english', ${a}), 'A') || ` +
+      `setweight(to_tsvector('english', regexp_replace(coalesce(${prose}, ''), '<[^>]+>', ' ', 'g')), 'C')`,
+  );
+}
 
 /* ------------------------------------------------------------------ *
  * Enums
@@ -105,9 +129,15 @@ export const units = pgTable(
     /** The main "what is this unit" description, HTML. */
     handbookSynopsis: text(),
     raw: jsonb().$type<UnitContent>().notNull(),
+    searchVector: tsvector().generatedAlwaysAs(
+      searchVector(["code", "title"], "handbook_synopsis"),
+    ),
   },
   (t) => [
     primaryKey({ columns: [t.year, t.code] }),
+    // Code-only lookups across years: a page's year list, sitemaps.
+    index("units_code_idx").on(t.code),
+    index("units_search_idx").using("gin", t.searchVector),
     index("units_title_idx").on(t.title),
     index("units_school_idx").on(t.school),
     // Trigram GIN indexes power the unit-search `ILIKE '%q%'` queries.
@@ -155,9 +185,14 @@ export const courses = pgTable(
      *  against the AoS merged from component courses. */
     excludedAos: jsonb().$type<ExcludedAos[]>(),
     raw: jsonb().$type<CourseContent>().notNull(),
+    searchVector: tsvector().generatedAlwaysAs(
+      searchVector(["code", "title", "abbreviated_name"], "overview"),
+    ),
   },
   (t) => [
     primaryKey({ columns: [t.year, t.code] }),
+    index("courses_code_idx").on(t.code),
+    index("courses_search_idx").using("gin", t.searchVector),
     index("courses_title_idx").on(t.title),
     index("courses_title_trgm_idx").using("gin", sql`title gin_trgm_ops`),
     index("courses_code_trgm_idx").using("gin", sql`code gin_trgm_ops`),
@@ -178,9 +213,16 @@ export const areasOfStudy = pgTable(
     handbookDescription: text(),
     curriculumStructure: jsonb().$type<CurriculumStructure>(),
     raw: jsonb().$type<AosContent>().notNull(),
+    searchVector: tsvector().generatedAlwaysAs(
+      searchVector(["code", "title"], "handbook_description"),
+    ),
   },
   (t) => [
     primaryKey({ columns: [t.year, t.code] }),
+    index("aos_code_idx").on(t.code),
+    index("aos_search_idx").using("gin", t.searchVector),
+    index("aos_title_trgm_idx").using("gin", sql`title gin_trgm_ops`),
+    index("aos_code_trgm_idx").using("gin", sql`code gin_trgm_ops`),
     index("aos_title_idx").on(t.title),
   ],
 );
