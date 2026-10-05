@@ -3,12 +3,22 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Light-only theme. Palette is built around Monash's yellow (#ffe330)
- * and purple (#5b2d90): white paper-ish canvas, a faint lavender in
- * surfaces/borders so the app doesn't read as "gray on white", and
- * the brand purple as the interactive accent. The `.dark` variant
- * is deliberately not shipped — see theme-provider.tsx.
+ * Theme. The palette matches monashcoding.com: charcoal neutrals, MAC
+ * yellow (#ffe330) as the only brand colour, and other hues only where
+ * they mean something (status, faculty rails). Light and dark modes
+ * share every token name; `.dark` on <html> (set by next-themes)
+ * switches the values.
+ *
+ * Dark mode applies on screen only. Print always uses the light
+ * values, so a student in dark mode still prints black on white.
  */
+@custom-variant dark {
+  @media screen {
+    &:where(.dark, .dark *) {
+      @slot;
+    }
+  }
+}
 
 @theme inline {
   --font-heading: var(--font-sans);
@@ -30,15 +40,18 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
-  --color-warning: oklch(0.72 0.16 70);
-  --color-warning-foreground: oklch(0.38 0.1 55);
-  --color-warning-soft: oklch(0.93 0.1 88);
-  --color-success: oklch(0.62 0.14 155);
-  --color-success-foreground: oklch(0.34 0.09 155);
-  --color-success-soft: oklch(0.93 0.08 160);
-  --color-info: oklch(0.6 0.16 245);
-  --color-info-foreground: oklch(0.32 0.11 245);
-  --color-info-soft: oklch(0.93 0.07 245);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
+  --color-emphasis: var(--emphasis);
+  --color-emphasis-soft: var(--emphasis-soft);
+  --color-year-strip: var(--year-strip);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -63,79 +76,144 @@
 }
 
 :root {
-  /* Brand anchors. Used directly by components that opt into the
-       Monash palette (the app icon, the Course Progression Guide
-       pill, the rails on FIT unit cards). */
+  /* Brand anchors, identical in both modes. */
   --monash-yellow: #ffe330;
-  --monash-yellow-ink: #1d1300;
-  --monash-purple: #5b2d90;
-  --monash-purple-deep: #3a1a63;
-  --monash-purple-soft: #f4eef9;
+  --monash-yellow-ink: #252525;
+  --mac-charcoal: #252525;
 
-  /* Semantic tokens — what shadcn/base-ui pull from. */
-  --background: oklch(0.995 0.004 300); /* paper white, a drop of lavender */
-  --foreground: oklch(0.17 0.02 295); /* near-black, purple undertone */
+  --background: #fafaf7; /* warm paper */
+  --foreground: #252525;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0.02 295);
+  --card: #ffffff;
+  --card-foreground: #252525;
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0.02 295);
+  --popover: #ffffff;
+  --popover-foreground: #252525;
 
   --primary: var(--monash-yellow);
   --primary-foreground: var(--monash-yellow-ink);
 
-  /* Secondary = soft lavender surface — used for chips, badges,
-       and the low-contrast card zebra rows. */
-  --secondary: var(--monash-purple-soft);
-  --secondary-foreground: var(--monash-purple-deep);
+  /* Neutral chip / zebra surface. */
+  --secondary: #f0efeb;
+  --secondary-foreground: #252525;
 
-  --muted: oklch(0.965 0.01 300);
-  --muted-foreground: oklch(0.5 0.03 295);
+  --muted: #f3f2ee;
+  --muted-foreground: #6b6a65;
 
-  /* Accent = Monash purple. This is the hover/press colour for
-       buttons, combobox items, and interactive list rows. Yellow
-       stays as the *brand* mark; purple is the *interaction* mark. */
-  --accent: var(--monash-purple);
-  --accent-foreground: #ffffff;
+  /* Hover / press wash for menus, list rows and ghost controls. */
+  --accent: #efeee9;
+  --accent-foreground: #252525;
+
+  /* Selected and active marks: borders, focus rings, highlighted
+     graph edges, links. Ink on paper, yellow on charcoal. */
+  --emphasis: #252525;
+  --emphasis-soft: color-mix(in oklch, var(--monash-yellow) 32%, #ffffff);
 
   --destructive: oklch(0.58 0.22 27);
 
-  --border: oklch(0.92 0.015 300);
-  --input: oklch(0.94 0.01 300);
-  --ring: var(--monash-purple);
+  --warning: oklch(0.72 0.16 60);
+  --warning-foreground: oklch(0.42 0.11 50);
+  --warning-soft: oklch(0.95 0.06 75);
+  --success: oklch(0.62 0.14 155);
+  --success-foreground: oklch(0.38 0.09 155);
+  --success-soft: oklch(0.94 0.06 160);
+  --info: oklch(0.6 0.16 245);
+  --info-foreground: oklch(0.38 0.11 245);
+  --info-soft: oklch(0.94 0.05 245);
 
-  /* Chart palette — purple-leaning so data viz stays on-brand. */
-  --chart-1: #5b2d90;
-  --chart-2: #7b4ab5;
-  --chart-3: #a57fd4;
-  --chart-4: #ffe330;
-  --chart-5: #c99c00;
+  --border: #e7e5e0;
+  --input: #e2e0da;
+  --ring: var(--emphasis);
 
-  --radius: 0.625rem;
+  /* Year header strips above each study year. */
+  --year-strip: var(--mac-charcoal);
 
-  --sidebar: oklch(0.985 0.008 300);
-  --sidebar-foreground: oklch(0.17 0.02 295);
+  --chart-1: #ffe330;
+  --chart-2: #252525;
+  --chart-3: #6b6a65;
+  --chart-4: #b5b3ac;
+  --chart-5: #c9a800;
+
+  --radius: 0.5rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #252525;
   --sidebar-primary: var(--monash-yellow);
   --sidebar-primary-foreground: var(--monash-yellow-ink);
-  --sidebar-accent: oklch(0.95 0.015 300);
-  --sidebar-accent-foreground: var(--monash-purple-deep);
-  --sidebar-border: oklch(0.92 0.015 300);
-  --sidebar-ring: var(--monash-purple);
+  --sidebar-accent: #efeee9;
+  --sidebar-accent-foreground: #252525;
+  --sidebar-border: #e7e5e0;
+  --sidebar-ring: var(--emphasis);
+
+  --shadow-tint: rgba(37, 37, 37, 0.12);
+}
+
+@media screen {
+  .dark {
+    /* monashcoding.com: page #252525, cards #1e1e1e, lines #404040. */
+    --background: #252525;
+    --foreground: #ffffff;
+
+    --card: #1e1e1e;
+    --card-foreground: #ffffff;
+
+    --popover: #2e2e2e;
+    --popover-foreground: #ffffff;
+
+    --secondary: #333333;
+    --secondary-foreground: #ffffff;
+
+    --muted: #2c2c2c;
+    --muted-foreground: #a8a8a8;
+
+    --accent: #353535;
+    --accent-foreground: #ffffff;
+
+    --emphasis: var(--monash-yellow);
+    --emphasis-soft: color-mix(in oklch, var(--monash-yellow) 16%, #1e1e1e);
+
+    --destructive: oklch(0.7 0.19 22);
+
+    --warning: oklch(0.78 0.15 65);
+    --warning-foreground: oklch(0.85 0.12 75);
+    --warning-soft: oklch(0.32 0.06 60);
+    --success: oklch(0.72 0.15 155);
+    --success-foreground: oklch(0.83 0.12 155);
+    --success-soft: oklch(0.3 0.05 155);
+    --info: oklch(0.72 0.13 245);
+    --info-foreground: oklch(0.83 0.1 245);
+    --info-soft: oklch(0.3 0.06 245);
+
+    --border: #404040;
+    --input: #4a4a4a;
+
+    --year-strip: #161616;
+
+    --chart-2: #ffffff;
+    --chart-3: #a8a8a8;
+    --chart-4: #5c5c5c;
+
+    --sidebar: #1e1e1e;
+    --sidebar-foreground: #ffffff;
+    --sidebar-accent: #353535;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #404040;
+
+    --shadow-tint: rgba(0, 0, 0, 0.45);
+  }
 }
 
 /*
  * Consistent card elevation — one shadow, everywhere. Registered as
  * a Tailwind v4 @utility so `className="shadow-card"` is recognised
- * by the scanner and output in the final CSS. The subtle purple
- * tint in the blur is what makes surfaces feel like they belong to
- * the Monash palette rather than a generic neutral.
+ * by the scanner and output in the final CSS. The tint deepens in
+ * dark mode, where a light shadow would read as a glow.
  */
 @utility shadow-card {
   box-shadow:
-    0 1px 0 rgba(17, 12, 30, 0.02),
-    0 4px 10px -4px rgba(17, 12, 30, 0.1),
-    0 6px 14px -8px rgba(89, 45, 144, 0.16);
+    0 1px 0 rgba(0, 0, 0, 0.02),
+    0 4px 10px -4px var(--shadow-tint),
+    0 6px 14px -8px var(--shadow-tint);
 }
 
 /*
@@ -165,10 +243,9 @@
 }
 
 /*
- * Page backdrop — soft lavender wash with a yellow sunrise from the
- * top-left. Fixed attachment + -z-10 so it lives under the whole app
- * and doesn't scroll with the viewport. Keeps monmap from reading
- * as "shadcn default on white" without tinting any actual surface.
+ * Page backdrop — a faint yellow sunrise from the top-left over the
+ * page colour. Fixed + -z-10 so it lives under the whole app and
+ * doesn't scroll with the viewport.
  */
 body::before {
   content: "";
@@ -178,16 +255,23 @@ body::before {
   background:
     radial-gradient(
       60rem 40rem at -10% -10%,
-      color-mix(in oklch, var(--monash-yellow) 25%, transparent) 0%,
+      color-mix(in oklch, var(--monash-yellow) 22%, transparent) 0%,
       transparent 55%
     ),
-    radial-gradient(
-      50rem 50rem at 110% 20%,
-      color-mix(in oklch, var(--monash-purple) 18%, transparent) 0%,
-      transparent 60%
-    ),
-    linear-gradient(180deg, var(--monash-purple-soft) 0%, #ffffff 60%);
+    var(--background);
   pointer-events: none;
+}
+
+@media screen {
+  .dark body::before {
+    background:
+      radial-gradient(
+        60rem 40rem at -10% -10%,
+        color-mix(in oklch, var(--monash-yellow) 7%, transparent) 0%,
+        transparent 55%
+      ),
+      var(--background);
+  }
 }
 
 @layer base {
@@ -197,6 +281,12 @@ body::before {
   html,
   body {
     color-scheme: light;
+  }
+  @media screen {
+    .dark,
+    .dark body {
+      color-scheme: dark;
+    }
   }
   body {
     @apply text-foreground;

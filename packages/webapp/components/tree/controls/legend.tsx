@@ -9,7 +9,7 @@ export function Legend() {
     <ControlSection title="Legend">
       <ul className="flex flex-col gap-1.5 text-[11px]">
         <li className="flex items-center gap-2">
-          <Swatch className="bg-[var(--monash-purple-soft)] ring-1 ring-primary/40" />
+          <Swatch className="bg-emphasis-soft ring-1 ring-primary/40" />
           Seed (the unit / major you picked)
         </li>
         <li className="flex items-center gap-2">

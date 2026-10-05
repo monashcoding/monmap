@@ -74,7 +74,7 @@ export function StartingYearPicker() {
               variant="ghost"
               size="sm"
               aria-label="Change starting year"
-              className="h-6 gap-1.5 rounded-full bg-white px-2 text-[10px] font-semibold tracking-wide text-foreground uppercase hover:bg-white/90 hover:text-foreground sm:px-2.5"
+              className="h-6 gap-1.5 rounded-md bg-primary px-2 text-[10px] font-semibold tracking-wide text-primary-foreground uppercase hover:bg-primary/85 hover:text-primary-foreground sm:px-2.5"
             />
           }
         >

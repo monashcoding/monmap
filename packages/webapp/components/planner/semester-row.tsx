@@ -141,7 +141,7 @@ export function SemesterRow({
         <div
           className={cn(
             "flex items-center justify-between gap-1 border-b px-3 py-2 text-[11px] font-medium text-muted-foreground md:border-r md:border-b-0 md:py-3",
-            slot.locked ? "bg-black/[0.08]" : "bg-muted/20"
+            slot.locked ? "bg-foreground/[0.08]" : "bg-muted/20"
           )}
         >
           <div className="min-w-0 flex-1 leading-tight">

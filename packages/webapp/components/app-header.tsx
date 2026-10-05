@@ -9,6 +9,7 @@ import { useState, useSyncExternalStore } from "react"
 import { AnonymousBadge } from "@/components/anonymous-badge"
 import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { PRIMARY_NAV_ITEMS, PrimaryNav } from "@/components/primary-nav"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -46,7 +47,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         <MobileNavTrigger />
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <Link href="/" aria-label="MonMap home" className="relative shrink-0">
-            <div className="flex size-9 items-center justify-center overflow-hidden rounded-2xl bg-primary ring-2 ring-[var(--monash-purple)] sm:size-10">
+            <div className="flex size-9 items-center justify-center overflow-hidden rounded-2xl bg-primary sm:size-10">
               <Image
                 src="/brand-logo.png"
                 alt="Monash Association of Coding"
@@ -87,6 +88,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
             {children}
           </div>
         ) : null}
+        <ThemeToggle />
         <UserMenu />
       </div>
     </header>
@@ -127,7 +129,7 @@ function MobileNavTrigger() {
                 className={cn(
                   "flex h-12 items-center gap-3 rounded-xl px-3 text-base transition-colors",
                   active
-                    ? "bg-[var(--monash-purple-soft)] font-semibold text-[var(--monash-purple-deep)]"
+                    ? "bg-emphasis-soft font-semibold text-emphasis"
                     : "text-foreground/80 hover:bg-muted/50"
                 )}
               >
@@ -135,9 +137,7 @@ function MobileNavTrigger() {
                   aria-hidden
                   className={cn(
                     "size-1.5 rounded-full",
-                    active
-                      ? "bg-[var(--monash-purple)]"
-                      : "bg-muted-foreground/40"
+                    active ? "bg-primary" : "bg-muted-foreground/40"
                   )}
                 />
                 {label}

@@ -1,14 +1,22 @@
 "use client"
 
+import { ThemeProvider as NextThemesProvider } from "next-themes"
 import * as React from "react"
 
 /**
- * Light-mode-only shell. We used to route through `next-themes` to
- * support dark mode, but the product is light-only — a theme switch
- * fragments the yellow/purple palette and isn't worth the hydration
- * complexity for a single-surface app. The component is kept as a
- * trivial passthrough so layout.tsx's import doesn't churn.
+ * Light and dark themes, following the operating system until the
+ * student picks one in the header. next-themes writes `.dark` on
+ * <html> before first paint, so there is no flash of the wrong theme.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      {children}
+    </NextThemesProvider>
+  )
 }

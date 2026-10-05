@@ -88,7 +88,7 @@ export function SemesterSlot({
         // Mobile: vertical stack so each card has comfortable width.
         // Desktop: capacity-sized grid (one card per column).
         isMobile ? "flex flex-col" : "grid",
-        slot.locked ? "bg-black/[0.05]" : showDropTint && "bg-primary/5"
+        slot.locked ? "bg-foreground/[0.05]" : showDropTint && "bg-primary/5"
       )}
       style={
         isMobile

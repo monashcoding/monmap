@@ -64,7 +64,7 @@ export function NewPlanButton({
           setYear(defaultYear)
           setOpen(true)
         }}
-        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--monash-purple)]/40 bg-[var(--monash-purple-soft)] px-5 py-3 text-sm font-semibold text-[var(--monash-purple-deep)] transition-colors hover:border-[var(--monash-purple)] hover:bg-[var(--monash-purple)]/10"
+        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-emphasis/40 bg-emphasis-soft px-5 py-3 text-sm font-semibold text-emphasis transition-colors hover:border-emphasis hover:bg-emphasis/10"
       >
         <PlusIcon className="size-4" />
         New plan
@@ -111,7 +111,7 @@ export function NewPlanButton({
             <Button
               onClick={handleSubmit}
               disabled={isPending || !year}
-              className="bg-[var(--monash-purple)] text-white hover:bg-[var(--monash-purple)]/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/80"
             >
               Create plan
             </Button>

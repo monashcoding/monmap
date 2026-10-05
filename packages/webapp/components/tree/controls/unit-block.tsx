@@ -144,7 +144,7 @@ export function UnitBlock({
               className={cn(
                 "rounded-lg border px-2 py-1.5 text-[10px] leading-tight font-semibold transition-colors",
                 direction === d.value
-                  ? "border-[var(--monash-purple)] bg-[var(--monash-purple-soft)] text-[var(--monash-purple-deep)]"
+                  ? "border-emphasis bg-emphasis-soft text-emphasis"
                   : "border-border bg-background text-muted-foreground hover:border-muted-foreground/40"
               )}
             >

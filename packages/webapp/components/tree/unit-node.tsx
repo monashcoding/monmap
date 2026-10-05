@@ -38,9 +38,9 @@ function UnitNodeInner({ data, selected }: NodeProps) {
         "group/tree-node relative flex h-[64px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-xl border bg-background shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
         "hover:-translate-y-px hover:shadow-md",
         d.isFocused || selected
-          ? "border-[var(--monash-purple)] ring-2 ring-[var(--monash-purple)]/40"
+          ? "border-emphasis ring-2 ring-emphasis/40"
           : d.isOnFocusedPath
-            ? "border-[var(--monash-purple)]/60"
+            ? "border-emphasis/60"
             : "border-border",
         d.isDimmed && "opacity-40",
         d.isSeed && "ring-1 ring-primary/40",

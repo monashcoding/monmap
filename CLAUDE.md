@@ -57,7 +57,7 @@ applies to `next start` and any other long-running server.
 
 `--primary` is Monash yellow (`#ffe330`). Yellow text on a yellow tint
 (`bg-primary/15 text-primary` and friends) is unreadable. The brand
-defines `--primary-foreground` as `#1d1300` ("yellow ink") for exactly
+defines `--primary-foreground` as `#252525` (MAC charcoal ink) for exactly
 this pairing — use it on any yellow-tinted chip, badge, or pill, and
 bump the tint (≈`/40`) so the surface still reads as yellow rather
 than gray.

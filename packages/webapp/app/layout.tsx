@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Poppins } from "next/font/google"
 
 import "./globals.css"
@@ -62,6 +62,14 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+}
+
+// Browser chrome follows the page colour in each theme.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf7" },
+    { media: "(prefers-color-scheme: dark)", color: "#252525" },
+  ],
 }
 
 export default function RootLayout({

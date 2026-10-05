@@ -17,7 +17,7 @@ export const OG_SIZE = { width: 1200, height: 630 }
 export const OG_CONTENT_TYPE = "image/png"
 
 const MONASH_YELLOW = "#ffe330"
-const MONASH_YELLOW_INK = "#1d1300"
+const MONASH_YELLOW_INK = "#252525"
 
 // Fonts are self-hosted under public/fonts (OFL Poppins, committed to
 // the repo) and read off disk. They were previously fetched from
@@ -107,7 +107,7 @@ export function OgShell({
         width: "100%",
         height: "100%",
         display: "flex",
-        background: "#0e0820",
+        background: "#252525",
         color: "#ffffff",
         fontFamily: "Poppins",
         position: "relative",
@@ -122,7 +122,7 @@ export function OgShell({
           height: 920,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(91,45,144,0.55) 0%, rgba(91,45,144,0.18) 35%, rgba(91,45,144,0) 70%)",
+            "radial-gradient(circle, rgba(255,227,48,0.16) 0%, rgba(255,227,48,0.05) 35%, rgba(255,227,48,0) 70%)",
           display: "flex",
         }}
       />
@@ -135,7 +135,7 @@ export function OgShell({
           height: 760,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(122,63,192,0.45) 0%, rgba(122,63,192,0.15) 35%, rgba(122,63,192,0) 70%)",
+            "radial-gradient(circle, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 35%, rgba(255,255,255,0) 70%)",
           display: "flex",
         }}
       />

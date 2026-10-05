@@ -16,7 +16,7 @@ export function PlanBlock({
           type="checkbox"
           checked={enabled}
           onChange={(e) => onEnabledChange(e.target.checked)}
-          className="mt-0.5 size-4 accent-[var(--monash-purple)]"
+          className="mt-0.5 size-4 accent-emphasis"
         />
         <span className="flex flex-col gap-0.5">
           <span className="text-xs font-medium">Use my saved plan</span>

@@ -27,7 +27,7 @@ export const PRIMARY_NAV_ITEMS: readonly PrimaryNavItem[] = [
 
 /**
  * Inline horizontal nav, à la Bootstrap / BBC / Facebook. Sits next to
- * the brand inside the page header. Active item is bolded with a purple
+ * the brand inside the page header. Active item is bolded with a yellow
  * underline; inactive items are muted with hover-to-foreground.
  *
  * On mobile the inline form is hidden — see the Sheet menu in
@@ -51,7 +51,7 @@ export function PrimaryNav({ className }: { className?: string }) {
             className={cn(
               "relative py-1 transition-colors",
               active
-                ? "font-semibold text-[var(--monash-purple-deep)] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-[var(--monash-purple)]"
+                ? "font-semibold text-foreground after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

@@ -106,7 +106,7 @@ function UnitFacts({
       {detail?.handbookSynopsis ? (
         <Block label="Synopsis">
           <div
-            className="prose prose-sm max-w-none text-foreground/90 [&_a]:text-[var(--monash-purple-deep)] [&_a]:underline [&_p]:my-2"
+            className="prose prose-sm max-w-none text-foreground/90 [&_a]:text-emphasis [&_a]:underline [&_p]:my-2"
             dangerouslySetInnerHTML={{ __html: detail.handbookSynopsis }}
           />
           {handbookUrl ? <HandbookLink href={handbookUrl} year={year} /> : null}
@@ -254,7 +254,7 @@ function CourseFacts({ course, onPickAos, details }: EntityFactsProps) {
       {detail?.overview ? (
         <Block label="Overview">
           <div
-            className="prose prose-sm max-w-none text-foreground/90 [&_a]:text-[var(--monash-purple-deep)] [&_a]:underline [&_p]:my-2"
+            className="prose prose-sm max-w-none text-foreground/90 [&_a]:text-emphasis [&_a]:underline [&_p]:my-2"
             dangerouslySetInnerHTML={{ __html: detail.overview }}
           />
           <HandbookLink href={handbookUrl} year={year} />
@@ -303,7 +303,7 @@ function CourseFacts({ course, onPickAos, details }: EntityFactsProps) {
                         <button
                           type="button"
                           onClick={() => onPickAos(a.code)}
-                          className="text-left text-foreground/90 hover:text-[var(--monash-purple-deep)] hover:underline"
+                          className="text-left text-foreground/90 hover:text-emphasis hover:underline"
                           title={`Re-seed the graph with ${a.title}`}
                         >
                           {a.title}
@@ -347,7 +347,7 @@ function EmptyHint({ featured }: EntityFactsProps) {
               <Link
                 href={`/tree?unit=${u.code}`}
                 prefetch={false}
-                className="text-foreground/90 hover:text-[var(--monash-purple-deep)] hover:underline"
+                className="text-foreground/90 hover:text-emphasis hover:underline"
               >
                 {u.title}
               </Link>
@@ -427,7 +427,7 @@ function UnitBullets({
             <Link
               href={`/tree?unit=${c}`}
               prefetch={false}
-              className="text-foreground/90 hover:text-[var(--monash-purple-deep)] hover:underline"
+              className="text-foreground/90 hover:text-emphasis hover:underline"
             >
               {u?.title ?? c}
             </Link>

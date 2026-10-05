@@ -121,7 +121,7 @@ export function TreeSidePanel({
           {node.planStatus === "placed" ? (
             <Badge
               variant="outline"
-              className="border-[var(--monash-purple)]/60 bg-[var(--monash-purple-soft)] text-[10px] font-normal text-[var(--monash-purple-deep)]"
+              className="border-emphasis/60 bg-emphasis-soft text-[10px] font-normal text-emphasis"
             >
               Planned
             </Badge>

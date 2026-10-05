@@ -118,7 +118,7 @@ function TreeGraphInner({
             animated: false,
             style: {
               stroke: onPath
-                ? "var(--monash-purple)"
+                ? "var(--emphasis)"
                 : "color-mix(in oklab, var(--color-foreground) 25%, transparent)",
               strokeWidth: onPath ? 2 : 1.25,
               strokeDasharray: e.type === "corequisite" ? "5 4" : undefined,
@@ -127,7 +127,7 @@ function TreeGraphInner({
             markerEnd: {
               type: MarkerType.ArrowClosed,
               color: onPath
-                ? "var(--monash-purple)"
+                ? "var(--emphasis)"
                 : "color-mix(in oklab, var(--color-foreground) 45%, transparent)",
               width: 14,
               height: 14,
@@ -206,7 +206,7 @@ function TreeGraphInner({
           maskColor="var(--color-muted)"
           nodeColor={(n) =>
             (n.data as unknown as UnitNodeData).isFocused
-              ? "var(--monash-purple)"
+              ? "var(--emphasis)"
               : "var(--color-foreground)"
           }
           className="!hidden !rounded-xl !border !bg-card/90 !shadow-card sm:!block"

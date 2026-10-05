@@ -16,25 +16,6 @@ import type { PeriodKind } from "@/lib/planner/types"
 import { usePlanner } from "./planner-context"
 import { StartingYearPicker } from "./starting-year-picker"
 
-/**
- * Per-year accent gradients. All sit in Monash purple so the strips
- * read as chapter dividers rather than decoration; each year drops a
- * step darker to reinforce "later in the degree = deeper". White
- * text + yellow accent dot gives the strip a badge-like feel without
- * competing with the coloured unit cards below.
- */
-const YEAR_GRADIENTS: string[] = [
-  "linear-gradient(90deg, #5b2d90 0%, #7b4ab5 100%)",
-  "linear-gradient(90deg, #4a248a 0%, #5b2d90 100%)",
-  "linear-gradient(90deg, #3a1a63 0%, #4a248a 100%)",
-  "linear-gradient(90deg, #2a104f 0%, #3a1a63 100%)",
-  "linear-gradient(90deg, #1c0836 0%, #2a104f 100%)",
-]
-
-export function yearGradient(index: number): string {
-  return YEAR_GRADIENTS[Math.min(index, YEAR_GRADIENTS.length - 1)]
-}
-
 const ADDABLE_SLOT_KINDS: PeriodKind[] = [
   "S1",
   "S2",
@@ -44,7 +25,7 @@ const ADDABLE_SLOT_KINDS: PeriodKind[] = [
 ]
 
 /**
- * Header strip for a single study year — the coloured banner above the
+ * Header strip for a single study year — the charcoal banner above the
  * year's slots. Carries the year label, calendar year, reset/add/remove
  * controls and (for Year 1) the handbook-year picker.
  */
@@ -65,11 +46,12 @@ export function YearHeader({
 }) {
   const { dispatch } = usePlanner()
   return (
-    <div
-      className="relative flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2.5 text-white sm:px-4"
-      style={{ backgroundImage: yearGradient(yearIndex) }}
-    >
-      <h3 className="min-w-0 truncate text-[11px] font-semibold tracking-[0.12em] text-white uppercase sm:text-xs">
+    <div className="relative flex items-center justify-between gap-2 border-b border-white/10 bg-year-strip px-3 py-2.5 text-white sm:px-4">
+      <h3 className="flex min-w-0 items-center truncate text-[11px] font-semibold tracking-[0.12em] text-white uppercase sm:text-xs">
+        <span
+          aria-hidden
+          className="mr-2 size-1.5 shrink-0 rounded-full bg-primary"
+        />
         {yearLabel}
         <span className="ml-1.5">({calYear})</span>
       </h3>
