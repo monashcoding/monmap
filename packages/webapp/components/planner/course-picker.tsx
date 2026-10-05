@@ -100,16 +100,6 @@ export function CoursePicker({ className }: { className?: string }) {
                 <ExternalLinkIcon className="size-3" />
                 View Details
               </a>
-              <a
-                href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
-              >
-                <ExternalLinkIcon className="size-3" />
-                Handbook
-              </a>
             </div>
           ) : null}
         </div>

@@ -270,15 +270,6 @@ export function UnitDetailView({
             <ExternalLinkIcon className="size-3" />
             View Details
           </a>
-          <a
-            href={`https://handbook.monash.edu/${unit?.fallbackFor === selectedYear ? unit.year : selectedYear}/units/${code}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
-          >
-            <ExternalLinkIcon className="size-3" />
-            Handbook
-          </a>
         </div>
         <h3 className="text-sm leading-snug font-medium">
           {unit?.title ??

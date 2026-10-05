@@ -84,26 +84,15 @@ export function TreeSidePanel({
               className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
             >
               <ExternalLinkIcon className="size-3" />
-              View details
+              View Details
             </Link>
           ) : null}
-          <a
-            href={`https://handbook.monash.edu/${year}/units/${node.code}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline",
-              !detailsHref && "ml-auto"
-            )}
-          >
-            <ExternalLinkIcon className="size-3" />
-            Handbook
-          </a>
           <Button
             variant="ghost"
             size="icon-xs"
             onClick={onClose}
             aria-label="Close detail panel"
+            className={cn(!detailsHref && "ml-auto")}
           >
             <XIcon className="size-3.5" />
           </Button>
