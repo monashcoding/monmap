@@ -254,7 +254,12 @@ export function UnitDetailView({
     <div className={className}>
       <header className="flex flex-col gap-1 border-b pb-3">
         <div className="flex items-baseline gap-2">
-          <span className="text-base font-semibold tabular-nums">{code}</span>
+          <a
+            href={`/units/${code}/${selectedYear}`}
+            className="text-base font-semibold tabular-nums underline-offset-2 hover:underline"
+          >
+            {code}
+          </a>
           {unit ? (
             <span className="text-xs text-muted-foreground tabular-nums">
               {unit.creditPoints}cp
@@ -275,15 +280,29 @@ export function UnitDetailView({
           </a>
         </div>
         <h3 className="text-sm leading-snug font-medium">
-          {unit?.title ??
-            (loading ? "Loading…" : "Not in this year's handbook")}
+          {unit ? (
+            <a
+              href={`/units/${code}/${selectedYear}`}
+              className="underline-offset-2 hover:underline"
+            >
+              {unit.title}
+            </a>
+          ) : loading ? (
+            "Loading…"
+          ) : (
+            "Not in this year's handbook"
+          )}
         </h3>
-        <a
-          href={`/units/${code}#reviews`}
-          className="min-h-4 self-start rounded-tag underline-offset-2 hover:underline"
-        >
-          {rating ? <RatingInline summary={rating} size="xs" /> : null}
-        </a>
+        <div className="min-h-4">
+          {rating ? (
+            <a
+              href={`/units/${code}#reviews`}
+              className="rounded-tag underline-offset-2 hover:underline"
+            >
+              <RatingInline summary={rating} size="xs" />
+            </a>
+          ) : null}
+        </div>
         {unit?.fallbackFor ? (
           <p className="text-[11px] text-muted-foreground">
             From the {unit.year} handbook. The {unit.fallbackFor} page

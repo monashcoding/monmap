@@ -75,7 +75,18 @@ export function TreeSidePanel({
     >
       <header className="sticky top-0 z-10 flex flex-col gap-1 border-b bg-card px-4 pt-4 pb-3">
         <div className="flex items-baseline gap-2">
-          <span className="text-base font-bold tabular-nums">{node.code}</span>
+          {detailsHref ? (
+            <Link
+              href={detailsHref}
+              className="text-base font-bold tabular-nums underline-offset-2 hover:underline"
+            >
+              {node.code}
+            </Link>
+          ) : (
+            <span className="text-base font-bold tabular-nums">
+              {node.code}
+            </span>
+          )}
           {unit ? (
             <span className="text-xs text-muted-foreground tabular-nums">
               {unit.creditPoints}cp
@@ -101,7 +112,16 @@ export function TreeSidePanel({
           </Button>
         </div>
         <h3 className="text-sm leading-snug font-medium">
-          {unit?.title ?? (
+          {unit && detailsHref ? (
+            <Link
+              href={detailsHref}
+              className="underline-offset-2 hover:underline"
+            >
+              {unit.title}
+            </Link>
+          ) : unit ? (
+            unit.title
+          ) : (
             <span className="text-muted-foreground italic">
               Not offered in {year}
             </span>
