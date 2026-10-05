@@ -28,22 +28,30 @@ Reviews & Units".
 
 ## What is indexed
 
-`resolveEntity` (`lib/handbook/resolve.ts`) sets `indexable`:
+`resolveEntity` (`lib/handbook/resolve.ts`) sets `canonical` and
+`indexable`:
 
-- Indexed: the bare URL (`/units/FIT2004`) of a code that is in either
-  of the two newest handbooks.
-- `noindex, follow`: every `/[year]` URL, and retired codes. They stay
-  reachable for students and their links are followed.
-- `/search` with a query, tab or filter is `noindex, follow`, as
-  before.
+- Every URL of a code, the bare one and each `/[year]` one, has the
+  bare URL as its canonical. Year pages repeat the same unit with small
+  changes, so they point search engines at the bare page, which
+  collects their links and is the one indexed. The bare URL shows the
+  latest year.
+- A code is `indexable` when it is in either of the two newest
+  handbooks. Retired codes are `noindex, follow` on every URL: their
+  pages stay up for students, and their links are followed.
+- `/search` with a query, tab or filter is `noindex, follow`.
+- Only the home page claims `/` as its canonical. Pages without their
+  own canonical (the 404 page, `/plans`) have none, rather than
+  inheriting `/` from the layout.
 
 The sitemaps (`/sitemaps/*.xml`) list only indexed URLs: about 5,500
 units, 560 courses and 690 areas of study. A page with published
 reviews gets `lastmod` (its newest review), priority 0.8 and a weekly
 change frequency, so crawlers revisit the pages that change.
 
-Links to older years carry `rel="nofollow"`, and the year picker uses
-the router, so crawlers don't spend their visits on noindex pages.
+Links that would only spend crawl visits carry `rel="nofollow"`: links
+to older years, search filters, and "Plan this course" (each would be
+another copy of `/`). The year picker uses the router.
 
 ## Unique content on every page
 
@@ -74,9 +82,13 @@ Monash's own prose (`Prose` in `components/handbook/parts.tsx`) carries
 ## Structured data
 
 - Units: `Course` with `coursePrerequisites`, `hasCourseInstance` (one
-  per period and campus), `aggregateRating` and `review`.
-- Courses: `EducationalOccupationalProgram`. Areas of study:
-  `WebPage`. Each page has a `BreadcrumbList`.
+  per period and campus, with `courseWorkload` when the handbook gives
+  a semester total), `aggregateRating` and `review`.
+- Courses: `EducationalOccupationalProgram` and `Course` (Google shows
+  review stars for `Course` only), with `aggregateRating` and `review`.
+- Areas of study: `Course`, with `aggregateRating` and `review`.
+- Every `description` is MonMap's summary, not the handbook's text.
+- Each page has a `BreadcrumbList`. Pages are `lang="en-AU"`.
 - Home: `WebApplication`. `/search`: `WebSite` with a `SearchAction`.
 
 ## Crawl paths

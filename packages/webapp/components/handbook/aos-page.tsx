@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { AOS_KIND_LABEL, fetchAosPage } from "@/lib/db/handbook"
 import { entityHref, monashHandbookUrl } from "@/lib/handbook/links"
 import { resolveEntity } from "@/lib/handbook/resolve"
-import { absoluteUrl, stripHtml, truncate } from "@/lib/seo"
+import { absoluteUrl } from "@/lib/seo"
 import { prefetchGraphForSeeds } from "@/lib/tree/prefetch"
 
 import {
@@ -23,9 +23,14 @@ import {
   fetchEntityReviews,
   ReviewsSection,
 } from "@/components/reviews/reviews-section"
-import { JsonLd, breadcrumbLd } from "./json-ld"
+import { JsonLd, breadcrumbLd, ratingLd } from "./json-ld"
 import { QuickAnswers, SegText } from "./quick-answers"
-import { aosDescription, aosLede, aosQuestions } from "@/lib/handbook/summary"
+import {
+  aosDescription,
+  aosLede,
+  aosQuestions,
+  plain,
+} from "@/lib/handbook/summary"
 import { aosFacts } from "@/lib/handbook/facts"
 import {
   CurriculumTree,
@@ -307,16 +312,21 @@ export async function AosPage({
         data={[
           {
             "@context": "https://schema.org",
-            "@type": "WebPage",
+            // A course of study within a degree; typed as Course so its
+            // reviews can show as stars in search results.
+            "@type": "Course",
             name: `${a.title} (${a.code})`,
-            description: truncate(stripHtml(a.description), 500) || undefined,
+            courseCode: a.code,
+            // MonMap's own summary: always present, never the handbook copy.
+            description: plain(aosLede(facts)),
             url: absoluteUrl(r.canonical),
-            about: {
+            provider: {
               "@type": "CollegeOrUniversity",
               name: "Monash University",
               sameAs: "https://www.monash.edu/",
             },
             sameAs: monashHandbookUrl("aos", a.code, r.year),
+            ...ratingLd(reviews.summary, reviews.reviews),
           },
           breadcrumbLd([
             { name: "Search", path: "/search" },

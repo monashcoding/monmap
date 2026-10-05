@@ -10,7 +10,7 @@ import {
 import { entityHref, monashHandbookUrl } from "@/lib/handbook/links"
 import { resolveEntity } from "@/lib/handbook/resolve"
 import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
-import { absoluteUrl, stripHtml, truncate } from "@/lib/seo"
+import { absoluteUrl } from "@/lib/seo"
 import { prefetchTreeData } from "@/lib/tree/prefetch"
 import { cn } from "@/lib/utils"
 
@@ -709,7 +709,8 @@ export async function UnitPage({
             "@type": "Course",
             name: `${u.code} ${u.title}`,
             courseCode: u.code,
-            description: truncate(stripHtml(u.synopsis), 500) || undefined,
+            // MonMap's own summary: always present, never the handbook copy.
+            description: plain(unitLede(facts)),
             url: absoluteUrl(r.canonical),
             inLanguage: "en-AU",
             educationalLevel: u.undergradPostgrad ?? undefined,
@@ -723,12 +724,12 @@ export async function UnitPage({
             coursePrerequisites: facts.prerequisites
               ? plain(ruleSegs(facts.prerequisites) ?? [])
               : undefined,
-            hasCourseInstance: courseInstancesLd(u),
+            hasCourseInstance: courseInstancesLd(u, facts.workloadHours),
             ...ratingLd(reviews.summary, reviews.reviews),
           },
           breadcrumbLd([
             { name: "Search", path: "/search" },
-            { name: "Units", path: "/search?type=units" },
+            { name: "Units", path: "/search" },
             { name: `${u.code} ${u.title}`, path: r.canonical },
           ]),
         ]}
@@ -738,7 +739,7 @@ export async function UnitPage({
 }
 
 /** One schema.org CourseInstance per teaching period and campus. */
-function courseInstancesLd(u: UnitPageData) {
+function courseInstancesLd(u: UnitPageData, hours: number | null) {
   const seen = new Set<string>()
   const out: object[] = []
   for (const o of u.offerings) {
@@ -755,6 +756,8 @@ function courseInstancesLd(u: UnitPageData) {
             ? "Blended"
             : "Onsite",
       location: o.location ?? undefined,
+      // ISO 8601 total for the semester, when the handbook gives one.
+      courseWorkload: hours ? `PT${hours}H` : undefined,
     })
   }
   return out.length ? out : undefined

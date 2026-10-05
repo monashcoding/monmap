@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
 
 import { PlannerSkeleton } from "@/components/planner/planner-skeleton"
@@ -13,6 +14,13 @@ import {
   listUserGrades,
   listUserPlansWithState,
 } from "@/lib/db/queries"
+
+// Only the home page claims "/" as canonical; a layout-level canonical
+// would leak onto every page without its own, 404s included. Query
+// variants (?course=, ?year=, ?plan=) are the same page.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+}
 
 /**
  * Server-component shell. Fetches the picker list and pre-warms units

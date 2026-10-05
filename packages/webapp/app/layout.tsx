@@ -39,9 +39,6 @@ export const metadata: Metadata = {
     "Australia",
   ],
   authors: [{ name: "MonMap" }],
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     title: "MonMap: Monash Course Planner, Unit Reviews & Prerequisite Maps",
     description: SITE_DESCRIPTION,
@@ -109,7 +106,7 @@ export default function RootLayout({
   }
   return (
     <html
-      lang="en"
+      lang="en-AU"
       suppressHydrationWarning
       className={cn("antialiased", "font-sans", poppins.variable)}
     >

@@ -16,13 +16,16 @@ export interface ResolvedEntity {
   siteLatest: string
   /** Year segment for links on this page; null on latest-year pages. */
   linkYear: string | null
-  /** The canonical path: bare for the latest year, else with the year. */
+  /**
+   * The canonical path: always the bare URL. Year pages repeat the
+   * same unit with small changes, so they point search engines at the
+   * bare page, which collects their links and is the one indexed.
+   */
   canonical: string
   /**
-   * Whether search engines should index this URL. Only the latest
-   * year of a code that is still current is: older years repeat the
-   * same page with small changes, and codes gone from the last two
-   * handbooks are retired. Both stay reachable and followable.
+   * Whether the code should be in search results at all. Codes gone
+   * from the two newest handbooks are retired: their pages stay up but
+   * are noindex, follow.
    */
   indexable: boolean
 }
@@ -68,8 +71,8 @@ export async function resolveEntity(
     latest,
     siteLatest,
     linkYear: isLatest ? null : year,
-    canonical: entityHref(kind, code, isLatest ? null : year),
-    indexable: isLatest && isCurrent(latest, siteLatest),
+    canonical: entityHref(kind, code),
+    indexable: isCurrent(latest, siteLatest),
   }
 }
 

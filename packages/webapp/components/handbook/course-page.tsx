@@ -6,7 +6,7 @@ import { fetchCoursePage } from "@/lib/db/handbook"
 import { entityHref, monashHandbookUrl } from "@/lib/handbook/links"
 import { isoDuration, resolveEntity } from "@/lib/handbook/resolve"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
-import { absoluteUrl, stripHtml, truncate } from "@/lib/seo"
+import { absoluteUrl } from "@/lib/seo"
 import { prefetchTreeData } from "@/lib/tree/prefetch"
 
 import {
@@ -25,12 +25,13 @@ import {
   fetchEntityReviews,
   ReviewsSection,
 } from "@/components/reviews/reviews-section"
-import { JsonLd, breadcrumbLd } from "./json-ld"
+import { JsonLd, breadcrumbLd, ratingLd } from "./json-ld"
 import { QuickAnswers, SegText } from "./quick-answers"
 import {
   courseDescription,
   courseLede,
   courseQuestions,
+  plain,
 } from "@/lib/handbook/summary"
 import { courseFacts, qualification } from "@/lib/handbook/facts"
 import {
@@ -202,6 +203,8 @@ export async function CoursePage({
         actions={
           <Link
             href={planCourseHref(c.code, r.year)}
+            // Every course would otherwise add a crawlable copy of "/".
+            rel="nofollow"
             className="inline-flex h-8 items-center gap-1.5 rounded-control bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-primary/80"
           >
             <MapIcon className="size-3.5" aria-hidden />
@@ -509,11 +512,14 @@ export async function CoursePage({
         data={[
           {
             "@context": "https://schema.org",
-            "@type": "EducationalOccupationalProgram",
+            // Also a Course: Google shows review stars for Course, not
+            // for EducationalOccupationalProgram.
+            "@type": ["EducationalOccupationalProgram", "Course"],
             name: c.title,
             identifier: c.code,
             programType: qualification(c.aqfLevel) ?? undefined,
-            description: truncate(stripHtml(c.overview), 500) || undefined,
+            // MonMap's own summary: always present, never the handbook copy.
+            description: plain(courseLede(facts)),
             url: absoluteUrl(r.canonical),
             timeToComplete: isoDuration(c.fullTime),
             numberOfCredits: c.creditPoints || undefined,
@@ -524,6 +530,7 @@ export async function CoursePage({
               sameAs: "https://www.monash.edu/",
             },
             sameAs: monashHandbookUrl("course", c.code, r.year),
+            ...ratingLd(reviews.summary, reviews.reviews),
           },
           breadcrumbLd([
             { name: "Search", path: "/search" },
