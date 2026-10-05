@@ -108,10 +108,20 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
           className="flex items-center gap-2 rounded-control font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           MonMap
-          <span className="hidden rounded-tag bg-primary px-1.5 py-0.5 text-[10px] leading-none font-semibold text-primary-foreground sm:inline">
-            2027 update!
-          </span>
         </Link>
+        {/* One yellow pill: the 2027 note and a link to start reviewing.
+            It sits beside the MonMap link, not in it, so the two links
+            don't nest. */}
+        <span className="hidden items-center rounded-tag bg-primary text-[10px] leading-none font-semibold text-primary-foreground sm:inline-flex">
+          <span className="py-0.5 pr-1.5 pl-1.5">2027 update</span>
+          <span aria-hidden className="h-2.5 w-px bg-primary-foreground/30" />
+          <Link
+            href="/my-reviews"
+            className="rounded-tag py-0.5 pr-1.5 pl-1.5 underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Review your units
+          </Link>
+        </span>
       </nav>
       <PrimaryNav className="ml-3 hidden md:flex" />
       <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
