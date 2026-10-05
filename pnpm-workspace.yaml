@@ -7,6 +7,13 @@ packages:
 overrides:
   drizzle-orm: 0.38.4
 
+# Next.js only: skip the 7-day minimum release age so security patches
+# install at once. Every other package still waits 7 days. 16.3.8 is
+# older than 7 days from 2026-10-07, after which this can go.
+minimumReleaseAgeExclude:
+  - next
+  - "@next/*"
+
 # Install scripts pnpm may run. esbuild and unrs-resolver set up native
 # binaries; sharp backs next/image. The rest only print banners or
 # telemetry notices, so they stay off.
