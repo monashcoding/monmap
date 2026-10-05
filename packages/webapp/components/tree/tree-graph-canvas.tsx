@@ -45,6 +45,7 @@ function TreeGraphInner({
   variantCounts,
   onFocus,
   fitAll = false,
+  fitSeeds = false,
   minimap = true,
   interactive = true,
   scrollZoom = interactive,
@@ -61,6 +62,22 @@ function TreeGraphInner({
     () => layoutTree({ nodes: codesKey ? codesKey.split(",") : [], edges }),
     [codesKey, edges]
   )
+
+  // The nodes the first view fits when `fitSeeds` is on: the seeds, and
+  // for a single seed its direct prerequisites and dependants too.
+  const seedView = useMemo(() => {
+    if (!fitSeeds) return undefined
+    const ids = new Set(nodes.filter((n) => n.isSeed).map((n) => n.code))
+    if (ids.size === 1) {
+      const [seed] = ids
+      for (const e of edges) {
+        if (e.type === "prohibition") continue
+        if (e.from === seed) ids.add(e.to)
+        if (e.to === seed) ids.add(e.from)
+      }
+    }
+    return ids.size > 0 ? [...ids].map((id) => ({ id })) : undefined
+  }, [fitSeeds, nodes, edges])
 
   const rfNodes = useMemo<Node<UnitNodeData>[]>(() => {
     const byCode = new Map(nodes.map((n) => [n.code, n]))
@@ -183,7 +200,7 @@ function TreeGraphInner({
       fitViewOptions={
         fitAll
           ? { padding: 0.06, maxZoom: 1, minZoom: 0.05 }
-          : { padding: 0.18, maxZoom: 1, minZoom: 0.4 }
+          : { padding: 0.18, maxZoom: 1, minZoom: 0.4, nodes: seedView }
       }
       minZoom={fitAll ? 0.05 : 0.25}
       maxZoom={1.5}

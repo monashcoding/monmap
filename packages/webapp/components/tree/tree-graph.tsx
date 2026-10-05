@@ -34,6 +34,11 @@ export interface TreeGraphProps {
    * scrolls the page.
    */
   fitAll?: boolean
+  /**
+   * Open on the seed units (the page's own unit or units) instead of the
+   * whole graph. A single seed brings its direct neighbours with it.
+   */
+  fitSeeds?: boolean
   minimap?: boolean
   interactive?: boolean
   /**

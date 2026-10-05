@@ -261,6 +261,7 @@ export function EntityGraph({
                   variantCounts={variantCounts}
                   onFocus={setFocused}
                   minimap={false}
+                  fitSeeds
                   className="h-full min-h-0 rounded-none border-0 shadow-none"
                 />
               ) : null}
