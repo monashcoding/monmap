@@ -36,8 +36,7 @@ test("the CSV lays a plan out like the planner", () => {
     "Unit 4",
     "Credit points",
   ])
-  assert.equal(rows[1]![0], "First year (2027)")
-  assert.deepEqual(rows[2], [
+  assert.deepEqual(rows[1], [
     "Semester 1, 2027",
     "FIT1045 Introduction to programming (HD 85)",
     "",

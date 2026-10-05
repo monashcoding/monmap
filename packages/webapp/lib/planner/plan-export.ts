@@ -1,10 +1,5 @@
 import { markToGrade } from "./grades.ts"
-import {
-  slotBlockCredit,
-  slotLabel,
-  studyYearName,
-  studyYearSpan,
-} from "./timeline.ts"
+import { slotBlockCredit, slotLabel } from "./timeline.ts"
 import type { PlannerState, PlannerUnit } from "./types.ts"
 
 export interface CsvContext {
@@ -13,9 +8,9 @@ export interface CsvContext {
 }
 
 /**
- * The plan as a spreadsheet laid out like the planner: a heading row
- * per study year, then one row per semester with its units across the
- * columns and the semester's credit points last. A unit cell reads
+ * The plan as a spreadsheet laid out like the planner: one row per
+ * semester with its units across the columns and the semester's
+ * credit points last. A unit cell reads
  * "FIT1045 Introduction to programming", with "(HD 85)" when it has a
  * mark. A UTF-8 byte-order mark and CRLF line endings make Excel and
  * Numbers open it cleanly.
@@ -51,7 +46,6 @@ export function buildCsv(state: PlannerState, ctx: CsvContext): string {
   ]
   let total = 0
   state.years.forEach((year, yi) => {
-    rows.push(row(`${studyYearName(yi)} (${studyYearSpan(state, yi)})`))
     for (const slot of year.slots) {
       const label = slotLabel(state, yi, slot)
       if (slot.status) {
@@ -76,7 +70,6 @@ export function buildCsv(state: PlannerState, ctx: CsvContext): string {
   if (credit.length > 0) {
     const cp = credit.reduce((n, c) => n + c.creditPoints, 0)
     total += cp
-    rows.push(row("Credit for prior study"))
     for (const entry of credit) {
       rows.push(
         row(
