@@ -330,6 +330,17 @@
   animation: validation-flash 0.55s ease-in-out 3;
 }
 
+/*
+ * Theme switch: the new theme grows as a circle from the theme button
+ * (components/theme-toggle.tsx animates the clip-path). The browser's
+ * default cross-fade is turned off so only the circle moves.
+ */
+:root.theme-switching::view-transition-old(root),
+:root.theme-switching::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 /* Selection tint — picks up the brand yellow instead of system blue. */
 ::selection {
   background: color-mix(in oklch, var(--monash-yellow) 60%, transparent);
