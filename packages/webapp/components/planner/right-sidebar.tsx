@@ -79,7 +79,7 @@ function MobileRightDrawer({
         render={
           <Button
             variant="default"
-            className="fixed right-4 bottom-4 z-30 flex h-12 items-center gap-2 rounded-full px-4 shadow-xl md:hidden print:hidden"
+            className="fixed right-4 bottom-4 z-30 flex h-12 items-center gap-2 rounded-control px-4 shadow-xl md:hidden print:hidden"
             aria-label="Open course & progress panel"
           />
         }
@@ -159,7 +159,7 @@ function RightPanel({
   return (
     <div
       className={cn(
-        "overflow-hidden border bg-card md:rounded-3xl md:shadow-card",
+        "overflow-hidden border bg-card md:rounded-panel md:shadow-card",
         className
       )}
     >
@@ -281,7 +281,7 @@ function GaugeStat({
             type="button"
             onClick={() => setHidden((v) => !v)}
             aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
-            className="rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-ring"
+            className="rounded-tag text-muted-foreground transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-ring"
           >
             {hidden ? (
               <EyeOffIcon className="size-3" />

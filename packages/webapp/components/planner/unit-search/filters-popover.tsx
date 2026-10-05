@@ -71,7 +71,7 @@ export function FiltersPopover({
           <Button
             size="sm"
             variant={hasActive ? "default" : "outline"}
-            className="h-7 gap-1.5 rounded-lg px-2.5 text-xs"
+            className="h-7 gap-1.5 rounded-control px-2.5 text-xs"
           />
         }
       >

@@ -29,7 +29,7 @@ export function ResultSection({
           type="button"
           onClick={() => setCollapsed((c) => !c)}
           aria-expanded={!collapsed}
-          className="-mx-1 flex items-center justify-between rounded-md px-1 py-0.5 text-left transition-colors hover:bg-muted/40"
+          className="-mx-1 flex items-center justify-between rounded-control px-1 py-0.5 text-left transition-colors hover:bg-muted/40"
         >
           <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
             {title}
@@ -68,13 +68,13 @@ export function EmptyResultState({
   action?: { label: string; onClick: () => void }
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-muted/20 px-4 py-6 text-center">
+    <div className="flex flex-col items-center gap-2 rounded-control border border-dashed bg-muted/20 px-4 py-6 text-center">
       <p className="text-xs text-muted-foreground">{message}</p>
       {action && (
         <button
           type="button"
           onClick={action.onClick}
-          className="rounded-full bg-primary/40 px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/60"
+          className="rounded-control bg-primary/40 px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/60"
         >
           {action.label}
         </button>

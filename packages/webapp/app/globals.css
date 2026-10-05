@@ -66,13 +66,27 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /*
+   * Two corner radii, named by role. Use these, not sizes:
+   *   rounded-control — buttons, inputs, selects, chips, badges, menu
+   *                     items, unit cards, slots (6px)
+   *   rounded-panel   — cards, sidebars, popovers, menus, dialogs,
+   *                     sheets, toasts (12px)
+   *   rounded-tag     — inline labels under ~16px tall (4px)
+   *   rounded-full    — avatars, dots, progress rings only
+   * The size names below alias the two roles so a stray `rounded-2xl`
+   * still lands on the scale rather than inventing a third radius.
+   */
+  --radius-tag: calc(var(--radius) * 0.5);
+  --radius-control: calc(var(--radius) * 0.75);
+  --radius-panel: calc(var(--radius) * 1.5);
+  --radius-sm: var(--radius-control);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-control);
+  --radius-xl: var(--radius-panel);
+  --radius-2xl: var(--radius-panel);
+  --radius-3xl: var(--radius-panel);
+  --radius-4xl: var(--radius-panel);
 }
 
 :root {
@@ -242,38 +256,6 @@
   color: var(--monash-yellow-ink);
 }
 
-/*
- * Page backdrop — a faint yellow sunrise from the top-left over the
- * page colour. Fixed + -z-10 so it lives under the whole app and
- * doesn't scroll with the viewport.
- */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -10;
-  background:
-    radial-gradient(
-      60rem 40rem at -10% -10%,
-      color-mix(in oklch, var(--monash-yellow) 22%, transparent) 0%,
-      transparent 55%
-    ),
-    var(--background);
-  pointer-events: none;
-}
-
-@media screen {
-  .dark body::before {
-    background:
-      radial-gradient(
-        60rem 40rem at -10% -10%,
-        color-mix(in oklch, var(--monash-yellow) 7%, transparent) 0%,
-        transparent 55%
-      ),
-      var(--background);
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -289,11 +271,14 @@ body::before {
     }
   }
   body {
-    @apply text-foreground;
-    background: transparent;
+    @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+    /* The top bar's backdrop is 100vw wide, which includes a classic
+       scrollbar's width on Windows and Linux. Clip (not hidden) so it
+       can't cause sideways scroll without breaking position: sticky. */
+    overflow-x: clip;
   }
 }
 
@@ -309,9 +294,6 @@ body::before {
 }
 
 @media print {
-  body::before {
-    display: none;
-  }
   body {
     background: #fff;
   }

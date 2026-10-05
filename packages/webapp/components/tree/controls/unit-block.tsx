@@ -64,7 +64,7 @@ export function UnitBlock({
               render={
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 rounded-xl border bg-background py-2 pr-9 pl-3 text-left hover:border-muted-foreground/40"
+                  className="flex w-full items-center justify-between gap-2 rounded-control border bg-background py-2 pr-9 pl-3 text-left hover:border-muted-foreground/40"
                 >
                   <span className="inline-flex items-center gap-2 text-xs">
                     <SearchIcon className="size-3.5 text-muted-foreground" />
@@ -92,7 +92,7 @@ export function UnitBlock({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="e.g. FIT2004 or algorithms"
-                className="mb-1.5 w-full rounded-lg border bg-background px-2.5 py-1.5 text-xs"
+                className="mb-1.5 w-full rounded-control border bg-background px-2.5 py-1.5 text-xs"
               />
               <ul className="max-h-60 overflow-y-auto">
                 {visibleResults.length === 0 && qReady ? (
@@ -109,7 +109,7 @@ export function UnitBlock({
                         setOpen(false)
                         setQ("")
                       }}
-                      className="flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left hover:bg-muted"
+                      className="flex w-full flex-col items-start gap-0.5 rounded-control px-2 py-1.5 text-left hover:bg-muted"
                     >
                       <span className="text-[11px] font-bold tabular-nums">
                         {u.code}
@@ -128,7 +128,7 @@ export function UnitBlock({
               type="button"
               aria-label="Clear unit"
               onClick={() => onUnitChange("")}
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="absolute top-1/2 right-2 -translate-y-1/2 rounded-tag p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <XIcon className="size-3" />
             </button>
@@ -142,7 +142,7 @@ export function UnitBlock({
               type="button"
               onClick={() => onDirectionChange(d.value)}
               className={cn(
-                "rounded-lg border px-2 py-1.5 text-[10px] leading-tight font-semibold transition-colors",
+                "rounded-control border px-2 py-1.5 text-[10px] leading-tight font-semibold transition-colors",
                 direction === d.value
                   ? "border-emphasis bg-emphasis-soft text-emphasis"
                   : "border-border bg-background text-muted-foreground hover:border-muted-foreground/40"

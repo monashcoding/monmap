@@ -35,7 +35,9 @@ export function Legend() {
 
 function Swatch({ className }: { className: string }) {
   return (
-    <span className={cn("inline-block size-3 rounded-md border", className)} />
+    <span
+      className={cn("inline-block size-3 rounded-control border", className)}
+    />
   )
 }
 

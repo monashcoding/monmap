@@ -32,7 +32,7 @@ export function AnonymousBadge() {
         backgroundColor: "var(--monash-yellow)",
         color: "var(--monash-yellow-ink)",
       }}
-      className="flex items-center gap-1.5 rounded-full py-1 pr-1 pl-3 shadow-sm selection:bg-[var(--monash-yellow-ink)] selection:text-[var(--monash-yellow)] print:hidden"
+      className="flex items-center gap-1.5 rounded-control py-1 pr-1 pl-3 shadow-sm selection:bg-[var(--monash-yellow-ink)] selection:text-[var(--monash-yellow)] print:hidden"
     >
       <span className="text-[10px] leading-none font-medium whitespace-nowrap">
         On this device only

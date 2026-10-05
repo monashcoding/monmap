@@ -109,7 +109,7 @@ export function SemesterSlot({
         <Button
           variant="ghost"
           className={cn(
-            "rounded-xl border border-dashed border-border/80 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+            "rounded-control border border-dashed border-border/80 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
             isMobile ? "h-12 w-full" : "h-[88px]"
           )}
           onClick={() => setOpen(true)}

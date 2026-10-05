@@ -344,7 +344,7 @@ function RoleSelect({
  */
 function CampusChip({ scope }: { scope: string }) {
   return (
-    <span className="shrink-0 rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
+    <span className="shrink-0 rounded-tag bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
       {scope}
     </span>
   )

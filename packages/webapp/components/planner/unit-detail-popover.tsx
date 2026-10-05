@@ -311,7 +311,7 @@ export function UnitDetailView({
             {validation.errors.map((issue, i) => (
               <li
                 key={`err-${i}`}
-                className="flex gap-2 rounded-lg bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive"
+                className="flex gap-2 rounded-control bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive"
               >
                 <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
                 <span>{issue.message}</span>
@@ -320,7 +320,7 @@ export function UnitDetailView({
             {validation.warnings.map((issue, i) => (
               <li
                 key={`warn-${i}`}
-                className="flex gap-2 rounded-lg bg-warning-soft px-2.5 py-1.5 text-xs text-warning-foreground"
+                className="flex gap-2 rounded-control bg-warning-soft px-2.5 py-1.5 text-xs text-warning-foreground"
               >
                 <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
                 <span>{issue.message}</span>
@@ -387,7 +387,7 @@ function YearPicker({
             type="button"
             aria-label={`Viewing ${year} handbook — change year`}
             className={cn(
-              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] tabular-nums transition-colors",
+              "inline-flex items-center gap-1 rounded-control border px-1.5 py-0.5 text-[10px] tabular-nums transition-colors",
               isDefault
                 ? "border-border text-muted-foreground hover:text-foreground"
                 : "border-primary/40 bg-primary/40 text-primary-foreground hover:bg-primary/55"

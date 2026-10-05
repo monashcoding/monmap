@@ -168,7 +168,7 @@ export function UnitCard({
       data-dragging={isBeingDragged ? "true" : undefined}
       data-swap-target={isSwapTarget ? "true" : undefined}
       className={cn(
-        "group/card relative flex min-w-0 animate-in items-stretch overflow-hidden rounded-xl border bg-background shadow-card transition-[transform,box-shadow,border-color,opacity] duration-200 fade-in-0 slide-in-from-top-1",
+        "group/card relative flex min-w-0 animate-in items-stretch overflow-hidden rounded-control border bg-background shadow-card transition-[transform,box-shadow,border-color,opacity] duration-200 fade-in-0 slide-in-from-top-1",
         "hover:-translate-y-px",
         isDragOverlay
           ? "cursor-grabbing"
@@ -227,7 +227,7 @@ export function UnitCard({
             ) : null}
             <StatusIcon status={status} />
             {isFY ? (
-              <span className="ml-auto rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
+              <span className="ml-auto rounded-tag bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
                 Full year
               </span>
             ) : null}
@@ -262,7 +262,7 @@ export function UnitCard({
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-4 w-10 rounded border border-border bg-background px-1 py-0 text-center text-[10px] leading-none font-semibold text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
+                  className="h-4 w-10 rounded-tag border border-border bg-background px-1 py-0 text-center text-[10px] leading-none font-semibold text-foreground tabular-nums focus:ring-1 focus:ring-ring focus:outline-none"
                 />
                 <span className="text-[9px] leading-none text-muted-foreground">
                   /100
@@ -339,7 +339,7 @@ type CardStatus = "ok" | "warn" | "error" | "loading"
 
 function CoreBadge() {
   return (
-    <span className="rounded bg-primary px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
+    <span className="rounded-tag bg-primary px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
       Core
     </span>
   )
@@ -368,7 +368,7 @@ function GradeBadge({ grade }: { grade: ReturnType<typeof markToGrade> }) {
   return (
     <span
       className={cn(
-        "rounded px-1 py-0.5 text-[9px] leading-none font-bold tabular-nums",
+        "rounded-tag px-1 py-0.5 text-[9px] leading-none font-bold tabular-nums",
         s.bg,
         s.text
       )}

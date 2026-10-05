@@ -51,7 +51,7 @@ export function PlanPreview({ state }: { state: PlannerState }) {
                       return (
                         <div
                           key={i}
-                          className="shrink-0 rounded border border-dashed border-border bg-muted/40"
+                          className="shrink-0 rounded-tag border border-dashed border-border bg-muted/40"
                           style={{ width: CELL_W, height: 26 }}
                         />
                       )
@@ -60,7 +60,7 @@ export function PlanPreview({ state }: { state: PlannerState }) {
                     return (
                       <div
                         key={i}
-                        className="flex shrink-0 items-center overflow-hidden rounded border border-border/60 bg-background"
+                        className="flex shrink-0 items-center overflow-hidden rounded-tag border border-border/60 bg-background"
                         style={{ width: CELL_W, height: 26 }}
                       >
                         <div

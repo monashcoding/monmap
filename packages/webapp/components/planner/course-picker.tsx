@@ -55,7 +55,7 @@ export function CoursePicker({ className }: { className?: string }) {
 
   return (
     <section
-      className={cn("rounded-3xl border bg-card p-3 shadow-card", className)}
+      className={cn("rounded-panel border bg-card p-3 shadow-card", className)}
     >
       <label className="px-1 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
         Course
@@ -66,7 +66,7 @@ export function CoursePicker({ className }: { className?: string }) {
             render={
               <Button
                 variant="outline"
-                className="h-auto w-full justify-between gap-2 rounded-2xl px-4 py-3.5 text-left whitespace-normal"
+                className="h-auto w-full justify-between gap-2 rounded-control px-4 py-3.5 text-left whitespace-normal"
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-xs text-muted-foreground tabular-nums">

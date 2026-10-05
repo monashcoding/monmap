@@ -74,7 +74,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
 
   return (
     <section
-      className={cn("rounded-3xl border bg-card shadow-card", className)}
+      className={cn("rounded-panel border bg-card shadow-card", className)}
     >
       <div className="border-b px-4 py-2.5">
         <h2 className="text-xs font-semibold tracking-tight">
@@ -267,7 +267,7 @@ function CourseBlock({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-2 flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left text-[10px] text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          className="mt-2 flex w-full items-center gap-1 rounded-control px-1 py-0.5 text-left text-[10px] text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         >
           <ChevronRightIcon className="size-3 shrink-0" />
           Show all {requirements.length} requirement groups
@@ -283,7 +283,7 @@ function CourseBlock({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="mt-2 flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left text-[10px] text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              className="mt-2 flex w-full items-center gap-1 rounded-control px-1 py-0.5 text-left text-[10px] text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             >
               <ChevronRightIcon className="size-3 shrink-0 rotate-90" />
               Collapse requirement groups
@@ -409,7 +409,7 @@ function GroupList({
               {isChoice ? (
                 <span
                   className={cn(
-                    "rounded px-1 py-px text-[8px] font-medium tracking-wide uppercase",
+                    "rounded-tag px-1 py-px text-[8px] font-medium tracking-wide uppercase",
                     satisfied
                       ? "bg-success-soft text-success-foreground"
                       : "bg-primary/40 text-primary-foreground"
@@ -419,7 +419,7 @@ function GroupList({
                 </span>
               ) : null}
               {g.scope ? (
-                <span className="rounded bg-info/30 px-1 py-px text-[8px] font-medium tracking-wide text-info-foreground uppercase">
+                <span className="rounded-tag bg-info/30 px-1 py-px text-[8px] font-medium tracking-wide text-info-foreground uppercase">
                   {g.scope}
                 </span>
               ) : null}
@@ -442,7 +442,7 @@ function GroupList({
                         type="button"
                         aria-label={`Details for ${code}`}
                         className={cn(
-                          "inline-flex cursor-pointer items-center gap-0.5 rounded-md border px-1 py-0.5 text-[9px] tabular-nums transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                          "inline-flex cursor-pointer items-center gap-0.5 rounded-control border px-1 py-0.5 text-[9px] tabular-nums transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                           placed
                             ? "border-success/40 bg-success-soft text-success-foreground hover:bg-success/20"
                             : isChoice
@@ -489,7 +489,7 @@ function OverlapNotice({
       {budget ? (
         <p
           className={cn(
-            "rounded-lg px-2.5 py-1.5 text-[11px] leading-snug",
+            "rounded-control px-2.5 py-1.5 text-[11px] leading-snug",
             budget.overCommitted
               ? "bg-primary/40 text-primary-foreground"
               : "bg-muted text-muted-foreground"
@@ -502,7 +502,7 @@ function OverlapNotice({
         <p
           key={`${o.a.code}/${o.b.code}`}
           className={cn(
-            "rounded-lg px-2.5 py-1.5 text-[11px] leading-snug",
+            "rounded-control px-2.5 py-1.5 text-[11px] leading-snug",
             o.severity === "warning"
               ? "bg-primary/40 text-primary-foreground"
               : "bg-muted text-muted-foreground"

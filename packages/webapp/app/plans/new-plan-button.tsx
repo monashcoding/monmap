@@ -64,7 +64,7 @@ export function NewPlanButton({
           setYear(defaultYear)
           setOpen(true)
         }}
-        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-emphasis/40 bg-emphasis-soft px-5 py-3 text-sm font-semibold text-emphasis transition-colors hover:border-emphasis hover:bg-emphasis/10"
+        className="inline-flex items-center gap-1.5 rounded-control border border-dashed border-emphasis/40 bg-emphasis-soft px-5 py-3 text-sm font-semibold text-emphasis transition-colors hover:border-emphasis hover:bg-emphasis/10"
       >
         <PlusIcon className="size-4" />
         New plan

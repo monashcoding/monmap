@@ -278,7 +278,7 @@ function NewUnitDragOverlay({ code }: { code: string }) {
   const { units } = usePlanner()
   const unit = units.get(code)
   return (
-    <div className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2 shadow-2xl ring-2 ring-primary/40">
+    <div className="flex items-center gap-2 rounded-control border bg-background px-3 py-2 shadow-2xl ring-2 ring-primary/40">
       <span className="text-xs font-semibold tabular-nums">{code}</span>
       {unit ? (
         <span className="text-[9px] text-muted-foreground">
@@ -307,7 +307,7 @@ export function PlanGrid() {
   const startYear = Number(state.courseYear) || new Date().getFullYear()
 
   return (
-    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-2xl border bg-card shadow-card sm:rounded-3xl">
+    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-panel border bg-card shadow-card">
       {state.years.map((year, yearIndex) => (
         <div key={yearIndex} className="flex flex-col">
           <YearHeader

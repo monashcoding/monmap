@@ -35,7 +35,7 @@ function UnitNodeInner({ data, selected }: NodeProps) {
     <div
       data-status={d.planStatus ?? "none"}
       className={cn(
-        "group/tree-node relative flex h-[64px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-xl border bg-background shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
+        "group/tree-node relative flex h-[64px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-control border bg-background shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
         "hover:-translate-y-px hover:shadow-md",
         d.isFocused || selected
           ? "border-emphasis ring-2 ring-emphasis/40"
@@ -75,7 +75,7 @@ function UnitNodeInner({ data, selected }: NodeProps) {
           {d.variantCount > 1 ? (
             <span
               title={`Equivalent to ${d.variantCount - 1} other code${d.variantCount === 2 ? "" : "s"}`}
-              className="rounded bg-muted px-1 py-0.5 text-[8px] leading-none font-semibold text-muted-foreground"
+              className="rounded-tag bg-muted px-1 py-0.5 text-[8px] leading-none font-semibold text-muted-foreground"
             >
               +{d.variantCount - 1}
             </span>
@@ -96,7 +96,7 @@ function UnitNodeInner({ data, selected }: NodeProps) {
             />
           ) : null}
           {d.periodBadge ? (
-            <span className="ml-auto rounded bg-muted px-1 py-0.5 text-[8px] leading-none font-semibold text-muted-foreground tabular-nums">
+            <span className="ml-auto rounded-tag bg-muted px-1 py-0.5 text-[8px] leading-none font-semibold text-muted-foreground tabular-nums">
               {d.periodBadge}
             </span>
           ) : null}

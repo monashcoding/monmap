@@ -23,7 +23,7 @@ export function ActiveFilterChips({
           key={chip.key}
           type="button"
           onClick={chip.remove}
-          className="inline-flex items-center gap-1 rounded-full bg-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/60"
+          className="inline-flex items-center gap-1 rounded-control bg-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/60"
           aria-label={`Remove filter: ${chip.label}`}
         >
           {chip.label}

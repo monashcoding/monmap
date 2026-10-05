@@ -52,7 +52,7 @@ export function GoogleSignInButton({
         })
       }}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white text-zinc-800 shadow-sm transition-colors",
+        "inline-flex items-center justify-center gap-2 rounded-control border border-zinc-300 bg-white text-zinc-800 shadow-sm transition-colors",
         "hover:bg-zinc-50 active:bg-zinc-100",
         // Google's dark sign-in button colours.
         "dark:border-[#8e918f] dark:bg-[#131314] dark:text-[#e3e3e3] dark:hover:bg-[#1f1f20] dark:active:bg-[#2a2a2b]",

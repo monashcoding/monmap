@@ -176,7 +176,7 @@ export function UnitSearchPanel() {
 
   return (
     <div className="flex flex-col gap-3 p-3">
-      <div className="flex items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-control border bg-muted/30 px-3 py-2">
         <SearchIcon className="size-3.5 shrink-0 text-muted-foreground" />
         <input
           placeholder="Search units…"

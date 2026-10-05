@@ -129,7 +129,7 @@ function LeafNode({
   return (
     <div
       className={cn(
-        "flex items-baseline gap-2 rounded-md px-2 py-1",
+        "flex items-baseline gap-2 rounded-control px-2 py-1",
         good ? "text-foreground" : "text-muted-foreground",
         isProhibition && taken && "bg-destructive/10 text-destructive",
         !isProhibition && taken && "bg-success-soft"

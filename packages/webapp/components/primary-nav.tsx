@@ -26,9 +26,8 @@ export const PRIMARY_NAV_ITEMS: readonly PrimaryNavItem[] = [
 ] as const
 
 /**
- * Inline horizontal nav, à la Bootstrap / BBC / Facebook. Sits next to
- * the brand inside the page header. Active item is bolded with a yellow
- * underline; inactive items are muted with hover-to-foreground.
+ * Inline tab nav in the top bar. The active tab sits on the accent
+ * wash; inactive tabs are muted with hover-to-foreground.
  *
  * On mobile the inline form is hidden — see the Sheet menu in
  * `<AppHeader>` which renders the same destinations as touch-sized rows.
@@ -37,7 +36,7 @@ export function PrimaryNav({ className }: { className?: string }) {
   const pathname = usePathname() ?? "/"
   const router = useRouter()
   return (
-    <nav className={cn("flex items-center gap-5 text-sm", className)}>
+    <nav className={cn("flex items-center gap-1 text-sm", className)}>
       {PRIMARY_NAV_ITEMS.map(({ href, label, match }) => {
         const active = match(pathname)
         return (
@@ -45,14 +44,15 @@ export function PrimaryNav({ className }: { className?: string }) {
             key={href}
             href={href}
             prefetch
+            aria-current={active ? "page" : undefined}
             onMouseEnter={() => router.prefetch(href)}
             onFocus={() => router.prefetch(href)}
             onTouchStart={() => router.prefetch(href)}
             className={cn(
-              "relative py-1 transition-colors",
+              "rounded-control px-3 py-1.5 transition-colors",
               active
-                ? "font-semibold text-foreground after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-accent font-medium text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
             )}
           >
             {label}

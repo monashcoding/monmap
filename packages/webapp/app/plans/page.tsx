@@ -47,7 +47,7 @@ export default async function PlansPage() {
     return (
       <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
         <AppHeader />
-        <div className="flex flex-col items-center gap-4 rounded-3xl border bg-card py-20 text-center shadow-card">
+        <div className="flex flex-col items-center gap-4 rounded-panel border bg-card py-20 text-center shadow-card">
           <GraduationCapIcon className="size-10 text-muted-foreground/40" />
           <div className="flex flex-col gap-1">
             <p className="text-base font-semibold">
@@ -119,7 +119,7 @@ export default async function PlansPage() {
       <AppHeader />
 
       {plans.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-3xl border bg-card py-20 text-center shadow-card">
+        <div className="flex flex-col items-center gap-3 rounded-panel border bg-card py-20 text-center shadow-card">
           <GraduationCapIcon className="size-10 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">No plans saved yet.</p>
         </div>
@@ -139,7 +139,7 @@ export default async function PlansPage() {
           <form action={createBlankPlanAction}>
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-emphasis/40 bg-emphasis-soft px-5 py-3 text-sm font-semibold text-emphasis transition-colors hover:border-emphasis hover:bg-emphasis/10"
+              className="inline-flex items-center gap-1.5 rounded-control border border-dashed border-emphasis/40 bg-emphasis-soft px-5 py-3 text-sm font-semibold text-emphasis transition-colors hover:border-emphasis hover:bg-emphasis/10"
             >
               <PlusIcon className="size-4" />
               New plan

@@ -64,7 +64,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
       {...dragListeners}
       {...dragAttributes}
       className={cn(
-        "group/row flex items-stretch overflow-hidden rounded-xl border bg-background shadow-card transition-[transform,box-shadow,opacity] duration-200",
+        "group/row flex items-stretch overflow-hidden rounded-control border bg-background shadow-card transition-[transform,box-shadow,opacity] duration-200",
         "cursor-grab hover:-translate-y-px active:cursor-grabbing data-[dragging=true]:opacity-30",
         // Dimmed as a hint that it's already somewhere on the plan —
         // still draggable, since a retake is a legitimate second copy.
@@ -78,7 +78,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
           <button
             type="button"
             aria-label={`Details for ${code}`}
-            className="min-w-0 flex-1 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+            className="min-w-0 flex-1 rounded-control text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
           >
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold tabular-nums">{code}</span>
@@ -101,7 +101,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
                 size="sm"
                 variant="ghost"
                 aria-label={`Add ${code}`}
-                className="size-6 shrink-0 rounded-lg p-0"
+                className="size-6 shrink-0 rounded-control p-0"
               >
                 <PlusIcon className="size-3.5" />
               </Button>
@@ -135,7 +135,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
                         setAddOpen(false)
                       }}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                        "flex w-full items-center justify-between rounded-control px-3 py-2 text-left text-sm transition-colors",
                         full
                           ? "cursor-not-allowed opacity-40"
                           : "hover:bg-muted"

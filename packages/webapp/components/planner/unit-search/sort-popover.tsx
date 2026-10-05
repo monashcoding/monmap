@@ -31,7 +31,7 @@ export function SortPopover({
           <Button
             size="sm"
             variant={value !== "relevance" ? "default" : "outline"}
-            className="h-7 gap-1.5 rounded-lg px-2.5 text-xs"
+            className="h-7 gap-1.5 rounded-control px-2.5 text-xs"
           />
         }
       >
@@ -53,7 +53,7 @@ export function SortPopover({
                 onOpenChange(false)
               }}
               className={cn(
-                "flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-sm transition-colors hover:bg-primary/40",
+                "flex w-full items-center justify-between rounded-control px-3 py-1.5 text-left text-sm transition-colors hover:bg-primary/40",
                 value === key
                   ? "font-medium text-foreground"
                   : "text-muted-foreground"

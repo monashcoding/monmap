@@ -172,7 +172,7 @@ function TreeGraphInner({
   }, [rfNodes])
 
   return (
-    <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-2xl border bg-card shadow-card">
+    <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-panel border bg-card shadow-card">
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
@@ -198,7 +198,7 @@ function TreeGraphInner({
         />
         <Controls
           showInteractive={false}
-          className="!rounded-xl !border !bg-card !shadow-card [&_button]:!border-none [&_button]:!bg-transparent [&_button:hover]:!bg-muted"
+          className="!rounded-control !border !bg-card !shadow-card [&_button]:!border-none [&_button]:!bg-transparent [&_button:hover]:!bg-muted"
         />
         <MiniMap
           pannable
@@ -209,7 +209,7 @@ function TreeGraphInner({
               ? "var(--emphasis)"
               : "var(--color-foreground)"
           }
-          className="!hidden !rounded-xl !border !bg-card/90 !shadow-card sm:!block"
+          className="!hidden !rounded-control !border !bg-card/90 !shadow-card sm:!block"
         />
       </ReactFlow>
     </div>

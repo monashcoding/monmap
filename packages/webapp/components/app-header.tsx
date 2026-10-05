@@ -7,6 +7,7 @@ import { LogOutIcon, MenuIcon, NotebookPenIcon } from "lucide-react"
 import { useState, useSyncExternalStore } from "react"
 
 import { AnonymousBadge } from "@/components/anonymous-badge"
+import { MacAppsMenu } from "@/components/mac-apps-menu"
 import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { PRIMARY_NAV_ITEMS, PrimaryNav } from "@/components/primary-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -33,61 +34,74 @@ import { signOut, useSession } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 
 /**
- * Site-wide page header: brand block, page nav, and the avatar/sign-in
- * control. Self-contained — no per-page wiring required.
+ * Site-wide top bar: a slim, sticky, full-width strip with the
+ * MAC / MonMap breadcrumb, page tabs, the page's context slot, the MAC
+ * apps menu, the theme toggle and the avatar.
  *
- * Mobile (<md): brand + hamburger menu + avatar; the page-context
- * `children` slot wraps below if anything's there.
- * Desktop (md+): brand · inline nav · context slot · avatar.
+ * Pages render it as the first child of their <main>. The bar pulls
+ * itself out of <main>'s padding with negative margins, and its
+ * backdrop (the ::before layer) spans the whole viewport so the strip
+ * reads edge to edge even though <main> is capped at 1500px.
+ *
+ * Mobile (<md): hamburger, breadcrumb, context slot, avatar. The MAC
+ * apps menu and theme toggle stay; the tabs move into the sheet.
  */
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   return (
-    <header className="relative flex flex-wrap items-center justify-between gap-2 overflow-hidden rounded-2xl border bg-card px-3 py-2.5 shadow-card sm:gap-3 sm:rounded-3xl sm:px-5 sm:py-3 print:border-none print:bg-transparent print:shadow-none">
-      <div className="flex min-w-0 items-center gap-3 md:gap-6">
-        <MobileNavTrigger />
-        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-          <Link href="/" aria-label="MonMap home" className="relative shrink-0">
-            <div className="flex size-9 items-center justify-center overflow-hidden rounded-2xl bg-primary sm:size-10">
-              <Image
-                src="/brand-logo.png"
-                alt="Monash Association of Coding"
-                width={40}
-                height={40}
-                priority
-                className="size-full object-cover"
-              />
-            </div>
-          </Link>
-          <div className="min-w-0">
-            {/* Brand bug — intentionally NOT an <h1>. Each route owns
-                its own h1 (the unit/course title on canonical pages,
-                "Start exploring" on the empty workbench, etc.) so
-                Google sees a unique main topic per URL instead of
-                "MonMap" repeated across every page. */}
-            <p className="truncate text-base leading-tight font-semibold">
-              MonMap
-            </p>
-            <p className="hidden truncate text-[11px] text-muted-foreground sm:block">
-              A course mapper by{" "}
-              <a
-                href="https://monashcoding.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline-offset-2 hover:text-foreground hover:underline"
-              >
-                Monash Association of Coding (MAC)
-              </a>
-            </p>
-          </div>
-        </div>
-        <PrimaryNav className="hidden md:flex" />
-      </div>
-      <div className="ml-auto flex items-center gap-2 sm:gap-3">
+    <header
+      className={cn(
+        "sticky top-0 z-40 -mx-3 -mt-3 flex h-14 items-center gap-2 px-3 sm:-mx-5 sm:-mt-5 sm:gap-3 sm:px-5",
+        "before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:border-b before:bg-background/85 before:backdrop-blur-md",
+        "print:static print:mx-0 print:mt-0 print:before:hidden"
+      )}
+    >
+      <MobileNavTrigger />
+      {/* Brand bug — intentionally NOT an <h1>. Each route owns its own
+          h1 (the unit/course title on canonical pages, "Start
+          exploring" on the empty workbench, etc.) so Google sees a
+          unique main topic per URL instead of "MonMap" repeated across
+          every page. */}
+      <nav
+        aria-label="Breadcrumb"
+        className="flex min-w-0 shrink-0 items-center gap-2 text-sm"
+      >
+        <a
+          href="https://monashcoding.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Monash Association of Coding"
+          className="group/mac flex items-center gap-2 rounded-control outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
+            <Image
+              src="/brand-logo.png"
+              alt="Monash Association of Coding"
+              width={28}
+              height={28}
+              priority
+              className="size-full object-cover"
+            />
+          </span>
+          <span className="hidden text-muted-foreground transition-colors group-hover/mac:text-foreground sm:inline">
+            MAC
+          </span>
+        </a>
+        <span aria-hidden className="hidden text-border sm:inline">
+          /
+        </span>
+        <Link
+          href="/"
+          className="rounded-control font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          MonMap
+        </Link>
+      </nav>
+      <PrimaryNav className="ml-3 hidden md:flex" />
+      <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
         {children ? (
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            {children}
-          </div>
+          <div className="flex min-w-0 items-center gap-2">{children}</div>
         ) : null}
+        <MacAppsMenu />
         <ThemeToggle />
         <UserMenu />
       </div>
@@ -127,10 +141,10 @@ function MobileNavTrigger() {
                 prefetch
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex h-12 items-center gap-3 rounded-xl px-3 text-base transition-colors",
+                  "flex h-12 items-center gap-3 rounded-control px-3 text-base transition-colors",
                   active
-                    ? "bg-emphasis-soft font-semibold text-emphasis"
-                    : "text-foreground/80 hover:bg-muted/50"
+                    ? "bg-accent font-semibold text-accent-foreground"
+                    : "text-foreground/80 hover:bg-accent/60"
                 )}
               >
                 <span
@@ -185,7 +199,7 @@ function UserMenu() {
   // had written the skeleton. Gating on `hydrated` makes the first
   // client render match the server unconditionally.
   if (!hydrated || isPending) {
-    return <div className="size-10 animate-pulse rounded-full bg-muted" />
+    return <div className="size-8 animate-pulse rounded-full bg-muted" />
   }
 
   const user = data?.user
@@ -205,7 +219,7 @@ function UserMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Avatar size="lg">
+          <Avatar>
             {user.image ? (
               <AvatarImage src={user.image} alt={user.name} />
             ) : null}

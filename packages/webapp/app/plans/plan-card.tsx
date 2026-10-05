@@ -137,14 +137,14 @@ export function PlanCard({ data }: { data: PlanPageData }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="overflow-hidden rounded-2xl border bg-card shadow-card">
+      <div className="overflow-hidden rounded-panel border bg-card shadow-card">
         {/* Body: stacked on mobile, side-by-side on md+. */}
         <div className="grid grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)] md:divide-x">
           <div className="flex flex-col gap-3 p-4 sm:p-5">
             <div>
               {editingName ? (
                 <input
-                  className="w-full rounded bg-muted/50 px-1 text-base leading-tight font-bold ring-1 ring-primary outline-none focus:ring-2"
+                  className="w-full rounded-control bg-muted/50 px-1 text-base leading-tight font-bold ring-1 ring-primary outline-none focus:ring-2"
                   value={nameDraft}
                   autoFocus
                   onChange={(e) => setNameDraft(e.target.value)}
@@ -325,7 +325,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
             </Button>
             <Link
               href={`/?plan=${plan.id}`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3 py-2 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
             >
               Edit plan
               <ChevronRightIcon className="size-3.5" />

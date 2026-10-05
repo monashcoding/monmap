@@ -467,7 +467,7 @@ function EmptyState({
   controls: TreeControlsValue
 }) {
   return (
-    <div className="pointer-events-auto max-w-md rounded-2xl border bg-card/95 p-6 text-center shadow-card backdrop-blur-sm">
+    <div className="pointer-events-auto max-w-md rounded-panel border bg-card/95 p-6 text-center shadow-card backdrop-blur-sm">
       <p className="text-sm font-medium text-foreground">
         Nothing to draw yet.
       </p>

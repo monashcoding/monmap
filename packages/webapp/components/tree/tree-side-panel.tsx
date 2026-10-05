@@ -62,7 +62,7 @@ export function TreeSidePanel({
     <aside
       className={
         variant === "floating"
-          ? "flex h-full flex-col overflow-y-auto rounded-3xl border bg-card shadow-2xl ring-1 ring-border/60"
+          ? "flex h-full flex-col overflow-y-auto rounded-panel border bg-card shadow-2xl ring-1 ring-border/60"
           : "flex h-full flex-col overflow-y-auto bg-card"
       }
     >
@@ -190,7 +190,7 @@ export function TreeSidePanel({
             <span aria-hidden>🔒</span>
             Enrolment rules
           </h4>
-          <div className="rounded-2xl bg-primary/40 px-3.5 py-3 text-primary-foreground">
+          <div className="rounded-control bg-primary/40 px-3.5 py-3 text-primary-foreground">
             <ul className="flex flex-col gap-2 text-[12px] leading-relaxed">
               {enrolmentRules.map((er, i) => (
                 <li

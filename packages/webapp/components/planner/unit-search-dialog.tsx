@@ -451,7 +451,7 @@ function UnitRow({
       onClick={onClick}
       aria-disabled={placed ? "true" : undefined}
       className={cn(
-        "flex w-full flex-col gap-1 rounded-xl px-3 py-2 text-left text-sm transition-colors",
+        "flex w-full flex-col gap-1 rounded-control px-3 py-2 text-left text-sm transition-colors",
         focused ? "bg-accent text-accent-foreground" : "hover:bg-muted",
         // Non-fitting units are NOT dimmed at the row level — the chip
         // colours alone signal which period a unit runs in. Units already
@@ -516,7 +516,7 @@ function PeriodChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border px-1.5 py-0 text-[10px] font-medium tabular-nums",
+        "inline-flex items-center rounded-control border px-1.5 py-0 text-[10px] font-medium tabular-nums",
         // Always render solid — chips for units that don't fit the slot
         // keep the same colour, the row's opacity handles the "less
         // relevant" cue without washing the chip out.
@@ -552,20 +552,20 @@ function FocusedDetails({
       {slotKind ? (
         <div className="flex shrink-0 items-center gap-2 border-b bg-card px-4 py-2 text-xs">
           {placed ? (
-            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-control border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
               <CheckIcon className="size-3" /> Already in this slot
             </span>
           ) : !hasOfferingData ? (
-            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-control border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
               Checking fit for {PERIOD_KIND_LABEL[slotKind]}…
             </span>
           ) : fits ? (
-            <span className="inline-flex items-center gap-1 rounded-md border border-success/30 bg-success-soft px-2 py-0.5 font-medium text-success-foreground">
+            <span className="inline-flex items-center gap-1 rounded-control border border-success/30 bg-success-soft px-2 py-0.5 font-medium text-success-foreground">
               <CheckIcon className="size-3" />
               Fits {PERIOD_KIND_LABEL[slotKind]}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-md border border-warning/40 bg-warning-soft px-2 py-0.5 font-medium text-warning-foreground">
+            <span className="inline-flex items-center gap-1 rounded-control border border-warning/40 bg-warning-soft px-2 py-0.5 font-medium text-warning-foreground">
               Not offered in {PERIOD_KIND_LABEL[slotKind]}
             </span>
           )}

@@ -32,7 +32,7 @@ export const SORT_OPTIONS = [
 export type SortKey = (typeof SORT_OPTIONS)[number]["key"]
 
 export const CHIP_BASE =
-  "flex items-center justify-center rounded-lg text-xs font-medium transition-all border"
+  "flex items-center justify-center rounded-control text-xs font-medium transition-all border"
 export const CHIP_ACTIVE =
   "border-primary bg-primary text-primary-foreground shadow-sm"
 export const CHIP_IDLE =

@@ -63,7 +63,7 @@ export function AoSTemplates({ className }: { className?: string }) {
 
   return (
     <section
-      className={cn("rounded-3xl border bg-card p-3 shadow-card", className)}
+      className={cn("rounded-panel border bg-card p-3 shadow-card", className)}
     >
       <p className="px-1 pb-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
         Templates
@@ -137,14 +137,14 @@ function CourseUnitsCard({
   )
 
   return (
-    <div className="rounded-xl border-2 border-primary/30 bg-primary/[0.03]">
+    <div className="rounded-control border-2 border-primary/30 bg-primary/[0.03]">
       <div className="flex items-start gap-2 px-2.5 py-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Collapse groupings" : "Expand groupings"}
-          className="mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="mt-0.5 shrink-0 rounded-tag p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ChevronRightIcon
             className={cn("size-3.5 transition-transform", open && "rotate-90")}
@@ -152,7 +152,7 @@ function CourseUnitsCard({
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="rounded bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
+            <span className="rounded-tag bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
               Degree
             </span>
           </div>
@@ -203,10 +203,10 @@ function MissingTemplateCard({
   hasRequirements: boolean
 }) {
   return (
-    <div className="rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/30">
+    <div className="rounded-control border-2 border-dashed border-muted-foreground/20 bg-muted/30">
       <div className="flex items-start gap-2 px-2.5 py-2">
         <div className="min-w-0 flex-1">
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">
+          <span className="rounded-tag bg-muted px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">
             Degree
           </span>
           <div className="mt-0.5 truncate text-xs leading-snug font-medium">
@@ -248,14 +248,14 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
   )
 
   return (
-    <div className="rounded-xl border bg-background">
+    <div className="rounded-control border bg-background">
       <div className="flex items-start gap-2 px-2.5 py-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Collapse groupings" : "Expand groupings"}
-          className="mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="mt-0.5 shrink-0 rounded-tag p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ChevronRightIcon
             className={cn("size-3.5 transition-transform", open && "rotate-90")}
@@ -265,7 +265,7 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                "rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase",
+                "rounded-tag px-1.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase",
                 KIND_BADGE[aos.kind]
               )}
             >
@@ -314,11 +314,11 @@ function GroupingRow({ name, codes }: { name: string; codes: string[] }) {
   )
 
   return (
-    <div className="rounded-md">
+    <div className="rounded-control">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left hover:bg-muted/50"
+        className="flex w-full items-center gap-1.5 rounded-control px-1 py-1 text-left hover:bg-muted/50"
       >
         <ChevronDownIcon
           className={cn(

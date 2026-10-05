@@ -95,7 +95,7 @@ function UnitFacts({
   }
 
   return (
-    <section className="flex flex-col gap-7 rounded-3xl border bg-card p-5 shadow-card sm:p-7">
+    <section className="flex flex-col gap-7 rounded-panel border bg-card p-5 shadow-card sm:p-7">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl leading-tight font-semibold sm:text-3xl">
           {unit?.title ?? code}
@@ -241,7 +241,7 @@ function CourseFacts({ course, onPickAos, details }: EntityFactsProps) {
   const handbookUrl = `https://handbook.monash.edu/${year}/courses/${course.code}`
 
   return (
-    <section className="flex flex-col gap-7 rounded-3xl border bg-card p-5 shadow-card sm:p-7">
+    <section className="flex flex-col gap-7 rounded-panel border bg-card p-5 shadow-card sm:p-7">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl leading-tight font-semibold sm:text-3xl">
           {course.title}
@@ -328,7 +328,7 @@ function CourseFacts({ course, onPickAos, details }: EntityFactsProps) {
 
 function EmptyHint({ featured }: EntityFactsProps) {
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border bg-card p-5 shadow-card sm:p-7">
+    <section className="flex flex-col gap-4 rounded-panel border bg-card p-5 shadow-card sm:p-7">
       <header className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold">Start exploring</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">

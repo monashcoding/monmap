@@ -34,7 +34,7 @@ export function ModeBlock({
             onClick={() => onModeChange(m.value)}
             type="button"
             className={cn(
-              "flex flex-col items-start rounded-xl border px-2.5 py-2 text-left transition-colors",
+              "flex flex-col items-start rounded-control border px-2.5 py-2 text-left transition-colors",
               value === m.value
                 ? "border-emphasis bg-emphasis-soft text-emphasis"
                 : "border-border bg-background hover:border-muted-foreground/40"

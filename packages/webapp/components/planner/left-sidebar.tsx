@@ -126,7 +126,7 @@ export function LeftSidebar() {
 
   return (
     <div className="flex flex-col gap-1 self-start sm:flex-row sm:flex-wrap sm:items-start sm:gap-2 print:hidden">
-      <aside className="flex flex-col gap-1 self-start rounded-2xl border bg-card p-1.5 shadow-card sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 sm:rounded-3xl sm:p-2">
+      <aside className="flex flex-col gap-1 self-start rounded-panel border bg-card p-1.5 shadow-card sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 sm:p-2">
         {currentUser && activePlan ? (
           <>
             {editingName ? (
@@ -139,14 +139,14 @@ export function LeftSidebar() {
                   if (e.key === "Enter") commitNameEdit()
                   if (e.key === "Escape") cancelNameEdit()
                 }}
-                className="w-full max-w-full rounded px-3 py-2 text-xs font-semibold ring-1 ring-primary outline-none focus:ring-2 sm:w-auto sm:max-w-[220px]"
+                className="w-full max-w-full rounded-control px-3 py-2 text-xs font-semibold ring-1 ring-primary outline-none focus:ring-2 sm:w-auto sm:max-w-[220px]"
               />
             ) : (
               <button
                 type="button"
                 onClick={() => setEditingName(true)}
                 title={`Rename "${activePlan.name}"`}
-                className="w-full max-w-full cursor-text truncate rounded px-3 py-2 text-left text-xs font-semibold hover:bg-muted/60 sm:w-auto sm:max-w-[220px]"
+                className="w-full max-w-full cursor-text truncate rounded-control px-3 py-2 text-left text-xs font-semibold hover:bg-muted/60 sm:w-auto sm:max-w-[220px]"
               >
                 {activePlan.name}
               </button>
@@ -253,13 +253,13 @@ export function LeftSidebar() {
         />
       </aside>
 
-      <aside className="flex flex-col gap-1 self-start rounded-2xl border bg-card p-1.5 shadow-card sm:flex-row sm:items-center sm:gap-1 sm:rounded-3xl sm:p-2">
+      <aside className="flex flex-col gap-1 self-start rounded-panel border bg-card p-1.5 shadow-card sm:flex-row sm:items-center sm:gap-1 sm:p-2">
         <a
           href="https://docs.google.com/forms/d/e/1FAIpQLSfEMCU4OCItlK6DGgIXTovH7_sPSW6mZtMaPGf1OCUQW_43kg/viewform"
           target="_blank"
           rel="noopener noreferrer"
           title="Give Feedback"
-          className="flex h-auto flex-col items-center gap-1 rounded-2xl border border-transparent px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
+          className="flex h-auto flex-col items-center gap-1 rounded-control border border-transparent px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
         >
           <FileTextIcon className="size-4" />
           <span className="text-[10px] leading-none font-medium">Feedback</span>
@@ -269,7 +269,7 @@ export function LeftSidebar() {
           target="_blank"
           rel="noopener noreferrer"
           title="Contribute on GitHub"
-          className="flex h-auto flex-col items-center gap-1 rounded-2xl border border-transparent px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
+          className="flex h-auto flex-col items-center gap-1 rounded-control border border-transparent px-3 py-2 text-xs text-foreground transition-colors hover:bg-muted/60"
         >
           <svg
             viewBox="0 0 24 24"
@@ -311,7 +311,7 @@ function ActionButton({
       variant="ghost"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-auto flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs"
+      className="flex h-auto flex-col items-center gap-1 rounded-control px-3 py-2 text-xs"
     >
       <span
         className={

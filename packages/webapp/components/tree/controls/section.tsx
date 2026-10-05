@@ -17,10 +17,7 @@ export function ControlSection({
 }) {
   return (
     <section
-      className={cn(
-        "rounded-2xl border bg-card p-3 shadow-card sm:rounded-3xl",
-        className
-      )}
+      className={cn("rounded-panel border bg-card p-3 shadow-card", className)}
     >
       <div className="px-1 pb-2 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
         {title}

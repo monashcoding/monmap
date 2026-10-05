@@ -63,7 +63,7 @@ export function CourseBlock({
             render={
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-xl border bg-background px-3 py-2 text-left hover:border-muted-foreground/40"
+                className="flex w-full items-center justify-between rounded-control border bg-background px-3 py-2 text-left hover:border-muted-foreground/40"
               >
                 <span className="min-w-0 truncate text-xs">
                   {selectedCourse ? (
@@ -142,7 +142,7 @@ export function CourseBlock({
               {aosOptions.map((a) => (
                 <SelectItem key={a.code} value={a.code}>
                   <span className="flex min-w-0 items-center gap-2">
-                    <span className="inline-flex shrink-0 items-center justify-center rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-muted-foreground! uppercase tabular-nums">
+                    <span className="inline-flex shrink-0 items-center justify-center rounded-tag bg-muted px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-muted-foreground! uppercase tabular-nums">
                       {shortKindLabel(a.kind)}
                     </span>
                     <span className="text-[12px] whitespace-normal">
