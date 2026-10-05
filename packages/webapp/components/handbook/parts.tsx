@@ -1,5 +1,9 @@
 import Link from "next/link"
-import { ArrowUpRightIcon, ChevronRightIcon } from "lucide-react"
+import {
+  ArrowUpRightIcon,
+  ChevronRightIcon,
+  type LucideIcon,
+} from "lucide-react"
 
 import { AppHeader } from "@/components/app-header"
 import { HandbookAttribution } from "@/components/handbook-attribution"
@@ -13,6 +17,7 @@ import {
 import type { RequisiteBlock, RequisiteContainer } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
+import { PageToc, type TocItem } from "./page-toc"
 import { YearSelect } from "./year-select"
 
 /* ------------------------------------------------------------------ *
@@ -94,9 +99,18 @@ export function KindBadge({
   )
 }
 
+export interface HeroStat {
+  label: string
+  value: string
+  /** A second line, such as the campuses after "Semester 1". */
+  hint?: string | null
+}
+
 /**
  * The top card of a handbook page: breadcrumbs, the code and title,
- * a line of key facts, the year picker and the Monash Handbook link.
+ * the year picker and the Monash Handbook link, then the facts most
+ * people come for (credit points, when it runs, how it's assessed) as
+ * a row of tiles.
  */
 export function EntityHero({
   kind,
@@ -105,6 +119,7 @@ export function EntityHero({
   title,
   facts,
   subtitle,
+  stats = [],
   breadcrumbs,
   year,
   years,
@@ -116,8 +131,10 @@ export function EntityHero({
   kindLabel?: string
   code: string
   title: string
+  /** Short labels beside the kind badge, such as "Level 2". */
   facts: Array<string | null | undefined | false>
   subtitle?: string | null
+  stats?: Array<HeroStat | null | false>
   breadcrumbs: Crumb[]
   year: string
   years: string[]
@@ -126,29 +143,12 @@ export function EntityHero({
   notice?: React.ReactNode
 }) {
   const shown = facts.filter((f): f is string => !!f)
+  const tiles = stats.filter((t): t is HeroStat => !!t)
   return (
-    <header className="flex flex-col gap-4 rounded-panel border bg-card p-5 shadow-card sm:p-7">
-      <Breadcrumbs items={breadcrumbs} />
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <KindBadge kind={kind} label={kindLabel} />
-            {shown.map((f, i) => (
-              <span key={i} className="flex items-center gap-2">
-                {i > 0 ? <span aria-hidden>|</span> : null}
-                {f}
-              </span>
-            ))}
-          </div>
-          <h1 className="text-2xl leading-tight font-semibold text-balance sm:text-3xl">
-            <span className="tabular-nums">{code}</span>{" "}
-            <span className="font-medium">{title}</span>
-          </h1>
-          {subtitle ? (
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
+    <header className="flex flex-col gap-5 rounded-panel border bg-card p-5 shadow-card sm:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Breadcrumbs items={breadcrumbs} />
+        <div className="flex flex-wrap items-center gap-3">
           <YearSelect
             value={year}
             options={[...years]
@@ -162,10 +162,49 @@ export function EntityHero({
             className="inline-flex items-center gap-1 text-sm text-info-foreground underline-offset-2 hover:underline"
           >
             Monash Handbook
-            <ArrowUpRightIcon className="size-3.5" />
+            <ArrowUpRightIcon className="size-3.5" aria-hidden />
+            <span className="sr-only">(opens in a new tab)</span>
           </a>
         </div>
       </div>
+
+      <div className="flex min-w-0 flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <KindBadge kind={kind} label={kindLabel} />
+          {shown.map((f, i) => (
+            <span key={i} className="flex items-center gap-2">
+              {i > 0 ? <span aria-hidden>|</span> : null}
+              {f}
+            </span>
+          ))}
+        </div>
+        <h1 className="text-3xl leading-tight font-semibold text-balance sm:text-4xl">
+          <span className="text-muted-foreground tabular-nums">{code}</span>{" "}
+          {title}
+        </h1>
+        {subtitle ? (
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        ) : null}
+      </div>
+
+      {tiles.length > 0 ? (
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-control border bg-border sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
+          {tiles.map((t) => (
+            <div
+              key={t.label}
+              className="flex flex-col gap-0.5 bg-card px-4 py-3"
+            >
+              <dt className="text-xs text-muted-foreground">{t.label}</dt>
+              <dd className="text-base leading-snug font-semibold">
+                {t.value}
+              </dd>
+              {t.hint ? (
+                <dd className="text-xs text-muted-foreground">{t.hint}</dd>
+              ) : null}
+            </div>
+          ))}
+        </dl>
+      ) : null}
       {notice}
     </header>
   )
@@ -180,44 +219,24 @@ export function Notice({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** Jump links to the page's sections. */
-export function SectionNav({
-  items,
+/**
+ * The sections of a page in one column, with "On this page" in a
+ * sticky rail beside them on wide screens.
+ */
+export function DetailLayout({
+  toc,
+  children,
 }: {
-  items: Array<{ id: string; label: string } | null | false>
+  toc: Array<TocItem | null | false>
+  children: React.ReactNode
 }) {
-  const shown = items.filter((i): i is { id: string; label: string } => !!i)
-  if (shown.length < 3) return null
+  const items = toc.filter((t): t is TocItem => !!t)
   return (
-    <nav
-      aria-label="On this page"
-      className="-mt-1 flex flex-wrap gap-1.5 sm:-mt-2"
-    >
-      {shown.map((i) => (
-        <a
-          key={i.id}
-          href={`#${i.id}`}
-          className="rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground hover:border-ring hover:text-foreground"
-        >
-          {i.label}
-        </a>
-      ))}
-    </nav>
-  )
-}
-
-/** The main column beside a sidebar of facts and links. */
-export function DetailColumns({
-  main,
-  aside,
-}: {
-  main: React.ReactNode
-  aside: React.ReactNode
-}) {
-  return (
-    <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-5">{main}</div>
-      <aside className="flex min-w-0 flex-col gap-3 sm:gap-5">{aside}</aside>
+    <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_200px]">
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-5">{children}</div>
+      <aside className="sticky top-[4.5rem] hidden lg:block">
+        <PageToc items={items} />
+      </aside>
     </div>
   )
 }
@@ -225,11 +244,16 @@ export function DetailColumns({
 export function Section({
   id,
   title,
+  icon: Icon,
+  action,
   children,
   className,
 }: {
   id?: string
   title: string
+  icon?: LucideIcon
+  /** Something for the heading's right side, such as a count. */
+  action?: React.ReactNode
   children: React.ReactNode
   className?: string
 }) {
@@ -238,24 +262,34 @@ export function Section({
       id={id}
       aria-labelledby={id ? `${id}-title` : undefined}
       className={cn(
-        "scroll-mt-20 rounded-panel border bg-card p-5 shadow-card sm:p-6",
+        "scroll-mt-20 rounded-panel border bg-card p-5 shadow-card sm:p-7",
         className
       )}
     >
-      <h2
-        id={id ? `${id}-title` : undefined}
-        className="mb-3 text-base font-semibold"
-      >
-        {title}
-      </h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2
+          id={id ? `${id}-title` : undefined}
+          className="flex items-center gap-2.5 text-lg font-semibold"
+        >
+          {Icon ? (
+            // MAC yellow tile with charcoal ink (CLAUDE.md section 4).
+            <span className="flex size-8 items-center justify-center rounded-control bg-primary text-primary-foreground">
+              <Icon className="size-4" strokeWidth={2.25} aria-hidden />
+            </span>
+          ) : null}
+          {title}
+        </h2>
+        {action}
+      </div>
       {children}
     </section>
   )
 }
 
+/** A small heading inside a section. Callers space the blocks. */
 export function SubHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mt-5 mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase first:mt-0">
+    <h3 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
       {children}
     </h3>
   )
@@ -344,12 +378,15 @@ export interface EntityRowData {
   kind: EntityKind
   code: string
   title: string | null
-  /** Right-hand note, such as "6 credit points" or "Major". */
+  /** Right-hand note, such as "6 cp" or "Major". */
   note?: string | null
   /** False when MonMap has no page for the code. */
   linkable?: boolean
+  /** Show the kind badge, for lists that mix units with other kinds. */
+  showKind?: boolean
 }
 
+/** A compact list: code, title and a note per row. */
 export function EntityRows({
   rows,
   linkYear,
@@ -382,25 +419,24 @@ function EntityRow({
 }) {
   const body = (
     <>
-      <span className="flex min-w-0 items-baseline gap-2">
-        {row.kind !== "unit" ? (
+      <span className="font-semibold whitespace-nowrap tabular-nums">
+        {row.code}
+      </span>
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+        {row.showKind && row.kind !== "unit" ? (
           <KindBadge kind={row.kind} className="translate-y-[-1px]" />
         ) : null}
-        <span className="shrink-0 font-semibold tabular-nums">{row.code}</span>
-        {row.title ? (
-          <span className="min-w-0 text-foreground/80 underline-offset-2 group-hover:underline">
-            {row.title}
-          </span>
-        ) : null}
-      </span>
-      {row.note ? (
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {row.note}
+        <span className="text-foreground/80 underline-offset-2 group-hover:underline">
+          {row.title ?? ""}
         </span>
-      ) : null}
+      </span>
+      <span className="text-xs whitespace-nowrap text-muted-foreground">
+        {row.note ?? ""}
+      </span>
     </>
   )
-  const cls = "flex items-baseline justify-between gap-3 px-3 py-2 text-sm"
+  const cls =
+    "grid grid-cols-[minmax(4.5rem,auto)_minmax(0,1fr)_auto] items-baseline gap-x-3 px-3 py-2 text-sm"
   if (row.linkable === false) {
     return <div className={cls}>{body}</div>
   }
@@ -411,6 +447,80 @@ function EntityRow({
     >
       {body}
     </Link>
+  )
+}
+
+/**
+ * Cards for a short list of courses or areas of study: the title
+ * leads, the code and a note sit above it.
+ */
+export function EntityCards({
+  rows,
+  linkYear,
+}: {
+  rows: EntityRowData[]
+  linkYear: string | null
+}) {
+  if (rows.length === 0) return null
+  return (
+    <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      {rows.map((r, i) => (
+        <li key={`${r.kind}:${r.code}:${i}`} className="flex">
+          <Link
+            href={entityHref(r.kind, r.code, linkYear)}
+            className="group flex w-full flex-col gap-1 rounded-control border px-3.5 py-3 hover:border-ring hover:bg-muted/30"
+          >
+            <span className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span className="font-semibold tabular-nums">{r.code}</span>
+              {r.note ? <span>{r.note}</span> : null}
+            </span>
+            <span className="text-sm leading-snug font-medium underline-offset-2 group-hover:underline">
+              {r.title ?? r.code}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Unit tiles in a grid: code over title, for requisite groups. */
+export function UnitTiles({
+  units,
+  linkYear,
+}: {
+  units: Array<{ code: string; title: string | null; linkable: boolean }>
+  linkYear: string | null
+}) {
+  return (
+    <ul className="grid gap-2 sm:grid-cols-2">
+      {units.map((u) => {
+        const body = (
+          <>
+            <span className="text-sm font-semibold tabular-nums">{u.code}</span>
+            <span className="text-sm leading-snug text-muted-foreground group-hover:text-foreground">
+              {u.title ?? "No handbook page"}
+            </span>
+          </>
+        )
+        const cls =
+          "flex h-full flex-col gap-0.5 rounded-control border bg-card px-3.5 py-2.5"
+        return (
+          <li key={u.code}>
+            {u.linkable ? (
+              <Link
+                href={entityHref("unit", u.code, linkYear)}
+                className={cn(cls, "group hover:border-ring")}
+              >
+                {body}
+              </Link>
+            ) : (
+              <div className={cn(cls, "border-dashed")}>{body}</div>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -485,6 +595,7 @@ function itemRow(
     code: n.code,
     title: n.name,
     note: n.creditPoints ? `${n.creditPoints} cp` : null,
+    showKind: true,
     linkable:
       n.entity == null
         ? false
@@ -557,17 +668,28 @@ function GroupBody({
  * Requisite rules
  * ------------------------------------------------------------------ */
 
-const REQUISITE_LABEL: Record<string, string> = {
-  prerequisite: "Prerequisites",
-  corequisite: "Corequisites",
-  prohibition: "Prohibitions",
-  permission: "Permission",
-  other: "Other requirements",
+const REQUISITE_LABEL: Record<string, { title: string; note?: string }> = {
+  prerequisite: {
+    title: "Prerequisites",
+    note: "Pass these before you enrol.",
+  },
+  corequisite: {
+    title: "Corequisites",
+    note: "Pass these before, or take them in the same semester.",
+  },
+  prohibition: {
+    title: "Prohibitions",
+    note: "You can't enrol if you have passed any of these.",
+  },
+  permission: { title: "Permission required" },
+  other: { title: "Other requirements" },
 }
 
+type RuleUnit = { code: string; title: string | null; linkable: boolean }
+
 /**
- * A unit's requisite rules as nested "all of" / "any of" lists, each
- * unit a link to its page.
+ * A unit's requisite rules as groups a student can read at a glance:
+ * "One of" and "All of" boxes of unit tiles, joined by "and" or "or".
  */
 export function RequisiteRules({
   blocks,
@@ -580,88 +702,144 @@ export function RequisiteRules({
   linkable: ReadonlySet<string>
   linkYear: string | null
 }) {
+  const unit = (code: string, name?: string): RuleUnit => ({
+    code,
+    title: titles[code] ?? name ?? null,
+    linkable: linkable.has(code),
+  })
   return (
-    <div className="flex flex-col gap-4">
-      {blocks.map((b, i) => (
-        <div key={i}>
-          <SubHeading>
-            {REQUISITE_LABEL[b.requisiteType] ?? b.requisiteType}
-          </SubHeading>
-          {b.requisiteType === "prohibition" ? (
-            <p className="mb-2 text-xs text-muted-foreground">
-              You cannot enrol in this unit if you have passed any of these.
-            </p>
-          ) : null}
-          <div className="flex flex-col gap-2">
-            {(b.rule ?? []).map((c, j) => (
-              <RuleContainer
-                key={j}
-                container={c}
-                depth={0}
-                titles={titles}
-                linkable={linkable}
-                linkYear={linkYear}
-              />
-            ))}
+    <div className="flex flex-col gap-6">
+      {blocks.map((b, i) => {
+        const label = REQUISITE_LABEL[b.requisiteType] ?? {
+          title: b.requisiteType,
+        }
+        return (
+          <div key={i} className="flex flex-col gap-2">
+            <div>
+              <h3 className="text-sm font-semibold">{label.title}</h3>
+              {label.note ? (
+                <p className="text-xs text-muted-foreground">{label.note}</p>
+              ) : null}
+            </div>
+            <RuleGroup
+              containers={b.rule ?? []}
+              any={false}
+              unit={unit}
+              linkYear={linkYear}
+              depth={0}
+            />
           </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function Joiner({ any }: { any: boolean }) {
+  return (
+    <div className="flex items-center gap-2 py-0.5" aria-hidden>
+      <span className="h-px flex-1 bg-border" />
+      <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+        {any ? "or" : "and"}
+      </span>
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  )
+}
+
+/** Sibling containers, which the handbook joins with AND at the top. */
+function RuleGroup({
+  containers,
+  any,
+  unit,
+  linkYear,
+  depth,
+}: {
+  containers: RequisiteContainer[]
+  any: boolean
+  unit: (code: string, name?: string) => RuleUnit
+  linkYear: string | null
+  depth: number
+}) {
+  const parts = containers.filter(
+    (c) => (c.relationships?.length ?? 0) + (c.containers?.length ?? 0) > 0
+  )
+  return (
+    <div className="flex flex-col gap-2">
+      {parts.map((c, i) => (
+        <div key={i} className="flex flex-col gap-2">
+          {i > 0 ? <Joiner any={any} /> : null}
+          <RuleBox
+            container={c}
+            unit={unit}
+            linkYear={linkYear}
+            depth={depth}
+          />
         </div>
       ))}
     </div>
   )
 }
 
-function RuleContainer({
+function RuleBox({
   container,
-  depth,
-  titles,
-  linkable,
+  unit,
   linkYear,
+  depth,
 }: {
   container: RequisiteContainer
-  depth: number
-  titles: Record<string, string>
-  linkable: ReadonlySet<string>
+  unit: (code: string, name?: string) => RuleUnit
   linkYear: string | null
+  depth: number
 }) {
-  const leaves = container.relationships ?? []
+  const leaves = (container.relationships ?? []).map((l) =>
+    unit(l.academic_item_code, l.academic_item_name)
+  )
   const subs = container.containers ?? []
-  const count = leaves.length + subs.length
-  if (count === 0) return null
   const any =
     (container.parent_connector?.value ?? "AND").toUpperCase() === "OR"
+  const count = leaves.length + subs.length
+  // A group that only wraps one other group adds nothing: show the
+  // inner one ("All of" around a single "One of").
+  if (leaves.length === 0 && subs.length === 1) {
+    return (
+      <RuleBox
+        container={subs[0]}
+        unit={unit}
+        linkYear={linkYear}
+        depth={depth}
+      />
+    )
+  }
+  // One unit on its own needs no box.
+  if (count === 1 && leaves.length === 1) {
+    return <UnitTiles units={leaves} linkYear={linkYear} />
+  }
   return (
     <div
       className={cn(
-        "flex flex-col gap-1.5",
-        depth > 0 && "border-l-2 border-dashed pl-3"
+        "flex flex-col gap-2 rounded-control p-3",
+        depth % 2 === 0 ? "bg-muted/50" : "border bg-card"
       )}
     >
-      {count > 1 ? (
-        <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-          {any ? "Any one of" : "All of"}
-        </span>
-      ) : null}
+      <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+        {any ? "One of" : "All of"}
+      </span>
       {leaves.length > 0 ? (
-        <EntityRows
-          rows={leaves.map((l) => ({
-            kind: "unit" as const,
-            code: l.academic_item_code,
-            title: titles[l.academic_item_code] ?? l.academic_item_name ?? null,
-            linkable: linkable.has(l.academic_item_code),
-          }))}
-          linkYear={linkYear}
-        />
+        <UnitTiles units={leaves} linkYear={linkYear} />
       ) : null}
-      {subs.map((c, i) => (
-        <RuleContainer
-          key={i}
-          container={c}
-          depth={depth + 1}
-          titles={titles}
-          linkable={linkable}
-          linkYear={linkYear}
-        />
-      ))}
+      {subs.length > 0 ? (
+        <>
+          {leaves.length > 0 ? <Joiner any={any} /> : null}
+          <RuleGroup
+            containers={subs}
+            any={any}
+            unit={unit}
+            linkYear={linkYear}
+            depth={depth + 1}
+          />
+        </>
+      ) : null}
     </div>
   )
 }

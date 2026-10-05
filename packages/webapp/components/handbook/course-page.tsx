@@ -8,19 +8,29 @@ import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 import { absoluteUrl, stripHtml, truncate } from "@/lib/seo"
 import { prefetchTreeData } from "@/lib/tree/prefetch"
 
+import {
+  BookOpenIcon,
+  DoorOpenIcon,
+  InfoIcon,
+  ListTreeIcon,
+  MapIcon,
+  NetworkIcon,
+  TargetIcon,
+  UsersIcon,
+} from "lucide-react"
+
 import { EntityGraph } from "./entity-graph"
 import { JsonLd, breadcrumbLd } from "./json-ld"
 import {
   CurriculumTree,
-  DetailColumns,
+  DetailLayout,
+  EntityCards,
   EntityHero,
-  EntityRows,
   FactList,
   HandbookMain,
   Notice,
   Prose,
   Section,
-  SectionNav,
   SubHeading,
   YearLinks,
 } from "./parts"
@@ -135,21 +145,42 @@ export async function CoursePage({
       </Notice>
     ) : null
 
+  // "70; International: ..." leads with the domestic guaranteed ATAR.
+  const atar = c.atar?.split(";")[0]?.trim() || null
+  const campuses = c.modes.length
+    ? [...new Set(c.modes.flatMap((m) => m.locations))].join(", ")
+    : c.locations
+
   return (
     <HandbookMain year={r.year}>
       <EntityHero
         kind="course"
         code={c.code}
         title={c.title}
-        facts={[
-          qualification(c.aqfLevel),
-          `${c.creditPoints} credit points`,
-          c.fullTime ? `${c.fullTime} full time` : null,
-          c.locations,
+        facts={[qualification(c.aqfLevel), c.abbreviatedName]}
+        subtitle={c.school}
+        stats={[
+          { label: "Credit points", value: String(c.creditPoints) },
+          c.fullTime
+            ? {
+                label: "Duration",
+                value: `${c.fullTime.toLowerCase()} full time`,
+                hint: c.partTime
+                  ? `${c.partTime.toLowerCase()} part time`
+                  : null,
+              }
+            : null,
+          campuses
+            ? {
+                label: "Campus",
+                value: campuses,
+                hint: c.modes.map((m) => m.mode).join(", ") || null,
+              }
+            : null,
+          atar && /\d/.test(atar)
+            ? { label: "Guaranteed ATAR", value: atar }
+            : null,
         ]}
-        subtitle={
-          [c.abbreviatedName, c.school].filter(Boolean).join(" | ") || null
-        }
         breadcrumbs={[
           { label: "Search", href: "/search" },
           { label: "Courses", href: "/search?type=courses" },
@@ -162,10 +193,11 @@ export async function CoursePage({
         notice={notice}
       />
 
-      <SectionNav
-        items={[
+      <DetailLayout
+        toc={[
           c.overview ? { id: "overview", label: "Overview" } : null,
-          c.curriculum.length > 0
+          { id: "map", label: "Requisite map" },
+          c.curriculum.length > 0 || c.requirements
             ? { id: "structure", label: "Structure" }
             : null,
           aosByKind.size > 0
@@ -176,276 +208,272 @@ export async function CoursePage({
             : null,
           hasEntry ? { id: "entry", label: "Entry requirements" } : null,
           hasMore ? { id: "more", label: "More information" } : null,
+          c.contacts.length > 0 ? { id: "contacts", label: "Contacts" } : null,
+          { id: "details", label: "Course details" },
         ]}
-      />
+      >
+        {c.overview ? (
+          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+            <Prose
+              html={c.overview}
+              linkYear={linkYear}
+              className="text-[15px]"
+            />
+          </Section>
+        ) : null}
 
-      <EntityGraph
-        initial={graph}
-        year={r.year}
-        linkYear={linkYear}
-        title="Requisite map"
-        subtitle="The course's foundation units and the prerequisites behind them. Pick an area of study to add its units."
-        emptyText={`The ${r.year} handbook lists no units for ${c.code} itself. Pick an area of study to see its units.`}
-        course={{
-          code: c.code,
-          aosOptions: c.areasOfStudy
-            .filter(
-              (a, i, all) => all.findIndex((b) => b.code === a.code) === i
-            )
-            .map((a) => ({ code: a.code, title: a.title, kind: a.kind })),
-        }}
-      />
+        <Section id="map" title="Requisite map" icon={NetworkIcon}>
+          <EntityGraph
+            initial={graph}
+            year={r.year}
+            linkYear={linkYear}
+            emptyText={`The ${r.year} handbook lists no units for ${c.code} itself. Pick an area of study to see its units.`}
+            course={{
+              code: c.code,
+              aosOptions: c.areasOfStudy
+                .filter(
+                  (a, i, all) => all.findIndex((b) => b.code === a.code) === i
+                )
+                .map((a) => ({ code: a.code, title: a.title, kind: a.kind })),
+            }}
+          />
+        </Section>
 
-      <DetailColumns
-        main={
-          <>
-            {c.overview ? (
-              <Section id="overview" title="Overview">
-                <Prose html={c.overview} linkYear={linkYear} />
-              </Section>
-            ) : null}
-
-            {c.curriculum.length > 0 || c.requirements ? (
-              <Section id="structure" title="Course structure">
-                {c.curriculum.length > 0 ? (
-                  <CurriculumTree
-                    nodes={c.curriculum}
+        {c.curriculum.length > 0 || c.requirements ? (
+          <Section id="structure" title="Course structure" icon={ListTreeIcon}>
+            <div className="flex flex-col gap-4">
+              {c.components.length > 0 ? (
+                <div>
+                  <SubHeading>Made up of</SubHeading>
+                  <EntityCards
+                    rows={c.components.map((x) => ({
+                      kind: "course" as const,
+                      code: x.code,
+                      title: x.title,
+                      note: x.componentTitle,
+                    }))}
                     linkYear={linkYear}
-                    linkableUnits={linkableUnits}
                   />
-                ) : (
-                  <Prose html={c.requirements} linkYear={linkYear} />
-                )}
-                {/* The handbook's prose repeats the structure above in
-                    words, with the rules the tree can't express. */}
-                {c.curriculum.length > 0 && (c.requirements || c.structure) ? (
-                  <details className="mt-4 rounded-control bg-muted/40 px-4 py-3">
-                    <summary className="cursor-pointer text-sm font-medium">
-                      The handbook&apos;s description of this structure
-                    </summary>
-                    <Prose
-                      html={c.structure}
-                      linkYear={linkYear}
-                      className="mt-3"
-                    />
-                    <Prose
-                      html={c.requirements}
-                      linkYear={linkYear}
-                      className="mt-3"
-                    />
-                  </details>
-                ) : null}
-              </Section>
-            ) : null}
-
-            {c.learningOutcomes.length > 0 ? (
-              <Section id="outcomes" title="Learning outcomes">
-                {c.outcomesIntro ? (
-                  <Prose
-                    html={c.outcomesIntro}
-                    linkYear={linkYear}
-                    className="mb-3 text-muted-foreground"
-                  />
-                ) : null}
-                <ol className="flex flex-col gap-2">
-                  {c.learningOutcomes.map((o, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="w-6 shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">
-                        {i + 1}
-                      </span>
-                      <Prose html={o.html} linkYear={linkYear} />
-                    </li>
-                  ))}
-                </ol>
-              </Section>
-            ) : null}
-
-            {hasEntry ? (
-              <Section id="entry" title="Entry requirements">
-                {c.atar ? (
-                  <>
-                    <SubHeading>Guaranteed ATAR and selection rank</SubHeading>
-                    <p className="text-sm">{c.atar}</p>
-                  </>
-                ) : null}
-                {c.nonYear12Entry ? (
-                  <>
-                    <SubHeading>Other applicants</SubHeading>
-                    <Prose html={c.nonYear12Entry} linkYear={linkYear} />
-                  </>
-                ) : null}
-                {c.englishLanguage ? (
-                  <>
-                    <SubHeading>English language</SubHeading>
-                    <Prose html={c.englishLanguage} linkYear={linkYear} />
-                  </>
-                ) : null}
-                {c.entry ? (
-                  <>
-                    <SubHeading>Pathways</SubHeading>
-                    <Prose html={c.entry} linkYear={linkYear} />
-                  </>
-                ) : null}
-              </Section>
-            ) : null}
-
-            {hasMore ? (
-              <Section id="more" title="More information">
-                {c.progression ? (
-                  <>
-                    <SubHeading>Progression to further studies</SubHeading>
-                    <Prose html={c.progression} linkYear={linkYear} />
-                  </>
-                ) : null}
-                {c.accreditation ? (
-                  <>
-                    <SubHeading>Professional accreditation</SubHeading>
-                    <Prose html={c.accreditation} linkYear={linkYear} />
-                  </>
-                ) : null}
-                {c.specialNotes ? (
-                  <>
-                    <SubHeading>Notes for students</SubHeading>
-                    <Prose html={c.specialNotes} linkYear={linkYear} />
-                  </>
-                ) : null}
-                {c.otherInformation ? (
-                  <>
-                    <SubHeading>Other information</SubHeading>
-                    <Prose html={c.otherInformation} linkYear={linkYear} />
-                  </>
-                ) : null}
-              </Section>
-            ) : null}
-          </>
-        }
-        aside={
-          <>
-            <Section title="Course details">
-              <FactList
-                rows={[
-                  qualification(c.aqfLevel)
-                    ? {
-                        label: "Qualification",
-                        value: qualification(c.aqfLevel),
-                      }
-                    : null,
-                  c.aqfLevel
-                    ? {
-                        label: "AQF level",
-                        value: c.aqfLevel.match(/Level \d+/)?.[0] ?? null,
-                      }
-                    : null,
-                  { label: "Credit points", value: c.creditPoints },
-                  c.fullTime ? { label: "Full time", value: c.fullTime } : null,
-                  c.partTime ? { label: "Part time", value: c.partTime } : null,
-                  c.maximumYears
-                    ? {
-                        label: "Maximum time",
-                        value: `${c.maximumYears} years`,
-                      }
-                    : null,
-                  c.modes.length > 0
-                    ? {
-                        label: "Delivery",
-                        value: (
-                          <span className="flex flex-col">
-                            {c.modes.map((m) => (
-                              <span key={m.mode}>
-                                {m.mode}
-                                {m.locations.length
-                                  ? `: ${m.locations.join(", ")}`
-                                  : ""}
-                              </span>
-                            ))}
-                          </span>
-                        ),
-                      }
-                    : c.locations
-                      ? { label: "Locations", value: c.locations }
-                      : null,
-                  c.school ? { label: "Faculty", value: c.school } : null,
-                  c.cricosCode
-                    ? { label: "CRICOS code", value: c.cricosCode }
-                    : null,
-                  c.abbreviatedName
-                    ? { label: "Abbreviation", value: c.abbreviatedName }
-                    : null,
-                  {
-                    label: "Handbook years",
-                    value: (
-                      <YearLinks
-                        years={r.years}
-                        current={r.year}
-                        href={yearHref}
-                      />
-                    ),
-                  },
-                ]}
-              />
-            </Section>
-
-            {c.components.length > 0 ? (
-              <Section title="Component degrees">
-                <EntityRows
-                  rows={c.components.map((x) => ({
-                    kind: "course" as const,
-                    code: x.code,
-                    title: x.title,
-                  }))}
+                </div>
+              ) : null}
+              {c.curriculum.length > 0 ? (
+                <CurriculumTree
+                  nodes={c.curriculum}
                   linkYear={linkYear}
+                  linkableUnits={linkableUnits}
                 />
-              </Section>
-            ) : null}
+              ) : (
+                <Prose html={c.requirements} linkYear={linkYear} />
+              )}
+              {/* The handbook's prose repeats the structure above in
+                  words, with the rules the tree can't express. */}
+              {c.curriculum.length > 0 && (c.requirements || c.structure) ? (
+                <details className="rounded-control bg-muted/40 px-4 py-3">
+                  <summary className="cursor-pointer text-sm font-medium">
+                    The handbook&apos;s description of this structure
+                  </summary>
+                  <Prose
+                    html={c.structure}
+                    linkYear={linkYear}
+                    className="mt-3"
+                  />
+                  <Prose
+                    html={c.requirements}
+                    linkYear={linkYear}
+                    className="mt-3"
+                  />
+                </details>
+              ) : null}
+            </div>
+          </Section>
+        ) : null}
 
-            {aosByKind.size > 0 ? (
-              <Section id="areas-of-study" title="Areas of study">
-                {KIND_ORDER.filter((k) => aosByKind.has(k)).map((k) => (
-                  <div key={k}>
-                    <SubHeading>{KIND_HEADING[k]}</SubHeading>
-                    <EntityRows
-                      rows={aosByKind.get(k)!.map((a) => ({
-                        kind: "aos" as const,
-                        code: a.code,
-                        title: a.title,
-                        note: a.scope ?? null,
-                      }))}
-                      linkYear={linkYear}
-                    />
-                  </div>
-                ))}
-              </Section>
-            ) : null}
+        {aosByKind.size > 0 ? (
+          <Section id="areas-of-study" title="Areas of study" icon={MapIcon}>
+            <div className="flex flex-col gap-6">
+              {KIND_ORDER.filter((k) => aosByKind.has(k)).map((k) => (
+                <div key={k}>
+                  <SubHeading>
+                    {KIND_HEADING[k]} ({aosByKind.get(k)!.length})
+                  </SubHeading>
+                  <EntityCards
+                    rows={aosByKind.get(k)!.map((a) => ({
+                      kind: "aos" as const,
+                      code: a.code,
+                      title: a.title,
+                      note: a.scope ?? null,
+                    }))}
+                    linkYear={linkYear}
+                  />
+                </div>
+              ))}
+            </div>
+          </Section>
+        ) : null}
 
-            {c.awards.length > 0 ? (
-              <Section title="Award titles">
-                <ul className="flex flex-col gap-1 text-sm">
-                  {c.awards.map((a) => (
-                    <li key={a}>{a}</li>
+        {c.learningOutcomes.length > 0 ? (
+          <Section id="outcomes" title="Learning outcomes" icon={TargetIcon}>
+            {c.outcomesIntro ? (
+              <Prose
+                html={c.outcomesIntro}
+                linkYear={linkYear}
+                className="mb-4 text-muted-foreground"
+              />
+            ) : null}
+            <ol className="flex flex-col gap-3">
+              {c.learningOutcomes.map((o, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold tabular-nums">
+                    {i + 1}
+                  </span>
+                  <Prose html={o.html} linkYear={linkYear} className="pt-0.5" />
+                </li>
+              ))}
+            </ol>
+          </Section>
+        ) : null}
+
+        {hasEntry ? (
+          <Section id="entry" title="Entry requirements" icon={DoorOpenIcon}>
+            <div className="flex flex-col gap-6">
+              {c.atar ? (
+                <div>
+                  <SubHeading>Guaranteed ATAR and selection rank</SubHeading>
+                  <p className="max-w-[75ch] text-sm leading-relaxed">
+                    {c.atar}
+                  </p>
+                </div>
+              ) : null}
+              {c.nonYear12Entry ? (
+                <div>
+                  <SubHeading>Other applicants</SubHeading>
+                  <Prose html={c.nonYear12Entry} linkYear={linkYear} />
+                </div>
+              ) : null}
+              {c.englishLanguage ? (
+                <div>
+                  <SubHeading>English language</SubHeading>
+                  <Prose html={c.englishLanguage} linkYear={linkYear} />
+                </div>
+              ) : null}
+              {c.entry ? (
+                <div>
+                  <SubHeading>Pathways</SubHeading>
+                  <Prose html={c.entry} linkYear={linkYear} />
+                </div>
+              ) : null}
+            </div>
+          </Section>
+        ) : null}
+
+        {hasMore ? (
+          <Section id="more" title="More information" icon={InfoIcon}>
+            <div className="flex flex-col gap-6">
+              {c.progression ? (
+                <div>
+                  <SubHeading>Progression to further studies</SubHeading>
+                  <Prose html={c.progression} linkYear={linkYear} />
+                </div>
+              ) : null}
+              {c.accreditation ? (
+                <div>
+                  <SubHeading>Professional accreditation</SubHeading>
+                  <Prose html={c.accreditation} linkYear={linkYear} />
+                </div>
+              ) : null}
+              {c.specialNotes ? (
+                <div>
+                  <SubHeading>Notes for students</SubHeading>
+                  <Prose html={c.specialNotes} linkYear={linkYear} />
+                </div>
+              ) : null}
+              {c.otherInformation ? (
+                <div>
+                  <SubHeading>Other information</SubHeading>
+                  <Prose html={c.otherInformation} linkYear={linkYear} />
+                </div>
+              ) : null}
+            </div>
+          </Section>
+        ) : null}
+
+        {c.contacts.length > 0 ? (
+          <Section id="contacts" title="Contacts" icon={UsersIcon}>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {c.contacts.map((x) => (
+                <div key={x.role}>
+                  <dt className="mb-1 text-xs text-muted-foreground">
+                    {x.role.replace(/\(s\)$/, "s")}
+                  </dt>
+                  {x.names.map((n) => (
+                    <dd key={n} className="text-sm font-medium">
+                      {n}
+                    </dd>
                   ))}
-                </ul>
-              </Section>
-            ) : null}
+                </div>
+              ))}
+            </dl>
+          </Section>
+        ) : null}
 
-            {c.contacts.length > 0 ? (
-              <Section title="Contacts">
-                <FactList
-                  rows={c.contacts.map((x) => ({
-                    label: x.role.replace(/\(s\)$/, "s"),
-                    value: (
-                      <span className="flex flex-col">
-                        {x.names.map((n) => (
-                          <span key={n}>{n}</span>
-                        ))}
-                      </span>
-                    ),
-                  }))}
-                />
-              </Section>
-            ) : null}
-          </>
-        }
-      />
+        <Section id="details" title="Course details" icon={InfoIcon}>
+          <div className="grid gap-x-10 md:grid-cols-2">
+            <FactList
+              rows={[
+                qualification(c.aqfLevel)
+                  ? { label: "Qualification", value: qualification(c.aqfLevel) }
+                  : null,
+                c.aqfLevel
+                  ? {
+                      label: "AQF level",
+                      value: c.aqfLevel.match(/Level \d+/)?.[0] ?? null,
+                    }
+                  : null,
+                { label: "Credit points", value: c.creditPoints },
+                c.fullTime ? { label: "Full time", value: c.fullTime } : null,
+                c.partTime ? { label: "Part time", value: c.partTime } : null,
+                c.maximumYears
+                  ? { label: "Maximum time", value: `${c.maximumYears} years` }
+                  : null,
+              ]}
+            />
+            <FactList
+              rows={[
+                c.school ? { label: "Faculty", value: c.school } : null,
+                c.cricosCode
+                  ? { label: "CRICOS code", value: c.cricosCode }
+                  : null,
+                c.abbreviatedName
+                  ? { label: "Abbreviation", value: c.abbreviatedName }
+                  : null,
+                c.awards.length > 0
+                  ? {
+                      label:
+                        c.awards.length === 1 ? "Award title" : "Award titles",
+                      value: (
+                        <span className="flex flex-col">
+                          {c.awards.map((a) => (
+                            <span key={a}>{a}</span>
+                          ))}
+                        </span>
+                      ),
+                    }
+                  : null,
+                {
+                  label: "Handbook years",
+                  value: (
+                    <YearLinks
+                      years={r.years}
+                      current={r.year}
+                      href={yearHref}
+                    />
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </Section>
+      </DetailLayout>
 
       <JsonLd
         data={[

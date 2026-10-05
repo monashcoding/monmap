@@ -44,7 +44,7 @@ const KIND_SHORT: Record<string, string> = {
 
 /**
  * The requisite map on a unit, course or area of study page: the same
- * graph as the plan map, read-only. Clicking a unit traces its chain
+ * graph as the plan map, read-only, drawn inside the page's section. Clicking a unit traces its chain
  * and opens its details, with a link to its page. The scroll wheel
  * scrolls the page; pinch, drag and the zoom buttons move the map.
  *
@@ -55,8 +55,6 @@ export function EntityGraph({
   initial,
   year,
   linkYear,
-  title,
-  subtitle,
   emptyText,
   course,
 }: {
@@ -65,8 +63,6 @@ export function EntityGraph({
   year: string
   /** Year segment for links to unit pages; null links the latest. */
   linkYear: string | null
-  title: string
-  subtitle: string
   emptyText: string
   course?: { code: string; aosOptions: GraphAosOption[] }
 }) {
@@ -104,69 +100,75 @@ export function EntityGraph({
     ? entityHref("unit", detail.node.code, linkYear)
     : undefined
 
+  // Short graphs get a shorter canvas, so a unit with two
+  // prerequisites isn't a small cluster in a large empty box. The
+  // smallest still fits the unit panel that opens on a click.
+  const height =
+    nodes.length <= 6
+      ? "h-[420px]"
+      : nodes.length <= 16
+        ? "h-[440px] sm:h-[500px]"
+        : "h-[460px] sm:h-[600px]"
+
   return (
-    <section
-      aria-label={title}
-      className="flex flex-col overflow-hidden rounded-panel border bg-card shadow-card"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-5">
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold">{title}</h2>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-3">
+      {course && course.aosOptions.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <Select
+            value={aosCode ?? ALL}
+            onValueChange={(v) => {
+              setLoading(true)
+              setAosCode(String(v))
+            }}
+          >
+            <SelectTrigger
+              aria-label="Area of study to show"
+              className="w-[min(360px,100%)]"
+            >
+              <SelectValue>
+                {(value: unknown) => {
+                  if (value === ALL || value == null)
+                    return "Course core (no area of study)"
+                  return (
+                    course.aosOptions.find((a) => a.code === value)?.title ??
+                    String(value)
+                  )
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value={ALL}>
+                  Course core (no area of study)
+                </SelectItem>
+                {course.aosOptions.map((a) => (
+                  <SelectItem key={a.code} value={a.code}>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="inline-flex shrink-0 rounded-tag bg-muted px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-muted-foreground! uppercase">
+                        {KIND_SHORT[a.kind] ?? "Other"}
+                      </span>
+                      <span className="text-[12px] whitespace-normal">
+                        {a.title}
+                      </span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           {loading ? (
             <LoaderCircleIcon
               className="size-4 animate-spin text-muted-foreground"
               aria-label="Loading"
             />
           ) : null}
-          {course && course.aosOptions.length > 0 ? (
-            <Select
-              value={aosCode ?? ALL}
-              onValueChange={(v) => {
-                setLoading(true)
-                setAosCode(String(v))
-              }}
-            >
-              <SelectTrigger className="w-[min(320px,80vw)]">
-                <SelectValue>
-                  {(value: unknown) => {
-                    if (value === ALL || value == null)
-                      return "Course core (no area of study)"
-                    return (
-                      course.aosOptions.find((a) => a.code === value)?.title ??
-                      String(value)
-                    )
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value={ALL}>
-                    Course core (no area of study)
-                  </SelectItem>
-                  {course.aosOptions.map((a) => (
-                    <SelectItem key={a.code} value={a.code}>
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="inline-flex shrink-0 rounded-tag bg-muted px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-muted-foreground! uppercase">
-                          {KIND_SHORT[a.kind] ?? "Other"}
-                        </span>
-                        <span className="text-[12px] whitespace-normal">
-                          {a.title}
-                        </span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          ) : null}
         </div>
-      </div>
+      ) : null}
 
       {hasGraph ? (
-        <div className="relative h-[420px] sm:h-[560px]">
+        <div
+          className={`relative overflow-hidden rounded-control border ${height}`}
+        >
           <TreeGraph
             // Remount on new data so the map fits the new layout.
             key={payload.graph.nodes.join(",")}
@@ -194,7 +196,7 @@ export function EntityGraph({
           ) : null}
         </div>
       ) : (
-        <p className="px-4 py-8 text-center text-sm text-muted-foreground sm:px-5">
+        <p className="rounded-control border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
           {emptyText}
         </p>
       )}
@@ -229,6 +231,6 @@ export function EntityGraph({
           ) : null}
         </SheetContent>
       </Sheet>
-    </section>
+    </div>
   )
 }

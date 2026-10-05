@@ -248,8 +248,10 @@
  * no typography plugin, so this styles the few tags the handbook uses.
  */
 @utility handbook-prose {
+  /* About 75 characters a line, the comfortable reading width. */
+  max-width: 75ch;
   font-size: var(--text-sm);
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--foreground);
   overflow-wrap: anywhere;
   & p {

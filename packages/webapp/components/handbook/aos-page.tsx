@@ -7,19 +7,29 @@ import { resolveEntity } from "@/lib/handbook/resolve"
 import { absoluteUrl, stripHtml, truncate } from "@/lib/seo"
 import { prefetchGraphForSeeds } from "@/lib/tree/prefetch"
 
+import {
+  BookOpenIcon,
+  GraduationCapIcon,
+  InfoIcon,
+  ListTreeIcon,
+  NetworkIcon,
+  NotebookPenIcon,
+  TargetIcon,
+  UsersIcon,
+} from "lucide-react"
+
 import { EntityGraph } from "./entity-graph"
 import { JsonLd, breadcrumbLd } from "./json-ld"
 import {
   CurriculumTree,
-  DetailColumns,
+  DetailLayout,
+  EntityCards,
   EntityHero,
-  EntityRows,
   FactList,
   HandbookMain,
   Notice,
   Prose,
   Section,
-  SectionNav,
   YearLinks,
 } from "./parts"
 
@@ -86,12 +96,21 @@ export async function AosPage({
         kindLabel={kindLabel}
         code={a.code}
         title={a.title}
-        facts={[
-          a.studyLevel,
-          a.creditPoints ? `${a.creditPoints} credit points` : null,
-          a.locations,
-        ]}
+        facts={[a.studyLevel]}
         subtitle={a.school}
+        stats={[
+          a.creditPoints
+            ? { label: "Credit points", value: String(a.creditPoints) }
+            : null,
+          { label: "Units", value: String(a.unitCodes.length) },
+          a.locations ? { label: "Campus", value: a.locations } : null,
+          a.courses.length > 0
+            ? {
+                label: "Offered in",
+                value: `${a.courses.length} course${a.courses.length === 1 ? "" : "s"}`,
+              }
+            : null,
+        ]}
         breadcrumbs={[
           { label: "Search", href: "/search" },
           { label: "Areas of study", href: "/search?type=aos" },
@@ -104,145 +123,150 @@ export async function AosPage({
         notice={notice}
       />
 
-      <SectionNav
-        items={[
+      <DetailLayout
+        toc={[
           a.description ? { id: "overview", label: "Overview" } : null,
+          { id: "map", label: "Requisite map" },
           a.curriculum.length > 0
             ? { id: "structure", label: "Structure" }
             : null,
           a.courses.length > 0 ? { id: "courses", label: "Courses" } : null,
+          a.specialStatements ? { id: "notes", label: "Notes" } : null,
           a.learningOutcomes.length > 0
             ? { id: "outcomes", label: "Learning outcomes" }
             : null,
+          a.contacts.length > 0 ? { id: "contacts", label: "Contacts" } : null,
+          { id: "details", label: "Details" },
         ]}
-      />
+      >
+        {a.description ? (
+          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+            <Prose
+              html={a.description}
+              linkYear={linkYear}
+              className="text-[15px]"
+            />
+          </Section>
+        ) : null}
 
-      <EntityGraph
-        initial={graph}
-        year={r.year}
-        linkYear={linkYear}
-        title="Requisite map"
-        subtitle={`The units in ${a.title} and the prerequisites behind them. Click a unit to see its details.`}
-        emptyText={`None of the units in ${a.title} have prerequisites in the ${r.year} handbook.`}
-      />
+        <Section id="map" title="Requisite map" icon={NetworkIcon}>
+          <EntityGraph
+            initial={graph}
+            year={r.year}
+            linkYear={linkYear}
+            emptyText={`None of the units in ${a.title} have prerequisites in the ${r.year} handbook.`}
+          />
+        </Section>
 
-      <DetailColumns
-        main={
-          <>
-            {a.description ? (
-              <Section id="overview" title="Overview">
-                <Prose html={a.description} linkYear={linkYear} />
-              </Section>
-            ) : null}
+        {a.curriculum.length > 0 ? (
+          <Section id="structure" title="Structure" icon={ListTreeIcon}>
+            <CurriculumTree
+              nodes={a.curriculum}
+              linkYear={linkYear}
+              linkableUnits={new Set(a.linkableUnits)}
+            />
+          </Section>
+        ) : null}
 
-            {a.curriculum.length > 0 ? (
-              <Section id="structure" title="Structure">
-                <CurriculumTree
-                  nodes={a.curriculum}
-                  linkYear={linkYear}
-                  linkableUnits={new Set(a.linkableUnits)}
-                />
-              </Section>
-            ) : null}
+        {a.courses.length > 0 ? (
+          <Section
+            id="courses"
+            title="Courses that offer it"
+            icon={GraduationCapIcon}
+          >
+            <EntityCards
+              rows={a.courses.map((c) => ({
+                kind: "course" as const,
+                code: c.code,
+                title: c.title,
+                note: AOS_KIND_LABEL[c.kind] ?? null,
+              }))}
+              linkYear={linkYear}
+            />
+          </Section>
+        ) : null}
 
-            {a.specialStatements ? (
-              <Section id="notes" title="Notes">
-                <Prose html={a.specialStatements} linkYear={linkYear} />
-              </Section>
-            ) : null}
+        {a.specialStatements ? (
+          <Section id="notes" title="Notes" icon={NotebookPenIcon}>
+            <Prose html={a.specialStatements} linkYear={linkYear} />
+          </Section>
+        ) : null}
 
-            {a.learningOutcomes.length > 0 ? (
-              <Section id="outcomes" title="Learning outcomes">
-                {a.outcomesIntro ? (
-                  <Prose
-                    html={a.outcomesIntro}
-                    linkYear={linkYear}
-                    className="mb-3 text-muted-foreground"
-                  />
-                ) : null}
-                <ol className="flex flex-col gap-2">
-                  {a.learningOutcomes.map((o, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="w-6 shrink-0 text-xs font-semibold text-muted-foreground tabular-nums">
-                        {i + 1}
-                      </span>
-                      <Prose html={o.html} linkYear={linkYear} />
-                    </li>
-                  ))}
-                </ol>
-              </Section>
-            ) : null}
-          </>
-        }
-        aside={
-          <>
-            <Section title={`${kindLabel} details`}>
-              <FactList
-                rows={[
-                  { label: "Type", value: kindLabel },
-                  a.studyLevel
-                    ? { label: "Study level", value: a.studyLevel }
-                    : null,
-                  a.creditPoints
-                    ? { label: "Credit points", value: a.creditPoints }
-                    : null,
-                  a.locations
-                    ? { label: "Locations", value: a.locations }
-                    : null,
-                  a.school ? { label: "Faculty", value: a.school } : null,
-                  a.academicOrg && a.academicOrg !== a.school
-                    ? { label: "Organisational unit", value: a.academicOrg }
-                    : null,
-                  {
-                    label: "Handbook years",
-                    value: (
-                      <YearLinks
-                        years={r.years}
-                        current={r.year}
-                        href={yearHref}
-                      />
-                    ),
-                  },
-                ]}
+        {a.learningOutcomes.length > 0 ? (
+          <Section id="outcomes" title="Learning outcomes" icon={TargetIcon}>
+            {a.outcomesIntro ? (
+              <Prose
+                html={a.outcomesIntro}
+                linkYear={linkYear}
+                className="mb-4 text-muted-foreground"
               />
-            </Section>
-
-            {a.courses.length > 0 ? (
-              <Section
-                id="courses"
-                title={`Offered in ${a.courses.length} course${a.courses.length === 1 ? "" : "s"}`}
-              >
-                <EntityRows
-                  rows={a.courses.map((c) => ({
-                    kind: "course" as const,
-                    code: c.code,
-                    title: c.title,
-                    note: AOS_KIND_LABEL[c.kind] ?? null,
-                  }))}
-                  linkYear={linkYear}
-                />
-              </Section>
             ) : null}
+            <ol className="flex flex-col gap-3">
+              {a.learningOutcomes.map((o, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold tabular-nums">
+                    {i + 1}
+                  </span>
+                  <Prose html={o.html} linkYear={linkYear} className="pt-0.5" />
+                </li>
+              ))}
+            </ol>
+          </Section>
+        ) : null}
 
-            {a.contacts.length > 0 ? (
-              <Section title="Contacts">
-                <FactList
-                  rows={a.contacts.map((x) => ({
-                    label: x.role.replace(/\(s\)$/, "s"),
-                    value: (
-                      <span className="flex flex-col">
-                        {x.names.map((n) => (
-                          <span key={n}>{n}</span>
-                        ))}
-                      </span>
-                    ),
-                  }))}
-                />
-              </Section>
-            ) : null}
-          </>
-        }
-      />
+        {a.contacts.length > 0 ? (
+          <Section id="contacts" title="Contacts" icon={UsersIcon}>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {a.contacts.map((x) => (
+                <div key={x.role}>
+                  <dt className="mb-1 text-xs text-muted-foreground">
+                    {x.role.replace(/\(s\)$/, "s")}
+                  </dt>
+                  {x.names.map((n) => (
+                    <dd key={n} className="text-sm font-medium">
+                      {n}
+                    </dd>
+                  ))}
+                </div>
+              ))}
+            </dl>
+          </Section>
+        ) : null}
+
+        <Section id="details" title={`${kindLabel} details`} icon={InfoIcon}>
+          <div className="grid gap-x-10 md:grid-cols-2">
+            <FactList
+              rows={[
+                { label: "Type", value: kindLabel },
+                a.studyLevel
+                  ? { label: "Study level", value: a.studyLevel }
+                  : null,
+                a.creditPoints
+                  ? { label: "Credit points", value: a.creditPoints }
+                  : null,
+              ]}
+            />
+            <FactList
+              rows={[
+                a.school ? { label: "Faculty", value: a.school } : null,
+                a.academicOrg && a.academicOrg !== a.school
+                  ? { label: "Organisational unit", value: a.academicOrg }
+                  : null,
+                {
+                  label: "Handbook years",
+                  value: (
+                    <YearLinks
+                      years={r.years}
+                      current={r.year}
+                      href={yearHref}
+                    />
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </Section>
+      </DetailLayout>
 
       <JsonLd
         data={[
