@@ -133,9 +133,9 @@ export async function AosPage({
 
       <DetailLayout
         toc={[
-          a.description ? { id: "overview", label: "Overview" } : null,
-          { id: "map", label: "Requisite map" },
           { id: "reviews", label: "Reviews" },
+          { id: "map", label: "Requisite map" },
+          a.description ? { id: "overview", label: "Overview" } : null,
           a.curriculum.length > 0
             ? { id: "structure", label: "Structure" }
             : null,
@@ -148,15 +148,12 @@ export async function AosPage({
           { id: "details", label: "Details" },
         ]}
       >
-        {a.description ? (
-          <Section id="overview" title="Overview" icon={BookOpenIcon}>
-            <Prose
-              html={a.description}
-              linkYear={linkYear}
-              className="text-[15px]"
-            />
-          </Section>
-        ) : null}
+        <ReviewsSection
+          kind="aos"
+          code={a.code}
+          title={a.title}
+          data={reviews}
+        />
 
         <Section id="map" title="Requisite map" icon={NetworkIcon}>
           <EntityGraph
@@ -167,12 +164,15 @@ export async function AosPage({
           />
         </Section>
 
-        <ReviewsSection
-          kind="aos"
-          code={a.code}
-          title={a.title}
-          data={reviews}
-        />
+        {a.description ? (
+          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+            <Prose
+              html={a.description}
+              linkYear={linkYear}
+              className="text-[15px]"
+            />
+          </Section>
+        ) : null}
 
         {a.curriculum.length > 0 ? (
           <Section id="structure" title="Structure" icon={ListTreeIcon}>

@@ -201,9 +201,9 @@ export async function CoursePage({
 
       <DetailLayout
         toc={[
-          c.overview ? { id: "overview", label: "Overview" } : null,
-          { id: "map", label: "Requisite map" },
           { id: "reviews", label: "Reviews" },
+          { id: "map", label: "Requisite map" },
+          c.overview ? { id: "overview", label: "Overview" } : null,
           c.curriculum.length > 0 || c.requirements
             ? { id: "structure", label: "Structure" }
             : null,
@@ -219,15 +219,12 @@ export async function CoursePage({
           { id: "details", label: "Course details" },
         ]}
       >
-        {c.overview ? (
-          <Section id="overview" title="Overview" icon={BookOpenIcon}>
-            <Prose
-              html={c.overview}
-              linkYear={linkYear}
-              className="text-[15px]"
-            />
-          </Section>
-        ) : null}
+        <ReviewsSection
+          kind="course"
+          code={c.code}
+          title={c.title}
+          data={reviews}
+        />
 
         <Section id="map" title="Requisite map" icon={NetworkIcon}>
           <EntityGraph
@@ -246,12 +243,15 @@ export async function CoursePage({
           />
         </Section>
 
-        <ReviewsSection
-          kind="course"
-          code={c.code}
-          title={c.title}
-          data={reviews}
-        />
+        {c.overview ? (
+          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+            <Prose
+              html={c.overview}
+              linkYear={linkYear}
+              className="text-[15px]"
+            />
+          </Section>
+        ) : null}
 
         {c.curriculum.length > 0 || c.requirements ? (
           <Section id="structure" title="Course structure" icon={ListTreeIcon}>

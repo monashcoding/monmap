@@ -259,9 +259,9 @@ export async function UnitPage({
 
       <DetailLayout
         toc={[
-          u.synopsis ? { id: "overview", label: "Overview" } : null,
-          hasRequisites ? { id: "requisites", label: "Requisites" } : null,
           { id: "reviews", label: "Reviews" },
+          hasRequisites ? { id: "requisites", label: "Requisites" } : null,
+          u.synopsis ? { id: "overview", label: "Overview" } : null,
           { id: "offerings", label: "Offerings" },
           u.assessments.length > 0
             ? { id: "assessment", label: "Assessment" }
@@ -280,15 +280,12 @@ export async function UnitPage({
           { id: "details", label: "More details" },
         ]}
       >
-        {u.synopsis ? (
-          <Section id="overview" title="Overview" icon={BookOpenIcon}>
-            <Prose
-              html={u.synopsis}
-              linkYear={linkYear}
-              className="text-[15px]"
-            />
-          </Section>
-        ) : null}
+        <ReviewsSection
+          kind="unit"
+          code={u.code}
+          title={u.title}
+          data={reviews}
+        />
 
         {hasRequisites ? (
           <Section id="requisites" title="Requisites" icon={NetworkIcon}>
@@ -380,12 +377,15 @@ export async function UnitPage({
           </Section>
         ) : null}
 
-        <ReviewsSection
-          kind="unit"
-          code={u.code}
-          title={u.title}
-          data={reviews}
-        />
+        {u.synopsis ? (
+          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+            <Prose
+              html={u.synopsis}
+              linkYear={linkYear}
+              className="text-[15px]"
+            />
+          </Section>
+        ) : null}
 
         <Section
           id="offerings"
