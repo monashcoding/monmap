@@ -272,7 +272,7 @@ export function UnitDetailView({
             Tree
           </a>
           <a
-            href={`https://handbook.monash.edu/${selectedYear}/units/${code}`}
+            href={`https://handbook.monash.edu/${unit?.fallbackFor === selectedYear ? unit.year : selectedYear}/units/${code}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -285,6 +285,12 @@ export function UnitDetailView({
           {unit?.title ??
             (loading ? "Loading…" : "Not in this year's handbook")}
         </h3>
+        {unit?.fallbackFor ? (
+          <p className="text-[11px] text-muted-foreground">
+            From the {unit.year} handbook. The {unit.fallbackFor} page
+            isn&apos;t published yet.
+          </p>
+        ) : null}
         {unit?.level || unit?.school ? (
           <div className="flex flex-wrap gap-1 pt-0.5">
             {unit?.level ? (

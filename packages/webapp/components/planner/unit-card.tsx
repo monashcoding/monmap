@@ -227,6 +227,14 @@ export function UnitCard({
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tabular-nums">{code}</span>
             {isCore ? <CoreBadge /> : null}
+            {unit?.fallbackFor ? (
+              <span
+                title={`From the ${unit.year} handbook. The ${unit.fallbackFor} page isn't published yet.`}
+                className="rounded-tag bg-muted px-1 py-0.5 text-[9px] leading-none font-semibold text-muted-foreground tabular-nums"
+              >
+                {unit.year}
+              </span>
+            ) : null}
             <StatusIcon status={status} />
             {isFY ? (
               <span className="ml-auto rounded-tag bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
