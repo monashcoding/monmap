@@ -158,7 +158,10 @@ function RightPanel({
 }) {
   return (
     <div
-      className={cn("border-t bg-card lg:border-t-0 lg:border-l", className)}
+      className={cn(
+        "overflow-hidden rounded-panel border bg-card shadow-card",
+        className
+      )}
     >
       {/* Tab bar */}
       <div className="sticky top-0 z-10 flex border-b bg-card">
