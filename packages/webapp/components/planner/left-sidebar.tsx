@@ -131,7 +131,7 @@ export function LeftSidebar() {
           <button
             type="button"
             onClick={() => setEditingName(true)}
-            title={`Rename "${activePlan.name}"`}
+            title="Rename plan"
             className="flex min-w-0 items-center rounded-control px-2 py-1 text-left text-lg font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="truncate">{planTitle}</span>

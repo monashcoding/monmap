@@ -62,6 +62,8 @@ export interface PlanPageData {
   plan: PlanWithState
   course: CourseMeta | null
   totalCreditPoints: number
+  /** Handbook years, so the CSV export loads each unit at its study year. */
+  availableYears: string[]
 }
 
 export default async function PlansPage({
@@ -134,6 +136,7 @@ export default async function PlansPage({
         courseMap.get(`${plan.state.courseCode}:${plan.state.courseYear}`) ??
         null,
       totalCreditPoints: planCreditPoints(plan.state, cpMap),
+      availableYears,
     }
   })
 

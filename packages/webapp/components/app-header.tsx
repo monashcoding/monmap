@@ -162,7 +162,7 @@ function MobileNavTrigger() {
           <SheetDescription>Monash course planner</SheetDescription>
         </SheetHeader>
         <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <nav aria-label="Pages" className="flex flex-col gap-1">
+          <nav aria-label="Pages" className="flex flex-col gap-1 md:hidden">
             {PRIMARY_NAV_ITEMS.map(({ href, label, match }) => {
               const active = match(pathname)
               return (
@@ -194,7 +194,7 @@ function MobileNavTrigger() {
           <Link
             href="/my-reviews"
             onClick={close}
-            className="flex items-center gap-3 rounded-control bg-primary/40 px-3 py-2.5 text-primary-foreground"
+            className="flex items-center gap-3 rounded-control bg-primary/40 px-3 py-2.5 text-primary-foreground md:hidden dark:bg-primary"
           >
             <MessageSquareTextIcon className="size-4 shrink-0" />
             <span className="flex flex-col">
@@ -302,7 +302,7 @@ function UserMenu() {
         {/* The same generated avatar reviews show, so the student sees
             how they appear to others. */}
         <DropdownMenuTrigger
-          aria-label={`Account menu for ${user.name}`}
+          aria-label="Account menu"
           className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ReviewAvatar initials={reviewAs} size={32} />

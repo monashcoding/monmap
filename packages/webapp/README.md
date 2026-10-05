@@ -11,7 +11,9 @@ reviews. It is a Next.js app in the monorepo.
 - Handbook data quirks: [`docs/handbook-internals.md`](../../docs/handbook-internals.md).
 - Analytics: client code sends PostHog events only through
   `lib/analytics.ts` (an eslint rule enforces it), which loads
-  posthog-js on demand. Events never carry an email, a name, a plan
+  posthog-js on demand. Server code sends them only through
+  `captureServer` in `lib/posthog-server.ts`. Neither sends anything
+  outside production, and no event carries an email, a name, a plan
   name or a grade.
 
 UI components come from shadcn/ui. Add one with:

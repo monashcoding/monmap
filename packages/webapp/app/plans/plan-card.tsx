@@ -33,7 +33,8 @@ import {
 
 import type { PlanPageData } from "./page"
 import { capture } from "@/lib/analytics"
-import { fetchUnits } from "@/lib/api/client"
+import { fetchUnitsByYear } from "@/lib/api/client"
+import { codesToHydrate } from "@/lib/planner/hydration"
 import { MAX_PLANS_PER_USER } from "@/lib/db/input"
 import { monashHandbookUrl } from "@/lib/handbook/links"
 import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
@@ -168,7 +169,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
                 <h2 className="text-base leading-tight font-bold">
                   <button
                     type="button"
-                    title={`Rename "${plan.name}"`}
+                    title="Rename plan"
                     onClick={startNameEdit}
                     className="-mx-2 -my-1 rounded-control px-2 py-1 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                   >
@@ -268,18 +269,18 @@ export function PlanCard({ data }: { data: PlanPageData }) {
                 // This page only has the plan's codes, so fetch titles,
                 // credit points and marks for the export.
                 startTransition(async () => {
-                  const codes = [
-                    ...new Set([
-                      ...plan.state.years.flatMap((y) =>
-                        y.slots.flatMap((s) => s.unitCodes)
-                      ),
-                      ...(plan.state.credit ?? []).flatMap((c) =>
-                        c.code ? [c.code] : []
-                      ),
-                    ]),
-                  ]
+                  // The same per-year lookup the planner uses, so the CSV
+                  // shows each unit's data from its study year.
+                  const codesByYear = codesToHydrate({
+                    state: plan.state,
+                    availableYears: data.availableYears,
+                    units: new Map(),
+                    offerings: new Map(),
+                    requisites: new Map(),
+                    empty: new Set(),
+                  })
                   const [hydrated, grades] = await Promise.all([
-                    fetchUnits(codes, plan.state.courseYear),
+                    fetchUnitsByYear(codesByYear),
                     listMyGradesAction(),
                   ])
                   downloadBlob(
