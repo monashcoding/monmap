@@ -1,5 +1,13 @@
 # Data & edge-case audit — all years (2020–2026)
 
+> **Status (October 2026).** A snapshot from 2026-08-29 of handbook
+> years 2020–2026; the 2027 year added since is not audited here.
+> Resolved since: §1.1 (ingest trims requisite codes, in
+> `packages/ingest/src/parse.ts`). Partly addressed: §1.6 (ingest now
+> recovers blank course credit points from the curriculum tree, but the
+> 144-point fallback remains). The rest is still open.
+> `pnpm --filter webapp verify:corpus` reports current counts.
+
 Ran against the live corpus on 2026-08-29, checking every ingested
 handbook year rather than just the current one. Each item below was
 measured, not inferred; where a headline number overstates the real
@@ -78,10 +86,10 @@ told to take them cannot clear the error by any means.
 ### 1.6 Two courses have null credit points
 
 `B2057` (Bachelor of Digital Business) and `B0601` (Diploma of
-Business). `summarizePlan` does `course?.creditPoints ?? 144`
-(`progress.ts:117`), so the ring silently adopts a **144-point
-denominator** that was never checked against these courses. No crash —
-`right-sidebar.tsx:223` guards `> 0` — but the percentage may simply
+Business). `summarizePlan` (`lib/planner/progress.ts`) does
+`course?.creditPoints ?? 144`, so the ring silently adopts a
+**144-point denominator** that was never checked against these
+courses. No crash — `right-sidebar.tsx` guards `> 0` — but the percentage may simply
 be wrong. The other 67 null-CP courses in 2026 are research doctorates
 and masters, which nobody plans in this tool.
 

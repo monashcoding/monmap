@@ -1,21 +1,17 @@
-# Next.js template
+# webapp
 
-This is a Next.js template with shadcn/ui.
+The MonMap web app: the planner, the handbook pages, search and
+reviews. It is a Next.js app in the monorepo.
 
-## Adding components
+- Setup, commands and conventions: the [root README](../../README.md)
+  and [`CLAUDE.md`](../../CLAUDE.md).
+- Handbook pages, search and caching: [`docs/handbook-pages.md`](../../docs/handbook-pages.md).
+- Reviews and moderation: [`docs/reviews.md`](../../docs/reviews.md).
+- SEO: [`docs/seo.md`](../../docs/seo.md).
+- Handbook data quirks: [`docs/handbook-internals.md`](../../docs/handbook-internals.md).
 
-To add components to your app, run the following command:
+UI components come from shadcn/ui. Add one with:
 
 ```bash
-npx shadcn@latest add button
-```
-
-This will place the ui components in the `components` directory.
-
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
+pnpm dlx shadcn@latest add button
 ```

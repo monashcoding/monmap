@@ -12,12 +12,13 @@ the handbook data, and a search page over all of them.
 | `/units/[code]/[year]`                      | A unit in one earlier year.                                                                                |
 | `/courses/[code]`, `/courses/[code]/[year]` | The same for courses.                                                                                      |
 | `/aos/[code]`, `/aos/[code]/[year]`         | The same for areas of study.                                                                               |
+| `/courses`, `/aos`                          | Every current course, or area of study, grouped, with ratings.                                             |
 
 The segment names copy handbook.monash.edu, so a Monash URL becomes a
 MonMap URL by changing the domain.
 
-- The bare URL is canonical. A year page for the code's latest year
-  sets its canonical to the bare URL.
+- The bare URL is canonical, and every year page names it as its
+  canonical (see [`seo.md`](seo.md)).
 - A lowercase code redirects to the uppercase one (308).
 - A year with no page for the code redirects to the bare URL (307).
 - An unknown code is a 404.
@@ -90,8 +91,8 @@ page, 2 at a time with a 200 ms pause:
 pnpm --filter webapp warm:pages --base https://monmap.monashcoding.com
 ```
 
-At about 1 page a second, the full set of about 10,000 pages takes
-roughly 3 hours. Use `--only courses`, `--only aos` or `--limit` to
+At about 1 page a second, the full set of about 6,800 pages (the
+current codes the sitemaps list) takes roughly 2 hours. Use `--only courses`, `--only aos` or `--limit` to
 warm a part first.
 
 ## SEO

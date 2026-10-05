@@ -1,5 +1,12 @@
 # MonMap feedback triage — May 2026 form
 
+> **Status (October 2026).** B1 to B6 are fixed or closed, including
+> B4: the plan-level campus preference shipped
+> (`lib/planner/campus.ts`). Some B7 singles and feature requests are
+> still open, as marked. File and line references describe the code
+> at the time of each fix and have since moved; the starting-year
+> picker now lives in `components/planner/plan-basics.tsx`.
+
 Source: *MonMap Feedback Form (Responses)* — 88 responses, all
 submitted 18 May 2026. Median usefulness rating 4/5.
 
@@ -182,7 +189,7 @@ whose includedParts exclude E*. Requires threading the component's
 `fetchCourseWithAoS`, and a golden-fixture test on ECSYSENG04-in-E3010
 versus ECSYSENG04-in-E3001.~~
 
-### B4 — Campus scoping *(4 reports: #4, #16, #55, #87)* — **PARTLY FIXED**
+### B4 — Campus scoping *(4 reports: #4, #16, #55, #87)* — **FIXED**
 
 > "Ability to choose a campus, so malaysia units don't appear in the list maybe?"
 > "the engineering minors dont show Malaysia minors"
@@ -209,8 +216,9 @@ asks sit under this heading:
   **FIXED 2026-08-21**: `course_areas_of_study.scope` (migration 0011)
   captures the campus from the ancestor path at ingest, and the AoS
   picker shows it as a chip. 66 of 2026's 718 edges are scoped.
-  The *filtering* half — hiding other-campus options outright — still
-  needs the plan-level campus preference above.
+  The *filtering* half shipped later: a plan-level campus preference
+  (`PlannerState.campus`, `lib/planner/campus.ts`) hides other-campus
+  options.
 
 ### B5 — "Core" tagging looks arbitrary *(3 reports: #33, #83, #9)* — **FIXED**
 
@@ -327,7 +335,7 @@ pick-one pair for free, with no pick-one detection anywhere.
 3. ~~**B5**~~ — done.
 4. ~~**B2**~~ — closed, not reproducible.
 5. ~~**Prior credit**~~ — done.
-6. ~~**B4**~~ display half done; the campus *preference* remains.
+6. ~~**B4**~~ done: the scope chip and the campus preference.
 7. ~~**B6**~~ — done.
 8. ~~The B7 singles~~ — swept 2026-08-29: #17 fixed; #49 and #82
    resolved by data refresh; #54 working as designed; #58 needs the

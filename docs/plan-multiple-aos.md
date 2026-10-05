@@ -1,5 +1,11 @@
 # Plan — multiple majors/minors, and the campus preference
 
+> **Status: shipped (October 2026).** The campus preference, repeat AoS
+> slots (`#2`, at most 2 per kind) and overlap detection with its
+> requirements-panel note are all in the planner. This document is the
+> original design record; its code references describe the code as of
+> `818d67a`.
+
 Covers feature #2 from `feedback-triage-2026-05.md`: **multiple
 majors / minors (9 requests — #15, #24, #34, #41, #50, #63, #67, #77,
 #81)**, plus the unfinished **campus preference** half of B4, which is
@@ -101,7 +107,7 @@ A second, stricter rule appears only from 2023 and only in a handful
 
 ### 0.4 Why this is the part that needs care
 
-`summarizeAoSProgress` (`progress.ts:153`) is called **once per AoS,
+`summarizeAoSProgress` (`progress.ts`) is called **once per AoS,
 independently**, with no cross-AoS awareness. Today that is harmless —
 a student holds at most one pick per slot. The moment they hold two
 majors that share units, a shared unit counts **fully toward both**
@@ -133,7 +139,7 @@ stay readable forever so saved plans never migrate"*. A `#2` suffix is
 a third generation of the same idea.
 
 The payoff is large because of how `pickedAosEntries`
-(`aos-slots.ts:265`) is written. It iterates `computeAosSlots` first,
+(`aos-slots.ts`) is written. It iterates `computeAosSlots` first,
 then sweeps **any remaining `selectedAos` key** that names a real
 course AoS, de-duplicating by code. So repeat-slot picks flow into the
 requirements panel, `unit-card`'s core badge and `aos-templates`
@@ -309,15 +315,14 @@ the failure mode the feedback complained about.
   current years' width, and assert the two-minor rule stays silent on a
   2020 plan (§0.3: it doesn't exist before 2023).
 - Year switching needs no new handling — `set_year` already resets
-  `selectedAos` wholesale (`state.ts:153`), so repeat keys clear with
+  `selectedAos` wholesale (`state.ts`), so repeat keys clear with
   everything else. Worth a test pinning that, since only 113 of 2026's
   393 AoS codes exist in 2020 and a surviving pick would usually be
   invalid.
 - `pnpm --filter webapp verify:resolver` — snapshot must not drift;
   none of this touches the resolver, so any drift is a bug.
 
-Run tests with `node --experimental-strip-types --test` (plain
-`pnpm test` fails on Node 22.13).
+Run tests with `pnpm --filter webapp test`.
 
 ---
 

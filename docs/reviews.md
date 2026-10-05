@@ -64,13 +64,16 @@ Editing a shadowbanned review keeps it shadowbanned.
 Ratings use the Google Maps form, "4.3 ★★★★☆ (12)", and "☆☆☆☆☆ (0)"
 with no reviews:
 
-- The page hero (linking to the Reviews section), with
-  `aggregateRating` and `review` JSON-LD on unit pages.
+- The page hero (linking to the Reviews section, which opens the
+  page), with `aggregateRating` and `review` JSON-LD on unit, course
+  and area of study pages.
 - Unit, course and area of study lists on the pages: requisite tiles,
   "After" lists, structure trees and cards.
 - `/search` results.
+- Every requisite map node, on the handbook pages and the plan map.
 - The planner: unit search rows (one star, compact), the unit popover,
-  the course card and the map's unit panel. These load through
+  the course card, the map's unit panel and the plan map's unit card.
+  These load through
   `components/reviews/use-ratings.ts`, which batches every request on
   the page into one server action per kind.
 

@@ -309,6 +309,9 @@ extracts from `areas_of_study.curriculum_structure` per AoS.
 
 ## Fields that aren't what they look like
 
+Most of these are keys in the upstream JSON (`raw`), not database
+columns; `areas_of_study.type` and `study_level` are columns.
+
 - `courses.description` — populated on **6/501** records. Use
   `overview` instead (94%).
 - `units.exclusions` — always empty string. The "can't take both"
@@ -517,6 +520,8 @@ to strip tags; some fields rely on them for line breaks.
 
 ## Corpus shape (2026, pre-reingest of A4/A7/A10 fixes)
 
+A 2026 snapshot. The database now holds handbook years 2020–2027.
+
 | table | rows |
 |---|---|
 | `units` | 5,218 |
@@ -532,5 +537,5 @@ to strip tags; some fields rely on them for line breaks.
 Requisite type split: 1,612 prohibition · 1,317 prerequisite · 381 corequisite.
 AoS kind split: 195 major · 162 specialisation · 113 other · 107 minor · 80 elective · 62 extended_major.
 
-After the A10 fix, expect `other` to shrink (campus-shadowed real
-specialisations move to `specialisation`).
+The A10 fix has since shipped, so `other` is smaller than shown:
+campus-shadowed specialisations moved to `specialisation`.

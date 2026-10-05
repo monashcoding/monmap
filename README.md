@@ -4,7 +4,7 @@
 
 **A course planner for Monash students, built by the [Monash Association of Coding](https://monashcoding.com).**
 
-Meant to replace [MonPlan](https://monplan.apps.monash.edu), which is being sunset on 2 June 2026.
+Built to replace [MonPlan](https://monplan.apps.monash.edu), which Monash sunset on 2 June 2026.
 
 [**Live site**](https://monmap.monashcoding.com) · [Report a bug](https://github.com/monashcoding/monmap/issues) · [Feedback form](https://docs.google.com/forms/d/e/1FAIpQLSfEMCU4OCItlK6DGgIXTovH7_sPSW6mZtMaPGf1OCUQW_43kg/viewform)
 
@@ -15,16 +15,25 @@ Meant to replace [MonPlan](https://monplan.apps.monash.edu), which is being suns
 ## Overview
 
 MonMap lets you drag units onto a year-by-year grid and see, in real
-time, whether your plan actually works. It checks prereqs and slot
-offerings against the actual Monash handbook, flags what doesn't fit,
-surfaces what's missing from your course requirements, and keeps a
-running WAM as you tweak. Sign in to save plans across devices, or use
-it anonymously and export to JSON.
+time, whether your plan works. It checks prerequisites and offerings
+against the Monash handbook, flags what doesn't fit, shows what your
+course requirements still need, and keeps a running WAM. Every unit,
+course and major also has its own page with student reviews and a
+requisite map. Sign in to save plans across devices, or use it
+anonymously and export to JSON.
 
 ## Features
 
 - **Quick unit search.** Two-pane layout with slot-fit hints and a
   recent-units rail so common picks are one click away.
+- **Student reviews.** Rate units, courses and majors on teaching,
+  content, assessment, difficulty and workload. Reviews show initials
+  only, and a classifier screens out abuse, spam and personal details
+  ([how it works](docs/reviews.md)).
+- **Handbook pages and search.** A page for every unit, course and area
+  of study from 2020 to 2027, with a requisite map of what each unit
+  needs and unlocks, and one search over all of them
+  ([details](docs/handbook-pages.md)).
 - **Plans you own.** Export, re-import, print, or share. Your data
   travels with you.
 - **Faithful handbook coverage.** Cross-year prereqs, honours track
@@ -75,7 +84,8 @@ createdb monmap
 pnpm db:migrate
 
 # 4. Download the latest handbook corpus from GitHub releases
-#    (~120 MB; covers 2020–2026). Requires the gh CLI; alternatively
+#    (~120 MB; covers 2020–2026, the live site also has 2027).
+#    Requires the gh CLI; alternatively
 #    grab it from https://github.com/monashcoding/monmap/releases/latest
 gh release download --repo monashcoding/monmap --pattern 'monmap-handbook-*.tar.gz'
 
@@ -166,6 +176,9 @@ gh release create handbook-YYYYMMDD monmap-handbook-YYYYMMDD.tar.gz \
 - Handbook data quirks (fields that silently lie, JSONB tree shapes,
   cross-year references): [`docs/handbook-internals.md`](docs/handbook-internals.md).
   Worth skimming before writing a query.
+- Handbook pages, search and caching: [`docs/handbook-pages.md`](docs/handbook-pages.md).
+- Reviews and moderation: [`docs/reviews.md`](docs/reviews.md).
+- SEO: [`docs/seo.md`](docs/seo.md).
 
 ## Credits
 
