@@ -13,12 +13,12 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
-import { slotLabel } from "@/lib/planner/timeline"
+import { isFreshPlan, slotLabel } from "@/lib/planner/timeline"
 
 import { usePlanner } from "./planner-context"
 import { SemesterRow } from "./semester-row"
-import { ContinueMenu } from "./continue-menu"
-import { FinishLine } from "./finish-line"
+import { AddSemesterButton, FinishLine } from "./finish-line"
+import { PlanSetup } from "./plan-basics"
 import { UnitCard } from "./unit-card"
 import { YearHeader } from "./year-header"
 
@@ -305,6 +305,11 @@ function NewUnitDragOverlay({ code }: { code: string }) {
  */
 export function PlanGrid() {
   const { state, course } = usePlanner()
+
+  // A plan nobody has started gets the three-question setup instead of
+  // an empty grid.
+  if (isFreshPlan(state)) return <PlanSetup />
+
   return (
     <div className="flex min-w-0 flex-col gap-0">
       {state.years.map((year, yearIndex) => (
@@ -335,7 +340,7 @@ export function PlanGrid() {
       ) : (
         <>
           <FinishLine />
-          <ContinueMenu variant="footer" />
+          <AddSemesterButton />
         </>
       )}
     </div>

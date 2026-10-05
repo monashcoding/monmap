@@ -202,3 +202,57 @@ test("next semesters continue from the end of the plan", () => {
     { yearIndex: 1, kind: "S1" },
   ])
 })
+
+import { isFreshPlan, yearsNeeded } from "./timeline.ts"
+
+test("years needed follow the load", () => {
+  assert.equal(yearsNeeded(144, 4), 3)
+  assert.equal(yearsNeeded(144, 2), 6)
+  assert.equal(yearsNeeded(192, 4), 4)
+  assert.equal(yearsNeeded(null, 4), 3)
+})
+
+test("set_load resizes semesters but not below placed units", () => {
+  let st = defaultState("2027", null, 1)
+  for (const c of ["A1000", "B1000", "C1000"])
+    st = plannerReducer(st, {
+      type: "add_unit",
+      yearIndex: 0,
+      slotIndex: 0,
+      code: c,
+    })
+  st = plannerReducer(st, { type: "set_load", load: 2 })
+  assert.equal(st.load, 2)
+  assert.equal(st.years[0]!.slots[0]!.capacity, 3)
+  assert.equal(st.years[0]!.slots[1]!.capacity, 2)
+  st = plannerReducer(st, { type: "add_year" })
+  assert.equal(st.years[1]!.slots[0]!.capacity, 2)
+  st = plannerReducer(st, { type: "set_load", load: 4 })
+  assert.equal(st.load, undefined)
+})
+
+test("shrinking the year count keeps years that are in use", () => {
+  let st = defaultState("2027", null, 4)
+  st = plannerReducer(st, {
+    type: "add_unit",
+    yearIndex: 2,
+    slotIndex: 0,
+    code: "FIT3171",
+  })
+  st = plannerReducer(st, { type: "set_year_count", count: 1 })
+  assert.equal(st.years.length, 3)
+})
+
+test("a plan is fresh until it has content or setup is done", () => {
+  let st = defaultState("2027", "C2001", 3)
+  assert.equal(isFreshPlan(st), true)
+  st = plannerReducer(st, { type: "complete_setup" })
+  assert.equal(isFreshPlan(st), false)
+  const withUnit = plannerReducer(defaultState("2027", null, 1), {
+    type: "add_unit",
+    yearIndex: 0,
+    slotIndex: 0,
+    code: "FIT1045",
+  })
+  assert.equal(isFreshPlan(withUnit), false)
+})

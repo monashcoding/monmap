@@ -9,6 +9,7 @@ import {
   type PlannerYear,
 } from "./types.ts"
 import {
+  loadOf,
   primaryOrder,
   sortSlots,
   startPeriodOf,
@@ -41,7 +42,8 @@ export function defaultState(
 export function defaultYear(
   nth: number,
   start: StartPeriod = "S1",
-  only?: "first"
+  only?: "first",
+  capacity: number = DEFAULT_SLOT_CAPACITY
 ): PlannerYear {
   const kinds = primaryOrder(start).slice(0, only === "first" ? 1 : 2)
   return {
@@ -49,9 +51,18 @@ export function defaultYear(
     slots: kinds.map((kind) => ({
       kind,
       unitCodes: [],
-      capacity: DEFAULT_SLOT_CAPACITY,
+      capacity,
     })),
   }
+}
+
+/** A new year shaped by the plan's intake and load. */
+function yearFor(
+  state: PlannerState,
+  nth: number,
+  only?: "first"
+): PlannerYear {
+  return defaultYear(nth, startPeriodOf(state), only, loadOf(state))
 }
 
 export type PlannerAction =
@@ -124,6 +135,8 @@ export type PlannerAction =
     }
   | { type: "add_year"; only?: "first" }
   | { type: "set_start_period"; period: StartPeriod }
+  | { type: "set_load"; load: number }
+  | { type: "complete_setup" }
   | {
       type: "set_slot_status"
       yearIndex: number
@@ -389,10 +402,7 @@ export function plannerReducer(
       while (next.years.length <= maxYi) {
         next = {
           ...next,
-          years: [
-            ...next.years,
-            defaultYear(next.years.length + 1, startPeriodOf(next)),
-          ],
+          years: [...next.years, yearFor(next, next.years.length + 1)],
         }
       }
       const grouped = new Map<string, string[]>()
@@ -429,11 +439,7 @@ export function plannerReducer(
         ...state,
         years: [
           ...state.years,
-          defaultYear(
-            state.years.length + 1,
-            startPeriodOf(state),
-            action.only
-          ),
+          yearFor(state, state.years.length + 1, action.only),
         ],
       }
 
@@ -450,6 +456,32 @@ export function plannerReducer(
         })),
       }
     }
+
+    case "set_load": {
+      const load = Math.min(
+        MAX_SLOT_CAPACITY,
+        Math.max(1, Math.round(action.load))
+      )
+      if (loadOf(state) === load && (state.load === undefined) === (load === 4))
+        return state
+      // Semesters take the new load, but never fewer slots than units
+      // already placed; summer, winter and leave/exchange are left alone.
+      return {
+        ...state,
+        load: load === DEFAULT_SLOT_CAPACITY ? undefined : load,
+        years: state.years.map((y) => ({
+          ...y,
+          slots: y.slots.map((s) =>
+            (s.kind === "S1" || s.kind === "S2") && !s.status
+              ? { ...s, capacity: Math.max(load, s.unitCodes.length) }
+              : s
+          ),
+        })),
+      }
+    }
+
+    case "complete_setup":
+      return state.setupDone ? state : { ...state, setupDone: true }
 
     case "set_slot_status": {
       const year = state.years[action.yearIndex]
@@ -518,12 +550,20 @@ export function plannerReducer(
       if (state.years.length < target) {
         const added = Array.from(
           { length: target - state.years.length },
-          (_, i) =>
-            defaultYear(state.years.length + i + 1, startPeriodOf(state))
+          (_, i) => yearFor(state, state.years.length + i + 1)
         )
         return { ...state, years: [...state.years, ...added] }
       }
-      return { ...state, years: state.years.slice(0, target) }
+      // Never drop a year that has units, a leave/exchange semester or
+      // a renamed label: shrink only as far as the last year in use.
+      let lastUsed = -1
+      state.years.forEach((y, i) => {
+        if (y.slots.some((s) => s.unitCodes.length > 0 || s.status))
+          lastUsed = i
+      })
+      const keep = Math.max(target, lastUsed + 1)
+      if (keep === state.years.length) return state
+      return { ...state, years: state.years.slice(0, keep) }
     }
 
     case "add_optional_slot": {
@@ -643,7 +683,7 @@ export function plannerReducer(
       return {
         ...state,
         years: Array.from({ length: yearCount }, (_, i) =>
-          defaultYear(i + 1, startPeriodOf(state))
+          yearFor(state, i + 1)
         ),
       }
     }

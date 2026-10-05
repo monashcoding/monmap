@@ -20,7 +20,6 @@ import {
 import type { PeriodKind } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
-import { StartingYearPicker } from "./starting-year-picker"
 
 const ADDABLE_SLOT_KINDS: PeriodKind[] = [
   "S1",
@@ -33,7 +32,7 @@ const ADDABLE_SLOT_KINDS: PeriodKind[] = [
 /**
  * Header strip for a single study year — the charcoal banner above the
  * year's slots. Carries the year label, calendar year, reset/add/remove
- * controls and (for Year 1) the handbook-year picker.
+ * controls. The intake and starting year live in the plan header.
  */
 export function YearHeader({
   yearIndex,
@@ -69,7 +68,6 @@ export function YearHeader({
         <span className="ml-1.5">({span})</span>
       </h3>
       <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-        {yearIndex === 0 ? <StartingYearPicker /> : null}
         <Button
           variant="ghost"
           size="icon-xs"
@@ -86,7 +84,8 @@ export function YearHeader({
               <Button
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Add section"
+                aria-label={`Add a term to ${yearLabel}`}
+                title="Add summer, winter or another term"
                 className="text-white/70 hover:bg-white/15 hover:text-white"
               />
             }

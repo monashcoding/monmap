@@ -1,6 +1,6 @@
 "use client"
 
-import { FlagIcon } from "lucide-react"
+import { FlagIcon, PlusIcon } from "lucide-react"
 import { useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -22,8 +22,55 @@ const CP_PER_UNIT = 6
  * works out how many more semesters the remaining points need at the
  * student's usual load, when that lands, and offers to add them.
  */
+/**
+ * Add the next `n` semesters after the end of the plan: a missing
+ * semester goes into its existing year, new years come in whole, and a
+ * new year that only needs its first semester comes in as a half year.
+ */
+export function useAddSemesters() {
+  const { state, dispatch } = usePlanner()
+  return (n: number) => {
+    const byYear = new Map<number, Set<"S1" | "S2">>()
+    for (const pos of nextSemesters(state, n)) {
+      const kinds = byYear.get(pos.yearIndex) ?? new Set()
+      kinds.add(pos.kind)
+      byYear.set(pos.yearIndex, kinds)
+    }
+    for (const [yearIndex, kinds] of [...byYear].sort((x, y) => x[0] - y[0])) {
+      if (yearIndex < state.years.length) {
+        for (const kind of kinds)
+          dispatch({ type: "add_optional_slot", yearIndex, kind })
+      } else {
+        dispatch({
+          type: "add_year",
+          only: kinds.size === 1 ? "first" : undefined,
+        })
+      }
+    }
+  }
+}
+
+/** "＋ Add Semester 1, 2029": the one way to extend the plan. */
+export function AddSemesterButton() {
+  const { state } = usePlanner()
+  const addSemesters = useAddSemesters()
+  const next = nextSemesters(state, 1)[0]!
+  const label = slotLabel(state, next.yearIndex, { kind: next.kind })
+  return (
+    <button
+      type="button"
+      onClick={() => addSemesters(1)}
+      className="flex w-full items-center justify-center gap-1.5 border-t border-dashed bg-muted/20 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors outline-none hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40 print:hidden"
+    >
+      <PlusIcon className="size-3.5" />
+      Add {label}
+    </button>
+  )
+}
+
 export function FinishLine() {
-  const { state, course, units, offerings, dispatch } = usePlanner()
+  const { state, course, units, offerings } = usePlanner()
+  const addSemesters = useAddSemesters()
 
   const projection = useMemo(() => {
     if (!course) return null
@@ -98,29 +145,6 @@ export function FinishLine() {
   }, [state, course, units, offerings])
 
   if (!projection) return null
-
-  // Add the semesters the projection counted: a missing semester goes
-  // into its existing year, new years come in whole, and a new year
-  // that only needs its first semester comes in as a half year.
-  const addSemesters = (n: number) => {
-    const byYear = new Map<number, Set<"S1" | "S2">>()
-    for (const pos of nextSemesters(state, n)) {
-      const kinds = byYear.get(pos.yearIndex) ?? new Set()
-      kinds.add(pos.kind)
-      byYear.set(pos.yearIndex, kinds)
-    }
-    for (const [yearIndex, kinds] of [...byYear].sort((x, y) => x[0] - y[0])) {
-      if (yearIndex < state.years.length) {
-        for (const kind of kinds)
-          dispatch({ type: "add_optional_slot", yearIndex, kind })
-      } else {
-        dispatch({
-          type: "add_year",
-          only: kinds.size === 1 ? "first" : undefined,
-        })
-      }
-    }
-  }
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t px-4 py-3 text-xs text-muted-foreground">
