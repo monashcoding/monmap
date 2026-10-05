@@ -104,11 +104,18 @@ export function ReviewsClient({
     }
   }, [key, kind, code])
 
+  // Better Auth refetches the session when the tab regains focus, and
+  // for a signed-out visitor `isPending` is true again during that
+  // refetch. Remember that the session resolved once, so the sign-in
+  // prompt does not flip back to the skeleton each time.
+  const [sessionKnown, setSessionKnown] = useState(false)
+  if (!sessionKnown && !session.isPending) setSessionKnown(true)
+
   // Hold the skeleton until hydration, as the header's UserMenu does:
   // the session can resolve before this hydrates, and the first client
   // render must match the server's skeleton.
   let mine: Mine = { state: "loading" }
-  if (hydrated && !session.isPending) {
+  if (hydrated && sessionKnown) {
     if (!key) mine = { state: "anonymous" }
     else if (own?.key === key)
       mine = own.signedIn
