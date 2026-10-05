@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { GraduationCapIcon, PlusIcon } from "lucide-react"
+import { GraduationCapIcon } from "lucide-react"
 
 import { AppHeader } from "@/components/app-header"
 
@@ -22,7 +22,7 @@ import {
 } from "@/lib/db/queries"
 import type { PlannerState } from "@/lib/planner/types"
 
-import { NewPlanButton } from "./new-plan-button"
+import { NewPlanButton, NewPlanCard } from "./new-plan-button"
 import { PlanCard } from "./plan-card"
 
 function allUnitCodes(state: PlannerState): string[] {
@@ -131,24 +131,16 @@ export default async function PlansPage() {
         </div>
       )}
 
-      <div className="flex justify-center">
-        {plans.length === 0 ? (
-          // First plan: nothing to choose between yet, so skip the
-          // year prompt and let the server pick the latest handbook
-          // year. Subsequent plans go through NewPlanButton's dialog.
-          <form action={createBlankPlanAction}>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 rounded-control border border-dashed border-emphasis/40 bg-emphasis-soft px-5 py-3 text-sm font-semibold text-emphasis transition-colors hover:border-emphasis hover:bg-emphasis/10"
-            >
-              <PlusIcon className="size-4" />
-              New plan
-            </button>
-          </form>
-        ) : (
-          <NewPlanButton availableYears={availableYears} />
-        )}
-      </div>
+      {plans.length === 0 ? (
+        // First plan: nothing to choose between yet, so skip the year
+        // prompt and let the server pick the latest handbook year.
+        // Subsequent plans go through NewPlanButton's dialog.
+        <form action={createBlankPlanAction}>
+          <NewPlanCard type="submit" />
+        </form>
+      ) : (
+        <NewPlanButton availableYears={availableYears} />
+      )}
     </main>
   )
 }

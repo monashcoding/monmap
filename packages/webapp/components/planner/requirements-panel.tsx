@@ -58,11 +58,12 @@ export function RequirementsPanel({ className }: { className?: string }) {
   )
 
   // "Where you have space in your degree" is the handbook's only limit
-  // on extra majors, so show the space.
-  const budget = useMemo(
-    () => summarizeAosCreditBudget(pickedAos, course?.creditPoints),
-    [pickedAos, course?.creditPoints]
-  )
+  // on extra majors. The note shows only when the picks overrun the
+  // degree; under that, the running total tells the student nothing.
+  const budget = useMemo(() => {
+    const b = summarizeAosCreditBudget(pickedAos, course?.creditPoints)
+    return b?.overCommitted ? b : null
+  }, [pickedAos, course?.creditPoints])
 
   const withProgress = useMemo<(PickedAosEntry & { progress: AoSProgress })[]>(
     () =>

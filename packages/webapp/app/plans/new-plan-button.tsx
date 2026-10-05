@@ -58,17 +58,12 @@ export function NewPlanButton({
 
   return (
     <>
-      <button
-        type="button"
+      <NewPlanCard
         onClick={() => {
           setYear(defaultYear)
           setOpen(true)
         }}
-        className="inline-flex items-center gap-1.5 rounded-control border border-dashed border-emphasis/40 bg-emphasis-soft px-5 py-3 text-sm font-semibold text-emphasis transition-colors hover:border-emphasis hover:bg-emphasis/10"
-      >
-        <PlusIcon className="size-4" />
-        New plan
-      </button>
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
@@ -119,5 +114,31 @@ export function NewPlanButton({
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+/**
+ * The "New plan" card below the plan list, styled like the planner's
+ * Add semester bar. The whole card is the button; the yellow pill in
+ * the middle is its label, so clicking anywhere on the card works.
+ */
+export function NewPlanCard({
+  type = "button",
+  onClick,
+}: {
+  type?: "button" | "submit"
+  onClick?: () => void
+}) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className="group flex min-h-24 w-full items-center justify-center rounded-panel border border-dashed bg-muted/20 px-4 py-4 transition-colors outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <span className="inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-card transition-colors group-hover:bg-primary/85">
+        <PlusIcon className="size-4" />
+        New plan
+      </span>
+    </button>
   )
 }
