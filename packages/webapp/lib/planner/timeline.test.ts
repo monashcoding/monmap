@@ -236,3 +236,11 @@ test("a plan is fresh until it has content or setup is done", () => {
   })
   assert.equal(isFreshPlan(withUnit), false)
 })
+
+import { studyYearName } from "./timeline.ts"
+
+test("study years are named by position", () => {
+  assert.equal(studyYearName(0), "First year")
+  assert.equal(studyYearName(2), "Third year")
+  assert.equal(studyYearName(10), "Year 11")
+})

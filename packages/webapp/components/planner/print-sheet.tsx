@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 
 import { summarizePlan } from "@/lib/planner/progress"
-import { slotLabel, studyYearSpan } from "@/lib/planner/timeline"
+import { slotLabel, studyYearName, studyYearSpan } from "@/lib/planner/timeline"
 import type {
   PlannerCourseWithAoS,
   PlannerOffering,
@@ -139,7 +139,7 @@ export function PrintSheetView({
             className="mb-4 w-full border-collapse break-inside-avoid text-[10px]"
           >
             <caption className="mb-1 text-left text-[11px] font-bold">
-              {year.label} · {studyYearSpan(state, yearIndex)}
+              {studyYearName(yearIndex)} · {studyYearSpan(state, yearIndex)}
               <span className="float-right font-normal text-neutral-600">
                 {yearCp} cp
               </span>

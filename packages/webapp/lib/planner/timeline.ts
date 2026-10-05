@@ -184,3 +184,26 @@ export function nextSemesters(
   }
   return out
 }
+
+const ORDINALS = [
+  "First",
+  "Second",
+  "Third",
+  "Fourth",
+  "Fifth",
+  "Sixth",
+  "Seventh",
+  "Eighth",
+  "Ninth",
+  "Tenth",
+]
+
+/**
+ * How students name a study year: "First year", "Second year"… from
+ * its position, so it stays right when years are added or removed.
+ * Past the tenth it falls back to "Year 11".
+ */
+export function studyYearName(yearIndex: number): string {
+  const word = ORDINALS[yearIndex]
+  return word ? `${word} year` : `Year ${yearIndex + 1}`
+}

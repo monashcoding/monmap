@@ -13,7 +13,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
-import { isFreshPlan, slotLabel } from "@/lib/planner/timeline"
+import { isFreshPlan, slotLabel, studyYearName } from "@/lib/planner/timeline"
 
 import { usePlanner } from "./planner-context"
 import { SemesterRow } from "./semester-row"
@@ -316,7 +316,7 @@ export function PlanGrid() {
         <div key={yearIndex} className="flex flex-col">
           <YearHeader
             yearIndex={yearIndex}
-            yearLabel={year.label}
+            yearLabel={studyYearName(yearIndex)}
             yearSlotKinds={year.slots.map((s) => s.kind)}
             removableYear={state.years.length > 1}
             yearHasUnits={year.slots.some((s) => s.unitCodes.length > 0)}

@@ -60,12 +60,8 @@ export function YearHeader({
   return (
     <div className="relative flex items-center justify-between gap-2 border-b border-white/10 bg-year-strip px-3 py-2.5 text-white sm:px-4">
       <h3 className="flex min-w-0 items-center truncate text-[11px] font-semibold tracking-[0.12em] text-white uppercase sm:text-xs">
-        <span
-          aria-hidden
-          className="mr-2 size-1.5 shrink-0 rounded-full bg-primary"
-        />
         {yearLabel}
-        <span className="ml-1.5">({span})</span>
+        <span className="ml-2 font-medium text-white/60">· {span}</span>
       </h3>
       <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
         <Button
