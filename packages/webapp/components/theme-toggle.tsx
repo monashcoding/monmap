@@ -12,6 +12,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 const OPTIONS = [
   { value: "light", label: "Light", Icon: SunIcon },
@@ -21,8 +22,49 @@ const OPTIONS = [
 
 const subscribe = () => () => {}
 
+/**
+ * Light, dark and system as a row of buttons, for the mobile menu
+ * sheet. It switches at once: the sheet covers the page, so the
+ * circle reveal of `ThemeToggle` would not show.
+ */
+export function ThemeChoice() {
+  const { theme, setTheme } = useTheme()
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false
+  )
+  const current = mounted ? (theme ?? "system") : null
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Theme"
+      className="grid grid-cols-3 gap-1 rounded-control bg-muted p-1"
+    >
+      {OPTIONS.map(({ value, label, Icon }) => (
+        <button
+          key={value}
+          type="button"
+          role="radio"
+          aria-checked={current === value}
+          onClick={() => setTheme(value)}
+          className={cn(
+            "flex h-10 items-center justify-center gap-1 rounded-tag text-[13px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            current === value
+              ? "bg-card font-medium text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Icon className="size-4" />
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 /** Header control for picking light, dark or the system theme. */
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const { theme, resolvedTheme, setTheme } = useTheme()
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -105,7 +147,7 @@ export function ThemeToggle() {
             variant="ghost"
             size="icon-sm"
             aria-label="Change theme"
-            className="print:hidden"
+            className={cn("print:hidden", className)}
           />
         }
       >

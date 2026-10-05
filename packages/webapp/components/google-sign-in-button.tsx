@@ -26,7 +26,7 @@ export function GoogleSignInButton({
 }: Omit<React.ComponentProps<"button">, "type"> & {
   callbackURL?: string
   size?: "default" | "sm"
-  label?: string
+  label?: React.ReactNode
 }) {
   return (
     <button

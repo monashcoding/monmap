@@ -15,11 +15,11 @@ import { toast } from "sonner"
 
 import { isReviewAdminAction } from "@/app/review-actions"
 import { AnonymousBadge } from "@/components/anonymous-badge"
-import { HeaderLinks } from "@/components/header-links"
+import { HEADER_LINKS, HeaderLinks } from "@/components/header-links"
 import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { PRIMARY_NAV_ITEMS, PrimaryNav } from "@/components/primary-nav"
 import { ReviewAvatar } from "@/components/reviews/review-avatar"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeChoice, ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -51,9 +51,9 @@ import { cn } from "@/lib/utils"
  * the whole viewport so the strip reads edge to edge even though
  * <main> is capped at 1500px.
  *
- * Mobile (<md): hamburger, breadcrumb, context slot, avatar. Feedback,
- * Contribute and the theme toggle shrink to icons; the tabs move into
- * the sheet.
+ * Mobile (<md): hamburger, breadcrumb, context slot, avatar. The tabs,
+ * the outside links, the theme choice and the "Review your units" link
+ * move into the menu sheet.
  */
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   return (
@@ -128,8 +128,8 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         {children ? (
           <div className="flex min-w-0 items-center gap-2">{children}</div>
         ) : null}
-        <HeaderLinks />
-        <ThemeToggle />
+        <HeaderLinks className="hidden md:flex" />
+        <ThemeToggle className="hidden md:inline-flex" />
         <UserMenu />
       </div>
     </header>
@@ -139,6 +139,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
 function MobileNavTrigger() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname() ?? "/"
+  const close = () => setOpen(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
@@ -158,34 +159,72 @@ function MobileNavTrigger() {
           <SheetTitle>MonMap</SheetTitle>
           <SheetDescription>Monash course planner</SheetDescription>
         </SheetHeader>
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-          {PRIMARY_NAV_ITEMS.map(({ href, label, match }) => {
-            const active = match(pathname)
-            return (
-              <Link
+        <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <nav aria-label="Pages" className="flex flex-col gap-1">
+            {PRIMARY_NAV_ITEMS.map(({ href, label, match }) => {
+              const active = match(pathname)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  prefetch
+                  aria-current={active ? "page" : undefined}
+                  onClick={close}
+                  className={cn(
+                    "flex h-12 items-center gap-3 rounded-control px-3 text-base transition-colors",
+                    active
+                      ? "bg-accent font-semibold text-accent-foreground"
+                      : "text-foreground/80 hover:bg-accent/60"
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "size-1.5 rounded-full",
+                      active ? "bg-primary" : "bg-muted-foreground/40"
+                    )}
+                  />
+                  {label}
+                </Link>
+              )
+            })}
+          </nav>
+          <Link
+            href="/my-reviews"
+            onClick={close}
+            className="flex items-center gap-3 rounded-control bg-primary/40 px-3 py-2.5 text-primary-foreground"
+          >
+            <MessageSquareTextIcon className="size-4 shrink-0" />
+            <span className="flex flex-col">
+              <span className="text-sm font-semibold">Review your units</span>
+              <span className="text-xs">New in the 2027 update</span>
+            </span>
+          </Link>
+          <section className="flex flex-col gap-2">
+            <h2 className="px-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Theme
+            </h2>
+            <ThemeChoice />
+          </section>
+          <section className="flex flex-col gap-1">
+            <h2 className="px-3 pb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Links
+            </h2>
+            {HEADER_LINKS.map(({ href, label, title, Icon }) => (
+              <a
                 key={href}
                 href={href}
-                prefetch
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex h-12 items-center gap-3 rounded-control px-3 text-base transition-colors",
-                  active
-                    ? "bg-accent font-semibold text-accent-foreground"
-                    : "text-foreground/80 hover:bg-accent/60"
-                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={title}
+                className="flex h-11 items-center gap-3 rounded-control px-3 text-sm text-foreground/80 transition-colors hover:bg-accent/60"
               >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "size-1.5 rounded-full",
-                    active ? "bg-primary" : "bg-muted-foreground/40"
-                  )}
-                />
+                <Icon className="size-4 text-muted-foreground" />
                 {label}
-              </Link>
-            )
-          })}
-        </nav>
+              </a>
+            ))}
+          </section>
+        </div>
       </SheetContent>
     </Sheet>
   )
