@@ -28,8 +28,11 @@ interface Params {
  * code with no row at all. The second is remembered per (year, code)
  * in `emptyRef` and not requested again.
  *
- * A re-run aborts the request in flight and asks again for the codes
- * that are still missing.
+ * A re-run leaves requests in flight alone and asks only for codes no
+ * request is fetching yet, so a merge that lands mid-request (a year
+ * load, a unit added from search) doesn't throw a nearly finished
+ * answer away. Requests are aborted only when the plan's handbook year
+ * changes or the planner unmounts.
  */
 export function useUnitDataHydration({
   state,
@@ -40,6 +43,22 @@ export function useUnitDataHydration({
   const [, startTransition] = useTransition()
 
   const emptyRef = useRef(new Set<string>())
+  // emptyKey(year, code) for every code a request is fetching, and the
+  // requests' controllers.
+  const inFlightRef = useRef(new Set<string>())
+  const controllersRef = useRef(new Set<AbortController>())
+
+  // React runs this cleanup before the fetch effect re-runs, so on a
+  // year change the old year's requests stop before new ones start.
+  useEffect(() => {
+    const inFlight = inFlightRef.current
+    const controllers = controllersRef.current
+    return () => {
+      for (const c of controllers) c.abort()
+      controllers.clear()
+      inFlight.clear()
+    }
+  }, [state.courseYear])
 
   useEffect(() => {
     const codesByYear = codesToHydrate({
@@ -55,25 +74,42 @@ export function useUnitDataHydration({
       empty: emptyRef.current,
     })
 
-    if (codesByYear.size === 0) return
+    const inFlight = inFlightRef.current
+    const wanted = new Map<string, string[]>()
+    for (const [year, codes] of codesByYear) {
+      const rest = codes.filter((c) => !inFlight.has(emptyKey(year, c)))
+      if (rest.length > 0) wanted.set(year, rest)
+    }
+    if (wanted.size === 0) return
 
+    const keys = [...wanted].flatMap(([year, codes]) =>
+      codes.map((c) => emptyKey(year, c))
+    )
+    for (const k of keys) inFlight.add(k)
     const controller = new AbortController()
+    controllersRef.current.add(controller)
     startTransition(async () => {
       try {
-        const res = await fetchUnitsByYear(codesByYear, controller.signal)
+        const res = await fetchUnitsByYear(wanted, controller.signal)
         if (controller.signal.aborted) return
-        for (const [year, codes] of codesByYear)
+        for (const [year, codes] of wanted)
           for (const code of codes)
             if (!res.units[code]) emptyRef.current.add(emptyKey(year, code))
-        mergeUnitData(res, [...codesByYear.values()].flat())
+        mergeUnitData(res, [...wanted.values()].flat())
       } catch (err) {
         if (isAbortError(err)) return
         toast.error("Couldn't load unit details", {
           description: err instanceof Error ? err.message : "Unknown error",
         })
+      } finally {
+        // An aborted request's keys were cleared with it, and a newer
+        // request may hold the same keys now.
+        if (!controller.signal.aborted) {
+          controllersRef.current.delete(controller)
+          for (const k of keys) inFlight.delete(k)
+        }
       }
     })
-    return () => controller.abort()
   }, [
     state.years,
     state.credit,

@@ -2,7 +2,7 @@
 
 import { LoaderCircleIcon, PencilIcon, Trash2Icon } from "lucide-react"
 import { usePathname } from "next/navigation"
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 
 import { deleteReviewAction, getMyReviewAction } from "@/app/review-actions"
@@ -78,6 +78,9 @@ export function ReviewsClient({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [sort, setSort] = useState<ReviewSort>("recent")
   const [list, setList] = useState(initial)
+  // The sort `list` is in, which `sort` runs ahead of while a new sort
+  // loads.
+  const [listSort, setListSort] = useState<ReviewSort>("recent")
   const [prevInitial, setPrevInitial] = useState(initial)
   const [loading, startLoading] = useTransition()
   const [deleting, startDeleting] = useTransition()
@@ -88,6 +91,7 @@ export function ReviewsClient({
     setPrevInitial(initial)
     setList(initial)
     setSort("recent")
+    setListSort("recent")
   }
 
   useEffect(() => {
@@ -127,20 +131,42 @@ export function ReviewsClient({
   const others = list.filter((r) => r.id !== myReview?.id)
   const hasMore = list.length < total
 
+  // The list requests run in parallel, so only the latest one may
+  // write: a slow answer for an older sort, or a "Show more" page of
+  // it, would otherwise land on the list for the new sort.
+  const requestRef = useRef(0)
+  const loadReviews = (
+    sortBy: ReviewSort,
+    offset: number,
+    apply: (page: PublicReview[]) => void
+  ) => {
+    const id = ++requestRef.current
+    startLoading(async () => {
+      try {
+        const page = await fetchReviews(kind, code, sortBy, offset)
+        if (id === requestRef.current) apply(page)
+      } catch {
+        if (id !== requestRef.current) return
+        // Put the select back on the sort the list is still in.
+        setSort(listSort)
+        toast.error("Couldn't load reviews. Try again.")
+      }
+    })
+  }
   const changeSort = (next: ReviewSort) => {
     setSort(next)
-    startLoading(async () => {
-      setList(await fetchReviews(kind, code, next, 0))
+    loadReviews(next, 0, (page) => {
+      setList(page)
+      setListSort(next)
     })
   }
   const showMore = () =>
-    startLoading(async () => {
-      const more = await fetchReviews(kind, code, sort, list.length)
+    loadReviews(sort, list.length, (more) =>
       setList((l) => {
         const seen = new Set(l.map((r) => r.id))
         return [...l, ...more.filter((r) => !seen.has(r.id))]
       })
-    })
+    )
 
   const remove = () =>
     startDeleting(async () => {

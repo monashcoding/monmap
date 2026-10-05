@@ -2,7 +2,12 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import { offering, unit } from "./test-fixtures.ts"
-import { mergeUnitMaps, unitBundleFor, unitMapsFrom } from "./unit-cache.ts"
+import {
+  keepUnitYears,
+  mergeUnitMaps,
+  unitBundleFor,
+  unitMapsFrom,
+} from "./unit-cache.ts"
 
 const base = unitMapsFrom({
   units: { A: unit("A") },
@@ -41,4 +46,23 @@ test("unitBundleFor takes one code and skips what is missing", () => {
     offerings: {},
     requisites: {},
   })
+})
+
+test("keepUnitYears keeps units good for the years, fallbacks included", () => {
+  const maps = unitMapsFrom({
+    units: {
+      A: unit("A", { year: "2026" }),
+      B: unit("B", { year: "2025" }),
+      // 2027 has no ENG1005 page yet, so 2026's stands in for it.
+      F: unit("F", { year: "2026", fallbackFor: "2027" }),
+    },
+    offerings: { A: [], B: [], F: [], EMPTY: [] },
+    requisites: { A: [], B: [], F: [], EMPTY: [] },
+  })
+  const kept = keepUnitYears(maps, new Set(["2027"]))
+  assert.deepEqual([...kept.units.keys()], ["F"])
+  assert.deepEqual([...kept.offerings.keys()], ["F"])
+  assert.deepEqual([...kept.requisites.keys()], ["F"])
+  const both = keepUnitYears(maps, new Set(["2026", "2027"]))
+  assert.deepEqual([...both.units.keys()].sort(), ["A", "F"])
 })

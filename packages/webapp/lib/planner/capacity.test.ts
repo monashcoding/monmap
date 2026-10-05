@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 
 import {
   canPlaceUnit,
+  inLockedSlot,
   slotCreditPoints,
   slotTakesUnits,
   slotUsedWeight,
@@ -123,4 +124,18 @@ test("canPlaceUnit: a FY unit needs room in both S1 and S2", () => {
     ok: false,
     reason: "duplicate",
   })
+})
+
+test("inLockedSlot: a lock on either half pins a full-year unit", () => {
+  const st = planState([
+    { S1: ["FY12", "A"], S2: { unitCodes: ["FY12"], locked: true } },
+  ])
+  const year = st.years[0]
+  assert.equal(inLockedSlot(year, "FY12"), true)
+  // From the S1 card, the S2 lock still counts.
+  assert.equal(inLockedSlot(year, "FY12", 0), true)
+  // From the locked S2 card itself, only other slots count.
+  assert.equal(inLockedSlot(year, "FY12", 1), false)
+  assert.equal(inLockedSlot(year, "A"), false)
+  assert.equal(inLockedSlot(undefined, "FY12"), false)
 })

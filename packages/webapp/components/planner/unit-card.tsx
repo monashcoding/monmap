@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { capture } from "@/lib/analytics"
-import { canPlaceUnit } from "@/lib/planner/capacity"
+import { canPlaceUnit, inLockedSlot } from "@/lib/planner/capacity"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { perSlotCreditPoints } from "@/lib/planner/full-year"
 import { GRADE_STYLES, markToGrade } from "@/lib/planner/grades"
@@ -85,9 +85,13 @@ export function UnitCard({
   } = usePlanner()
   const flashVersion = usePlannerFlash()
   const slot = state.years[yearIndex]?.slots[slotIndex]
-  const slotLocked = !!slot?.locked
   const { showResults, grades, setGrade } = useWam()
   const isFY = isFullYear(code)
+  // A year-long unit moves as a pair, so a lock on its other half pins
+  // this card too. Remove still works, as it does on a locked card.
+  const slotLocked =
+    !!slot?.locked ||
+    (isFY && inLockedSlot(state.years[yearIndex], code, slotIndex))
   const unit = units.get(code)
   // What this card contributes to its slot — full CP for normal units;
   // half CP for FY twins (rounded so a 12 CP FY reads "6cp" per

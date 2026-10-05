@@ -17,6 +17,7 @@ import {
 } from "react"
 
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useRatings } from "@/components/reviews/use-ratings"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { capture } from "@/lib/analytics"
 import { fetchRichUnitSearch } from "@/lib/api/client"
+import { canPlaceUnit } from "@/lib/planner/capacity"
 import {
   buildPersonalSignals,
   rankCandidates,
@@ -55,6 +57,7 @@ import { isOfferedInPeriod } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
 
 import { UnitDataOverlay, usePlanner } from "./planner-context"
+import { toastBlocked } from "./toast-blocked"
 import { UnitDetailView } from "./unit-detail-popover"
 
 const SEARCH_DISPLAY_LIMIT = 50
@@ -172,6 +175,7 @@ function UnitSearchView({
   // search results.
   const {
     addUnit,
+    isFullYear,
     state,
     course,
     units,
@@ -284,6 +288,12 @@ function UnitSearchView({
   ])
 
   const items = useMemo(() => ranked.map((r) => r.unit), [ranked])
+  // One batched ratings request for the whole list, so the details pane
+  // finds each row's rating cached instead of asking per row.
+  useRatings(
+    "unit",
+    items.map((u) => u.code)
+  )
   const scoreByCode = useMemo(
     () => new Map(ranked.map((r) => [r.unit.code, r.score])),
     [ranked]
@@ -292,9 +302,29 @@ function UnitSearchView({
   const focusAt = Math.min(focusIndex, Math.max(0, items.length - 1))
   const focused = items[focusAt]
   const detailCode = mobileDetail ?? focused?.code
+  // The details pane follows the pointer and arrow keys at once, but it
+  // asks for the synopsis only once a row has stayed focused, so a sweep
+  // down the list sends no text requests. Opening details on a phone is
+  // an explicit pick and asks at once.
+  const settledCode = useDebouncedValue(focused?.code, 250)
+  const detailSettled = mobileDetail !== null || settledCode === detailCode
 
   const addAndClose = useCallback(
     (code: string) => {
+      // A year-long unit lands in S1 and S2 whichever semester the
+      // dialog was opened from, so the other half can refuse it.
+      const place = canPlaceUnit(
+        state,
+        yearIndex,
+        slotIndex,
+        code,
+        units,
+        offerings
+      )
+      if (!place.ok) {
+        toastBlocked(place.reason, code, isFullYear(code))
+        return
+      }
       const unit = units.get(code)
       const score = scoreByCode.get(code)
       capture("unit_added", {
@@ -316,7 +346,19 @@ function UnitSearchView({
       addUnit(yearIndex, slotIndex, code)
       onClose()
     },
-    [addUnit, yearIndex, slotIndex, slotKind, q, units, scoreByCode, onClose]
+    [
+      addUnit,
+      state,
+      yearIndex,
+      slotIndex,
+      slotKind,
+      q,
+      units,
+      offerings,
+      isFullYear,
+      scoreByCode,
+      onClose,
+    ]
   )
 
   return (
@@ -465,6 +507,7 @@ function UnitSearchView({
                 (offerings.get(detailCode) ?? []).length > 0
               }
               placed={slotCodes.has(detailCode)}
+              settled={detailSettled}
               slotLabel={slotLabel}
               onAdd={() => addAndClose(detailCode)}
             />
@@ -609,6 +652,7 @@ function FocusedDetails({
   fits,
   hasOfferingData,
   placed,
+  settled,
   slotLabel,
   onAdd,
 }: {
@@ -617,6 +661,8 @@ function FocusedDetails({
   fits: boolean
   hasOfferingData: boolean
   placed: boolean
+  /** False while the pointer is passing over rows: fetch nothing yet. */
+  settled: boolean
   slotLabel: string
   onAdd: () => void
 }) {
@@ -645,7 +691,7 @@ function FocusedDetails({
         </div>
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <UnitDetailView code={code} className="p-4" />
+        <UnitDetailView code={code} active={settled} className="p-4" />
       </div>
       <div className="flex shrink-0 items-center justify-end gap-2 border-t bg-card px-3 py-2">
         <Button

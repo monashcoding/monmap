@@ -96,6 +96,26 @@ test("the CSV total matches the progress ring", () => {
   assert.equal(summarizePlan(st, null, units, offerings).totalCreditPoints, 24)
 })
 
+test("a unit with no data counts 0 in its row and in the total", () => {
+  // FIT9999 came back from no handbook year, so its credit points are
+  // unknown. The row must not show 6 for a unit the total leaves out.
+  let st = defaultState("2027", "C2001", 1)
+  for (const code of ["FIT1045", "FIT9999"])
+    st = plannerReducer(st, {
+      type: "add_unit",
+      yearIndex: 0,
+      slotIndex: 0,
+      code,
+    })
+  const rows = parse(
+    buildCsv(st, { units: unitMap(["FIT1045"]), grades: new Map() })
+  )
+  const cp = (label: string) =>
+    rows.filter((r) => r[0] === label).map((r) => r.at(-1))
+  assert.deepEqual(cp("Semester 1, 2027"), ["6"])
+  assert.deepEqual(cp("Total"), ["6"])
+})
+
 test("plan file names stay readable", () => {
   assert.equal(
     planFileName("Jason's course map", "csv"),

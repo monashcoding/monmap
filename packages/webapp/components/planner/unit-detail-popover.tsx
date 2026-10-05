@@ -192,7 +192,6 @@ export function UnitDetailView({
     offerings: PlannerOffering[]
     requisites: RequisiteBlock[]
   } | null>(null)
-  const [loading, setLoading] = useState(false)
   const fetchedKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -202,7 +201,6 @@ export function UnitDetailView({
       return
     }
     const controller = new AbortController()
-    setLoading(true)
     fetchUnits([code], selectedYear, controller.signal)
       .then((res) => {
         if (controller.signal.aborted) return
@@ -223,14 +221,14 @@ export function UnitDetailView({
           requisites: [],
         })
       })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false)
-      })
     return () => controller.abort()
   }, [active, usingCurrentYear, selectedYear, code, otherYearData?.year])
 
   const otherYearMatches =
     !usingCurrentYear && otherYearData?.year === selectedYear
+  // Derived rather than stored, so an aborted request (the student
+  // picked the default year again mid-fetch) can't leave it stuck.
+  const loading = active && !usingCurrentYear && !otherYearMatches
   const unit = usingCurrentYear
     ? (units.get(code) ?? null)
     : otherYearMatches
@@ -353,7 +351,9 @@ export function UnitDetailView({
 
       <UnitSynopsis
         html={text[code]?.synopsis}
-        loading={textLoading}
+        // An inactive view with a unit is about to ask (the search
+        // dialog waits for the pointer to settle): hold the space.
+        loading={textLoading || (!active && !!unit)}
         linkYear={linkYear}
         className="border-b pt-2 pb-4"
       />

@@ -48,6 +48,31 @@ export function mergeUnitMaps(
   return { units, offerings, requisites }
 }
 
+/**
+ * `maps` with only the codes whose unit is good for one of `years`: its
+ * own year, or the year it stands in for (`fallbackFor`). What a
+ * handbook-year switch keeps, so data the new year's plan still reads
+ * is not fetched again. A code with lists but no unit goes too.
+ */
+export function keepUnitYears(
+  maps: UnitMaps,
+  years: ReadonlySet<string>
+): UnitMaps {
+  const units = new Map(
+    [...maps.units].filter(
+      ([, u]) =>
+        years.has(u.year) || (!!u.fallbackFor && years.has(u.fallbackFor))
+    )
+  )
+  const offerings = new Map(
+    [...maps.offerings].filter(([code]) => units.has(code))
+  )
+  const requisites = new Map(
+    [...maps.requisites].filter(([code]) => units.has(code))
+  )
+  return { units, offerings, requisites }
+}
+
 /** One unit's data out of `maps`, for merging into another cache. */
 export function unitBundleFor(maps: UnitMaps, code: string): UnitBundle {
   const unit = maps.units.get(code)

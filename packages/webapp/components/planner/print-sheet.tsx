@@ -3,7 +3,11 @@
 import { memo, useDeferredValue, useEffect, useMemo } from "react"
 
 import { pickedAosEntries } from "@/lib/planner/aos-slots"
-import { slotCreditPoints } from "@/lib/planner/capacity"
+import {
+  slotCreditPoints,
+  unitSlotCreditPoints,
+  unitSlotWeight,
+} from "@/lib/planner/capacity"
 import { creditPointsFromCredit } from "@/lib/planner/credit"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { markToGrade } from "@/lib/planner/grades"
@@ -309,13 +313,16 @@ function SlotRow({
   grades: ReadonlyMap<string, number>
 }) {
   const slotCp = slotCreditPoints(slot, units, offerings)
+  // Column spans as the planner draws them: a 12 CP unit takes two, a
+  // full-year twin one in each semester.
+  const spans = slot.unitCodes.map((code) =>
+    unitSlotWeight(code, slot.kind, units, offerings)
+  )
+  const used = spans.reduce((sum, n) => sum + n, 0)
   // Four columns like the planner; a part-time or summer slot still
   // lines up with the semesters above and below it.
-  const columns = Math.max(4, slot.unitCodes.length)
-  const empty = Math.max(
-    0,
-    Math.min(slotCapacity(slot), columns) - slot.unitCodes.length
-  )
+  const columns = Math.max(4, used)
+  const empty = Math.max(0, Math.min(slotCapacity(slot), columns) - used)
 
   return (
     <div className="grid grid-cols-[104px_minmax(0,1fr)] border-t border-neutral-300">
@@ -342,7 +349,14 @@ function SlotRow({
                 key={`${code}:${i}`}
                 code={code}
                 title={unit?.title}
-                creditPoints={unit?.creditPoints}
+                creditPoints={
+                  unit
+                    ? Math.round(
+                        unitSlotCreditPoints(code, slot.kind, units, offerings)
+                      )
+                    : undefined
+                }
+                span={spans[i]}
                 mark={mark}
               />
             )
@@ -363,16 +377,23 @@ function UnitTile({
   code,
   title,
   creditPoints,
+  span,
   mark,
 }: {
   code: string
   title: string | undefined
+  /** This slot's share: half a full-year unit, as the row total counts it. */
   creditPoints: number | undefined
+  /** Grid columns the tile takes; one when unset. */
+  span?: number
   mark?: number
 }) {
   const faculty = facultyStyle(code)
   return (
-    <div className="flex min-h-[44px] overflow-hidden rounded-[5px] border border-neutral-300 bg-white">
+    <div
+      className="flex min-h-[44px] overflow-hidden rounded-[5px] border border-neutral-300 bg-white"
+      style={span ? { gridColumn: `span ${span} / span ${span}` } : undefined}
+    >
       <div aria-hidden className={cn("w-1.5 shrink-0", faculty.railClass)} />
       <div className="flex min-w-0 flex-1 flex-col px-1.5 py-1">
         <p className="text-[9.5px] font-bold tabular-nums">{code}</p>

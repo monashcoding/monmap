@@ -1,4 +1,4 @@
-import { slotTakesUnits } from "./capacity.ts"
+import { inLockedSlot, slotTakesUnits } from "./capacity.ts"
 import { countFullYearPrefix } from "./full-year.ts"
 import {
   DEFAULT_SLOT_CAPACITY,
@@ -347,8 +347,7 @@ export function plannerReducer(
       const from = state.years[action.fromYearIndex]
       const to = state.years[action.toYearIndex]
       if (!from || !to) return state
-      if (from.slots.some((s) => s.locked && s.unitCodes.includes(action.code)))
-        return state
+      if (inLockedSlot(from, action.code)) return state
       if (action.fromYearIndex === action.toYearIndex)
         return mapYear(state, action.fromYearIndex, (y) =>
           reorderFullYear(

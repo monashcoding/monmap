@@ -1,4 +1,4 @@
-import { slotCreditPoints } from "./capacity.ts"
+import { unitSlotCreditPoints } from "./capacity.ts"
 import { markToGrade } from "./grades.ts"
 import { summarizePlan } from "./progress.ts"
 import { slotBlockCredit, slotLabel } from "./timeline.ts"
@@ -21,7 +21,8 @@ export interface CsvContext {
  *
  * A row shows the semester's workload, so a retake counts in its own
  * row. The total is summarizePlan's, the same number as the progress
- * ring: each code once, and each credit entry once.
+ * ring: each code once, and each credit entry once. A unit with no
+ * data counts 0 in both, as in the ring, not capacity's 6 CP stand-in.
  */
 export function buildCsv(state: PlannerState, ctx: CsvContext): string {
   const columns = Math.max(
@@ -64,7 +65,14 @@ export function buildCsv(state: PlannerState, ctx: CsvContext): string {
         )
         continue
       }
-      const cp = slotCreditPoints(slot, ctx.units, ctx.offerings)
+      const cp = slot.unitCodes.reduce(
+        (sum, code) =>
+          ctx.units.has(code)
+            ? sum +
+              unitSlotCreditPoints(code, slot.kind, ctx.units, ctx.offerings)
+            : sum,
+        0
+      )
       rows.push(row(label, slot.unitCodes.map(unitCell), String(cp)))
     }
   })

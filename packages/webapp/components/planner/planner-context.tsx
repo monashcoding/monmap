@@ -56,8 +56,9 @@ import type {
   RequisiteBlock,
   SlotUnitValidation,
 } from "@/lib/planner/types"
-import { yearsNeeded } from "@/lib/planner/timeline"
+import { handbookYearFor, yearsNeeded } from "@/lib/planner/timeline"
 import {
+  keepUnitYears,
   mergeUnitMaps,
   unitBundleFor,
   unitMapsFrom,
@@ -74,6 +75,8 @@ import type { PlannerProps } from "./planner"
 const SERVER_SAVE_DEBOUNCE = 800
 
 const PLAN_LIMIT_MESSAGE = `You have reached the limit of ${MAX_PLANS_PER_USER} plans. Delete a plan to make a new one.`
+
+type CreateResult = Awaited<ReturnType<typeof createMyPlanAction>>
 
 /**
  * What the client knows about the signed-in user: the name for the
@@ -353,25 +356,65 @@ export function PlannerProvider({
     []
   )
 
+  // The latest committed plan, for async work that finishes after
+  // later edits (and for `switchPlan` to flush the pending save).
+  const lastSnapshotRef = useRef(state)
+  useEffect(() => {
+    lastSnapshotRef.current = state
+  }, [state])
+
+  /**
+   * The handbook year and course whose data the planner holds or is
+   * loading. When undo or redo moves the plan to another course or
+   * year, the effect below sees the mismatch and loads that data.
+   */
+  const loadedRef = useRef({
+    year: initialYear,
+    code: defaultCourse?.code ?? null,
+  })
+
   /**
    * Load the course and its unit data for a handbook year in one round
-   * trip, plus the course list when the year changed. A new year
-   * replaces the unit data, because another year's offerings and
-   * requisites would mis-validate; the same year merges into it.
+   * trip, plus the course list when the year changed. A new year drops
+   * cached units that no study year of the plan reads any more, because
+   * another year's offerings and requisites would mis-validate, and
+   * keeps the rest so they aren't fetched again; the same year merges.
    * Returns the course, or null when the year lacks it.
    */
   const loadYearData = useCallback(
     async (year: string, courseCode: string | null, yearChanged: boolean) => {
-      const res = await fetchYearInOrder(year, courseCode, yearChanged)
+      const before = loadedRef.current
+      const target = { year, code: courseCode }
+      loadedRef.current = target
+      let res: Awaited<ReturnType<typeof fetchYearInOrder>>
+      try {
+        res = await fetchYearInOrder(year, courseCode, yearChanged)
+      } catch (err) {
+        // Nothing loaded, so a later reconcile may try again.
+        if (loadedRef.current === target) loadedRef.current = before
+        throw err
+      }
       if (res.courses) setCourses(res.courses)
       setCourse(res.course)
-      setUnitData((m) =>
-        yearChanged ? unitMapsFrom(res) : mergeUnitMaps(m, res)
-      )
+      setUnitData((m) => {
+        if (!yearChanged) return mergeUnitMaps(m, res)
+        const studyYears = lastSnapshotRef.current.years.length
+        const reads = new Set(
+          Array.from({ length: Math.max(1, studyYears) }, (_, i) =>
+            handbookYearFor(i, year, availableYears)
+          )
+        )
+        return mergeUnitMaps(keepUnitYears(m, reads), res)
+      })
       return res.course
     },
-    [fetchYearInOrder]
+    [fetchYearInOrder, availableYears]
   )
+
+  const activePlanIdRef = useRef(activePlanId)
+  useEffect(() => {
+    activePlanIdRef.current = activePlanId
+  }, [activePlanId])
 
   /**
    * Save `snapshot` as a new plan, make it the active one and put it at
@@ -381,6 +424,9 @@ export function PlannerProvider({
     async (name: string, snapshot: PlannerState) => {
       const res = await createMyPlanAction(name, snapshot)
       if (res.ok) {
+        // Set now, not after the next render, so a debounced save that
+        // fires in between saves to this plan instead of creating one.
+        activePlanIdRef.current = res.plan.id
         setActivePlanId(res.plan.id)
         setPlans((prev) => [
           { id: res.plan.id, name: res.plan.name, updatedAt: new Date() },
@@ -390,6 +436,33 @@ export function PlannerProvider({
       return res
     },
     []
+  )
+
+  /**
+   * Save `snapshot` as the user's first plan, "My plan". The sign-in
+   * migration and a debounced save can both ask before the first create
+   * answers, so a create in flight is shared: a second caller waits for
+   * it and saves its snapshot to the new plan instead of making another.
+   */
+  const firstCreateRef = useRef<Promise<CreateResult> | null>(null)
+  const createFirstPlan = useCallback(
+    async (snapshot: PlannerState): Promise<CreateResult | SaveResult> => {
+      const pending = firstCreateRef.current
+      if (pending) {
+        const created = await pending
+        return created.ok
+          ? saveMyPlanAction(created.plan.id, snapshot)
+          : created
+      }
+      const create = createPlanRecord("My plan", snapshot)
+      firstCreateRef.current = create
+      try {
+        return await create
+      } finally {
+        firstCreateRef.current = null
+      }
+    },
+    [createPlanRecord]
   )
 
   // Rehydrate the plan exactly once on mount. Source of truth depends
@@ -443,8 +516,7 @@ export function PlannerProvider({
       // clear localStorage so future logouts don't surface a stale
       // copy. The created plan becomes the active one. (It sets state
       // only once the server answers, not during the effect.)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void createPlanRecord("My plan", merged).then((res) => {
+      void createFirstPlan(merged).then((res) => {
         if (res.ok) {
           clearLocalPlan()
           toast.success("Your plan is now saved to your account")
@@ -481,7 +553,7 @@ export function PlannerProvider({
     initialYear,
     availableYears,
     requestedCourse,
-    createPlanRecord,
+    createFirstPlan,
     loadYearData,
   ])
 
@@ -492,19 +564,11 @@ export function PlannerProvider({
   //                                  promotes it to active
   //   anonymous                     → localStorage write
   //
-  // We mirror activePlanId and the latest snapshot into refs so that
-  // `switchPlan` can flush the in-flight save synchronously without
-  // tripping over stale closure state.
+  // The timer reads activePlanIdRef and lastSnapshotRef (declared
+  // above), so `switchPlan` can flush the in-flight save synchronously
+  // without tripping over stale closure state.
   const firstPersistRef = useRef(true)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const activePlanIdRef = useRef(activePlanId)
-  const lastSnapshotRef = useRef(state)
-  useEffect(() => {
-    activePlanIdRef.current = activePlanId
-  }, [activePlanId])
-  useEffect(() => {
-    lastSnapshotRef.current = state
-  }, [state])
 
   const saveLocally = useCallback((snapshot: PlannerState) => {
     writeLocalPlan(snapshot)
@@ -567,7 +631,7 @@ export function PlannerProvider({
         } else {
           // First edit by a signed-in user with no plan yet. Promote
           // their work to a brand-new "My plan" record.
-          void createPlanRecord("My plan", snapshot).then((res) =>
+          void createFirstPlan(snapshot).then((res) =>
             applySaveResult(res, snapshot)
           )
         }
@@ -579,7 +643,7 @@ export function PlannerProvider({
 
     // Anonymous: keep on this device.
     saveLocally(state)
-  }, [state, currentUser, saveLocally, applySaveResult, createPlanRecord])
+  }, [state, currentUser, saveLocally, applySaveResult, createFirstPlan])
 
   useUnitDataHydration({ state, availableYears, unitData, mergeUnitData })
 
@@ -699,17 +763,23 @@ export function PlannerProvider({
       const year = state.courseYear
       startCourseTransition(async () => {
         try {
-          const res = await fetchYearInOrder(year, code, false)
-          setCourse(res.course)
-          dispatch({ type: "set_course", code })
           // Same year, so the units already cached stay valid: merge.
-          mergeUnitData(res)
-          if (res.course) {
-            dispatch({
-              type: "set_year_count",
-              count: yearsNeeded(res.course.creditPoints),
-            })
-          }
+          const c = await loadYearData(year, code, false)
+          // One undo step reverts the whole switch.
+          dispatch({
+            type: "batch",
+            actions: [
+              { type: "set_course", code },
+              ...(c
+                ? [
+                    {
+                      type: "set_year_count" as const,
+                      count: yearsNeeded(c.creditPoints),
+                    },
+                  ]
+                : []),
+            ],
+          })
         } catch (err) {
           toast.error("Couldn't load course", {
             description: err instanceof Error ? err.message : "Unknown error",
@@ -717,7 +787,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state.courseYear, mergeUnitData, fetchYearInOrder]
+    [state.courseYear, loadYearData]
   )
 
   // A "Plan this course" link landed on a saved plan for another
@@ -771,6 +841,35 @@ export function PlannerProvider({
     },
     [state.courseYear, state.courseCode, loadYearData]
   )
+
+  // Undo or redo of a course or year switch, or a reset to a fresh
+  // plan, changes the plan's course or year without loading anything.
+  // Load what the plan now names, so the course panel, validation and
+  // autosave agree with it. The switches and plan loads set loadedRef
+  // before their state change renders, so this skips them. It acts only
+  // when the plan's course or year changed, not on mount, where the
+  // restore effect has already started its own load.
+  const planCourseRef = useRef({
+    year: state.courseYear,
+    code: state.courseCode ?? null,
+  })
+  useEffect(() => {
+    const want = { year: state.courseYear, code: state.courseCode ?? null }
+    const prev = planCourseRef.current
+    planCourseRef.current = want
+    if (prev.year === want.year && prev.code === want.code) return
+    const loaded = loadedRef.current
+    if (loaded.year === want.year && loaded.code === want.code) return
+    startCourseTransition(async () => {
+      try {
+        await loadYearData(want.year, want.code, want.year !== loaded.year)
+      } catch (err) {
+        toast.error("Couldn't load the plan", {
+          description: err instanceof Error ? err.message : "Unknown error",
+        })
+      }
+    })
+  }, [state.courseYear, state.courseCode, loadYearData])
 
   /* ---------- Multi-plan operations ---------- */
 

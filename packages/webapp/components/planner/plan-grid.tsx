@@ -13,7 +13,7 @@ import {
 import { useState } from "react"
 import { toast } from "sonner"
 
-import { canPlaceUnit, type PlaceBlock } from "@/lib/planner/capacity"
+import { canPlaceUnit, inLockedSlot } from "@/lib/planner/capacity"
 import { isFreshPlan, slotLabel, studyYearName } from "@/lib/planner/timeline"
 import type { PlannerUnit } from "@/lib/planner/types"
 
@@ -22,6 +22,7 @@ import { SemesterRow } from "./semester-row"
 import { AddSemesterButton, FinishLine } from "./finish-line"
 import { PlanSetup } from "./plan-basics"
 import { UnitCard } from "./unit-card"
+import { toastBlocked } from "./toast-blocked"
 import { UnitSearchProvider } from "./unit-search-dialog"
 import { YearHeader } from "./year-header"
 
@@ -40,40 +41,6 @@ type ActiveDrag =
       /** Set when the unit may not be in the planner's maps yet. */
       unit?: PlannerUnit
     }
-
-/** Why a drop was refused, as a toast. Nothing for a missing slot. */
-function toastBlocked(reason: PlaceBlock, code: string, fullYear: boolean) {
-  switch (reason) {
-    case "no_twin":
-      toast.info(
-        "Year-long units need both S1 and S2 - that year is missing one."
-      )
-      return
-    case "full":
-      toast.warning(
-        fullYear
-          ? "Not enough room - S1 and S2 both need an open slot for a year-long unit."
-          : "That slot is full."
-      )
-      return
-    case "locked":
-      toast.info("That semester is locked. Unlock it to change its units.")
-      return
-    case "leave":
-      toast.info("That semester is a leave of absence, so it takes no units.")
-      return
-    case "exchange":
-      toast.info("That semester is on exchange, so it takes no units.")
-      return
-    case "duplicate":
-      toast.info(
-        fullYear
-          ? `${code} is already in that year.`
-          : `${code} is already in that semester.`
-      )
-      return
-  }
-}
 
 /**
  * Wraps any children in a single dnd-kit context, so drags from the
@@ -156,6 +123,12 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
     const fromSlot = state.years[a.yearIndex]?.slots[a.slotIndex]
     const toSlot = state.years[overData.yearIndex]?.slots[overData.slotIndex]
     if (fromSlot?.locked || toSlot?.locked) return
+    // A year-long unit moves both halves, so a lock on its other half
+    // pins it too.
+    if (a.isFullYear && inLockedSlot(state.years[a.yearIndex], a.code)) {
+      toastBlocked("locked", a.code, true)
+      return
+    }
 
     // ── Full-year unit drag rules ─────────────────────────────────
     // FY units occupy both S1[0..N-1] and S2[0..N-1] of their year.

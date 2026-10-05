@@ -7,6 +7,7 @@ import {
   type PlannerOffering,
   type PlannerSlot,
   type PlannerState,
+  type PlannerYear,
 } from "./types.ts"
 
 /**
@@ -24,6 +25,21 @@ export function slotTakesUnits(
   slot: Pick<PlannerSlot, "status" | "locked">
 ): boolean {
   return !slot.status && !slot.locked
+}
+
+/**
+ * True when a locked slot in the year holds `code`, other than the slot
+ * at `exceptSlotIndex`. A full-year unit sits in S1 and S2, so a lock on
+ * either half pins both.
+ */
+export function inLockedSlot(
+  year: Pick<PlannerYear, "slots"> | undefined,
+  code: string,
+  exceptSlotIndex?: number
+): boolean {
+  return !!year?.slots.some(
+    (s, si) => si !== exceptSlotIndex && s.locked && s.unitCodes.includes(code)
+  )
 }
 
 /**
