@@ -13,6 +13,7 @@ import { MobileCollapsible } from "@/components/handbook/mobile-collapsible"
 import { HandbookMain, KindBadge } from "@/components/handbook/parts"
 import { SearchBox } from "@/components/handbook/search-box"
 import { YearSelect } from "@/components/handbook/year-select"
+import { RatingInline } from "@/components/reviews/stars"
 import {
   listSearchFacets,
   SEARCH_PAGE_SIZE,
@@ -20,6 +21,11 @@ import {
   type SearchHit,
 } from "@/lib/db/handbook"
 import { listAvailableYears } from "@/lib/db/queries"
+import {
+  NO_RATINGS,
+  type RatingSummary,
+  ratingSummaries,
+} from "@/lib/db/reviews"
 import { entityHref, type EntityKind } from "@/lib/handbook/links"
 import {
   FILTER_PERIODS,
@@ -125,6 +131,19 @@ export default async function SearchPage({
     }),
     listSearchFacets(year),
   ])
+
+  // Ratings are live (this page renders per request), one query a kind.
+  const ratings = new Map<string, RatingSummary>()
+  await Promise.all(
+    (["unit", "course", "aos"] as const).map(async (kind) => {
+      const codes = result.hits
+        .filter((h) => h.kind === kind)
+        .map((h) => h.code)
+      if (codes.length === 0) return
+      const found = await ratingSummaries(kind, codes)
+      for (const c of codes) ratings.set(`${kind}:${c}`, found[c] ?? NO_RATINGS)
+    })
+  )
 
   const pageCount = Math.max(1, Math.ceil(result.total / SEARCH_PAGE_SIZE))
   const base = searchParamsOf({ ...state, q: "", page: 1 }).toString()
@@ -284,7 +303,12 @@ export default async function SearchPage({
             <ol className="flex flex-col divide-y overflow-hidden rounded-panel border bg-card shadow-card">
               {result.hits.map((h) => (
                 <li key={`${h.kind}:${h.code}`}>
-                  <Hit hit={h} words={words} linkYear={state.year} />
+                  <Hit
+                    hit={h}
+                    words={words}
+                    linkYear={state.year}
+                    rating={ratings.get(`${h.kind}:${h.code}`)}
+                  />
                 </li>
               ))}
             </ol>
@@ -350,10 +374,12 @@ function Hit({
   hit,
   words,
   linkYear,
+  rating,
 }: {
   hit: SearchHit
   words: string[]
   linkYear: string | null
+  rating: RatingSummary | undefined
 }) {
   const facts = [
     hit.detail,
@@ -376,6 +402,7 @@ function Hit({
             {highlight(hit.title, words)}
           </span>
         </p>
+        <RatingInline summary={rating} size="sm" />
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <KindBadge kind={hit.kind} />
           {facts.map((f, i) => (

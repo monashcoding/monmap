@@ -19,6 +19,10 @@ import {
 } from "lucide-react"
 
 import { EntityGraph } from "./entity-graph"
+import {
+  fetchEntityReviews,
+  ReviewsSection,
+} from "@/components/reviews/reviews-section"
 import { JsonLd, breadcrumbLd } from "./json-ld"
 import {
   CurriculumTree,
@@ -64,7 +68,10 @@ export async function AosPage({
   rawYear: string | null
 }) {
   const r = await resolveEntity("aos", rawCode, rawYear)
-  const a = await fetchAosPage(r.code, r.year)
+  const [a, reviews] = await Promise.all([
+    fetchAosPage(r.code, r.year),
+    fetchEntityReviews("aos", r.code),
+  ])
   if (!a) notFound()
   const graph = await prefetchGraphForSeeds(a.unitCodes, r.year, "upstream")
 
@@ -120,6 +127,7 @@ export async function AosPage({
         years={r.years}
         yearHref={yearHref}
         handbookUrl={monashHandbookUrl("aos", a.code, r.year)}
+        rating={reviews.summary}
         notice={notice}
       />
 
@@ -127,6 +135,7 @@ export async function AosPage({
         toc={[
           a.description ? { id: "overview", label: "Overview" } : null,
           { id: "map", label: "Requisite map" },
+          { id: "reviews", label: "Reviews" },
           a.curriculum.length > 0
             ? { id: "structure", label: "Structure" }
             : null,
@@ -157,6 +166,13 @@ export async function AosPage({
             emptyText={`None of the units in ${a.title} have prerequisites in the ${r.year} handbook.`}
           />
         </Section>
+
+        <ReviewsSection
+          kind="aos"
+          code={a.code}
+          title={a.title}
+          data={reviews}
+        />
 
         {a.curriculum.length > 0 ? (
           <Section id="structure" title="Structure" icon={ListTreeIcon}>

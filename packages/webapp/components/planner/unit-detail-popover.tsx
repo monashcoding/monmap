@@ -29,6 +29,8 @@ import type {
   PlannerUnit,
   RequisiteBlock,
 } from "@/lib/planner/types"
+import { RatingInline } from "@/components/reviews/stars"
+import { useRating } from "@/components/reviews/use-ratings"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
@@ -134,6 +136,7 @@ export function UnitDetailView({
   } = usePlanner()
 
   const isPlaced = yearIndex !== undefined && slotIndex !== undefined
+  const rating = useRating("unit", code)
 
   // Default to the year the planner's unit data was loaded for so the
   // view renders instantly from context; year-switching is opt-in and
@@ -275,6 +278,12 @@ export function UnitDetailView({
           {unit?.title ??
             (loading ? "Loading…" : "Not in this year's handbook")}
         </h3>
+        <a
+          href={`/units/${code}#reviews`}
+          className="min-h-4 self-start rounded-tag underline-offset-2 hover:underline"
+        >
+          {rating ? <RatingInline summary={rating} size="xs" /> : null}
+        </a>
         {unit?.fallbackFor ? (
           <p className="text-[11px] text-muted-foreground">
             From the {unit.year} handbook. The {unit.fallbackFor} page

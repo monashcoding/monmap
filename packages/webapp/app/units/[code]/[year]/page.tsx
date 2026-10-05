@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { UnitPage, unitMetadata } from "@/components/handbook/unit-page"
 
 // Same caching as the latest-year page; see ../page.tsx.
-export const revalidate = 604800
+export const revalidate = 86400
 export const dynamicParams = true
 export function generateStaticParams() {
   return []

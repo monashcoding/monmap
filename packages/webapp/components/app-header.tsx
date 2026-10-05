@@ -3,10 +3,17 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LogOutIcon, MenuIcon, NotebookPenIcon } from "lucide-react"
-import { useState, useSyncExternalStore } from "react"
+import {
+  LogOutIcon,
+  MenuIcon,
+  MessageSquareTextIcon,
+  NotebookPenIcon,
+  ShieldCheckIcon,
+} from "lucide-react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { toast } from "sonner"
 
+import { isReviewAdminAction } from "@/app/review-actions"
 import { AnonymousBadge } from "@/components/anonymous-badge"
 import { HeaderLinks } from "@/components/header-links"
 import { MyGradesDialog } from "@/components/my-grades-dialog"
@@ -195,7 +202,22 @@ function UserMenu() {
   const { data, isPending } = useSession()
   const router = useRouter()
   const [gradesOpen, setGradesOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const hydrated = useHydrated()
+  const userId = data?.user?.id
+
+  // Only admins see the moderation link. The server decides; the page
+  // itself 404s for everyone else.
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    void isReviewAdminAction().then((ok) => {
+      if (!cancelled) setIsAdmin(ok)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
 
   // Hold the skeleton until after hydration, even if the session has
   // already resolved. Better Auth's `useStore` passes its *live client*
@@ -251,6 +273,16 @@ function UserMenu() {
             <NotebookPenIcon className="size-3.5" />
             My grades
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push("/my-reviews")}>
+            <MessageSquareTextIcon className="size-3.5" />
+            My reviews
+          </DropdownMenuItem>
+          {isAdmin ? (
+            <DropdownMenuItem onClick={() => router.push("/admin/reviews")}>
+              <ShieldCheckIcon className="size-3.5" />
+              Review moderation
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             onClick={async () => {
               const { error } = await signOut()

@@ -15,6 +15,8 @@ import {
   type EntityKind,
 } from "@/lib/handbook/links"
 import type { RequisiteBlock, RequisiteContainer } from "@/lib/planner/types"
+import { RatingInline } from "@/components/reviews/stars"
+import { type RatingSummary, ratingSummaries } from "@/lib/db/reviews"
 import { cn } from "@/lib/utils"
 
 import { PageToc, type TocItem } from "./page-toc"
@@ -125,6 +127,7 @@ export function EntityHero({
   years,
   yearHref,
   handbookUrl,
+  rating,
   notice,
 }: {
   kind: EntityKind
@@ -140,6 +143,8 @@ export function EntityHero({
   years: string[]
   yearHref: (year: string) => string
   handbookUrl: string
+  /** Shown under the title, linking to the Reviews section. */
+  rating?: RatingSummary
   notice?: React.ReactNode
 }) {
   const shown = facts.filter((f): f is string => !!f)
@@ -184,6 +189,14 @@ export function EntityHero({
         </h1>
         {subtitle ? (
           <p className="text-sm text-muted-foreground">{subtitle}</p>
+        ) : null}
+        {rating ? (
+          <a
+            href="#reviews"
+            className="self-start rounded-tag underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RatingInline summary={rating} size="md" />
+          </a>
         ) : null}
       </div>
 
@@ -374,6 +387,37 @@ export function YearLinks({
  * Entity links and lists
  * ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ *
+ * Ratings on lists
+ * ------------------------------------------------------------------ */
+
+/** Overall ratings keyed by `kind:code`. */
+type Ratings = ReadonlyMap<string, RatingSummary>
+
+const ratingKey = (kind: EntityKind, code: string) => `${kind}:${code}`
+
+/** One query per kind for every row in a list or tree. */
+async function loadRatings(
+  items: ReadonlyArray<{ kind: EntityKind; code: string }>
+): Promise<Ratings> {
+  const byKind = new Map<EntityKind, string[]>()
+  for (const it of items) {
+    byKind.set(it.kind, [...(byKind.get(it.kind) ?? []), it.code])
+  }
+  const out = new Map<string, RatingSummary>()
+  await Promise.all(
+    [...byKind].map(async ([kind, codes]) => {
+      const found = await ratingSummaries(kind, codes)
+      for (const code of codes) {
+        out.set(ratingKey(kind, code), found[code] ?? NO_RATING)
+      }
+    })
+  )
+  return out
+}
+
+const NO_RATING: RatingSummary = { average: null, count: 0 }
+
 export interface EntityRowData {
   kind: EntityKind
   code: string
@@ -386,24 +430,34 @@ export interface EntityRowData {
   showKind?: boolean
 }
 
-/** A compact list: code, title and a note per row. */
-export function EntityRows({
+/**
+ * A compact list: code, title, rating and a note per row. Pass
+ * `ratings` when a parent already loaded them for many lists.
+ */
+export async function EntityRows({
   rows,
   linkYear,
   className,
+  ratings,
 }: {
   rows: EntityRowData[]
   linkYear: string | null
   className?: string
+  ratings?: Ratings
 }) {
   if (rows.length === 0) return null
+  const loaded = ratings ?? (await loadRatings(rows))
   return (
     <ul
       className={cn("flex flex-col divide-y rounded-control border", className)}
     >
       {rows.map((r, i) => (
         <li key={`${r.kind}:${r.code}:${i}`}>
-          <EntityRow row={r} linkYear={linkYear} />
+          <EntityRow
+            row={r}
+            linkYear={linkYear}
+            rating={loaded.get(ratingKey(r.kind, r.code))}
+          />
         </li>
       ))}
     </ul>
@@ -413,9 +467,11 @@ export function EntityRows({
 function EntityRow({
   row,
   linkYear,
+  rating,
 }: {
   row: EntityRowData
   linkYear: string | null
+  rating: RatingSummary | undefined
 }) {
   const body = (
     <>
@@ -430,8 +486,11 @@ function EntityRow({
           {row.title ?? ""}
         </span>
       </span>
-      <span className="text-xs whitespace-nowrap text-muted-foreground">
-        {row.note ?? ""}
+      <span className="flex items-center justify-end gap-3 text-xs whitespace-nowrap text-muted-foreground">
+        {row.linkable !== false ? (
+          <RatingInline summary={rating} size="xs" />
+        ) : null}
+        {row.note ? <span>{row.note}</span> : null}
       </span>
     </>
   )
@@ -454,7 +513,7 @@ function EntityRow({
  * Cards for a short list of courses or areas of study: the title
  * leads, the code and a note sit above it.
  */
-export function EntityCards({
+export async function EntityCards({
   rows,
   linkYear,
 }: {
@@ -462,6 +521,7 @@ export function EntityCards({
   linkYear: string | null
 }) {
   if (rows.length === 0) return null
+  const ratings = await loadRatings(rows)
   return (
     <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {rows.map((r, i) => (
@@ -477,6 +537,11 @@ export function EntityCards({
             <span className="text-sm leading-snug font-medium underline-offset-2 group-hover:underline">
               {r.title ?? r.code}
             </span>
+            <RatingInline
+              summary={ratings.get(ratingKey(r.kind, r.code))}
+              size="xs"
+              className="mt-auto pt-1"
+            />
           </Link>
         </li>
       ))}
@@ -485,13 +550,18 @@ export function EntityCards({
 }
 
 /** Unit tiles in a grid: code over title, for requisite groups. */
-export function UnitTiles({
+export async function UnitTiles({
   units,
   linkYear,
+  ratings,
 }: {
   units: Array<{ code: string; title: string | null; linkable: boolean }>
   linkYear: string | null
+  ratings?: Ratings
 }) {
+  const loaded =
+    ratings ??
+    (await loadRatings(units.map((u) => ({ kind: "unit", code: u.code }))))
   return (
     <ul className="grid gap-2 sm:grid-cols-2">
       {units.map((u) => {
@@ -501,6 +571,13 @@ export function UnitTiles({
             <span className="text-sm leading-snug text-muted-foreground group-hover:text-foreground">
               {u.title ?? "No handbook page"}
             </span>
+            {u.linkable ? (
+              <RatingInline
+                summary={loaded.get(ratingKey("unit", u.code))}
+                size="xs"
+                className="pt-0.5"
+              />
+            ) : null}
           </>
         )
         const cls =
@@ -538,7 +615,7 @@ function cp(n: number | null): string | null {
  * of study as links. Top-level parts collapse with <details>, which
  * keeps every link in the HTML for search engines.
  */
-export function CurriculumTree({
+export async function CurriculumTree({
   nodes,
   linkYear,
   linkableUnits,
@@ -547,6 +624,16 @@ export function CurriculumTree({
   linkYear: string | null
   linkableUnits: ReadonlySet<string>
 }) {
+  const items: Array<{ kind: EntityKind; code: string }> = []
+  const collect = (list: CurriculumNode[]) => {
+    for (const n of list) {
+      if (n.kind === "item") {
+        if (n.entity) items.push({ kind: n.entity, code: n.code })
+      } else collect(n.children)
+    }
+  }
+  collect(nodes)
+  const ratings = await loadRatings(items)
   return (
     <div className="flex flex-col gap-3">
       {nodes.map((n, i) =>
@@ -571,6 +658,7 @@ export function CurriculumTree({
                 node={n}
                 linkYear={linkYear}
                 linkableUnits={linkableUnits}
+                ratings={ratings}
               />
             </div>
           </details>
@@ -579,6 +667,7 @@ export function CurriculumTree({
             key={i}
             rows={[itemRow(n, linkableUnits)]}
             linkYear={linkYear}
+            ratings={ratings}
           />
         )
       )}
@@ -609,10 +698,12 @@ function GroupBody({
   node,
   linkYear,
   linkableUnits,
+  ratings,
 }: {
   node: Extract<CurriculumNode, { kind: "group" }>
   linkYear: string | null
   linkableUnits: ReadonlySet<string>
+  ratings: Ratings
 }) {
   // Runs of items render as one list; subgroups nest below.
   const blocks: Array<
@@ -641,6 +732,7 @@ function GroupBody({
             key={i}
             rows={b.items.map((it) => itemRow(it, linkableUnits))}
             linkYear={linkYear}
+            ratings={ratings}
           />
         ) : (
           <div key={i} className="border-l-2 pl-4">
@@ -656,6 +748,7 @@ function GroupBody({
               node={b.node}
               linkYear={linkYear}
               linkableUnits={linkableUnits}
+              ratings={ratings}
             />
           </div>
         )
@@ -691,7 +784,7 @@ type RuleUnit = { code: string; title: string | null; linkable: boolean }
  * A unit's requisite rules as groups a student can read at a glance:
  * "One of" and "All of" boxes of unit tiles, joined by "and" or "or".
  */
-export function RequisiteRules({
+export async function RequisiteRules({
   blocks,
   titles,
   linkable,
@@ -707,6 +800,17 @@ export function RequisiteRules({
     title: titles[code] ?? name ?? null,
     linkable: linkable.has(code),
   })
+  const codes: string[] = []
+  const collect = (list: RequisiteContainer[]) => {
+    for (const c of list) {
+      for (const l of c.relationships ?? []) codes.push(l.academic_item_code)
+      collect(c.containers ?? [])
+    }
+  }
+  for (const b of blocks) collect(b.rule ?? [])
+  const ratings = await loadRatings(
+    codes.map((code) => ({ kind: "unit", code }))
+  )
   return (
     <div className="flex flex-col gap-6">
       {blocks.map((b, i) => {
@@ -726,6 +830,7 @@ export function RequisiteRules({
               any={false}
               unit={unit}
               linkYear={linkYear}
+              ratings={ratings}
               depth={0}
             />
           </div>
@@ -753,12 +858,14 @@ function RuleGroup({
   any,
   unit,
   linkYear,
+  ratings,
   depth,
 }: {
   containers: RequisiteContainer[]
   any: boolean
   unit: (code: string, name?: string) => RuleUnit
   linkYear: string | null
+  ratings: Ratings
   depth: number
 }) {
   const parts = containers.filter(
@@ -773,6 +880,7 @@ function RuleGroup({
             container={c}
             unit={unit}
             linkYear={linkYear}
+            ratings={ratings}
             depth={depth}
           />
         </div>
@@ -785,11 +893,13 @@ function RuleBox({
   container,
   unit,
   linkYear,
+  ratings,
   depth,
 }: {
   container: RequisiteContainer
   unit: (code: string, name?: string) => RuleUnit
   linkYear: string | null
+  ratings: Ratings
   depth: number
 }) {
   const leaves = (container.relationships ?? []).map((l) =>
@@ -807,13 +917,14 @@ function RuleBox({
         container={subs[0]}
         unit={unit}
         linkYear={linkYear}
+        ratings={ratings}
         depth={depth}
       />
     )
   }
   // One unit on its own needs no box.
   if (count === 1 && leaves.length === 1) {
-    return <UnitTiles units={leaves} linkYear={linkYear} />
+    return <UnitTiles units={leaves} linkYear={linkYear} ratings={ratings} />
   }
   return (
     <div
@@ -826,7 +937,7 @@ function RuleBox({
         {any ? "One of" : "All of"}
       </span>
       {leaves.length > 0 ? (
-        <UnitTiles units={leaves} linkYear={linkYear} />
+        <UnitTiles units={leaves} linkYear={linkYear} ratings={ratings} />
       ) : null}
       {subs.length > 0 ? (
         <>
@@ -836,6 +947,7 @@ function RuleBox({
             any={any}
             unit={unit}
             linkYear={linkYear}
+            ratings={ratings}
             depth={depth + 1}
           />
         </>

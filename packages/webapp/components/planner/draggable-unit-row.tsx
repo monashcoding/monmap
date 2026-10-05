@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/popover"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
+import { RatingCompact } from "@/components/reviews/stars"
+import { useRating } from "@/components/reviews/use-ratings"
 import { cn } from "@/lib/utils"
 import { slotLabel } from "@/lib/planner/timeline"
 
@@ -30,6 +32,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
   const [detailsOpen, setDetailsOpen] = useState(false)
   const placed = plannedCodes.has(code)
   const unit = units.get(code)
+  const rating = useRating("unit", code)
   const fy = isFullYear(code)
 
   const dragData = useMemo(
@@ -84,6 +87,9 @@ export function DraggableUnitRow({ code }: { code: string }) {
               <span className="text-[9px] text-muted-foreground">
                 {unit?.creditPoints ?? 6}cp
               </span>
+              {rating ? (
+                <RatingCompact summary={rating} className="ml-auto" />
+              ) : null}
             </div>
             {unit ? (
               <p className="truncate text-[11px] text-muted-foreground">

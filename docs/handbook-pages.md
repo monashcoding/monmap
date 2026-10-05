@@ -72,8 +72,12 @@ latest year that has it.
 The Docker build has no database, so it renders no handbook pages.
 
 - Each page and share image renders on its first request. Next caches
-  the HTML for a week (`revalidate = 604800`, an empty
-  `generateStaticParams`).
+  page HTML for a day and share images for a week (`revalidate`, an
+  empty `generateStaticParams`).
+- Saving, deleting or moderating a review drops the cached HTML of
+  that entity's pages (`revalidatePath` for the bare URL and each
+  year). The day limit bounds how stale the stars on other pages'
+  lists can get.
 - The queries behind a page are also memoised in process for an hour
   (`cacheHandbook`).
 - After a re-ingest, redeploy to clear both caches.

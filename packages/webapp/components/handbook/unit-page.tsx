@@ -29,7 +29,11 @@ import {
 } from "lucide-react"
 
 import { EntityGraph } from "./entity-graph"
-import { JsonLd, breadcrumbLd } from "./json-ld"
+import { JsonLd, breadcrumbLd, ratingLd } from "./json-ld"
+import {
+  fetchEntityReviews,
+  ReviewsSection,
+} from "@/components/reviews/reviews-section"
 import {
   DetailLayout,
   EntityCards,
@@ -157,7 +161,7 @@ export async function UnitPage({
   rawYear: string | null
 }) {
   const r = await resolveEntity("unit", rawCode, rawYear)
-  const [u, graph] = await Promise.all([
+  const [u, graph, reviews] = await Promise.all([
     fetchUnitPage(r.code, r.year),
     prefetchTreeData({
       mode: "unit",
@@ -167,6 +171,7 @@ export async function UnitPage({
       direction: "both",
       year: r.year,
     }),
+    fetchEntityReviews("unit", r.code),
   ])
   if (!u) notFound()
 
@@ -248,6 +253,7 @@ export async function UnitPage({
         years={r.years}
         yearHref={yearHref}
         handbookUrl={monashHandbookUrl("unit", u.code, r.year)}
+        rating={reviews.summary}
         notice={notice}
       />
 
@@ -255,6 +261,7 @@ export async function UnitPage({
         toc={[
           u.synopsis ? { id: "overview", label: "Overview" } : null,
           hasRequisites ? { id: "requisites", label: "Requisites" } : null,
+          { id: "reviews", label: "Reviews" },
           { id: "offerings", label: "Offerings" },
           u.assessments.length > 0
             ? { id: "assessment", label: "Assessment" }
@@ -372,6 +379,13 @@ export async function UnitPage({
             </div>
           </Section>
         ) : null}
+
+        <ReviewsSection
+          kind="unit"
+          code={u.code}
+          title={u.title}
+          data={reviews}
+        />
 
         <Section
           id="offerings"
@@ -689,6 +703,7 @@ export async function UnitPage({
               sameAs: "https://www.monash.edu/",
             },
             sameAs: monashHandbookUrl("unit", u.code, r.year),
+            ...ratingLd(reviews.summary, reviews.reviews),
           },
           breadcrumbLd([
             { name: "Search", path: "/search" },

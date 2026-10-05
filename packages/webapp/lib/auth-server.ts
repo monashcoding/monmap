@@ -102,3 +102,26 @@ export interface CurrentUser {
   image: string | null
   roles: string[]
 }
+
+/**
+ * The signed-in user's display name from the central session, or null.
+ * The local `user` mirror only holds the email for users who joined
+ * after the move to central auth, so code that needs a real name (the
+ * initials on a review) asks the central service.
+ */
+export async function fetchSessionName(): Promise<string | null> {
+  const cookie = (await headers()).get("cookie")
+  if (!cookie) return null
+  try {
+    const res = await fetch(`${AUTH_URL}/api/auth/get-session`, {
+      headers: { cookie },
+      cache: "no-store",
+      signal: AbortSignal.timeout(3000),
+    })
+    if (!res.ok) return null
+    const name = (await res.json())?.user?.name
+    return typeof name === "string" && name.trim() ? name.trim() : null
+  } catch {
+    return null
+  }
+}

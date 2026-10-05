@@ -5,6 +5,8 @@ import { useMemo, useState } from "react"
 import posthog from "posthog-js"
 
 import { Button } from "@/components/ui/button"
+import { RatingInline } from "@/components/reviews/stars"
+import { useRating } from "@/components/reviews/use-ratings"
 import { cn } from "@/lib/utils"
 import {
   Command,
@@ -26,6 +28,7 @@ import { usePlanner } from "./planner-context"
 export function CoursePicker({ className }: { className?: string }) {
   const { courses, course, switchCourse } = usePlanner()
   const [open, setOpen] = useState(false)
+  const rating = useRating("course", course?.code)
 
   const groupedByFaculty = useMemo(() => {
     const ORDER: Record<string, number> = {
@@ -77,8 +80,11 @@ export function CoursePicker({ className }: { className?: string }) {
                   </div>
                   {course ? (
                     <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
-                      <span className="min-w-0 break-words whitespace-normal">
+                      <span className="flex min-w-0 flex-col gap-1 break-words whitespace-normal">
                         {course.aqfLevel ?? "-"}
+                        {rating ? (
+                          <RatingInline summary={rating} size="xs" />
+                        ) : null}
                       </span>
                       <span className="shrink-0 tabular-nums">
                         {course.creditPoints}cp

@@ -14,6 +14,8 @@ import type {
   RequisiteRule,
 } from "@/lib/planner/types"
 import type { TreeNode } from "@/lib/tree/types"
+import { RatingInline } from "@/components/reviews/stars"
+import { useRating } from "@/components/reviews/use-ratings"
 import { cn } from "@/lib/utils"
 
 export interface FocusedUnitDetail {
@@ -56,6 +58,7 @@ export function TreeSidePanel({
    *  card chrome, fills its container (mobile bottom sheet). */
   variant?: "floating" | "flush"
 }) {
+  const rating = useRating("unit", detail?.node.code)
   if (!detail) return null
   const { node, variants, offerings, requisites, enrolmentRules, completed } =
     detail
@@ -104,6 +107,9 @@ export function TreeSidePanel({
             </span>
           )}
         </h3>
+        {rating ? (
+          <RatingInline summary={rating} size="xs" className="self-start" />
+        ) : null}
         <div className="flex flex-wrap items-center gap-1 pt-0.5">
           {unit?.level ? (
             <Badge variant="secondary" className="text-[10px]">

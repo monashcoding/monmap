@@ -25,6 +25,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   customType,
   index,
   integer,
@@ -32,9 +33,12 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  real,
   serial,
+  smallint,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type {
   AosContent,
@@ -522,5 +526,91 @@ export const userGrade = pgTable(
   (t) => [
     primaryKey({ columns: [t.userId, t.unitCode] }),
     index("user_grade_user_id_idx").on(t.userId),
+  ],
+);
+
+/* ------------------------------------------------------------------ *
+ * Reviews
+ *
+ * One review per user per unit, course or area of study, keyed by the
+ * entity's code rather than a handbook year: a student's view of
+ * FIT2004 holds across editions. No FK to the entity tables, for the
+ * same reason as decision 6 at the top of this file.
+ *
+ * `overall` is the required 1-5 star rating. `ratings` holds the
+ * optional per-axis scores, keyed by the axis ids in the webapp's
+ * `lib/reviews/axes.ts`; the axes differ per entity kind.
+ *
+ * `authorInitials` is the only thing about the author that is ever
+ * shown or sent to a browser. It is worked out from the author's name
+ * when they write or edit the review, so public reads never join
+ * `user`.
+ *
+ * `status` decides who sees the review:
+ *   - published:    everyone.
+ *   - flagged:      the classifier judged it abusive, spam or personal
+ *                   information. Only the author sees it.
+ *   - shadowbanned: an admin hid it. Only the author sees it.
+ * The `classifier*` columns keep the classifier's verdict for the
+ * admin page. `classifierError` is set when the classifier was down
+ * and the review was published unchecked.
+ * ------------------------------------------------------------------ */
+
+export const reviewEntityKindEnum = pgEnum("review_entity_kind", [
+  "unit",
+  "course",
+  "aos",
+]);
+
+export const reviewStatusEnum = pgEnum("review_status", [
+  "published",
+  "flagged",
+  "shadowbanned",
+]);
+
+export const review = pgTable(
+  "review",
+  {
+    id: text()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    entityKind: reviewEntityKindEnum().notNull(),
+    entityCode: text().notNull(),
+    overall: smallint().notNull(),
+    ratings: jsonb().$type<Record<string, number>>().notNull().default({}),
+    body: text().notNull(),
+    /** The year the author took the unit or started the course. */
+    yearTaken: text(),
+    authorInitials: text().notNull(),
+    status: reviewStatusEnum().notNull().default("published"),
+    classifierLabel: text(),
+    classifierConfidence: real(),
+    classifierScores: jsonb().$type<Record<string, number>>(),
+    classifierError: text(),
+    classifiedAt: timestamp(),
+    /** Email of the admin who last changed `status`. */
+    moderatedBy: text(),
+    moderatedAt: timestamp(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp()
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("review_user_entity_idx").on(
+      t.userId,
+      t.entityKind,
+      t.entityCode,
+    ),
+    // Page reads and rating summaries only ever want published rows.
+    index("review_entity_published_idx")
+      .on(t.entityKind, t.entityCode, t.createdAt.desc())
+      .where(sql`${t.status} = 'published'`),
+    index("review_status_created_idx").on(t.status, t.createdAt.desc()),
+    check("review_overall_range", sql`${t.overall} BETWEEN 1 AND 5`),
   ],
 );

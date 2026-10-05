@@ -20,6 +20,10 @@ import {
 } from "lucide-react"
 
 import { EntityGraph } from "./entity-graph"
+import {
+  fetchEntityReviews,
+  ReviewsSection,
+} from "@/components/reviews/reviews-section"
 import { JsonLd, breadcrumbLd } from "./json-ld"
 import {
   CurriculumTree,
@@ -95,7 +99,7 @@ export async function CoursePage({
   rawYear: string | null
 }) {
   const r = await resolveEntity("course", rawCode, rawYear)
-  const [c, graph] = await Promise.all([
+  const [c, graph, reviews] = await Promise.all([
     fetchCoursePage(r.code, r.year),
     prefetchTreeData({
       mode: "course",
@@ -105,6 +109,7 @@ export async function CoursePage({
       direction: "upstream",
       year: r.year,
     }),
+    fetchEntityReviews("course", r.code),
   ])
   if (!c) notFound()
 
@@ -190,6 +195,7 @@ export async function CoursePage({
         years={r.years}
         yearHref={yearHref}
         handbookUrl={monashHandbookUrl("course", c.code, r.year)}
+        rating={reviews.summary}
         notice={notice}
       />
 
@@ -197,6 +203,7 @@ export async function CoursePage({
         toc={[
           c.overview ? { id: "overview", label: "Overview" } : null,
           { id: "map", label: "Requisite map" },
+          { id: "reviews", label: "Reviews" },
           c.curriculum.length > 0 || c.requirements
             ? { id: "structure", label: "Structure" }
             : null,
@@ -238,6 +245,13 @@ export async function CoursePage({
             }}
           />
         </Section>
+
+        <ReviewsSection
+          kind="course"
+          code={c.code}
+          title={c.title}
+          data={reviews}
+        />
 
         {c.curriculum.length > 0 || c.requirements ? (
           <Section id="structure" title="Course structure" icon={ListTreeIcon}>
