@@ -34,9 +34,9 @@ import { useWam } from "./wam-context"
 /**
  * Plan header above the grid: the plan's name (click to rename) and
  * its start ("Starts Semester 1, 2027") and validation status on the
- * left; undo/redo, the Results toggle and a
- * More menu on the right. State-only
- * operations (no server round-trip).
+ * left; undo/redo, Results, Credit, Print and Export on the right,
+ * with the rare Import and Reset under More. State-only operations
+ * (no server round-trip).
  */
 export function LeftSidebar() {
   const {
@@ -229,6 +229,25 @@ export function LeftSidebar() {
           pressed={showResults}
           onClick={toggleShowResults}
         />
+        <ToolbarButton
+          icon={<GraduationCapIcon />}
+          label="Credit"
+          title="Advanced standing: units and credit you already hold"
+          onClick={() => setCreditOpen(true)}
+          count={creditCount}
+        />
+        <ToolbarButton
+          icon={<PrinterIcon />}
+          label="Print"
+          title="Print or save as PDF"
+          onClick={onPrint}
+        />
+        <ToolbarButton
+          icon={<UploadIcon />}
+          label="Export"
+          title="Download this plan as a file"
+          onClick={onExport}
+        />
 
         <div aria-hidden className="mx-1 h-5 w-px bg-border" />
 
@@ -245,27 +264,10 @@ export function LeftSidebar() {
           >
             <EllipsisIcon />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => setCreditOpen(true)}>
-              <GraduationCapIcon />
-              Credit
-              {creditCount > 0 ? (
-                <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-                  {creditCount}
-                </span>
-              ) : null}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExport}>
-              <UploadIcon />
-              Export
-            </DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
               <DownloadIcon />
-              Import
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onPrint}>
-              <PrinterIcon />
-              Print
+              Import a plan file
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onReset}>
@@ -289,6 +291,43 @@ export function LeftSidebar() {
       />
       <CreditDialog open={creditOpen} onOpenChangeAction={setCreditOpen} />
     </div>
+  )
+}
+
+/**
+ * A labelled toolbar action. The label hides below lg, leaving the icon
+ * and its tooltip, so the row fits beside the plan title.
+ */
+function ToolbarButton({
+  icon,
+  label,
+  title,
+  onClick,
+  count = 0,
+}: {
+  icon: React.ReactNode
+  label: string
+  title: string
+  onClick: () => void
+  count?: number
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={onClick}
+      title={title}
+      aria-label={count > 0 ? `${label} (${count})` : label}
+      className="text-muted-foreground"
+    >
+      {icon}
+      <span className="hidden lg:inline">{label}</span>
+      {count > 0 ? (
+        <span className="rounded-tag bg-muted px-1 text-[10px] font-semibold text-foreground tabular-nums">
+          {count}
+        </span>
+      ) : null}
+    </Button>
   )
 }
 
