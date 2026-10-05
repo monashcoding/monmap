@@ -8,7 +8,7 @@ import withBundleAnalyzer from "@next/bundle-analyzer"
 // inside the package, but CLAUDE.md §1 says one .env, at the repo
 // root — see that file for rationale.
 const here = dirname(fileURLToPath(import.meta.url))
-config({ path: resolve(here, "../../.env") })
+config({ path: resolve(here, "../../.env"), quiet: true })
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

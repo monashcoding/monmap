@@ -14,9 +14,9 @@
   "dependencies": {
     "@monmap/db": "workspace:*",
     "@monmap/scraper": "workspace:*",
-    "drizzle-orm": "^0.38.0"
+    "drizzle-orm": "0.45.3"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "tsx": "^4.23.15"
   }
 }

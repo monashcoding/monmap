@@ -28,7 +28,7 @@ import { fileURLToPath } from "node:url"
 import { config } from "dotenv"
 import postgres from "postgres"
 
-config({ path: resolve(fileURLToPath(import.meta.url), "../../../../.env") })
+config({ path: resolve(fileURLToPath(import.meta.url), "../../../../.env"), quiet: true })
 
 const baselinePath = resolve(
   fileURLToPath(import.meta.url),

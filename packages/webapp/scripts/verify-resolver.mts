@@ -22,7 +22,7 @@ import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { config } from "dotenv"
 
-config({ path: resolve(fileURLToPath(import.meta.url), "../../../../.env") })
+config({ path: resolve(fileURLToPath(import.meta.url), "../../../../.env"), quiet: true })
 
 const { fetchCourseWithAoS, listCoursesForPicker } =
   await import("../lib/db/queries.ts")

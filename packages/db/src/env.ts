@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
  * See CLAUDE.md §1: all env vars live at the repo root.
  */
 const here = fileURLToPath(import.meta.url);
-config({ path: resolve(here, "../../../../.env") });
+config({ path: resolve(here, "../../../../.env"), quiet: true });
 
 export const DATABASE_URL = (() => {
   const url = process.env.DATABASE_URL;

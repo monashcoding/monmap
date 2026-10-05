@@ -5,7 +5,7 @@ packages:
 # better-auth's kysely fork a second copy and the workspace stops
 # typechecking (two unrelated `SQL<unknown>` types). See .npmrc too.
 overrides:
-  drizzle-orm: 0.38.4
+  drizzle-orm: 0.45.3
 
 # Next.js only: skip the 7-day minimum release age so security patches
 # install at once. Every other package still waits 7 days. 16.3.8 is
