@@ -5,6 +5,7 @@ import {
   AlertTriangleIcon,
   CircleAlertIcon,
   MoreVerticalIcon,
+  MoveIcon,
   XIcon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -20,7 +21,10 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { pickedAosEntries } from "@/lib/planner/aos-slots"
@@ -28,7 +32,15 @@ import { unitIsCore } from "@/lib/planner/core-units"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { perSlotCreditPoints } from "@/lib/planner/full-year"
 import { GRADE_STYLES, markToGrade } from "@/lib/planner/grades"
-import type { PlannerCourseWithAoS } from "@/lib/planner/types"
+import { slotLabel } from "@/lib/planner/timeline"
+import {
+  slotCapacity,
+  slotUsedWeight,
+  type PlannerCourseWithAoS,
+  type PlannerOffering,
+  type PlannerState,
+  type PlannerUnit,
+} from "@/lib/planner/types"
 import { keyFor } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
 
@@ -66,6 +78,7 @@ export function UnitCard({
 }) {
   const {
     state,
+    dispatch,
     units,
     offerings,
     validations,
@@ -274,6 +287,20 @@ export function UnitCard({
         <UnitMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
+          // Year-long units move as a pair, so they only move by drag.
+          moveTargets={
+            isFY || slotLocked ? [] : moveTargets(state, units, offerings, code)
+          }
+          onMove={(t) =>
+            dispatch({
+              type: "move_unit",
+              fromYearIndex: yearIndex,
+              fromSlotIndex: slotIndex,
+              toYearIndex: t.yearIndex,
+              toSlotIndex: t.slotIndex,
+              code,
+            })
+          }
           onRemove={() => {
             posthog.capture("unit_removed", {
               unit_code: code,
@@ -291,13 +318,45 @@ export function UnitCard({
   )
 }
 
+interface MoveTarget {
+  yearIndex: number
+  slotIndex: number
+  label: string
+}
+
+/** Unlocked semesters with room for `code`, other than its own. */
+function moveTargets(
+  state: PlannerState,
+  units: ReadonlyMap<string, PlannerUnit>,
+  offerings: ReadonlyMap<string, PlannerOffering[]>,
+  code: string
+): MoveTarget[] {
+  const out: MoveTarget[] = []
+  state.years.forEach((year, yearIndex) =>
+    year.slots.forEach((slot, slotIndex) => {
+      if (slot.locked || slot.unitCodes.includes(code)) return
+      if (slotUsedWeight(slot, units, offerings) >= slotCapacity(slot)) return
+      out.push({
+        yearIndex,
+        slotIndex,
+        label: slotLabel(state, yearIndex, slot),
+      })
+    })
+  )
+  return out
+}
+
 function UnitMenu({
   open,
   onOpenChange,
+  moveTargets,
+  onMove,
   onRemove,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
+  moveTargets: MoveTarget[]
+  onMove: (target: MoveTarget) => void
   onRemove: () => void
 }) {
   return (
@@ -309,6 +368,7 @@ function UnitMenu({
               variant="ghost"
               size="icon-xs"
               aria-label="Unit options"
+              className="max-md:size-8"
               onPointerDown={(e) => e.stopPropagation()}
             />
           }
@@ -316,6 +376,31 @@ function UnitMenu({
           <MoreVerticalIcon className="size-3.5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={4}>
+          {moveTargets.length > 0 ? (
+            <>
+              {/* A flat list, not a submenu: submenus open on hover,
+                  which a touch screen doesn't have. */}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="flex items-center gap-1.5">
+                  <MoveIcon className="size-3" />
+                  Move to
+                </DropdownMenuLabel>
+                {moveTargets.map((t) => (
+                  <DropdownMenuItem
+                    key={`${t.yearIndex}:${t.slotIndex}`}
+                    onClick={() => {
+                      onOpenChange(false)
+                      onMove(t)
+                    }}
+                    className="pl-6"
+                  >
+                    {t.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          ) : null}
           <DropdownMenuItem
             onClick={() => {
               onOpenChange(false)

@@ -57,7 +57,9 @@ export function RightSidebar() {
   }
 
   return (
-    <aside className="flex min-w-0 flex-col print:hidden">
+    // max-md:hidden: the server can't know the screen width, so on a
+    // phone this column must not flash in before the drawer replaces it.
+    <aside className="flex min-w-0 flex-col max-md:hidden print:hidden">
       <RightPanel tab={tab} onTabChange={setTab} />
     </aside>
   )

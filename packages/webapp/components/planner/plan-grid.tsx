@@ -3,7 +3,8 @@
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -46,10 +47,16 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
     usePlanner()
   const [active, setActive] = useState<ActiveDrag | null>(null)
 
-  // 6px activation distance lets the unit-detail popover button still
-  // fire on a click — only "real" drags engage dnd-kit.
+  // Mouse: a 6px activation distance lets the unit-detail popover
+  // button still fire on a click — only "real" drags engage dnd-kit.
+  // Touch: a drag starts only after a 250ms press, so a swipe over a
+  // card scrolls the page. The card menu's "Move to" is the tap
+  // alternative.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 8 },
+    })
   )
 
   function onDragStart(e: DragStartEvent) {

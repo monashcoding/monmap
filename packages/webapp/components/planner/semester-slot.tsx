@@ -4,7 +4,6 @@ import { useDroppable } from "@dnd-kit/core"
 import { PlusIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { perSlotCreditPoints } from "@/lib/planner/full-year"
 import { slotCapacity, slotUsedWeight, STANDARD_CP } from "@/lib/planner/types"
@@ -37,7 +36,6 @@ export function SemesterSlot({
 }) {
   const { state, units, offerings } = usePlanner()
   const [open, setOpen] = useState(false)
-  const isMobile = useIsMobile()
 
   const slot = state.years[yearIndex]?.slots[slotIndex]
 
@@ -84,22 +82,19 @@ export function SemesterSlot({
       ref={setNodeRef}
       className={cn(
         "min-w-0 items-stretch gap-2 p-2 transition-colors duration-150",
-        "min-h-[104px]",
         // Mobile: vertical stack so each card has comfortable width.
-        // Desktop: capacity-sized grid (one card per column).
-        isMobile ? "flex flex-col" : "grid",
+        // Desktop: capacity-sized grid (one card per column). CSS picks
+        // the layout, so the server HTML already matches the screen.
+        "flex min-h-16 flex-col md:grid md:min-h-[104px] md:grid-cols-[repeat(var(--slot-cols),minmax(0,1fr))]",
         slot.locked ? "bg-foreground/[0.05]" : showDropTint && "bg-primary/5"
       )}
-      style={
-        isMobile
-          ? undefined
-          : { gridTemplateColumns: `repeat(${totalColumns}, minmax(0, 1fr))` }
-      }
+      style={{ "--slot-cols": totalColumns } as React.CSSProperties}
     >
       {slot.unitCodes.map((code, i) => (
         <div
           key={code}
-          style={isMobile ? undefined : { gridColumn: `span ${unitSpans[i]}` }}
+          className="md:[grid-column:span_var(--span)/span_var(--span)]"
+          style={{ "--span": unitSpans[i] } as React.CSSProperties}
         >
           <UnitCard code={code} yearIndex={yearIndex} slotIndex={slotIndex} />
         </div>
@@ -110,7 +105,7 @@ export function SemesterSlot({
           variant="ghost"
           className={cn(
             "rounded-control border border-dashed border-border/80 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
-            isMobile ? "h-12 w-full" : "h-[88px]"
+            "h-12 w-full md:h-[88px] md:w-auto"
           )}
           onClick={() => setOpen(true)}
         >
