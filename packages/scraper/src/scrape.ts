@@ -12,11 +12,13 @@ interface ScrapeOptions {
   readonly years: readonly string[] | "all";
   readonly kinds: readonly ContentKind[];
   readonly resume: boolean;
+  /** Requests started per second. */
+  readonly rate: number;
 }
 
 const OUT_DIR = "./data";
-/** 2 req/s sits well under the AWS WAF rate rule. */
-const DELAY_MS = 500;
+/** Requests in flight at once. Pacing comes from `rate`, not from this. */
+const MAX_IN_FLIGHT = 8;
 /** Block windows are ~5 min; 6 min keeps us out of them with margin. */
 const PAUSE_SECONDS = 360;
 
@@ -68,27 +70,48 @@ export async function scrape(opts: ScrapeOptions): Promise<ScrapeManifest> {
   }
   console.log(
     `to fetch: ${toFetch.length} (skipping ${skipped} already on disk)\n` +
-      `pacing: ${DELAY_MS}ms between requests, ${PAUSE_SECONDS}s pause on 403`,
+      `pacing: ${opts.rate} req/s, ${PAUSE_SECONDS}s pause on 403`,
   );
 
   const counts: Record<string, number> = {};
   const errors: Array<{ url: string; reason: string }> = [];
   let done = 0;
 
-  for (const entry of toFetch) {
-    await sleep(DELAY_MS);
+  // Requests start on a fixed schedule (one every 1000/rate ms) rather
+  // than "fetch, then sleep", so slow responses don't stretch the run.
+  // A 403 pauses every request until the WAF block window has passed.
+  const intervalMs = 1000 / opts.rate;
+  let nextStart = Date.now();
+  let pausedUntil = 0;
+  const inFlight = new Set<Promise<void>>();
 
+  async function waitForSlot(): Promise<void> {
+    for (;;) {
+      const now = Date.now();
+      const at = Math.max(nextStart, pausedUntil);
+      if (now >= at) {
+        nextStart = Math.max(nextStart, now) + intervalMs;
+        return;
+      }
+      await sleep(at - now);
+    }
+  }
+
+  async function fetchOne(entry: SitemapEntry): Promise<void> {
     let r = await fetchDetail(buildId, entry);
     // AWS WAF rate-based rule — pause and retry the same URL.
     while (r.status === 403) {
-      console.log(`... 403 on ${entry.kind}/${entry.code}; pausing ${PAUSE_SECONDS}s`);
-      await sleep(PAUSE_SECONDS * 1000);
+      if (Date.now() >= pausedUntil) {
+        console.log(`... 403 on ${entry.kind}/${entry.code}; pausing ${PAUSE_SECONDS}s`);
+        pausedUntil = Date.now() + PAUSE_SECONDS * 1000;
+      }
+      await waitForSlot();
       r = await fetchDetail(buildId, entry);
     }
 
     if (r.status !== 200) {
       errors.push({ url: entry.url, reason: `http ${r.status}` });
-      continue;
+      return;
     }
 
     let parsed: HandbookDataResponse<unknown>;
@@ -96,14 +119,14 @@ export async function scrape(opts: ScrapeOptions): Promise<ScrapeManifest> {
       parsed = JSON.parse(r.body) as HandbookDataResponse<unknown>;
     } catch (e) {
       errors.push({ url: entry.url, reason: `bad json: ${String(e)}` });
-      continue;
+      return;
     }
     if (parsed.pageProps.pageType !== "AIPage") {
       errors.push({
         url: entry.url,
         reason: `pageType=${parsed.pageProps.pageType}`,
       });
-      continue;
+      return;
     }
 
     await writeJson(pathFor(entry), parsed.pageProps.pageContent);
@@ -113,6 +136,18 @@ export async function scrape(opts: ScrapeOptions): Promise<ScrapeManifest> {
       console.log(`... ${done}/${toFetch.length} (errors=${errors.length})`);
     }
   }
+
+  for (const entry of toFetch) {
+    while (inFlight.size >= MAX_IN_FLIGHT) await Promise.race(inFlight);
+    await waitForSlot();
+    const p: Promise<void> = fetchOne(entry)
+      .catch((e: unknown) => {
+        errors.push({ url: entry.url, reason: `fetch failed: ${String(e)}` });
+      })
+      .finally(() => inFlight.delete(p));
+    inFlight.add(p);
+  }
+  await Promise.all(inFlight);
 
   console.log(`complete: wrote=${done} skipped=${skipped} errors=${errors.length}`);
 
