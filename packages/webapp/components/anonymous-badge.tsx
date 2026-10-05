@@ -21,8 +21,14 @@ import { useSession } from "@/lib/auth-client"
  * tints selections in yellow) so highlighted text remains readable
  * on top of a yellow surface.
  *
- * Below md the header has no room for the note, so only a short
- * sign-in button shows.
+ * The header's room decides how much shows, so the bar never runs
+ * past the window for a signed-out visitor:
+ * - below md: a "Sign in" button;
+ * - md to xl, where the tabs and links take the room: the Google "G"
+ *   button alone;
+ * - xl to 2xl: the yellow pill with the help icon and "Sign in with
+ *   Google";
+ * - 2xl and up: the pill with the "On this device only" note too.
  */
 export function AnonymousBadge() {
   const { data, isPending } = useSession()
@@ -31,12 +37,12 @@ export function AnonymousBadge() {
   return (
     <div
       role="status"
-      className="flex shrink-0 items-center gap-1.5 rounded-control text-[var(--monash-yellow-ink)] selection:bg-[var(--monash-yellow-ink)] selection:text-[var(--monash-yellow)] md:bg-[var(--monash-yellow)] md:py-1 md:pr-1 md:pl-3 md:shadow-sm print:hidden"
+      className="flex shrink-0 items-center gap-1.5 rounded-control text-[var(--monash-yellow-ink)] selection:bg-[var(--monash-yellow-ink)] selection:text-[var(--monash-yellow)] xl:bg-[var(--monash-yellow)] xl:py-1 xl:pr-1 xl:pl-1.5 xl:shadow-sm 2xl:pl-3 print:hidden"
     >
-      <span className="hidden text-[10px] leading-none font-medium whitespace-nowrap md:inline">
+      <span className="hidden text-[10px] leading-none font-medium whitespace-nowrap 2xl:inline">
         On this device only
       </span>
-      <span className="sr-only md:hidden">
+      <span className="sr-only 2xl:hidden">
         Your plan is saved in this browser only.
       </span>
       <TooltipProvider>
@@ -46,7 +52,7 @@ export function AnonymousBadge() {
               <button
                 type="button"
                 aria-label="What does this mean?"
-                className="hidden size-4 items-center justify-center rounded-full text-[var(--monash-yellow-ink)]/70 hover:text-[var(--monash-yellow-ink)] focus-visible:ring-2 focus-visible:ring-[var(--monash-yellow-ink)] focus-visible:outline-none md:inline-flex"
+                className="hidden size-4 items-center justify-center rounded-full text-[var(--monash-yellow-ink)]/70 hover:text-[var(--monash-yellow-ink)] focus-visible:ring-2 focus-visible:ring-[var(--monash-yellow-ink)] focus-visible:outline-none xl:inline-flex"
               >
                 <HelpCircleIcon className="size-3.5" />
               </button>
@@ -60,11 +66,12 @@ export function AnonymousBadge() {
       </TooltipProvider>
       <GoogleSignInButton
         size="sm"
-        className="h-8 px-2.5 text-xs md:h-6 md:px-2 md:text-[10px]"
+        aria-label="Sign in with Google"
+        className="h-8 px-2.5 text-xs md:size-8 md:px-0 xl:h-6 xl:w-auto xl:px-2 xl:text-[10px]"
         label={
           <>
             <span className="md:hidden">Sign in</span>
-            <span className="hidden md:inline">Sign in with Google</span>
+            <span className="hidden xl:inline">Sign in with Google</span>
           </>
         }
       />

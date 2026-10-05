@@ -52,9 +52,10 @@ import { cn } from "@/lib/utils"
  * the whole viewport so the strip reads edge to edge even though
  * <main> is capped at 1500px.
  *
- * Mobile (<md): hamburger, breadcrumb, context slot, avatar. The tabs,
- * the outside links, the theme choice and the "Review your units" link
- * move into the menu sheet.
+ * Below lg the hamburger opens a menu sheet with the outside links and
+ * the theme choice, which have no room in the bar. Below md the tabs
+ * and the "Review your units" link move into the sheet too, and the
+ * bar keeps the breadcrumb, the context slot and the avatar.
  */
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   return (
@@ -129,8 +130,8 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         {children ? (
           <div className="flex min-w-0 items-center gap-2">{children}</div>
         ) : null}
-        <HeaderLinks className="hidden md:flex" />
-        <ThemeToggle className="hidden md:inline-flex" />
+        <HeaderLinks className="hidden lg:flex" />
+        <ThemeToggle className="hidden lg:inline-flex" />
         <UserMenu />
       </div>
     </header>
@@ -149,7 +150,7 @@ function MobileNavTrigger() {
             variant="ghost"
             size="icon-sm"
             aria-label="Open navigation menu"
-            className="md:hidden"
+            className="lg:hidden"
           />
         }
       >

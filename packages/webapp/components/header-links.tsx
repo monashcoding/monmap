@@ -31,12 +31,13 @@ export const HEADER_LINKS = [
 ] as const
 
 const linkClass =
-  "inline-flex h-8 items-center gap-1.5 rounded-control px-2 text-sm text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring lg:px-2.5"
+  "inline-flex h-8 items-center gap-1.5 rounded-control px-2 text-sm text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring min-[1200px]:px-2.5"
 
 /**
- * MAC website, feedback form and GitHub repo links for the top bar.
- * Icon-only below lg so the bar still fits beside the page's own
- * controls. Below md they move into the menu sheet.
+ * MAC website, feedback form and GitHub repo links for the top bar,
+ * from lg up. Icon-only below 1200px, where their labels and the
+ * planner's save status would push the bar past the window. Below lg
+ * they are in the menu sheet.
  */
 export function HeaderLinks({ className }: { className?: string }) {
   return (
@@ -51,7 +52,7 @@ export function HeaderLinks({ className }: { className?: string }) {
           className={linkClass}
         >
           <Icon className="size-4" />
-          <span className="hidden lg:inline">{label}</span>
+          <span className="hidden min-[1200px]:inline">{label}</span>
         </a>
       ))}
     </div>
