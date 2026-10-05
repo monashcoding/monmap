@@ -1,6 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
+
+import { Checkbox } from "@/components/ui/checkbox"
 
 import { PlanMap } from "./plan-map"
 import { usePlanner } from "./planner-context"
@@ -13,6 +15,8 @@ import { useWam } from "./wam-context"
 export function PlanMapSection() {
   const { state, course, units } = usePlanner()
   const { grades } = useWam()
+  // Off by default: the map is about the student's own units.
+  const [showUntaken, setShowUntaken] = useState(false)
 
   // Units the course and the picked areas of study list, so the map
   // can show the ones the plan leaves out.
@@ -32,10 +36,23 @@ export function PlanMapSection() {
 
   return (
     <section className="hidden flex-col overflow-hidden rounded-panel border bg-card shadow-card lg:flex print:hidden">
-      <h2 className="border-b px-4 py-3 text-sm font-semibold">Plan map</h2>
+      <div className="flex items-center justify-between gap-4 border-b px-4 py-3">
+        <h2 className="text-sm font-semibold">Plan map</h2>
+        {requirementCodes.length > 0 ? (
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground select-none">
+            <Checkbox
+              checked={showUntaken}
+              onCheckedChange={(checked) => setShowUntaken(checked)}
+            />
+            Show units not in plan
+          </label>
+        ) : null}
+      </div>
+      {/* Toggling changes the map's units, which remounts it and fits
+          the new set (see PlanMap). */}
       <PlanMap
         state={state}
-        requirementCodes={requirementCodes}
+        requirementCodes={showUntaken ? requirementCodes : undefined}
         knownUnits={units}
         grades={grades}
         className="h-[640px] min-h-0 rounded-none border-0 shadow-none"
