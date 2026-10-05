@@ -9,6 +9,16 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # Majors held back on purpose: typescript-eslint supports TypeScript
+    # below 6.1, Next's lint plugins support ESLint 9, and @types/node
+    # follows the Node 22 runtime in the Docker image.
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
