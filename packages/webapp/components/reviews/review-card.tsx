@@ -21,14 +21,14 @@ const LONG = 420
 export function ReviewCard({
   review,
   kind,
-  label,
+  mine = false,
   actions,
   className,
 }: {
   review: PublicReview
   kind: ReviewKind
-  /** Replaces the initials, such as "Your review". */
-  label?: string
+  /** The viewer wrote it: "(Your review)" follows the initials. */
+  mine?: boolean
   actions?: React.ReactNode
   className?: string
 }) {
@@ -43,7 +43,13 @@ export function ReviewCard({
         <ReviewAvatar initials={review.initials} size={36} />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-sm font-semibold">
-            {label ?? review.initials}
+            {review.initials}
+            {mine ? (
+              <span className="font-normal text-muted-foreground">
+                {" "}
+                (Your review)
+              </span>
+            ) : null}
           </span>
           <span className="text-xs text-muted-foreground">
             {reviewDate(review.createdAt)}

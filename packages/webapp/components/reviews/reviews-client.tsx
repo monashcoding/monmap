@@ -170,7 +170,7 @@ export function ReviewsClient({
           <ReviewCard
             review={myReview}
             kind={kind}
-            label="Your review"
+            mine
             actions={
               <div className="flex gap-1">
                 <Button
