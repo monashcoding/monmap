@@ -94,6 +94,32 @@ pnpm ingest:all
 pnpm --filter webapp dev         # http://localhost:3000
 ```
 
+On `localhost` you can't use your real MAC login: the shared
+`.monashcoding.com` session cookie is never sent to `localhost`, so the
+server renders you as signed out (the avatar may still show, because the
+browser asks auth.monashcoding.com directly). To sign in locally, serve
+the app from a `monashcoding.com` hostname instead:
+
+1. Point `local.monashcoding.com` at your machine. Add this line to
+   `/etc/hosts` (needs `sudo`):
+
+   ```
+   127.0.0.1 local.monashcoding.com
+   ```
+
+2. Run the HTTPS dev server and open https://local.monashcoding.com:3000:
+
+   ```bash
+   pnpm dev:sso
+   ```
+
+   The first run creates a local certificate authority with `mkcert`
+   and may ask for your password to trust it. The certificate lands in
+   `packages/webapp/certificates/`, which is git-ignored.
+
+Signed in this way, you read and write your real plans in whatever
+database `DATABASE_URL` points at.
+
 ### Day-to-day commands
 
 ```bash

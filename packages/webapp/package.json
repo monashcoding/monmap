@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:sso": "next dev --turbopack --experimental-https --hostname local.monashcoding.com",
     "build": "next build",
     "analyze": "ANALYZE=true next build",
     "start": "next start",

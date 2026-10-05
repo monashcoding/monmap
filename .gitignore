@@ -9,3 +9,5 @@ data/
 .env
 .mcp.json
 backups/
+# Local HTTPS certificates from `next dev --experimental-https` (pnpm dev:sso)
+certificates/
