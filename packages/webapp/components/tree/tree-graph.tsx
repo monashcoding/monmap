@@ -51,6 +51,8 @@ export interface TreeGraphProps {
    * pinch, drag and the zoom buttons still work.
    */
   scrollZoom?: boolean
+  /** Drawn over the canvas, such as the plan map's unit card. */
+  overlay?: React.ReactNode
   className?: string
 }
 
@@ -81,6 +83,7 @@ function TreeGraphInner({
   minimap = true,
   interactive = true,
   scrollZoom = interactive,
+  overlay,
   className,
 }: TreeGraphProps) {
   const lineage = useMemo(
@@ -255,6 +258,7 @@ function TreeGraphInner({
           />
         ) : null}
       </ReactFlow>
+      {overlay}
     </div>
   )
 }

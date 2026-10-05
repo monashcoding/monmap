@@ -4,6 +4,8 @@ import { Handle, Position, type NodeProps } from "@xyflow/react"
 import { CheckIcon } from "lucide-react"
 import { memo } from "react"
 
+import { RatingInline } from "@/components/reviews/stars"
+import { useRating } from "@/components/reviews/use-ratings"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import type { TreeNode } from "@/lib/tree/types"
 import { cn } from "@/lib/utils"
@@ -20,7 +22,8 @@ export type UnitNodeData = TreeNode & {
  * student moving between Planner and Tree sees the same chips. Same
  * faculty rail, same code-then-title layout, same height envelope.
  * Differences:
- *   - Compact (44px tall vs 88px) so 30-node trees fit on screen.
+ *   - Compact (76px tall vs 88px) so 30-node trees fit on screen.
+ *   - Its star rating along the bottom.
  *   - A small variant chip if equivalence-collapse stacked siblings
  *     (e.g. FIT1045 + FIT1053).
  *   - Lock icon when the unit has an enrolment-rule gate beyond
@@ -36,7 +39,7 @@ function UnitNodeInner({ data, selected }: NodeProps) {
     <div
       data-status={d.planStatus ?? "none"}
       className={cn(
-        "group/tree-node relative flex h-[64px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
+        "group/tree-node relative flex h-[76px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
         "hover:-translate-y-px hover:shadow-md",
         d.isFocused || selected
           ? "border-emphasis ring-2 ring-emphasis/40"
@@ -113,12 +116,25 @@ function UnitNodeInner({ data, selected }: NodeProps) {
             </span>
           )}
         </div>
+        <NodeRating code={d.code} />
       </div>
       <Handle
         type="source"
         position={Position.Right}
         className="!h-2 !w-2 !border-none !bg-transparent"
       />
+    </div>
+  )
+}
+
+/** Stars along the bottom of the node; blank until they load. */
+function NodeRating({ code }: { code: string }) {
+  const rating = useRating("unit", code)
+  return (
+    <div className="mt-auto h-3">
+      {rating ? (
+        <RatingInline summary={rating} size="xs" className="text-[10px]" />
+      ) : null}
     </div>
   )
 }

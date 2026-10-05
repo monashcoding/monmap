@@ -48,7 +48,7 @@ export interface LayoutResult {
 }
 
 const NODE_WIDTH = 196
-const NODE_HEIGHT = 64
+const NODE_HEIGHT = 76
 // Generous rank separation gives edges room to curve around intervening
 // nodes; tight node separation keeps the canvas compact vertically.
 const RANK_SEP = 140

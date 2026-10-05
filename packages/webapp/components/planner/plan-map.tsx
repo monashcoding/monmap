@@ -1,9 +1,15 @@
 "use client"
 
+import { ExternalLinkIcon, XIcon } from "lucide-react"
+import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 
 import { fetchPlanGraphAction } from "@/app/actions"
+import { RatingInline } from "@/components/reviews/stars"
+import { useRating } from "@/components/reviews/use-ratings"
 import { TreeGraph } from "@/components/tree/tree-graph"
+import { Button } from "@/components/ui/button"
+import { entityHref } from "@/lib/handbook/links"
 import type { PlannerState, PlannerUnit } from "@/lib/planner/types"
 import type { TreeEdge, TreeNode } from "@/lib/tree/types"
 
@@ -126,7 +132,75 @@ export function PlanMap({
       fitAll
       minimap={false}
       interactive={interactive}
+      overlay={
+        interactive && focused ? (
+          <FocusedUnitCard
+            code={focused}
+            title={nodes.find((n) => n.code === focused)?.unit?.title ?? null}
+            year={state.courseYear}
+            onClose={() => setFocused(null)}
+          />
+        ) : null
+      }
       className={className}
     />
+  )
+}
+
+/**
+ * The clicked unit, over the map's top-right corner, with a link to
+ * its page. The map itself only highlights the unit's chain.
+ */
+function FocusedUnitCard({
+  code,
+  title,
+  year,
+  onClose,
+}: {
+  code: string
+  title: string | null
+  year: string
+  onClose: () => void
+}) {
+  const rating = useRating("unit", code)
+  const href = entityHref("unit", code, year)
+  return (
+    <div className="absolute top-3 right-3 z-20 flex w-[min(300px,calc(100%-1.5rem))] flex-col gap-1.5 rounded-panel border bg-card p-3.5 shadow-2xl ring-1 ring-border/60">
+      <div className="flex items-center gap-2">
+        <Link
+          href={href}
+          className="text-base font-bold tabular-nums underline-offset-2 hover:underline"
+        >
+          {code}
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={onClose}
+          aria-label="Close unit card"
+          className="ml-auto"
+        >
+          <XIcon className="size-3.5" />
+        </Button>
+      </div>
+      {title ? (
+        <Link
+          href={href}
+          className="text-sm leading-snug font-medium underline-offset-2 hover:underline"
+        >
+          {title}
+        </Link>
+      ) : null}
+      <div className="h-4">
+        {rating ? <RatingInline summary={rating} size="xs" /> : null}
+      </div>
+      <Link
+        href={href}
+        className="mt-1 inline-flex h-8 items-center justify-center gap-1.5 rounded-control bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/80"
+      >
+        <ExternalLinkIcon className="size-3.5" aria-hidden />
+        View Details
+      </Link>
+    </div>
   )
 }
