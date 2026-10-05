@@ -17,7 +17,7 @@ export default async function OpengraphImage() {
       logoDataUrl: assets.logoDataUrl,
       title: "MonMap",
       subtitle:
-        "Plan your Monash degree visually — drag units into semesters, check prereqs, track your WAM.",
+        "Plan your Monash degree visually - drag units into semesters, check prereqs, track your WAM.",
       chips: [
         { label: "Course planner", filled: true },
         { label: "Unit search" },

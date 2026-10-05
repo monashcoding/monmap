@@ -30,7 +30,7 @@ export default function ErrorPage({
           </p>
           {error.digest ? (
             <p className="font-mono text-xs text-muted-foreground/70">
-              ref · {error.digest}
+              ref - {error.digest}
             </p>
           ) : null}
         </div>

@@ -520,7 +520,7 @@ function derivePeriodBadge(offerings: PlannerOffering[]): string | null {
   if (kinds.has("FULL_YEAR")) return "FY"
   const s1 = kinds.has("S1")
   const s2 = kinds.has("S2")
-  if (s1 && s2) return "S1·S2"
+  if (s1 && s2) return "S1-S2"
   if (s1) return "S1"
   if (s2) return "S2"
   // Fallback to the first non-OTHER kind label.

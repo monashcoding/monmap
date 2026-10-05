@@ -176,7 +176,7 @@ export function CreditDialog({
           </p>
         ) : !codeLooksValid ? (
           <p className="text-[11px] text-destructive">
-            Unit codes look like FIT1045 — leave it blank for credit that
+            Unit codes look like FIT1045 - leave it blank for credit that
             isn&apos;t tied to a specific unit.
           </p>
         ) : null}

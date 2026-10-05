@@ -34,7 +34,7 @@ export function SaveStatusBadge() {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] text-warning-foreground">
         <TriangleAlertIcon className="size-3.5" />
-        save failed — will retry
+        save failed - will retry
       </span>
     )
   }

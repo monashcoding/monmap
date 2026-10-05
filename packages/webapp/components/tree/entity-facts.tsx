@@ -172,7 +172,7 @@ function UnitFacts({
                     .map((o) =>
                       [o.location, o.attendanceModeCode]
                         .filter(Boolean)
-                        .join(" · ")
+                        .join(" - ")
                     )
                     .filter(Boolean)
                     .join(" / ") || "mode TBA"}
@@ -271,7 +271,7 @@ function CourseFacts({ course, onPickAos, details }: EntityFactsProps) {
             course.type ? { label: "Type", value: course.type } : null,
             detail?.school ? { label: "Faculty", value: detail.school } : null,
             modes.length > 0
-              ? { label: "Modes", value: modes.join(" · ") }
+              ? { label: "Modes", value: modes.join(" - ") }
               : null,
             detail?.cricosCode
               ? { label: "CRICOS code", value: detail.cricosCode }
@@ -298,7 +298,7 @@ function CourseFacts({ course, onPickAos, details }: EntityFactsProps) {
                     {list.map((a) => (
                       <li
                         key={a.code}
-                        className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['—']"
+                        className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['-']"
                       >
                         <button
                           type="button"
@@ -342,7 +342,7 @@ function EmptyHint({ featured }: EntityFactsProps) {
           {featured.map((u) => (
             <li
               key={u.code}
-              className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['—']"
+              className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['-']"
             >
               <Link
                 href={`/search?unit=${u.code}`}
@@ -422,7 +422,7 @@ function UnitBullets({
         return (
           <li
             key={c}
-            className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['—']"
+            className="flex items-baseline gap-2 before:text-xs before:text-muted-foreground/60 before:content-['-']"
           >
             <Link
               href={`/search?unit=${c}`}

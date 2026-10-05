@@ -391,7 +391,7 @@ function YearPicker({
         render={
           <button
             type="button"
-            aria-label={`Viewing ${year} handbook — change year`}
+            aria-label={`Viewing ${year} handbook - change year`}
             className={cn(
               "inline-flex items-center gap-1 rounded-control border px-1.5 py-0.5 text-[10px] tabular-nums transition-colors",
               isDefault
@@ -429,7 +429,7 @@ function OfferingsGrid({ offerings }: { offerings: PlannerOffering[] }) {
   >()
   for (const o of offerings) {
     const list = grouped.get(o.periodKind) ?? []
-    list.push({ location: o.location ?? "—", attendance: o.attendanceModeCode })
+    list.push({ location: o.location ?? "-", attendance: o.attendanceModeCode })
     grouped.set(o.periodKind, list)
   }
 
@@ -461,7 +461,7 @@ function OfferingsGrid({ offerings }: { offerings: PlannerOffering[] }) {
                   {o.location}
                   {o.attendance ? (
                     <span className="ml-1 text-muted-foreground">
-                      · {o.attendance}
+                      - {o.attendance}
                     </span>
                   ) : null}
                 </Badge>

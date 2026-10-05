@@ -20,7 +20,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    template: "%s · MonMap",
+    template: "%s - MonMap",
     default: "MonMap - Monash course planner & unit explorer",
   },
   description: SITE_DESCRIPTION,

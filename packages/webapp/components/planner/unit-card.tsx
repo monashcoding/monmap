@@ -442,7 +442,7 @@ function MarkChip({
             inputMode="decimal"
             min={0}
             max={100}
-            placeholder="0–100"
+            placeholder="0-100"
             value={draft}
             aria-invalid={!valid}
             onChange={(e) => setDraft(e.target.value)}

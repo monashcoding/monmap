@@ -324,7 +324,7 @@ function RoleSelect({
       </div>
       {outOfScope && selected ? (
         <p className="px-1 text-[10px] leading-tight text-muted-foreground">
-          Not offered at {campus} — {selected.scope} only.
+          Not offered at {campus} - {selected.scope} only.
         </p>
       ) : null}
     </div>

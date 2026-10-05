@@ -158,7 +158,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
               )}
               {course ? (
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  {course.code} — {course.title}
+                  {course.code} - {course.title}
                 </p>
               ) : (
                 <p className="mt-0.5 text-[11px] text-muted-foreground italic">

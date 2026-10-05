@@ -291,12 +291,12 @@ function ResultsSection() {
           <dl className="grid grid-cols-2 gap-2">
             <ResultStat
               label="WAM"
-              value={wam !== null ? wam.toFixed(3) : "—"}
+              value={wam !== null ? wam.toFixed(3) : "-"}
               hidden={hidden}
             />
             <ResultStat
               label="GPA"
-              value={gpa !== null ? gpa.toFixed(3) : "—"}
+              value={gpa !== null ? gpa.toFixed(3) : "-"}
               hidden={hidden}
             />
           </dl>

@@ -89,7 +89,7 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
         const s2 = yr?.slots.find((s) => s.kind === "S2")
         if (!s1 || !s2) {
           toast.info(
-            "Year-long units need both S1 and S2 — that year is missing one."
+            "Year-long units need both S1 and S2 - that year is missing one."
           )
           return
         }
@@ -98,7 +98,7 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
           slotUsedWeight(s2, units, offerings) >= slotCapacity(s2)
         ) {
           toast.warning(
-            "Not enough room — S1 and S2 both need an open slot for a year-long unit."
+            "Not enough room - S1 and S2 both need an open slot for a year-long unit."
           )
           return
         }
@@ -164,13 +164,13 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
       const targetKind = targetSlot?.kind
       if (targetKind !== "S1" && targetKind !== "S2") {
         toast.info(
-          "Year-long units can only sit in S1 + S2 — not in summer or winter slots."
+          "Year-long units can only sit in S1 + S2 - not in summer or winter slots."
         )
         return
       }
       if (targetYear === a.yearIndex) {
         toast.info(
-          `${a.code} is a year-long unit — both halves are locked together. Drag it to another year to move it.`
+          `${a.code} is a year-long unit - both halves are locked together. Drag it to another year to move it.`
         )
         return
       }
@@ -188,7 +188,7 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
         slotUsedWeight(s2, units, offerings) >= slotCapacity(s2)
       ) {
         toast.warning(
-          `Not enough room in ${targetYear + 1} — both S1 and S2 need an open slot for a year-long unit.`
+          `Not enough room in ${targetYear + 1} - both S1 and S2 need an open slot for a year-long unit.`
         )
         return
       }

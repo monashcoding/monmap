@@ -200,7 +200,7 @@ export function SemesterRow({
               {slot.status === "leave"
                 ? "On leave"
                 : slot.status === "exchange"
-                  ? `Exchange · ${slot.creditPoints ?? 24}cp`
+                  ? `Exchange - ${slot.creditPoints ?? 24}cp`
                   : `${usedWeight} / ${capacity} units`}
             </div>
           </div>

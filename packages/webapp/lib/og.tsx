@@ -160,7 +160,7 @@ export function OgShell({
           }}
         >
           {/* next/og's ImageResponse renders via Satori, which only
-              speaks raw <img> — next/image isn't usable here.
+              speaks raw <img> - next/image isn't usable here.
               eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logoDataUrl}

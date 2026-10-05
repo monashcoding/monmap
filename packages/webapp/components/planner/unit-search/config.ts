@@ -26,7 +26,7 @@ export const SORT_OPTIONS = [
   { key: "level-asc", label: "Level (low → high)", short: "Level ↑" },
   { key: "level-desc", label: "Level (high → low)", short: "Level ↓" },
   { key: "credit", label: "Credit points (low → high)", short: "Credits ↑" },
-  { key: "code", label: "Unit code (A → Z)", short: "Code A–Z" },
+  { key: "code", label: "Unit code (A → Z)", short: "Code A-Z" },
 ] as const
 
 export type SortKey = (typeof SORT_OPTIONS)[number]["key"]

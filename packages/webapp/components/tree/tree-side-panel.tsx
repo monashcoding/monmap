@@ -221,7 +221,7 @@ function OfferingsGrid({ offerings }: { offerings: PlannerOffering[] }) {
   >()
   for (const o of offerings) {
     const list = grouped.get(o.periodKind) ?? []
-    list.push({ location: o.location ?? "—", attendance: o.attendanceModeCode })
+    list.push({ location: o.location ?? "-", attendance: o.attendanceModeCode })
     grouped.set(o.periodKind, list)
   }
   const ordered: PeriodKind[] = [
@@ -252,7 +252,7 @@ function OfferingsGrid({ offerings }: { offerings: PlannerOffering[] }) {
                   {o.location}
                   {o.attendance ? (
                     <span className="ml-1 text-muted-foreground">
-                      · {o.attendance}
+                      - {o.attendance}
                     </span>
                   ) : null}
                 </Badge>

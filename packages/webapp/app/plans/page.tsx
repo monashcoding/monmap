@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/app-header"
 export const metadata: Metadata = {
   title: "My course maps",
   description:
-    "Saved course plans for your Monash degree — synced across devices.",
+    "Saved course plans for your Monash degree - synced across devices.",
   robots: { index: false, follow: false },
 }
 import { GoogleSignInButton } from "@/components/google-sign-in-button"

@@ -25,7 +25,7 @@ test("a mid-year start spans two calendar years", () => {
   assert.equal(slotCalendarYear(s2, 0, "SUMMER_A"), 2028)
   assert.equal(slotCalendarYear(s2, 0, "S1"), 2028)
   assert.equal(slotCalendarYear(s2, 1, "S2"), 2028)
-  assert.equal(studyYearSpan(s2, 0), "2027–28")
+  assert.equal(studyYearSpan(s2, 0), "2027-28")
   assert.equal(slotLabel(s2, 0, { kind: "S1" }), "Semester 1, 2028")
 })
 

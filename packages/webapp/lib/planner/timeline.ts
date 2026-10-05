@@ -120,7 +120,7 @@ export function studyYearSpan(
 ): string {
   const first = startYearOf(state) + yearIndex
   if (startPeriodOf(state) === "S1") return String(first)
-  return `${first}–${String(first + 1).slice(-2)}`
+  return `${first}-${String(first + 1).slice(-2)}`
 }
 
 /** "Semester 2, 2027", or the slot's own label when the student set one. */

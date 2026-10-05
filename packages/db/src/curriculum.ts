@@ -464,7 +464,7 @@ export function extractRequirementGroups(
     const collides = (titleCount.get(g.grouping) ?? 0) > 1
     const grouping =
       collides && g.partTitle && g.partTitle !== g.grouping
-        ? `${g.partTitle} — ${g.grouping}`
+        ? `${g.partTitle} - ${g.grouping}`
         : g.grouping
     // A grouping that calls itself an elective is a student choice by
     // definition, even when the listed options' credit points happen

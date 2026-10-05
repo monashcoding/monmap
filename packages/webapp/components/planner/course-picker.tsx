@@ -70,7 +70,7 @@ export function CoursePicker({ className }: { className?: string }) {
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-xs text-muted-foreground tabular-nums">
-                    {course?.code ?? "—"}
+                    {course?.code ?? "-"}
                   </div>
                   <div className="mt-1.5 text-sm leading-tight font-semibold break-words whitespace-normal">
                     {course?.title ?? "Choose a course"}
@@ -78,7 +78,7 @@ export function CoursePicker({ className }: { className?: string }) {
                   {course ? (
                     <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
                       <span className="min-w-0 break-words whitespace-normal">
-                        {course.aqfLevel ?? "—"}
+                        {course.aqfLevel ?? "-"}
                       </span>
                       <span className="shrink-0 tabular-nums">
                         {course.creditPoints}cp

@@ -130,7 +130,7 @@ export function detectAosOverlaps(
             .filter((c) => membership(b).has(c))
             .sort(),
           severity: "warning",
-          message: `The ${label(extended)} extended major already includes the ${label(major)} major — pick one, not both.`,
+          message: `The ${label(extended)} extended major already includes the ${label(major)} major - pick one, not both.`,
         })
         continue
       }

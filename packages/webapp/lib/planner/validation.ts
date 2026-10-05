@@ -90,7 +90,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
         ? `${input.unit.code} runs on a non-standard schedule (${formatPeriodList(input.offerings)}); verify it overlaps ${periodLabel(input.slotKind)}.`
         : dataIsReliable
           ? `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} for ${input.unit.year}.`
-          : `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} in the ${input.unit.year} handbook — ${expectedYear} offerings may differ.`,
+          : `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} in the ${input.unit.year} handbook - ${expectedYear} offerings may differ.`,
     }
     if (termOnly || !dataIsReliable) warnings.push(issue)
     else errors.push(issue)
@@ -155,7 +155,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
   if (input.slotCreditLoad > MAX_CREDIT_LOAD_PER_SLOT) {
     warnings.push({
       kind: "over_credit_load",
-      message: `Slot has ${input.slotCreditLoad} credit points — the standard full-time load is ${MAX_CREDIT_LOAD_PER_SLOT}.`,
+      message: `Slot has ${input.slotCreditLoad} credit points - the standard full-time load is ${MAX_CREDIT_LOAD_PER_SLOT}.`,
     })
   }
 

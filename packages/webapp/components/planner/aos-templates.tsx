@@ -74,7 +74,7 @@ export function AoSTemplates({ className }: { className?: string }) {
       </p>
       <div className="mt-2 flex flex-col gap-1.5">
         {/* Parent-level template renders alongside component cards when
-            both exist — some doubles keep one half's groups on the
+            both exist - some doubles keep one half's groups on the
             double degree itself (F2016) or share groups across halves. */}
         {course.courseUnits.length > 0 ? (
           <CourseUnitsCard courseUnits={course.courseUnits} />
@@ -161,7 +161,7 @@ function CourseUnitsCard({
           </div>
           <div className="mt-0.5 text-[10px] text-muted-foreground">
             {allCodes.length} unit{allCodes.length === 1 ? "" : "s"}
-            {groupings.length > 1 ? ` · ${groupings.length} groupings` : null}
+            {groupings.length > 1 ? ` - ${groupings.length} groupings` : null}
           </div>
         </div>
         <Button
@@ -214,8 +214,8 @@ function MissingTemplateCard({
           </div>
           <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
             {hasRequirements
-              ? "No units can be auto-filled for this component this year — pick from its requirements below or add units via search."
-              : "This degree's units come from your chosen major or specialisation — pick one above, or browse the "}
+              ? "No units can be auto-filled for this component this year - pick from its requirements below or add units via search."
+              : "This degree's units come from your chosen major or specialisation - pick one above, or browse the "}
             {hasRequirements ? null : (
               <a
                 className="underline underline-offset-2"
@@ -282,7 +282,7 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
           </div>
           <div className="mt-0.5 text-[10px] text-muted-foreground">
             {allCodes.length} unit{allCodes.length === 1 ? "" : "s"}
-            {groupings.length > 1 ? ` · ${groupings.length} groupings` : null}
+            {groupings.length > 1 ? ` - ${groupings.length} groupings` : null}
           </div>
         </div>
         <Button
