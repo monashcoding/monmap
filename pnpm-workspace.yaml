@@ -1,2 +1,20 @@
 packages:
   - "packages/*"
+
+# Pin one drizzle-orm for the whole workspace. Without it, peers such as
+# better-auth's kysely fork a second copy and the workspace stops
+# typechecking (two unrelated `SQL<unknown>` types). See .npmrc too.
+overrides:
+  drizzle-orm: 0.38.4
+
+# Install scripts pnpm may run. esbuild and unrs-resolver set up native
+# binaries; sharp backs next/image. The rest only print banners or
+# telemetry notices, so they stay off.
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - unrs-resolver
+ignoredBuiltDependencies:
+  - core-js
+  - msw
+  - protobufjs
