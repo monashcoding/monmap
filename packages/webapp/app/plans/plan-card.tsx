@@ -7,9 +7,9 @@ import posthog from "posthog-js"
 import {
   BookOpenIcon,
   ChevronRightIcon,
-  ClipboardCopyIcon,
   CopyIcon,
   DownloadIcon,
+  PrinterIcon,
   Trash2Icon,
 } from "lucide-react"
 
@@ -25,20 +25,13 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   deleteMyPlanAction,
   duplicateMyPlanAction,
   renameMyPlanAction,
 } from "@/app/actions"
 
 import type { PlanPageData } from "./page"
-import { allCodesFlat, buildCsv, downloadBlob, planSlug } from "./plan-export"
+import { buildCsv, downloadBlob, planSlug } from "@/lib/planner/plan-export"
 import { PlanPreview } from "./plan-preview"
 
 function ProgressBar({ pct }: { pct: number }) {
@@ -240,66 +233,38 @@ export function PlanCard({ data }: { data: PlanPageData }) {
               </a>
             ) : null}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 gap-1.5 text-[11px]"
-                  />
-                }
-              >
-                <DownloadIcon className="size-3.5" />
-                Export
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onClick={() => {
-                    posthog.capture("plan_exported", {
-                      format: "unit_codes",
-                      course_code: course?.code,
-                    })
-                    const codes = allCodesFlat(plan.state).join("\n")
-                    void navigator.clipboard.writeText(codes)
-                  }}
-                >
-                  <ClipboardCopyIcon className="size-3.5" />
-                  Copy unit codes
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    posthog.capture("plan_exported", {
-                      format: "csv",
-                      course_code: course?.code,
-                    })
-                    const csv = buildCsv(plan.state, plan.name)
-                    downloadBlob(csv, `${slug}.csv`, "text/csv")
-                  }}
-                >
-                  <DownloadIcon className="size-3.5" />
-                  Export as CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    posthog.capture("plan_exported", {
-                      format: "json",
-                      course_code: course?.code,
-                    })
-                    const json = JSON.stringify(
-                      { name: plan.name, state: plan.state },
-                      null,
-                      2
-                    )
-                    downloadBlob(json, `${slug}.json`, "application/json")
-                  }}
-                >
-                  <DownloadIcon className="size-3.5" />
-                  Export as JSON
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-[11px]"
+              onClick={() => {
+                posthog.capture("plan_exported", {
+                  format: "csv",
+                  course_code: course?.code,
+                })
+                downloadBlob(
+                  buildCsv(plan.state, plan.name),
+                  `${slug}.csv`,
+                  "text/csv"
+                )
+              }}
+            >
+              <DownloadIcon className="size-3.5" />
+              Export to CSV
+            </Button>
+            {/* The print layout needs the planner's unit data, so Print
+                opens the plan and prints once it has loaded. */}
+            <Link
+              href={`/?plan=${plan.id}&print=1`}
+              className={buttonVariants({
+                variant: "ghost",
+                size: "sm",
+                className: "h-8 gap-1.5 text-[11px]",
+              })}
+            >
+              <PrinterIcon className="size-3.5" />
+              Print
+            </Link>
           </div>
 
           <div className="flex items-center gap-2">

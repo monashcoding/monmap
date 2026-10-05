@@ -1,5 +1,7 @@
 "use client"
 
+import { Suspense } from "react"
+
 import type { PlanSummary } from "@/lib/db/queries"
 import type {
   PlannerCourse,
@@ -16,6 +18,7 @@ import { SaveStatusBadge } from "./save-status-badge"
 import { LeftSidebar } from "./left-sidebar"
 import { PlanGrid, PlannerDnd } from "./plan-grid"
 import { PlannerProvider, type PlannerCurrentUser } from "./planner-context"
+import { PrintOnArrival } from "./print-on-arrival"
 import { PrintSheet } from "./print-sheet"
 import { RightSidebar } from "./right-sidebar"
 import { SummaryBar } from "./summary-bar"
@@ -92,6 +95,10 @@ export function Planner(props: PlannerProps) {
         </div>
 
         <PrintSheet />
+        {/* useSearchParams needs a Suspense boundary of its own. */}
+        <Suspense fallback={null}>
+          <PrintOnArrival />
+        </Suspense>
       </WamProvider>
     </PlannerProvider>
   )

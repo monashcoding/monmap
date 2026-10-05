@@ -11,9 +11,8 @@ import {
   Redo2Icon,
   RotateCcwIcon,
   Undo2Icon,
-  UploadIcon,
 } from "lucide-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -24,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { PlannerState } from "@/lib/planner/types"
+import { buildCsv, downloadBlob, planSlug } from "@/lib/planner/plan-export"
 
 import { CreditDialog } from "./credit-dialog"
 import { PlanStartControl } from "./plan-basics"
@@ -34,8 +33,8 @@ import { useWam } from "./wam-context"
 /**
  * Plan header above the grid: the plan's name (click to rename) and
  * its start ("Starts Semester 1, 2027") and validation status on the
- * left; undo/redo, Results, Credit, Print and Export on the right,
- * with the rare Import and Reset under More. State-only operations
+ * left; undo/redo, Results, Credit and Print on the right, with
+ * Export to CSV and Reset under More. State-only operations
  * (no server round-trip).
  */
 export function LeftSidebar() {
@@ -43,7 +42,6 @@ export function LeftSidebar() {
     state,
     dispatch,
     validations,
-    switchCourse,
     flashErrors,
     plans,
     activePlanId,
@@ -80,7 +78,6 @@ export function LeftSidebar() {
     setEditingName(false)
   }, [activePlan?.name])
   const { showResults, toggleShowResults } = useWam()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [creditOpen, setCreditOpen] = useState(false)
   const creditCount = state.credit?.length ?? 0
 
@@ -97,37 +94,10 @@ export function LeftSidebar() {
   }, [dispatch])
 
   const onExport = useCallback(() => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], {
-      type: "application/json",
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `monmap-plan-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    toast.success("Plan exported")
-  }, [state])
-
-  const onImport = useCallback(
-    async (file: File) => {
-      try {
-        const text = await file.text()
-        const parsed = JSON.parse(text) as PlannerState
-        if (!parsed || !Array.isArray(parsed.years)) {
-          throw new Error("File isn't a MonMap plan")
-        }
-        dispatch({ type: "hydrate", state: parsed })
-        if (parsed.courseCode) void switchCourse(parsed.courseCode)
-        toast.success("Plan imported")
-      } catch (err) {
-        toast.error("Couldn't import plan", {
-          description: err instanceof Error ? err.message : "Unknown error",
-        })
-      }
-    },
-    [dispatch, switchCourse]
-  )
+    const name = activePlan?.name ?? "MonMap plan"
+    downloadBlob(buildCsv(state, name), `${planSlug(name)}.csv`, "text/csv")
+    toast.success("Plan exported to CSV")
+  }, [state, activePlan?.name])
 
   const onPrint = useCallback(() => {
     window.print()
@@ -242,12 +212,6 @@ export function LeftSidebar() {
           title="Print or save as PDF"
           onClick={onPrint}
         />
-        <ToolbarButton
-          icon={<UploadIcon />}
-          label="Export"
-          title="Download this plan as a file"
-          onClick={onExport}
-        />
 
         <div aria-hidden className="mx-1 h-5 w-px bg-border" />
 
@@ -265,9 +229,9 @@ export function LeftSidebar() {
             <EllipsisIcon />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+            <DropdownMenuItem onClick={onExport}>
               <DownloadIcon />
-              Import a plan file
+              Export to CSV
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onReset}>
@@ -278,17 +242,6 @@ export function LeftSidebar() {
         </DropdownMenu>
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) void onImport(f)
-          e.target.value = ""
-        }}
-      />
       <CreditDialog open={creditOpen} onOpenChangeAction={setCreditOpen} />
     </div>
   )

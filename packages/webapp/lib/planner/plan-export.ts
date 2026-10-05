@@ -1,15 +1,6 @@
 import { slotCalendarYear, slotLabel } from "@/lib/planner/timeline"
 import type { PlannerState } from "@/lib/planner/types"
 
-/** All unit codes anywhere in the plan, deduplicated. */
-export function allCodesFlat(state: PlannerState): string[] {
-  const seen = new Set<string>()
-  for (const year of state.years)
-    for (const slot of year.slots)
-      for (const code of slot.unitCodes) seen.add(code)
-  return [...seen]
-}
-
 /** Build a CSV with one row per placed unit. */
 export function buildCsv(state: PlannerState, planName: string): string {
   const rows: string[][] = [["Plan", "Year", "Semester", "Unit Code"]]
