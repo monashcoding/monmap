@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   LogOutIcon,
   MenuIcon,
-  MessageSquareTextIcon,
   NotebookPenIcon,
   ShieldCheckIcon,
 } from "lucide-react"
@@ -18,6 +17,7 @@ import { AnonymousBadge } from "@/components/anonymous-badge"
 import { HeaderLinks } from "@/components/header-links"
 import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { PRIMARY_NAV_ITEMS, PrimaryNav } from "@/components/primary-nav"
+import { ReviewAvatar } from "@/components/reviews/review-avatar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -39,6 +39,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { signOut, useSession } from "@/lib/auth-client"
+import { reviewInitials } from "@/lib/reviews/initials"
 import { cn } from "@/lib/utils"
 
 /**
@@ -245,6 +246,8 @@ function UserMenu() {
     .slice(0, 2)
     .join("")
     .toUpperCase()
+  // What reviews show instead of the name (lib/reviews/initials).
+  const reviewAs = reviewInitials(user.name, user.email)
 
   return (
     <>
@@ -273,9 +276,21 @@ function UserMenu() {
             <NotebookPenIcon className="size-3.5" />
             My grades
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push("/my-reviews")}>
-            <MessageSquareTextIcon className="size-3.5" />
-            My reviews
+          <DropdownMenuItem
+            onClick={() => router.push("/my-reviews")}
+            className="items-start py-2.5"
+          >
+            <ReviewAvatar initials={reviewAs} size={28} />
+            <span className="flex flex-col gap-0.5">
+              <span>My reviews</span>
+              <span className="max-w-52 text-[11px] leading-snug font-normal text-muted-foreground">
+                You review as{" "}
+                <span className="font-semibold text-foreground">
+                  {reviewAs}
+                </span>
+                . Others see these initials, never your name or photo.
+              </span>
+            </span>
           </DropdownMenuItem>
           {isAdmin ? (
             <DropdownMenuItem onClick={() => router.push("/admin/reviews")}>

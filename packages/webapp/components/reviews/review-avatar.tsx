@@ -23,8 +23,17 @@ export function ReviewAvatar({
     <span
       aria-hidden
       className={cn("inline-flex shrink-0 rounded-full", className)}
+      style={{ width: size, height: size }}
     >
-      <Avatar name={initials} variant="beam" colors={PALETTE} size={size} />
+      {/* A size-* class keeps parents that size bare svgs (menu items)
+          from shrinking it. */}
+      <Avatar
+        name={initials}
+        variant="beam"
+        colors={PALETTE}
+        size={size}
+        className="size-full"
+      />
     </span>
   )
 }
