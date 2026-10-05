@@ -112,12 +112,12 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         {/* One yellow pill: the 2027 note and a link to start reviewing.
             It sits beside the MonMap link, not in it, so the two links
             don't nest. */}
-        <span className="hidden items-center rounded-tag bg-primary text-[10px] leading-none font-semibold text-primary-foreground sm:inline-flex">
-          <span className="py-0.5 pr-1.5 pl-1.5">2027 update</span>
-          <span aria-hidden className="h-2.5 w-px bg-primary-foreground/30" />
+        <span className="hidden flex-col items-stretch rounded-tag bg-primary text-center text-[10px] leading-none font-semibold text-primary-foreground sm:inline-flex">
+          <span className="px-1.5 pt-1 pb-0.5">2027 update</span>
+          <span aria-hidden className="mx-1.5 h-px bg-primary-foreground/25" />
           <Link
             href="/my-reviews"
-            className="rounded-tag py-0.5 pr-1.5 pl-1.5 underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-tag px-1.5 pt-0.5 pb-1 underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
           >
             Review your units
           </Link>
