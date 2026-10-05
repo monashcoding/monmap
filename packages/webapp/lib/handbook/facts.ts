@@ -19,6 +19,17 @@ import type {
 export const isExam = (a: { name: string; type: string | null }) =>
   /exam/i.test(`${a.type ?? ""} ${a.name}`)
 
+/** The first item for each key, in order. */
+export function uniqueBy<T>(list: readonly T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>()
+  return list.filter((item) => {
+    const k = key(item)
+    if (seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
+}
+
 /**
  * The semester's total hours from the handbook's workload prose, as in
  * "total expected workload ... is 144 hours per semester". Weekly
@@ -34,12 +45,6 @@ function semesterHours(u: UnitPageData): number | null {
   return m ? Number(m[1]) : null
 }
 
-/** "144 hours" for the hero, when the handbook gives a semester total. */
-export function workloadHours(u: UnitPageData): string | null {
-  const n = semesterHours(u)
-  return n ? `${n} hours` : null
-}
-
 export function levelNumber(level: string | null): string | null {
   return level?.match(/\d+/)?.[0] ?? null
 }
@@ -47,6 +52,34 @@ export function levelNumber(level: string | null): string | null {
 /** "Bachelor Degree" from "Level 7 - Bachelor Degree / Level 7 - ...". */
 export function qualification(aqf: string | null): string | null {
   return aqf?.split(" / ")[0]?.replace(/^Level \d+ - /, "") ?? null
+}
+
+/**
+ * How many units `code` leads to: everything that lists it, or lists
+ * one of those, as a prerequisite or corequisite, as far as the graph
+ * was expanded (four steps on unit pages).
+ */
+export function downstreamReach(
+  code: string,
+  edges: ReadonlyArray<{ from: string; to: string; type: string }>
+): number {
+  const next = new Map<string, string[]>()
+  for (const e of edges) {
+    if (e.type !== "prerequisite" && e.type !== "corequisite") continue
+    if (e.from === e.to) continue
+    next.set(e.to, [...(next.get(e.to) ?? []), e.from])
+  }
+  const seen = new Set<string>([code])
+  const queue = [code]
+  while (queue.length) {
+    for (const n of next.get(queue.shift()!) ?? []) {
+      if (!seen.has(n)) {
+        seen.add(n)
+        queue.push(n)
+      }
+    }
+  }
+  return seen.size - 1
 }
 
 /** What the summary, the questions and the description need to know. */
@@ -65,13 +98,13 @@ export function unitFacts(
   const periods = [...new Set(u.offerings.map((o) => o.periodKind))]
     .filter((k) => k !== "OTHER")
     .map((k) => PERIOD_KIND_LABEL[k])
-  const hours = semesterHours(u)
+  const lvl = levelNumber(u.level)
   return {
     code: u.code,
     title: u.title,
     year: u.year,
     creditPoints: u.creditPoints,
-    level: levelNumber(u.level) ? Number(levelNumber(u.level)) : null,
+    level: lvl ? Number(lvl) : null,
     study: u.undergradPostgrad,
     school: u.school,
     periods,
@@ -86,11 +119,12 @@ export function unitFacts(
       ? exams.reduce((n, a) => n + (a.weight ?? 0), 0)
       : null,
     assessmentCount: u.assessments.length,
-    workloadHours: hours,
+    workloadHours: semesterHours(u),
     // One entry per name: a major and its minor often share a title.
-    areasOfStudy: u.areasOfStudy
-      .filter((a, i, all) => all.findIndex((b) => b.title === a.title) === i)
-      .map((a) => ({ code: a.code, title: a.title })),
+    areasOfStudy: uniqueBy(u.areasOfStudy, (a) => a.title).map((a) => ({
+      code: a.code,
+      title: a.title,
+    })),
     rating,
   }
 }
@@ -111,10 +145,13 @@ export function courseFacts(
     qualification: qualification(c.aqfLevel),
     school: c.school,
     campuses,
+    // "70; International: ..." leads with the domestic guaranteed ATAR.
     atar: c.atar?.split(";")[0]?.trim() || null,
-    aos: c.areasOfStudy
-      .filter((a, i, all) => all.findIndex((b) => b.code === a.code) === i)
-      .map((a) => ({ code: a.code, title: a.title, kind: a.kind })),
+    aos: uniqueBy(c.areasOfStudy, (a) => a.code).map((a) => ({
+      code: a.code,
+      title: a.title,
+      kind: a.kind,
+    })),
     rating,
   }
 }
@@ -129,9 +166,10 @@ export function aosFacts(a: AosPageData, rating: RatingFacts): AosFacts {
     unitCount: a.unitCodes.length,
     unitCodes: a.unitCodes,
     campuses: a.locations?.split(/,\s*/).filter(Boolean) ?? [],
-    courses: a.courses
-      .filter((c, i, all) => all.findIndex((d) => d.code === c.code) === i)
-      .map((c) => ({ code: c.code, title: c.title })),
+    courses: uniqueBy(a.courses, (c) => c.code).map((c) => ({
+      code: c.code,
+      title: c.title,
+    })),
     rating,
   }
 }

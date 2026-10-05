@@ -3,21 +3,20 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { fetchCoursePage } from "@/lib/db/handbook"
-import { entityHref, monashHandbookUrl } from "@/lib/handbook/links"
-import { isoDuration, resolveEntity } from "@/lib/handbook/resolve"
+import { isoDuration, MONASH_PROVIDER, ratingLd } from "@/lib/handbook/json-ld"
+import { AOS_KINDS } from "@/lib/handbook/kinds"
+import { monashHandbookUrl } from "@/lib/handbook/links"
+import { resolveEntity } from "@/lib/handbook/resolve"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 import { absoluteUrl } from "@/lib/seo"
 import { prefetchTreeData } from "@/lib/tree/prefetch"
 
 import {
-  BookOpenIcon,
   DoorOpenIcon,
   InfoIcon,
   ListTreeIcon,
   MapIcon,
   NetworkIcon,
-  TargetIcon,
-  UsersIcon,
 } from "lucide-react"
 
 import { EntityGraph } from "./entity-graph"
@@ -25,7 +24,7 @@ import {
   fetchEntityReviews,
   ReviewsSection,
 } from "@/components/reviews/reviews-section"
-import { JsonLd, breadcrumbLd, ratingLd } from "./json-ld"
+import { JsonLd } from "./json-ld"
 import { QuickAnswers, SegText } from "./quick-answers"
 import {
   courseDescription,
@@ -33,38 +32,33 @@ import {
   courseQuestions,
   plain,
 } from "@/lib/handbook/summary"
-import { courseFacts, qualification } from "@/lib/handbook/facts"
+import { courseFacts, uniqueBy } from "@/lib/handbook/facts"
+import { CurriculumTree, curriculumItems } from "./curriculum-tree"
 import {
-  CurriculumTree,
+  entityCrumbs,
+  entityMetadata,
+  entityYearHref,
+  YearNotice,
+  yearNote,
+} from "./entity-page"
+import { EntityCards } from "./entity-lists"
+import {
   DetailLayout,
-  EntityCards,
   EntityHero,
   FactList,
   HandbookMain,
-  Notice,
   Prose,
   Section,
   SubHeading,
   YearLinks,
-} from "./parts"
-
-const KIND_ORDER = [
-  "major",
-  "extended_major",
-  "specialisation",
-  "minor",
-  "elective",
-  "other",
-] as const
-
-const KIND_HEADING: Record<string, string> = {
-  major: "Majors",
-  extended_major: "Extended majors",
-  specialisation: "Specialisations",
-  minor: "Minors",
-  elective: "Elective studies",
-  other: "Other areas of study",
-}
+} from "./frame"
+import { loadRatings } from "./ratings"
+import {
+  ContactsSection,
+  LearningOutcomesSection,
+  OverviewSection,
+  ProseBlocks,
+} from "./sections"
 
 /** The planner, opened on this course and year. */
 export function planCourseHref(code: string, year: string): string {
@@ -80,18 +74,13 @@ export async function courseMetadata(
     fetchCoursePage(r.code, r.year),
     fetchEntityReviews("course", r.code),
   ])
-  if (!c) return { title: r.code, robots: { index: false } }
-  const yearNote = r.linkYear ? ` (${r.year} handbook)` : ""
-  const title = `${c.title} (${c.code})${yearNote}: Reviews & Course Map`
-  const description = courseDescription(courseFacts(c, reviews.summary))
-  return {
-    title,
-    description,
-    alternates: { canonical: r.canonical },
-    robots: r.indexable ? undefined : { index: false, follow: true },
-    openGraph: { title, description, type: "article", url: r.canonical },
-    twitter: { card: "summary_large_image", title, description },
-  }
+  return entityMetadata(
+    r,
+    c && {
+      title: `${c.title} (${c.code})${yearNote(r)}: Reviews & Course Map`,
+      description: courseDescription(courseFacts(c, reviews.summary)),
+    }
+  )
 }
 
 export async function CoursePage({
@@ -117,48 +106,32 @@ export async function CoursePage({
   if (!c) notFound()
 
   const { linkYear } = r
-  const yearHref = (y: string) =>
-    entityHref("course", c.code, y === r.latest ? null : y)
+  const yearHref = entityYearHref("course", c.code, r)
   const linkableUnits = new Set(c.linkableUnits)
+  const facts = courseFacts(c, reviews.summary)
 
+  const aos = uniqueBy(c.areasOfStudy, (a) => a.code)
   const aosByKind = new Map<string, PlannerAreaOfStudy[]>()
-  const seenAos = new Set<string>()
-  for (const a of c.areasOfStudy) {
-    if (seenAos.has(a.code)) continue
-    seenAos.add(a.code)
-    const list = aosByKind.get(a.kind) ?? []
-    list.push(a)
-    aosByKind.set(a.kind, list)
+  for (const a of aos) {
+    aosByKind.set(a.kind, [...(aosByKind.get(a.kind) ?? []), a])
   }
   const hasEntry = c.atar || c.entry || c.englishLanguage || c.nonYear12Entry
   const hasMore =
     c.progression || c.accreditation || c.specialNotes || c.otherInformation
-
-  const notice =
-    r.year !== r.latest ? (
-      <Notice>
-        This is the {r.year} handbook entry.{" "}
-        <a
-          href={entityHref("course", c.code)}
-          className="font-semibold underline"
-        >
-          See the {r.latest} entry
-        </a>
-        .
-      </Notice>
-    ) : r.year !== r.siteLatest ? (
-      <Notice>
-        The {r.siteLatest} handbook has no page for {c.code}. This is its{" "}
-        {r.year} entry, the latest one.
-      </Notice>
-    ) : null
-
-  // "70; International: ..." leads with the domestic guaranteed ATAR.
-  const atar = c.atar?.split(";")[0]?.trim() || null
-  const facts = courseFacts(c, reviews.summary)
-  const campuses = c.modes.length
-    ? [...new Set(c.modes.flatMap((m) => m.locations))].join(", ")
-    : c.locations
+  const campuses = facts.campuses.join(", ")
+  const { crumbs, ld: crumbsLd } = entityCrumbs(
+    [
+      { label: "Search", href: "/search" },
+      { label: "Courses", href: "/courses" },
+    ],
+    { code: c.code, name: `${c.code} ${c.title}`, canonical: r.canonical }
+  )
+  // Every list on the page shares one ratings load.
+  const ratings = await loadRatings([
+    ...c.components.map((x) => ({ kind: "course" as const, code: x.code })),
+    ...curriculumItems(c.curriculum),
+    ...aos.map((a) => ({ kind: "aos" as const, code: a.code })),
+  ])
 
   return (
     <HandbookMain year={r.year}>
@@ -166,7 +139,7 @@ export async function CoursePage({
         kind="course"
         code={c.code}
         title={c.title}
-        facts={[qualification(c.aqfLevel), c.abbreviatedName]}
+        facts={[facts.qualification, c.abbreviatedName]}
         subtitle={c.school}
         stats={[
           { label: "Credit points", value: String(c.creditPoints) },
@@ -186,15 +159,11 @@ export async function CoursePage({
                 hint: c.modes.map((m) => m.mode).join(", ") || null,
               }
             : null,
-          atar && /\d/.test(atar)
-            ? { label: "Guaranteed ATAR", value: atar }
+          facts.atar && /\d/.test(facts.atar)
+            ? { label: "Guaranteed ATAR", value: facts.atar }
             : null,
         ]}
-        breadcrumbs={[
-          { label: "Search", href: "/search" },
-          { label: "Courses", href: "/courses" },
-          { label: c.code },
-        ]}
+        breadcrumbs={crumbs}
         year={r.year}
         years={r.years}
         yearHref={yearHref}
@@ -212,7 +181,7 @@ export async function CoursePage({
           </Link>
         }
         lede={<SegText segs={courseLede(facts)} linkYear={linkYear} />}
-        notice={notice}
+        notice={<YearNotice kind="course" code={c.code} r={r} />}
       />
 
       <DetailLayout
@@ -251,24 +220,12 @@ export async function CoursePage({
             emptyText={`The ${r.year} handbook lists no units for ${c.code} itself. Pick an area of study to see its units.`}
             course={{
               code: c.code,
-              aosOptions: c.areasOfStudy
-                .filter(
-                  (a, i, all) => all.findIndex((b) => b.code === a.code) === i
-                )
-                .map((a) => ({ code: a.code, title: a.title, kind: a.kind })),
+              aosOptions: facts.aos,
             }}
           />
         </Section>
 
-        {c.overview ? (
-          <Section clamp id="overview" title="Overview" icon={BookOpenIcon}>
-            <Prose
-              html={c.overview}
-              linkYear={linkYear}
-              className="text-[15px]"
-            />
-          </Section>
-        ) : null}
+        <OverviewSection html={c.overview} linkYear={linkYear} />
 
         {c.curriculum.length > 0 || c.requirements ? (
           <Section id="structure" title="Course structure" icon={ListTreeIcon}>
@@ -284,6 +241,7 @@ export async function CoursePage({
                       note: x.componentTitle,
                     }))}
                     linkYear={linkYear}
+                    ratings={ratings}
                   />
                 </div>
               ) : null}
@@ -292,6 +250,7 @@ export async function CoursePage({
                   nodes={c.curriculum}
                   linkYear={linkYear}
                   linkableUnits={linkableUnits}
+                  ratings={ratings}
                 />
               ) : (
                 <Prose html={c.requirements} linkYear={linkYear} />
@@ -322,19 +281,20 @@ export async function CoursePage({
         {aosByKind.size > 0 ? (
           <Section id="areas-of-study" title="Areas of study" icon={MapIcon}>
             <div className="flex flex-col gap-6">
-              {KIND_ORDER.filter((k) => aosByKind.has(k)).map((k) => (
-                <div key={k}>
+              {AOS_KINDS.filter((k) => aosByKind.has(k.id)).map((k) => (
+                <div key={k.id}>
                   <SubHeading>
-                    {KIND_HEADING[k]} ({aosByKind.get(k)!.length})
+                    {k.plural} ({aosByKind.get(k.id)!.length})
                   </SubHeading>
                   <EntityCards
-                    rows={aosByKind.get(k)!.map((a) => ({
+                    rows={aosByKind.get(k.id)!.map((a) => ({
                       kind: "aos" as const,
                       code: a.code,
                       title: a.title,
                       note: a.scope ?? null,
                     }))}
                     linkYear={linkYear}
+                    ratings={ratings}
                   />
                 </div>
               ))}
@@ -342,32 +302,17 @@ export async function CoursePage({
           </Section>
         ) : null}
 
-        {c.learningOutcomes.length > 0 ? (
-          <Section
-            clamp
-            id="outcomes"
-            title="Learning outcomes"
-            icon={TargetIcon}
-          >
-            {c.outcomesIntro ? (
-              <Prose
-                html={c.outcomesIntro}
-                linkYear={linkYear}
-                className="mb-4 text-muted-foreground"
-              />
-            ) : null}
-            <ol className="flex flex-col gap-3">
-              {c.learningOutcomes.map((o, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold tabular-nums">
-                    {i + 1}
-                  </span>
-                  <Prose html={o.html} linkYear={linkYear} className="pt-0.5" />
-                </li>
-              ))}
-            </ol>
-          </Section>
-        ) : null}
+        <LearningOutcomesSection
+          outcomes={c.learningOutcomes}
+          intro={
+            <Prose
+              html={c.outcomesIntro}
+              linkYear={linkYear}
+              className="mb-4 text-muted-foreground"
+            />
+          }
+          linkYear={linkYear}
+        />
 
         {hasEntry ? (
           <Section
@@ -385,24 +330,14 @@ export async function CoursePage({
                   </p>
                 </div>
               ) : null}
-              {c.nonYear12Entry ? (
-                <div>
-                  <SubHeading>Other applicants</SubHeading>
-                  <Prose html={c.nonYear12Entry} linkYear={linkYear} />
-                </div>
-              ) : null}
-              {c.englishLanguage ? (
-                <div>
-                  <SubHeading>English language</SubHeading>
-                  <Prose html={c.englishLanguage} linkYear={linkYear} />
-                </div>
-              ) : null}
-              {c.entry ? (
-                <div>
-                  <SubHeading>Pathways</SubHeading>
-                  <Prose html={c.entry} linkYear={linkYear} />
-                </div>
-              ) : null}
+              <ProseBlocks
+                blocks={[
+                  ["Other applicants", c.nonYear12Entry],
+                  ["English language", c.englishLanguage],
+                  ["Pathways", c.entry],
+                ]}
+                linkYear={linkYear}
+              />
             </div>
           </Section>
         ) : null}
@@ -410,52 +345,20 @@ export async function CoursePage({
         {hasMore ? (
           <Section clamp id="more" title="More information" icon={InfoIcon}>
             <div className="flex flex-col gap-6">
-              {c.progression ? (
-                <div>
-                  <SubHeading>Progression to further studies</SubHeading>
-                  <Prose html={c.progression} linkYear={linkYear} />
-                </div>
-              ) : null}
-              {c.accreditation ? (
-                <div>
-                  <SubHeading>Professional accreditation</SubHeading>
-                  <Prose html={c.accreditation} linkYear={linkYear} />
-                </div>
-              ) : null}
-              {c.specialNotes ? (
-                <div>
-                  <SubHeading>Notes for students</SubHeading>
-                  <Prose html={c.specialNotes} linkYear={linkYear} />
-                </div>
-              ) : null}
-              {c.otherInformation ? (
-                <div>
-                  <SubHeading>Other information</SubHeading>
-                  <Prose html={c.otherInformation} linkYear={linkYear} />
-                </div>
-              ) : null}
+              <ProseBlocks
+                blocks={[
+                  ["Progression to further studies", c.progression],
+                  ["Professional accreditation", c.accreditation],
+                  ["Notes for students", c.specialNotes],
+                  ["Other information", c.otherInformation],
+                ]}
+                linkYear={linkYear}
+              />
             </div>
           </Section>
         ) : null}
 
-        {c.contacts.length > 0 ? (
-          <Section id="contacts" title="Contacts" icon={UsersIcon}>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              {c.contacts.map((x) => (
-                <div key={x.role}>
-                  <dt className="mb-1 text-xs text-muted-foreground">
-                    {x.role.replace(/\(s\)$/, "s")}
-                  </dt>
-                  {x.names.map((n) => (
-                    <dd key={n} className="text-sm font-medium">
-                      {n}
-                    </dd>
-                  ))}
-                </div>
-              ))}
-            </dl>
-          </Section>
-        ) : null}
+        <ContactsSection contacts={c.contacts} />
 
         <QuickAnswers items={courseQuestions(facts)} linkYear={linkYear} />
 
@@ -463,8 +366,8 @@ export async function CoursePage({
           <div className="grid gap-x-10 md:grid-cols-2">
             <FactList
               rows={[
-                qualification(c.aqfLevel)
-                  ? { label: "Qualification", value: qualification(c.aqfLevel) }
+                facts.qualification
+                  ? { label: "Qualification", value: facts.qualification }
                   : null,
                 c.aqfLevel
                   ? {
@@ -527,26 +430,18 @@ export async function CoursePage({
             "@type": ["EducationalOccupationalProgram", "Course"],
             name: c.title,
             identifier: c.code,
-            programType: qualification(c.aqfLevel) ?? undefined,
+            programType: facts.qualification ?? undefined,
             // MonMap's own summary: always present, never the handbook copy.
             description: plain(courseLede(facts)),
             url: absoluteUrl(r.canonical),
             timeToComplete: isoDuration(c.fullTime),
             numberOfCredits: c.creditPoints || undefined,
             educationalCredentialAwarded: c.awards[0] ?? c.title,
-            provider: {
-              "@type": "CollegeOrUniversity",
-              name: "Monash University",
-              sameAs: "https://www.monash.edu/",
-            },
+            provider: MONASH_PROVIDER,
             sameAs: monashHandbookUrl("course", c.code, r.year),
             ...ratingLd(reviews.summary, reviews.reviews),
           },
-          breadcrumbLd([
-            { name: "Search", path: "/search" },
-            { name: "Courses", path: "/courses" },
-            { name: `${c.code} ${c.title}`, path: r.canonical },
-          ]),
+          crumbsLd,
         ]}
       />
     </HandbookMain>

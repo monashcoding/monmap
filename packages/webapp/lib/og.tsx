@@ -1,9 +1,8 @@
 /**
- * Shared shell for OG images. Only the site-wide card at
- * app/opengraph-image.tsx renders it today (the per-entity cards went
- * away with the /units/[code] and /courses/[code] pages), but the
- * shell stays layout-agnostic: headline text, subtitle and chips are
- * all props.
+ * Shared shell for OG images: the site-wide card at
+ * app/opengraph-image.tsx and the unit, course and area of study cards
+ * in lib/og-entity.tsx. Headline text, subtitle and chips are all
+ * props.
  *
  * Returns a `ReactElement` plus the font byte arrays — the calling
  * route is expected to wrap with `new ImageResponse(...)` so the
@@ -31,7 +30,20 @@ const MONASH_YELLOW_INK = "#252525"
 // ttf/otf/woff (not woff2), hence the .ttf files.
 const FONT_DIR = join(process.cwd(), "public/fonts")
 
-export async function loadOgAssets() {
+let assets: ReturnType<typeof readOgAssets> | undefined
+
+/**
+ * The logo and fonts, read once per process. A failed read isn't kept,
+ * so the next render tries again.
+ */
+export function loadOgAssets() {
+  return (assets ??= readOgAssets().catch((e: unknown) => {
+    assets = undefined
+    throw e
+  }))
+}
+
+async function readOgAssets() {
   const [logoBytes, poppinsMedium, poppinsBold, poppinsBlack] =
     await Promise.all([
       readFile(join(process.cwd(), "public/brand-logo.png")),

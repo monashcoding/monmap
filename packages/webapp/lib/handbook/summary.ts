@@ -12,7 +12,10 @@
  * page gets filler.
  */
 import type { EntityKind } from "./links.ts"
+import { aosKind, aosKindWord } from "./kinds.ts"
 import type { RequisiteContainer } from "../planner/types.ts"
+import { REVIEW_AXES } from "../reviews/axes.ts"
+import { reviewCount } from "../reviews/format.ts"
 
 /** A piece of text, or a link to a unit, course or area of study. */
 export type Seg = string | { kind: EntityKind; code: string; text?: string }
@@ -79,19 +82,19 @@ const plural = (n: number, one: string, many = `${one}s`) =>
   `${n.toLocaleString("en-AU")} ${n === 1 ? one : many}`
 
 export const ratingText = (r: RatingFacts) =>
-  `${(r.average ?? 0).toFixed(1)} out of 5 from ${plural(r.count, "review")}`
+  `${(r.average ?? 0).toFixed(1)} out of 5 from ${reviewCount(r.count)}`
 
-const SCALE_WORDS: Record<string, readonly string[]> = {
-  difficulty: ["very easy", "easy", "moderate", "hard", "very hard"],
-  workload: ["very light", "light", "moderate", "heavy", "very heavy"],
-}
-
-/** "hard" for a mean difficulty of 3.9, or null with no ratings. */
+/**
+ * "hard" for a mean difficulty of 3.9, or null with no ratings. The
+ * words are the review form's steps for a unit's scale axes.
+ */
 export function scaleWord(r: RatingFacts, axis: string): string | null {
   const a = r.axes[axis]
-  const words = SCALE_WORDS[axis]
-  if (!a || a.count === 0 || !words) return null
-  return words[Math.min(4, Math.max(0, Math.round(a.average) - 1))]
+  const steps = REVIEW_AXES.unit.find((x) => x.id === axis)?.steps
+  if (!a || a.count === 0 || !steps) return null
+  return steps[
+    Math.min(4, Math.max(0, Math.round(a.average) - 1))
+  ].toLowerCase()
 }
 
 /**
@@ -406,23 +409,27 @@ export interface CourseFacts {
   rating: RatingFacts
 }
 
-const KIND_WORD: Record<string, [string, string]> = {
-  major: ["major", "majors"],
-  extended_major: ["extended major", "extended majors"],
-  minor: ["minor", "minors"],
-  specialisation: ["specialisation", "specialisations"],
-  elective: ["elective stream", "elective streams"],
-}
+/**
+ * The kinds a course lede counts, in its own order (minors before
+ * specialisations, unlike the page's list). Other areas of study
+ * aren't counted.
+ */
+const COUNTED_KINDS = [
+  "major",
+  "extended_major",
+  "minor",
+  "specialisation",
+  "elective",
+] as const
 
+/** "4 majors", "2 minors", ... */
 function aosCounts(aos: CourseFacts["aos"]): string[] {
   const n = new Map<string, number>()
   for (const a of aos) n.set(a.kind, (n.get(a.kind) ?? 0) + 1)
-  return Object.keys(KIND_WORD)
-    .filter((k) => n.get(k))
-    .map((k) => {
-      const c = n.get(k)!
-      return `${c} ${KIND_WORD[k][c === 1 ? 0 : 1]}`
-    })
+  return COUNTED_KINDS.filter((k) => n.get(k)).map((k) => {
+    const c = n.get(k)!
+    return `${c} ${aosKind(k)!.word[c === 1 ? 0 : 1]}`
+  })
 }
 
 export function courseLede(f: CourseFacts): Seg[] {
@@ -539,9 +546,7 @@ export interface AosFacts {
 }
 
 export function aosLede(f: AosFacts): Seg[] {
-  const kind = f.kind
-    ? (KIND_WORD[f.kind]?.[0] ?? "area of study")
-    : "area of study"
+  const kind = aosKindWord(f.kind)
   const out: Seg[] = [
     `${f.title} (${f.code}) is a${/^[aeiou]/.test(kind) ? "n" : ""} ${kind}`,
     f.creditPoints ? ` worth ${f.creditPoints} credit points` : "",
@@ -605,9 +610,7 @@ export function aosQuestions(f: AosFacts): QA[] {
 }
 
 export function aosDescription(f: AosFacts): string {
-  const kind = f.kind
-    ? (KIND_WORD[f.kind]?.[0] ?? "area of study")
-    : "area of study"
+  const kind = aosKindWord(f.kind)
   return sentences([
     `${f.title} ${kind} (${f.code}) at Monash${ratedBy(f.rating)}.`,
     f.unitCount
@@ -647,32 +650,4 @@ function fit(text: string, max: number): string {
   if (t.length <= max) return t
   const cut = t.slice(0, max - 1)
   return `${cut.slice(0, cut.lastIndexOf(" "))}…`
-}
-
-/**
- * How many units `code` leads to: everything that lists it, or lists
- * one of those, as a prerequisite or corequisite, as far as the graph
- * was expanded (four steps on unit pages).
- */
-export function downstreamReach(
-  code: string,
-  edges: ReadonlyArray<{ from: string; to: string; type: string }>
-): number {
-  const next = new Map<string, string[]>()
-  for (const e of edges) {
-    if (e.type !== "prerequisite" && e.type !== "corequisite") continue
-    if (e.from === e.to) continue
-    next.set(e.to, [...(next.get(e.to) ?? []), e.from])
-  }
-  const seen = new Set<string>([code])
-  const queue = [code]
-  while (queue.length) {
-    for (const n of next.get(queue.shift()!) ?? []) {
-      if (!seen.has(n)) {
-        seen.add(n)
-        queue.push(n)
-      }
-    }
-  }
-  return seen.size - 1
 }

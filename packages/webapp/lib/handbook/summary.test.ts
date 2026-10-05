@@ -4,6 +4,7 @@ import { test } from "node:test"
 import {
   aosDescription,
   courseDescription,
+  courseLede,
   plain,
   ruleSegs,
   scaleWord,
@@ -165,4 +166,44 @@ test("descriptions fit in 160 characters", () => {
       rating: NO_RATING,
     }).length <= 160
   )
+})
+
+test("scale words are the review form's steps, lowercased", () => {
+  const rated = (average: number): RatingFacts => ({
+    ...NO_RATING,
+    axes: {
+      difficulty: { average, count: 3 },
+      workload: { average, count: 3 },
+    },
+  })
+  assert.equal(scaleWord(rated(3.9), "difficulty"), "hard")
+  assert.equal(scaleWord(rated(1), "workload"), "very light")
+  assert.equal(scaleWord(rated(5.4), "workload"), "very heavy")
+  assert.equal(scaleWord(rated(3), "overall"), null)
+})
+
+test("a course lede counts its areas of study by kind", () => {
+  const aos = [
+    { code: "M1", title: "M1", kind: "major" },
+    { code: "M2", title: "M2", kind: "major" },
+    { code: "S1", title: "S1", kind: "specialisation" },
+    { code: "N1", title: "N1", kind: "minor" },
+    { code: "O1", title: "O1", kind: "other" },
+  ]
+  const lede = plain(
+    courseLede({
+      code: "C2001",
+      title: "Bachelor of Computer Science",
+      year: "2027",
+      creditPoints: 144,
+      duration: "3 years",
+      qualification: "Bachelor Degree",
+      school: null,
+      campuses: [],
+      atar: null,
+      aos,
+      rating: NO_RATING,
+    })
+  )
+  assert.match(lede, /choose from 2 majors, 1 minor and 1 specialisation\./)
 })

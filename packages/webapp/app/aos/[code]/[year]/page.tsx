@@ -4,7 +4,6 @@ import { AosPage, aosMetadata } from "@/components/handbook/aos-page"
 
 // Same caching as the latest-year page; see ../page.tsx.
 export const revalidate = 86400
-export const dynamicParams = true
 export function generateStaticParams() {
   return []
 }

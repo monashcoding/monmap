@@ -76,7 +76,7 @@ another copy of `/`). The year picker uses the router.
   unlocks, offerings), never the handbook synopsis. Sentences are
   dropped whole to fit 160 characters.
 
-Monash's own prose (`Prose` in `components/handbook/parts.tsx`) carries
+Monash's own prose (`Prose` in `components/handbook/frame.tsx`) carries
 `data-nosnippet`, so search results quote MonMap's summary instead.
 
 ## Structured data

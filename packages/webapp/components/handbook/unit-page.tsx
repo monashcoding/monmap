@@ -1,21 +1,16 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import {
-  AOS_KIND_LABEL,
-  fetchUnitPage,
-  kindFromCode,
-  type UnitPageData,
-} from "@/lib/db/handbook"
-import { entityHref, monashHandbookUrl } from "@/lib/handbook/links"
+import { fetchUnitPage, type UnitPageData } from "@/lib/db/handbook"
+import { MONASH_PROVIDER, ratingLd } from "@/lib/handbook/json-ld"
+import { aosKind, kindFromCode } from "@/lib/handbook/kinds"
+import { monashHandbookUrl } from "@/lib/handbook/links"
 import { resolveEntity } from "@/lib/handbook/resolve"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
 import { absoluteUrl } from "@/lib/seo"
 import { prefetchTreeData } from "@/lib/tree/prefetch"
 import { cn } from "@/lib/utils"
 
 import {
-  BookOpenIcon,
   CalendarDaysIcon,
   ClipboardCheckIcon,
   ClockIcon,
@@ -24,55 +19,57 @@ import {
   LockIcon,
   MapIcon,
   NetworkIcon,
-  TargetIcon,
-  UsersIcon,
 } from "lucide-react"
 
 import { EntityGraph } from "./entity-graph"
-import { JsonLd, breadcrumbLd, ratingLd } from "./json-ld"
+import { JsonLd } from "./json-ld"
 import { QuickAnswers, SegText } from "./quick-answers"
 import {
+  downstreamReach,
   isExam,
   levelNumber,
   unitFacts,
-  workloadHours,
 } from "@/lib/handbook/facts"
 import {
-  downstreamReach,
   plain,
   ruleSegs,
   unitDescription,
   unitLede,
   unitQuestions,
+  type UnitFacts,
 } from "@/lib/handbook/summary"
 import {
   fetchEntityReviews,
   ReviewsSection,
 } from "@/components/reviews/reviews-section"
 import {
+  entityCrumbs,
+  entityMetadata,
+  entityYearHref,
+  YearNotice,
+  yearNote,
+} from "./entity-page"
+import { EntityCards, EntityRows } from "./entity-lists"
+import {
   DetailLayout,
-  EntityCards,
   EntityHero,
-  EntityRows,
   FactList,
   HandbookMain,
-  Notice,
   Prose,
-  RequisiteRules,
   Section,
   SubHeading,
   YearLinks,
-} from "./parts"
+} from "./frame"
+import { loadRatings, type Ratings } from "./ratings"
+import { requisiteItems, RequisiteRules } from "./requisite-rules"
+import {
+  ContactsSection,
+  LearningOutcomesSection,
+  OverviewSection,
+} from "./sections"
 
-function periodSummary(u: UnitPageData): string | null {
-  const kinds = [...new Set(u.offerings.map((o) => o.periodKind))].filter(
-    (k) => k !== "OTHER"
-  )
-  return kinds.length ? kinds.map((k) => PERIOD_KIND_LABEL[k]).join(", ") : null
-}
-
-function campusSummary(u: UnitPageData): string | null {
-  const campuses = [...new Set(u.offerings.flatMap((o) => o.location ?? []))]
+/** "Clayton, Caulfield, Peninsula and 2 more", or null with none. */
+function campusSummary(campuses: string[]): string | null {
   if (campuses.length === 0) return null
   return campuses.length > 3
     ? `${campuses.slice(0, 3).join(", ")} and ${campuses.length - 3} more`
@@ -80,24 +77,21 @@ function campusSummary(u: UnitPageData): string | null {
 }
 
 /** "Exam 60%" or "No exam", the question students ask first. */
-function assessmentStat(u: UnitPageData) {
-  if (u.assessments.length === 0) return null
-  const exams = u.assessments.filter(isExam)
-  const examWeight = exams.reduce((n, a) => n + (a.weight ?? 0), 0)
-  const others = u.assessments.length - exams.length
-  return exams.length > 0
-    ? {
-        label: "Assessment",
-        value: examWeight > 0 ? `Exam ${examWeight}%` : "Has an exam",
-        hint: others
-          ? `and ${others} other task${others === 1 ? "" : "s"}`
-          : null,
-      }
-    : {
-        label: "Assessment",
-        value: "No exam",
-        hint: `${u.assessments.length} task${u.assessments.length === 1 ? "" : "s"}`,
-      }
+function assessmentStat(u: UnitPageData, f: UnitFacts) {
+  if (f.assessmentCount === 0) return null
+  if (f.examWeight == null) {
+    return {
+      label: "Assessment",
+      value: "No exam",
+      hint: `${f.assessmentCount} task${f.assessmentCount === 1 ? "" : "s"}`,
+    }
+  }
+  const others = f.assessmentCount - u.assessments.filter(isExam).length
+  return {
+    label: "Assessment",
+    value: f.examWeight > 0 ? `Exam ${f.examWeight}%` : "Has an exam",
+    hint: others ? `and ${others} other task${others === 1 ? "" : "s"}` : null,
+  }
 }
 
 const MODE_LABEL: Record<string, string> = {
@@ -135,20 +129,15 @@ export async function unitMetadata(
     fetchUnitPage(r.code, r.year),
     fetchEntityReviews("unit", r.code),
   ])
-  if (!u) return { title: r.code, robots: { index: false } }
-  const yearNote = r.linkYear ? ` (${r.year} handbook)` : ""
   // The searches this page answers: "FIT2004 review", "FIT2004
   // prerequisites". The facts in the description are MonMap's own.
-  const title = `${u.code} ${u.title}${yearNote}: Reviews & Prerequisites`
-  const description = unitDescription(unitFacts(u, reviews.summary, 0))
-  return {
-    title,
-    description,
-    alternates: { canonical: r.canonical },
-    robots: r.indexable ? undefined : { index: false, follow: true },
-    openGraph: { title, description, type: "article", url: r.canonical },
-    twitter: { card: "summary_large_image", title, description },
-  }
+  return entityMetadata(
+    r,
+    u && {
+      title: `${u.code} ${u.title}${yearNote(r)}: Reviews & Prerequisites`,
+      description: unitDescription(unitFacts(u, reviews.summary, 0)),
+    }
+  )
 }
 
 export async function UnitPage({
@@ -180,9 +169,31 @@ export async function UnitPage({
     reviews.summary,
     downstreamReach(u.code, graph.graph.edges)
   )
-  const yearHref = (y: string) =>
-    entityHref("unit", u.code, y === r.latest ? null : y)
+  const yearHref = entityYearHref("unit", u.code, r)
   const lvl = levelNumber(u.level)
+  const { crumbs, ld: crumbsLd } = entityCrumbs(
+    [
+      { label: "Search", href: "/search" },
+      { label: "Units", href: "/search?type=units", ldPath: "/search" },
+      ...(lvl
+        ? [
+            {
+              label: `Level ${lvl}`,
+              href: `/search?type=units&level=${lvl}`,
+              ldPath: null,
+            },
+          ]
+        : []),
+    ],
+    { code: u.code, name: `${u.code} ${u.title}`, canonical: r.canonical }
+  )
+  // Every list on the page shares one ratings load.
+  const ratings = await loadRatings([
+    ...requisiteItems(u.requisites),
+    ...u.equivalents.map((code) => ({ kind: "unit" as const, code })),
+    ...u.unlocks.map((x) => ({ kind: "unit" as const, code: x.code })),
+    ...u.areasOfStudy.map((a) => ({ kind: "aos" as const, code: a.code })),
+  ])
 
   const hasRules = u.requisites.length > 0 || u.enrolmentRules.length > 0
   const hasGraph = graph.graph.nodes.length > 1
@@ -193,25 +204,6 @@ export async function UnitPage({
     u.teachingApproaches.length > 0
   const weighted = u.assessments.filter((a) => (a.weight ?? 0) > 0)
   const weightTotal = weighted.reduce((n, a) => n + (a.weight ?? 0), 0)
-
-  const notice =
-    r.year !== r.latest ? (
-      <Notice>
-        This is the {r.year} handbook entry.{" "}
-        <a
-          href={entityHref("unit", u.code)}
-          className="font-semibold underline"
-        >
-          See the {r.latest} entry
-        </a>
-        .
-      </Notice>
-    ) : r.year !== r.siteLatest ? (
-      <Notice>
-        The {r.siteLatest} handbook has no page for {u.code}. This is its{" "}
-        {r.year} entry, the latest one.
-      </Notice>
-    ) : null
 
   return (
     <HandbookMain year={r.year}>
@@ -225,33 +217,23 @@ export async function UnitPage({
           { label: "Credit points", value: String(u.creditPoints) },
           {
             label: `Offered in ${r.year}`,
-            value:
-              periodSummary(u) ??
-              (u.offerings.length ? "Other periods" : "Not offered"),
-            hint: campusSummary(u),
+            value: facts.periods.length
+              ? facts.periods.join(", ")
+              : u.offerings.length
+                ? "Other periods"
+                : "Not offered",
+            hint: campusSummary(facts.campuses),
           },
-          assessmentStat(u),
-          workloadHours(u)
+          assessmentStat(u, facts),
+          facts.workloadHours
             ? {
                 label: "Workload",
-                value: workloadHours(u)!,
+                value: `${facts.workloadHours} hours`,
                 hint: "per semester",
               }
             : null,
         ]}
-        breadcrumbs={[
-          { label: "Search", href: "/search" },
-          { label: "Units", href: "/search?type=units" },
-          ...(lvl
-            ? [
-                {
-                  label: `Level ${lvl}`,
-                  href: `/search?type=units&level=${lvl}`,
-                },
-              ]
-            : []),
-          { label: u.code },
-        ]}
+        breadcrumbs={crumbs}
         year={r.year}
         years={r.years}
         yearHref={yearHref}
@@ -264,7 +246,7 @@ export async function UnitPage({
             linkableUnits={linkable}
           />
         }
-        notice={notice}
+        notice={<YearNotice kind="unit" code={u.code} r={r} />}
       />
 
       <DetailLayout
@@ -319,6 +301,7 @@ export async function UnitPage({
                       titles={u.titles}
                       linkable={linkable}
                       linkYear={linkYear}
+                      ratings={ratings}
                     />
                   ) : (
                     <p className="text-sm text-muted-foreground">
@@ -343,6 +326,7 @@ export async function UnitPage({
                         u={u}
                         linkable={linkable}
                         linkYear={linkYear}
+                        ratings={ratings}
                       />
                     </>
                   ) : (
@@ -381,6 +365,7 @@ export async function UnitPage({
                       linkable: linkable.has(c),
                     }))}
                     linkYear={linkYear}
+                    ratings={ratings}
                   />
                 </div>
               ) : null}
@@ -388,15 +373,7 @@ export async function UnitPage({
           </Section>
         ) : null}
 
-        {u.synopsis ? (
-          <Section clamp id="overview" title="Overview" icon={BookOpenIcon}>
-            <Prose
-              html={u.synopsis}
-              linkYear={linkYear}
-              className="text-[15px]"
-            />
-          </Section>
-        ) : null}
+        <OverviewSection html={u.synopsis} linkYear={linkYear} />
 
         <Section
           id="offerings"
@@ -518,28 +495,15 @@ export async function UnitPage({
           </Section>
         ) : null}
 
-        {u.learningOutcomes.length > 0 ? (
-          <Section
-            clamp
-            id="outcomes"
-            title="Learning outcomes"
-            icon={TargetIcon}
-          >
+        <LearningOutcomesSection
+          outcomes={u.learningOutcomes}
+          intro={
             <p className="mb-4 text-sm text-muted-foreground">
               When you finish this unit, you should be able to:
             </p>
-            <ol className="flex flex-col gap-3">
-              {u.learningOutcomes.map((o, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold tabular-nums">
-                    {i + 1}
-                  </span>
-                  <Prose html={o.html} linkYear={linkYear} className="pt-0.5" />
-                </li>
-              ))}
-            </ol>
-          </Section>
-        ) : null}
+          }
+          linkYear={linkYear}
+        />
 
         {hasDelivery ? (
           <Section id="workload" title="Workload and teaching" icon={ClockIcon}>
@@ -616,40 +580,21 @@ export async function UnitPage({
               handbook.
             </p>
             <EntityCards
-              rows={u.areasOfStudy.map((a) => {
-                const kind = kindFromCode(a.code)
-                return {
-                  kind: "aos" as const,
-                  code: a.code,
-                  title: a.title,
-                  note: [kind ? AOS_KIND_LABEL[kind] : null, a.grouping.trim()]
-                    .filter(Boolean)
-                    .join(", "),
-                }
-              })}
+              rows={u.areasOfStudy.map((a) => ({
+                kind: "aos" as const,
+                code: a.code,
+                title: a.title,
+                note: [aosKind(kindFromCode(a.code))?.label, a.grouping.trim()]
+                  .filter(Boolean)
+                  .join(", "),
+              }))}
               linkYear={linkYear}
+              ratings={ratings}
             />
           </Section>
         ) : null}
 
-        {u.contacts.length > 0 ? (
-          <Section id="contacts" title="Contacts" icon={UsersIcon}>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              {u.contacts.map((c) => (
-                <div key={c.role}>
-                  <dt className="mb-1 text-xs text-muted-foreground">
-                    {c.role.replace(/\(s\)$/, "s")}
-                  </dt>
-                  {c.names.map((n) => (
-                    <dd key={n} className="text-sm font-medium">
-                      {n}
-                    </dd>
-                  ))}
-                </div>
-              ))}
-            </dl>
-          </Section>
-        ) : null}
+        <ContactsSection contacts={u.contacts} />
 
         <QuickAnswers
           items={unitQuestions(facts)}
@@ -720,11 +665,7 @@ export async function UnitPage({
             inLanguage: "en-AU",
             educationalLevel: u.undergradPostgrad ?? undefined,
             numberOfCredits: u.creditPoints || undefined,
-            provider: {
-              "@type": "CollegeOrUniversity",
-              name: "Monash University",
-              sameAs: "https://www.monash.edu/",
-            },
+            provider: MONASH_PROVIDER,
             sameAs: monashHandbookUrl("unit", u.code, r.year),
             coursePrerequisites: facts.prerequisites
               ? plain(ruleSegs(facts.prerequisites) ?? [])
@@ -732,11 +673,7 @@ export async function UnitPage({
             hasCourseInstance: courseInstancesLd(u, facts.workloadHours),
             ...ratingLd(reviews.summary, reviews.reviews),
           },
-          breadcrumbLd([
-            { name: "Search", path: "/search" },
-            { name: "Units", path: "/search" },
-            { name: `${u.code} ${u.title}`, path: r.canonical },
-          ]),
+          crumbsLd,
         ]}
       />
     </HandbookMain>
@@ -773,10 +710,12 @@ function UnlockList({
   u,
   linkable,
   linkYear,
+  ratings,
 }: {
   u: UnitPageData
   linkable: ReadonlySet<string>
   linkYear: string | null
+  ratings: Ratings
 }) {
   const rows = u.unlocks.map((x) => ({
     kind: "unit" as const,
@@ -785,15 +724,25 @@ function UnlockList({
     note: x.type === "corequisite" ? "Coreq" : null,
     linkable: linkable.has(x.code),
   }))
-  if (rows.length <= 8) return <EntityRows rows={rows} linkYear={linkYear} />
+  if (rows.length <= 8) {
+    return <EntityRows rows={rows} linkYear={linkYear} ratings={ratings} />
+  }
   return (
     <div className="flex flex-col gap-2">
-      <EntityRows rows={rows.slice(0, 8)} linkYear={linkYear} />
+      <EntityRows
+        rows={rows.slice(0, 8)}
+        linkYear={linkYear}
+        ratings={ratings}
+      />
       <details className="group">
         <summary className="cursor-pointer text-sm text-info-foreground underline-offset-2 group-open:mb-2 hover:underline">
           Show {rows.length - 8} more
         </summary>
-        <EntityRows rows={rows.slice(8)} linkYear={linkYear} />
+        <EntityRows
+          rows={rows.slice(8)}
+          linkYear={linkYear}
+          ratings={ratings}
+        />
       </details>
     </div>
   )

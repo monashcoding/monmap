@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { SearchIcon } from "lucide-react"
 
 import { AppHeader } from "@/components/app-header"
-import { KindBadge } from "@/components/handbook/parts"
+import { KindBadge } from "@/components/handbook/frame"
 import { ReviewAvatar } from "@/components/reviews/review-avatar"
 import { Stars } from "@/components/reviews/stars"
 import { getCurrentUser } from "@/lib/auth-server"

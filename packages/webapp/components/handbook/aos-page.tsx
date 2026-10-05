@@ -1,21 +1,20 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { AOS_KIND_LABEL, fetchAosPage } from "@/lib/db/handbook"
-import { entityHref, monashHandbookUrl } from "@/lib/handbook/links"
+import { fetchAosPage } from "@/lib/db/handbook"
+import { MONASH_PROVIDER, ratingLd } from "@/lib/handbook/json-ld"
+import { aosKind, aosKindLabel } from "@/lib/handbook/kinds"
+import { monashHandbookUrl } from "@/lib/handbook/links"
 import { resolveEntity } from "@/lib/handbook/resolve"
 import { absoluteUrl } from "@/lib/seo"
 import { prefetchGraphForSeeds } from "@/lib/tree/prefetch"
 
 import {
-  BookOpenIcon,
   GraduationCapIcon,
   InfoIcon,
   ListTreeIcon,
   NetworkIcon,
   NotebookPenIcon,
-  TargetIcon,
-  UsersIcon,
 } from "lucide-react"
 
 import { EntityGraph } from "./entity-graph"
@@ -23,7 +22,7 @@ import {
   fetchEntityReviews,
   ReviewsSection,
 } from "@/components/reviews/reviews-section"
-import { JsonLd, breadcrumbLd, ratingLd } from "./json-ld"
+import { JsonLd } from "./json-ld"
 import { QuickAnswers, SegText } from "./quick-answers"
 import {
   aosDescription,
@@ -32,18 +31,30 @@ import {
   plain,
 } from "@/lib/handbook/summary"
 import { aosFacts } from "@/lib/handbook/facts"
+import { CurriculumTree, curriculumItems } from "./curriculum-tree"
 import {
-  CurriculumTree,
+  entityCrumbs,
+  entityMetadata,
+  entityYearHref,
+  YearNotice,
+  yearNote,
+} from "./entity-page"
+import { EntityCards } from "./entity-lists"
+import {
   DetailLayout,
-  EntityCards,
   EntityHero,
   FactList,
   HandbookMain,
-  Notice,
   Prose,
   Section,
   YearLinks,
-} from "./parts"
+} from "./frame"
+import { loadRatings } from "./ratings"
+import {
+  ContactsSection,
+  LearningOutcomesSection,
+  OverviewSection,
+} from "./sections"
 
 export async function aosMetadata(
   rawCode: string,
@@ -54,19 +65,13 @@ export async function aosMetadata(
     fetchAosPage(r.code, r.year),
     fetchEntityReviews("aos", r.code),
   ])
-  if (!a) return { title: r.code, robots: { index: false } }
-  const kind = a.kind ? AOS_KIND_LABEL[a.kind] : "Area of study"
-  const yearNote = r.linkYear ? ` (${r.year} handbook)` : ""
-  const title = `${a.title} ${kind} (${a.code})${yearNote}: Reviews & Units`
-  const description = aosDescription(aosFacts(a, reviews.summary))
-  return {
-    title,
-    description,
-    alternates: { canonical: r.canonical },
-    robots: r.indexable ? undefined : { index: false, follow: true },
-    openGraph: { title, description, type: "article", url: r.canonical },
-    twitter: { card: "summary_large_image", title, description },
-  }
+  return entityMetadata(
+    r,
+    a && {
+      title: `${a.title} ${aosKindLabel(a.kind)} (${a.code})${yearNote(r)}: Reviews & Units`,
+      description: aosDescription(aosFacts(a, reviews.summary)),
+    }
+  )
 }
 
 export async function AosPage({
@@ -82,29 +87,27 @@ export async function AosPage({
     fetchEntityReviews("aos", r.code),
   ])
   if (!a) notFound()
-  const graph = await prefetchGraphForSeeds(a.unitCodes, r.year, "upstream")
+  const [graph, ratings] = await Promise.all([
+    prefetchGraphForSeeds(a.unitCodes, r.year, "upstream"),
+    // Every list on the page shares one ratings load.
+    loadRatings([
+      ...curriculumItems(a.curriculum),
+      ...a.courses.map((c) => ({ kind: "course" as const, code: c.code })),
+    ]),
+  ])
 
   const { linkYear } = r
-  const yearHref = (y: string) =>
-    entityHref("aos", a.code, y === r.latest ? null : y)
-  const kindLabel = a.kind ? AOS_KIND_LABEL[a.kind] : "Area of study"
+  const yearHref = entityYearHref("aos", a.code, r)
+  const kindLabel = aosKindLabel(a.kind)
   const facts = aosFacts(a, reviews.summary)
-
-  const notice =
-    r.year !== r.latest ? (
-      <Notice>
-        This is the {r.year} handbook entry.{" "}
-        <a href={entityHref("aos", a.code)} className="font-semibold underline">
-          See the {r.latest} entry
-        </a>
-        .
-      </Notice>
-    ) : r.year !== r.siteLatest ? (
-      <Notice>
-        The {r.siteLatest} handbook has no page for {a.code}. This is its{" "}
-        {r.year} entry, the latest one.
-      </Notice>
-    ) : null
+  const linkableUnits = new Set(a.linkableUnits)
+  const { crumbs, ld: crumbsLd } = entityCrumbs(
+    [
+      { label: "Search", href: "/search" },
+      { label: "Areas of study", href: "/aos" },
+    ],
+    { code: a.code, name: `${a.title} (${a.code})`, canonical: r.canonical }
+  )
 
   return (
     <HandbookMain year={r.year}>
@@ -128,11 +131,7 @@ export async function AosPage({
               }
             : null,
         ]}
-        breadcrumbs={[
-          { label: "Search", href: "/search" },
-          { label: "Areas of study", href: "/aos" },
-          { label: a.code },
-        ]}
+        breadcrumbs={crumbs}
         year={r.year}
         years={r.years}
         yearHref={yearHref}
@@ -142,10 +141,10 @@ export async function AosPage({
           <SegText
             segs={aosLede(facts)}
             linkYear={linkYear}
-            linkableUnits={new Set(a.linkableUnits)}
+            linkableUnits={linkableUnits}
           />
         }
-        notice={notice}
+        notice={<YearNotice kind="aos" code={a.code} r={r} />}
       />
 
       <DetailLayout
@@ -182,22 +181,15 @@ export async function AosPage({
           />
         </Section>
 
-        {a.description ? (
-          <Section clamp id="overview" title="Overview" icon={BookOpenIcon}>
-            <Prose
-              html={a.description}
-              linkYear={linkYear}
-              className="text-[15px]"
-            />
-          </Section>
-        ) : null}
+        <OverviewSection html={a.description} linkYear={linkYear} />
 
         {a.curriculum.length > 0 ? (
           <Section id="structure" title="Structure" icon={ListTreeIcon}>
             <CurriculumTree
               nodes={a.curriculum}
               linkYear={linkYear}
-              linkableUnits={new Set(a.linkableUnits)}
+              linkableUnits={linkableUnits}
+              ratings={ratings}
             />
           </Section>
         ) : null}
@@ -213,9 +205,10 @@ export async function AosPage({
                 kind: "course" as const,
                 code: c.code,
                 title: c.title,
-                note: AOS_KIND_LABEL[c.kind] ?? null,
+                note: aosKind(c.kind)?.label ?? null,
               }))}
               linkYear={linkYear}
+              ratings={ratings}
             />
           </Section>
         ) : null}
@@ -226,56 +219,24 @@ export async function AosPage({
           </Section>
         ) : null}
 
-        {a.learningOutcomes.length > 0 ? (
-          <Section
-            clamp
-            id="outcomes"
-            title="Learning outcomes"
-            icon={TargetIcon}
-          >
-            {a.outcomesIntro ? (
-              <Prose
-                html={a.outcomesIntro}
-                linkYear={linkYear}
-                className="mb-4 text-muted-foreground"
-              />
-            ) : null}
-            <ol className="flex flex-col gap-3">
-              {a.learningOutcomes.map((o, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold tabular-nums">
-                    {i + 1}
-                  </span>
-                  <Prose html={o.html} linkYear={linkYear} className="pt-0.5" />
-                </li>
-              ))}
-            </ol>
-          </Section>
-        ) : null}
+        <LearningOutcomesSection
+          outcomes={a.learningOutcomes}
+          intro={
+            <Prose
+              html={a.outcomesIntro}
+              linkYear={linkYear}
+              className="mb-4 text-muted-foreground"
+            />
+          }
+          linkYear={linkYear}
+        />
 
-        {a.contacts.length > 0 ? (
-          <Section id="contacts" title="Contacts" icon={UsersIcon}>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              {a.contacts.map((x) => (
-                <div key={x.role}>
-                  <dt className="mb-1 text-xs text-muted-foreground">
-                    {x.role.replace(/\(s\)$/, "s")}
-                  </dt>
-                  {x.names.map((n) => (
-                    <dd key={n} className="text-sm font-medium">
-                      {n}
-                    </dd>
-                  ))}
-                </div>
-              ))}
-            </dl>
-          </Section>
-        ) : null}
+        <ContactsSection contacts={a.contacts} />
 
         <QuickAnswers
           items={aosQuestions(facts)}
           linkYear={linkYear}
-          linkableUnits={new Set(a.linkableUnits)}
+          linkableUnits={linkableUnits}
         />
 
         <Section id="details" title={`${kindLabel} details`} icon={InfoIcon}>
@@ -325,19 +286,11 @@ export async function AosPage({
             // MonMap's own summary: always present, never the handbook copy.
             description: plain(aosLede(facts)),
             url: absoluteUrl(r.canonical),
-            provider: {
-              "@type": "CollegeOrUniversity",
-              name: "Monash University",
-              sameAs: "https://www.monash.edu/",
-            },
+            provider: MONASH_PROVIDER,
             sameAs: monashHandbookUrl("aos", a.code, r.year),
             ...ratingLd(reviews.summary, reviews.reviews),
           },
-          breadcrumbLd([
-            { name: "Search", path: "/search" },
-            { name: "Areas of study", path: "/aos" },
-            { name: `${a.title} (${a.code})`, path: r.canonical },
-          ]),
+          crumbsLd,
         ]}
       />
     </HandbookMain>

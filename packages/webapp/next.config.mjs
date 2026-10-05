@@ -90,6 +90,18 @@ const nextConfig = {
       },
     ]
   },
+  // The /courses and /aos hubs render from app/hubs/[hub], a dynamic
+  // route, so they can be cached for a day (ISR) without the build
+  // rendering them; see that file. `{/}?` keeps /courses/ working, as
+  // skipTrailingSlashRedirect below means it isn't redirected first.
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/courses{/}?", destination: "/hubs/courses" },
+        { source: "/aos{/}?", destination: "/hubs/aos" },
+      ],
+    }
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }]
   },

@@ -1,7 +1,7 @@
 import { MessageSquareTextIcon } from "lucide-react"
 import { cache } from "react"
 
-import { Section } from "@/components/handbook/parts"
+import { Section } from "@/components/handbook/frame"
 import {
   listPublicReviews,
   type PublicReview,

@@ -4,7 +4,7 @@ import { ChevronRightIcon, MessageSquareTextIcon } from "lucide-react"
 
 import { AppHeader } from "@/components/app-header"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
-import { KindBadge } from "@/components/handbook/parts"
+import { KindBadge } from "@/components/handbook/frame"
 import { ReviewCard } from "@/components/reviews/review-card"
 import { getCurrentUser } from "@/lib/auth-server"
 import { listUserReviews } from "@/lib/db/reviews"

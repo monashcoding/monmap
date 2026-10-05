@@ -4,6 +4,8 @@ import { LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 
+import { cn } from "@/lib/utils"
+
 /**
  * The search field. Results update as you type (after a short pause)
  * by replacing the URL, so the server renders the results and every
@@ -90,8 +92,21 @@ export function SearchBox({
         placeholder="Search by code, title or topic, e.g. FIT1045, data science, BCompSci"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="h-14 w-full rounded-panel border border-input bg-field pr-24 pl-12 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 [&::-webkit-search-cancel-button]:hidden"
+        className={cn(
+          "peer h-14 w-full rounded-panel border border-input bg-field pr-24 pl-12 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 max-md:placeholder:text-transparent [&::-webkit-search-cancel-button]:hidden",
+          // Phones need the room for text while the right-hand
+          // controls are hidden.
+          !value && !pending && "max-md:pr-4"
+        )}
       />
+      {/* The full prompt doesn't fit on a phone, so a short one stands
+          in for it there. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 right-4 left-12 -translate-y-1/2 truncate text-base text-muted-foreground peer-[:not(:placeholder-shown)]:hidden md:hidden"
+      >
+        Code, title or topic
+      </span>
       <div className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-2">
         {pending ? (
           <LoaderCircleIcon

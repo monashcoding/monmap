@@ -46,32 +46,37 @@ export interface SearchState {
 
 type Raw = Record<string, string | string[] | undefined>
 
-function one(v: string | string[] | undefined): string | null {
+/** A query param's first value, trimmed; null when empty or missing. */
+export function firstParam(v: string | string[] | undefined): string | null {
   const s = Array.isArray(v) ? v[0] : v
   return s && s.trim() ? s.trim() : null
 }
+
+/** First value, cut to 100 characters: no real query or name is longer. */
+const text = (v: string | string[] | undefined) =>
+  firstParam(v)?.slice(0, 100) ?? null
 
 export function parseSearchState(
   sp: Raw,
   years: readonly string[]
 ): SearchState {
-  const tab = one(sp.type) as SearchTab | null
-  const study = one(sp.study) as StudyLevel | null
-  const period = one(sp.period) as PeriodKind | null
-  const level = one(sp.level)
-  const year = one(sp.year)
-  const page = Number(one(sp.page) ?? 1)
+  const tab = firstParam(sp.type) as SearchTab | null
+  const study = firstParam(sp.study) as StudyLevel | null
+  const period = firstParam(sp.period) as PeriodKind | null
+  const level = firstParam(sp.level)
+  const year = firstParam(sp.year)
+  const page = Number(firstParam(sp.page) ?? 1)
   const resolvedTab = tab && SEARCH_TABS.includes(tab) ? tab : "all"
   const units = resolvedTab === "units"
   return {
-    q: (one(sp.q) ?? "").slice(0, 100),
+    q: text(sp.q) ?? "",
     tab: resolvedTab,
     year: year && years.includes(year) && year !== years.at(-1) ? year : null,
-    faculty: one(sp.faculty),
+    faculty: text(sp.faculty),
     study: study && STUDY_LEVELS.includes(study) ? study : null,
     level: units && level && /^\d$/.test(level) ? level : null,
     period: units && period && FILTER_PERIODS.includes(period) ? period : null,
-    campus: units ? one(sp.campus) : null,
+    campus: units ? text(sp.campus) : null,
     page: Number.isInteger(page) && page > 1 ? Math.min(page, 500) : 1,
   }
 }

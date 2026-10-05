@@ -8,9 +8,11 @@ import {
   XIcon,
 } from "lucide-react"
 
+import { EntityLink } from "@/components/handbook/entity-link"
+import { HandbookMain, KindBadge } from "@/components/handbook/frame"
 import { JsonLd } from "@/components/handbook/json-ld"
 import { MobileCollapsible } from "@/components/handbook/mobile-collapsible"
-import { HandbookMain, KindBadge } from "@/components/handbook/parts"
+import { loadRatings, ratingKey } from "@/components/handbook/ratings"
 import { SearchBox } from "@/components/handbook/search-box"
 import { YearSelect } from "@/components/handbook/year-select"
 import { RatingInline } from "@/components/reviews/stars"
@@ -21,11 +23,6 @@ import {
   type SearchHit,
 } from "@/lib/db/handbook"
 import { listAvailableYears } from "@/lib/db/queries"
-import {
-  NO_RATINGS,
-  type RatingSummary,
-  ratingSummaries,
-} from "@/lib/db/reviews"
 import { entityHref, type EntityKind } from "@/lib/handbook/links"
 import {
   FILTER_PERIODS,
@@ -37,6 +34,7 @@ import {
   type SearchTab,
 } from "@/lib/handbook/search-url"
 import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import type { RatingSummary } from "@/lib/reviews/types"
 import { absoluteUrl } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
@@ -113,7 +111,7 @@ export default async function SearchPage({
   }
 
   const years = await listAvailableYears()
-  const latest = years.at(-1) ?? "2026"
+  const latest = years.at(-1) ?? String(new Date().getFullYear())
   const state = parseSearchState(sp, years)
   const year = state.year ?? latest
 
@@ -133,17 +131,7 @@ export default async function SearchPage({
   ])
 
   // Ratings are live (this page renders per request), one query a kind.
-  const ratings = new Map<string, RatingSummary>()
-  await Promise.all(
-    (["unit", "course", "aos"] as const).map(async (kind) => {
-      const codes = result.hits
-        .filter((h) => h.kind === kind)
-        .map((h) => h.code)
-      if (codes.length === 0) return
-      const found = await ratingSummaries(kind, codes)
-      for (const c of codes) ratings.set(`${kind}:${c}`, found[c] ?? NO_RATINGS)
-    })
-  )
+  const ratings = await loadRatings(result.hits)
 
   const pageCount = Math.max(1, Math.ceil(result.total / SEARCH_PAGE_SIZE))
   const base = searchParamsOf({ ...state, q: "", page: 1 }).toString()
@@ -307,7 +295,7 @@ export default async function SearchPage({
                     hit={h}
                     words={words}
                     linkYear={state.year}
-                    rating={ratings.get(`${h.kind}:${h.code}`)}
+                    rating={ratings.get(ratingKey(h.kind, h.code))}
                   />
                 </li>
               ))}
@@ -389,7 +377,7 @@ function Hit({
   ].filter(Boolean)
   const periods = hit.periods.filter((p) => p !== "OTHER")
   return (
-    <Link
+    <EntityLink
       href={entityHref(hit.kind, hit.code, linkYear)}
       className="group flex items-center gap-3 px-4 py-4 hover:bg-muted/40 sm:px-5"
     >
@@ -447,7 +435,7 @@ function Hit({
         className="size-4 shrink-0 text-muted-foreground"
         aria-hidden
       />
-    </Link>
+    </EntityLink>
   )
 }
 

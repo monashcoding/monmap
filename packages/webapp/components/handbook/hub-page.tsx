@@ -1,14 +1,10 @@
 import Link from "next/link"
 
-import { JsonLd, breadcrumbLd } from "./json-ld"
-import {
-  Breadcrumbs,
-  DetailLayout,
-  EntityRows,
-  type EntityRowData,
-  HandbookMain,
-  Section,
-} from "./parts"
+import { breadcrumbLd } from "@/lib/handbook/json-ld"
+
+import { EntityRows, type EntityRowData } from "./entity-lists"
+import { Breadcrumbs, DetailLayout, HandbookMain, Section } from "./frame"
+import { JsonLd } from "./json-ld"
 import { loadRatings } from "./ratings"
 
 export interface HubGroup {

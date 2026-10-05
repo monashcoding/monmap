@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { MapIcon, MessageSquareTextIcon, NetworkIcon } from "lucide-react"
 
-import { EntityRows } from "@/components/handbook/parts"
+import { EntityRows } from "@/components/handbook/entity-lists"
 import { listPopularCourses } from "@/lib/db/handbook"
 
 const FEATURES = [

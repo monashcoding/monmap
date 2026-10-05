@@ -4,7 +4,7 @@ import { MessageCircleQuestionIcon } from "lucide-react"
 import { entityHref } from "@/lib/handbook/links"
 import type { QA, Seg } from "@/lib/handbook/summary"
 
-import { Section } from "./parts"
+import { Section } from "./frame"
 
 /**
  * Words with links: unit codes link when MonMap has a page for them;
