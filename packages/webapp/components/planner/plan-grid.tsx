@@ -307,7 +307,7 @@ export function PlanGrid() {
   const startYear = Number(state.courseYear) || new Date().getFullYear()
 
   return (
-    <div className="flex min-w-0 flex-col gap-0 overflow-hidden rounded-panel border bg-card shadow-card">
+    <div className="flex min-w-0 flex-col gap-0">
       {state.years.map((year, yearIndex) => (
         <div key={yearIndex} className="flex flex-col">
           <YearHeader

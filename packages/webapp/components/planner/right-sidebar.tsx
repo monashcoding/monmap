@@ -56,7 +56,7 @@ export function RightSidebar() {
   }
 
   return (
-    <aside className="flex flex-col gap-4 print:hidden">
+    <aside className="flex min-w-0 flex-col print:hidden">
       <RightPanel tab={tab} onTabChange={setTab} />
     </aside>
   )
@@ -158,10 +158,7 @@ function RightPanel({
 }) {
   return (
     <div
-      className={cn(
-        "overflow-hidden border bg-card md:rounded-panel md:shadow-card",
-        className
-      )}
+      className={cn("border-t bg-card lg:border-t-0 lg:border-l", className)}
     >
       {/* Tab bar */}
       <div className="sticky top-0 z-10 flex border-b bg-card">

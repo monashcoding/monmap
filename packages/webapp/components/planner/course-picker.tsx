@@ -66,7 +66,7 @@ export function CoursePicker({ className }: { className?: string }) {
             render={
               <Button
                 variant="outline"
-                className="h-auto w-full justify-between gap-2 rounded-control px-4 py-3.5 text-left whitespace-normal"
+                className="h-auto w-full justify-between gap-2 rounded-control border-input bg-field px-4 py-3.5 text-left whitespace-normal hover:bg-accent"
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-xs text-muted-foreground tabular-nums">

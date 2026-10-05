@@ -52,6 +52,7 @@
   --color-emphasis: var(--emphasis);
   --color-emphasis-soft: var(--emphasis-soft);
   --color-year-strip: var(--year-strip);
+  --color-field: var(--field);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -141,7 +142,10 @@
   --info-soft: oklch(0.94 0.05 245);
 
   --border: #d9d7d0;
-  --input: #d6d4cc;
+  /* Dropdowns, inputs and pickers: a pale fill, lighter than the page,
+     with a light edge so they read as fields on white paper. */
+  --field: #f8f8f6;
+  --input: #e2e0da;
   --ring: var(--emphasis);
 
   /* Year header strips above each study year. */
@@ -205,7 +209,8 @@
     --info-soft: oklch(0.3 0.06 245);
 
     --border: #383838;
-    --input: #424242;
+    --field: #272727;
+    --input: #3a3a3a;
 
     /* Lighter than the panel, so the strip still reads as a band. */
     --year-strip: #343434;

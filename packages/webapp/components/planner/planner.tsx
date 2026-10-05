@@ -74,9 +74,14 @@ export function Planner(props: PlannerProps) {
           </AppHeader>
 
           <PlannerDnd>
-            <div className="grid flex-1 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="flex min-w-0 flex-col gap-3 sm:gap-5">
-                <LeftSidebar />
+            {/* One sheet of paper: the plan header, summary and grid on
+                the left, the course panel on the right, divided by
+                hairlines rather than separate floating cards. */}
+            <div className="grid flex-1 overflow-hidden rounded-panel border bg-card shadow-card lg:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="flex min-w-0 flex-col">
+                <div className="border-b px-3 py-3 sm:px-4">
+                  <LeftSidebar />
+                </div>
                 <SummaryBar />
                 <PlanGrid />
               </div>
