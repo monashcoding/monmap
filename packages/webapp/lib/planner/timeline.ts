@@ -129,3 +129,35 @@ export function slotBlockCredit(
 export function slotTakesUnits(slot: Pick<PlannerSlot, "status">): boolean {
   return !slot.status
 }
+
+/**
+ * The next `n` semesters after the end of the plan, as (yearIndex,
+ * kind) positions: the last year's missing semester first, then whole
+ * new study years. Used to project a finish date and to add the
+ * semesters a plan still needs.
+ */
+export function nextSemesters(
+  state: Pick<PlannerState, "startPeriod" | "years">,
+  n: number
+): Array<{ yearIndex: number; kind: "S1" | "S2" }> {
+  const [first, second] = primaryOrder(startPeriodOf(state))
+  const out: Array<{ yearIndex: number; kind: "S1" | "S2" }> = []
+  let yearIndex = state.years.length - 1
+  const last = state.years[yearIndex]
+  let nextKind: "S1" | "S2" =
+    last &&
+    last.slots.some((s) => s.kind === first) &&
+    !last.slots.some((s) => s.kind === second)
+      ? second
+      : first
+  if (nextKind === first) yearIndex += 1
+  while (out.length < n) {
+    out.push({ yearIndex, kind: nextKind })
+    if (nextKind === first) nextKind = second
+    else {
+      nextKind = first
+      yearIndex += 1
+    }
+  }
+  return out
+}

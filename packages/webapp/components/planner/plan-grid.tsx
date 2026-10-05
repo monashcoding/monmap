@@ -18,6 +18,7 @@ import { slotLabel } from "@/lib/planner/timeline"
 import { usePlanner } from "./planner-context"
 import { SemesterRow } from "./semester-row"
 import { ContinueMenu } from "./continue-menu"
+import { FinishLine } from "./finish-line"
 import { UnitCard } from "./unit-card"
 import { YearHeader } from "./year-header"
 
@@ -332,7 +333,10 @@ export function PlanGrid() {
           Pick a course on the right to get started.
         </div>
       ) : (
-        <ContinueMenu variant="footer" />
+        <>
+          <FinishLine />
+          <ContinueMenu variant="footer" />
+        </>
       )}
     </div>
   )

@@ -178,3 +178,27 @@ test("old plans with Winter after Semester 2 are put in time order", () => {
   )
   assert.equal(normalizeTimeline(fixed), fixed)
 })
+
+import { nextSemesters } from "./timeline.ts"
+
+test("next semesters continue from the end of the plan", () => {
+  const full = defaultState("2027", null, 2)
+  assert.deepEqual(nextSemesters(full, 3), [
+    { yearIndex: 2, kind: "S1" },
+    { yearIndex: 2, kind: "S2" },
+    { yearIndex: 3, kind: "S1" },
+  ])
+  const half = plannerReducer(full, { type: "add_year", only: "first" })
+  assert.deepEqual(nextSemesters(half, 2), [
+    { yearIndex: 2, kind: "S2" },
+    { yearIndex: 3, kind: "S1" },
+  ])
+  const mid: PlannerState = {
+    ...defaultState("2027", null, 1),
+    startPeriod: "S2",
+  }
+  assert.deepEqual(nextSemesters(mid, 2), [
+    { yearIndex: 1, kind: "S2" },
+    { yearIndex: 1, kind: "S1" },
+  ])
+})

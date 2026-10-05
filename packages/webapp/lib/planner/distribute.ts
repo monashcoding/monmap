@@ -113,6 +113,8 @@ export function distribute(args: {
     state.years[yi]?.slots.findIndex((s) => s.kind === kind) ?? -1
   const capOf = (yi: number, si: number): number => {
     const s = state.years[yi]?.slots[si]
+    // Leave and exchange semesters take no units.
+    if (s?.status) return 0
     return s ? slotCapacity(s) : 4
   }
 

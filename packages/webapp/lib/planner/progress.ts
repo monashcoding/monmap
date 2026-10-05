@@ -1,4 +1,5 @@
 import { creditedCodes, creditPointsFromCredit } from "./credit.ts"
+import { slotBlockCredit } from "./timeline.ts"
 import { isFullYearUnit, perSlotCreditPoints } from "./full-year.ts"
 import { effectiveRequired, reachableOptions } from "./reachable.ts"
 import type {
@@ -52,6 +53,10 @@ export function summarizePlan(
     // and a 12cp unit shouldn't count as 24cp toward the degree.
     const fyAlreadyCountedThisYear = new Set<string>()
     for (const slot of year.slots) {
+      // An exchange semester counts as a block of credit with no units.
+      const block = slotBlockCredit(slot)
+      total += block
+      yearTotal += block
       for (const code of slot.unitCodes) {
         const fullCp = unitsByCode.get(code)?.creditPoints ?? 0
         const isFY =

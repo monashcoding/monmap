@@ -1,10 +1,13 @@
 "use client"
 
 import {
+  BookOpenIcon,
   LockIcon,
   LockOpenIcon,
   MinusIcon,
   MoreVerticalIcon,
+  PauseIcon,
+  PlaneIcon,
   PlusIcon,
   RotateCcwIcon,
   Trash2Icon,
@@ -68,9 +71,9 @@ export function SemesterRow({
 
   const [isEditingLabel, setIsEditingLabel] = useState(false)
   const [labelDraft, setLabelDraft] = useState("")
-  const [pendingAction, setPendingAction] = useState<"reset" | "remove" | null>(
-    null
-  )
+  const [pendingAction, setPendingAction] = useState<
+    "reset" | "remove" | "leave" | "exchange" | null
+  >(null)
   const displayLabel = slot.label ?? yearLabel
 
   function requestReset() {
@@ -91,8 +94,24 @@ export function SemesterRow({
       dispatch({ type: "clear_slot", yearIndex, slotIndex })
     } else if (pendingAction === "remove") {
       dispatch({ type: "remove_slot", yearIndex, slotIndex })
+    } else if (pendingAction === "leave" || pendingAction === "exchange") {
+      dispatch({
+        type: "set_slot_status",
+        yearIndex,
+        slotIndex,
+        status: pendingAction,
+      })
     }
     setPendingAction(null)
+  }
+
+  // Leave and exchange clear the semester, so ask first when it has units.
+  function requestStatus(status: "leave" | "exchange") {
+    if (hasUnits) {
+      setPendingAction(status)
+      return
+    }
+    dispatch({ type: "set_slot_status", yearIndex, slotIndex, status })
   }
 
   function startLabelEdit() {
@@ -118,12 +137,16 @@ export function SemesterRow({
             <AlertDialogTitle>
               {pendingAction === "reset"
                 ? `Reset ${displayLabel}?`
-                : `Remove ${displayLabel}?`}
+                : pendingAction === "remove"
+                  ? `Remove ${displayLabel}?`
+                  : pendingAction === "leave"
+                    ? `Take leave in ${displayLabel}?`
+                    : `Go on exchange in ${displayLabel}?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingAction === "reset"
-                ? `All ${slot.unitCodes.length} unit${slot.unitCodes.length === 1 ? "" : "s"} in this semester will be removed. You can undo this.`
-                : `This section and its ${slot.unitCodes.length} unit${slot.unitCodes.length === 1 ? "" : "s"} will be removed. You can undo this.`}
+              {pendingAction === "remove"
+                ? `This section and its ${slot.unitCodes.length} unit${slot.unitCodes.length === 1 ? "" : "s"} will be removed. You can undo this.`
+                : `The ${slot.unitCodes.length} unit${slot.unitCodes.length === 1 ? "" : "s"} in this semester will be removed. You can undo this.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -132,7 +155,13 @@ export function SemesterRow({
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={confirmPending}
             >
-              {pendingAction === "reset" ? "Reset semester" : "Remove section"}
+              {pendingAction === "reset"
+                ? "Reset semester"
+                : pendingAction === "remove"
+                  ? "Remove section"
+                  : pendingAction === "leave"
+                    ? "Take leave"
+                    : "Go on exchange"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -168,7 +197,11 @@ export function SemesterRow({
               </button>
             )}
             <div className="mt-0.5 text-[10px] text-muted-foreground/70 tabular-nums">
-              {usedWeight} / {capacity} units
+              {slot.status === "leave"
+                ? "On leave"
+                : slot.status === "exchange"
+                  ? `Exchange · ${slot.creditPoints ?? 24}cp`
+                  : `${usedWeight} / ${capacity} units`}
             </div>
           </div>
           <Button
@@ -199,50 +232,154 @@ export function SemesterRow({
             >
               <MoreVerticalIcon />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                disabled={!canIncrease}
-                onClick={() =>
-                  dispatch({
-                    type: "set_slot_capacity",
-                    yearIndex,
-                    slotIndex,
-                    capacity: capacity + 1,
-                  })
-                }
-              >
-                <PlusIcon />
-                Add a unit slot
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canDecrease}
-                onClick={() =>
-                  dispatch({
-                    type: "set_slot_capacity",
-                    yearIndex,
-                    slotIndex,
-                    capacity: capacity - 1,
-                  })
-                }
-              >
-                <MinusIcon />
-                Remove a unit slot
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled={!hasUnits} onClick={requestReset}>
-                <RotateCcwIcon />
-                Reset semester
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={requestRemove}>
-                <Trash2Icon />
-                Remove section
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-52">
+              {slot.status ? (
+                <>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      dispatch({
+                        type: "set_slot_status",
+                        yearIndex,
+                        slotIndex,
+                        status: null,
+                      })
+                    }
+                  >
+                    <BookOpenIcon />
+                    Back to studying
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={requestRemove}>
+                    <Trash2Icon />
+                    Remove section
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem
+                    disabled={!canIncrease}
+                    onClick={() =>
+                      dispatch({
+                        type: "set_slot_capacity",
+                        yearIndex,
+                        slotIndex,
+                        capacity: capacity + 1,
+                      })
+                    }
+                  >
+                    <PlusIcon />
+                    Add a unit slot
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!canDecrease}
+                    onClick={() =>
+                      dispatch({
+                        type: "set_slot_capacity",
+                        yearIndex,
+                        slotIndex,
+                        capacity: capacity - 1,
+                      })
+                    }
+                  >
+                    <MinusIcon />
+                    Remove a unit slot
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={capacity === 2 || usedWeight > 2}
+                    onClick={() =>
+                      dispatch({
+                        type: "set_slot_capacity",
+                        yearIndex,
+                        slotIndex,
+                        capacity: 2,
+                      })
+                    }
+                  >
+                    <span className="w-4 text-center text-[10px] font-semibold">
+                      ½
+                    </span>
+                    Part-time (2 units)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => requestStatus("leave")}>
+                    <PauseIcon />
+                    Take leave this semester
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => requestStatus("exchange")}>
+                    <PlaneIcon />
+                    Go on exchange
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled={!hasUnits} onClick={requestReset}>
+                    <RotateCcwIcon />
+                    Reset semester
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={requestRemove}>
+                    <Trash2Icon />
+                    Remove section
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <SemesterSlot yearIndex={yearIndex} slotIndex={slotIndex} />
+        {slot.status ? (
+          <StatusPanel
+            slot={slot}
+            onCreditChange={(creditPoints) =>
+              dispatch({
+                type: "set_slot_credit",
+                yearIndex,
+                slotIndex,
+                creditPoints,
+              })
+            }
+          />
+        ) : (
+          <SemesterSlot yearIndex={yearIndex} slotIndex={slotIndex} />
+        )}
       </div>
     </>
+  )
+}
+
+/**
+ * Body of a leave or exchange semester: a striped band in place of the
+ * unit slots. Exchange shows the credit points it counts for, which the
+ * student can change.
+ */
+function StatusPanel({
+  slot,
+  onCreditChange,
+}: {
+  slot: PlannerSlot
+  onCreditChange: (creditPoints: number) => void
+}) {
+  return (
+    <div className="flex min-h-16 items-center gap-3 bg-[repeating-linear-gradient(135deg,transparent_0,transparent_8px,var(--muted)_8px,var(--muted)_16px)] px-4 py-3 text-xs text-muted-foreground">
+      {slot.status === "leave" ? (
+        <>
+          <PauseIcon className="size-4 shrink-0" />
+          <span>Leave of absence. No units this semester.</span>
+        </>
+      ) : (
+        <>
+          <PlaneIcon className="size-4 shrink-0" />
+          <span>Exchange semester, counted as</span>
+          <input
+            type="number"
+            min={0}
+            max={48}
+            step={6}
+            value={slot.creditPoints ?? 24}
+            onChange={(e) => onCreditChange(Number(e.target.value))}
+            aria-label="Exchange credit points"
+            className="h-7 w-16 rounded-control border border-input bg-field px-2 text-center text-xs font-semibold text-foreground tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          <span>credit points.</span>
+        </>
+      )}
+    </div>
   )
 }
