@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ExternalLinkIcon, FileTextIcon, XIcon } from "lucide-react"
+import { ExternalLinkIcon, XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -83,7 +83,7 @@ export function TreeSidePanel({
               href={detailsHref}
               className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
             >
-              <FileTextIcon className="size-3" />
+              <ExternalLinkIcon className="size-3" />
               View details
             </Link>
           ) : null}

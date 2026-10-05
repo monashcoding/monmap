@@ -1,6 +1,6 @@
 "use client"
 
-import { ExternalLinkIcon, XIcon } from "lucide-react"
+import { XIcon } from "lucide-react"
 import { useMemo } from "react"
 import posthog from "posthog-js"
 
@@ -114,7 +114,6 @@ export function AoSPicker() {
             current={current}
             campus={state.campus}
             knownCampuses={campuses}
-            year={course.year}
             onChange={(code) => {
               if (code) {
                 const selected = slot.options.find((o) => o.code === code)
@@ -220,7 +219,6 @@ function RoleSelect({
   current,
   campus,
   knownCampuses,
-  year,
   onChange,
 }: {
   label: string
@@ -228,7 +226,6 @@ function RoleSelect({
   current: string | undefined
   campus?: string | undefined
   knownCampuses: string[]
-  year: string
   onChange: (code: string | null) => void
 }) {
   const sorted = useMemo(
@@ -302,15 +299,6 @@ function RoleSelect({
         </Select>
         {current ? (
           <>
-            <a
-              href={`https://handbook.monash.edu/${year}/aos/${current}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground"
-              aria-label="View in handbook"
-            >
-              <ExternalLinkIcon className="size-3.5" />
-            </a>
             <Button
               variant="ghost"
               size="icon-sm"

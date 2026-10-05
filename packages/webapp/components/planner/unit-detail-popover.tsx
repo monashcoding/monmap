@@ -5,7 +5,6 @@ import {
   ChevronDownIcon,
   ExternalLinkIcon,
   InfoIcon,
-  Share2Icon,
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
@@ -268,7 +267,7 @@ export function UnitDetailView({
             href={`/units/${code}/${selectedYear}`}
             className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
           >
-            <Share2Icon className="size-3" />
+            <ExternalLinkIcon className="size-3" />
             View Details
           </a>
           <a

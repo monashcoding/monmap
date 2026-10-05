@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDownIcon, ExternalLinkIcon, Share2Icon } from "lucide-react"
+import { ChevronDownIcon, ExternalLinkIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 import posthog from "posthog-js"
 
@@ -97,7 +97,7 @@ export function CoursePicker({ className }: { className?: string }) {
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
               >
-                <Share2Icon className="size-3" />
+                <ExternalLinkIcon className="size-3" />
                 View Details
               </a>
               <a

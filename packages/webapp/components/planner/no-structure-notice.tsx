@@ -1,6 +1,6 @@
 "use client"
 
-import { ExternalLinkIcon, Share2Icon } from "lucide-react"
+import { ExternalLinkIcon } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button"
 import type { PlannerCourseWithAoS } from "@/lib/planner/types"
@@ -57,7 +57,7 @@ export function NoStructureNotice({
             href={`/courses/${course.code}/${structureYear}`}
             className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
           >
-            <Share2Icon />
+            <ExternalLinkIcon />
             See the {structureYear} structure
           </a>
         ) : null}
