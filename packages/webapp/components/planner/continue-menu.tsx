@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -118,23 +119,25 @@ export function ContinueMenu({
         {optional.length > 0 ? (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Add to Year {lastIndex + 1}
-            </DropdownMenuLabel>
-            {optional.map(({ kind }) => (
-              <DropdownMenuItem
-                key={kind}
-                onClick={() =>
-                  dispatch({
-                    type: "add_optional_slot",
-                    yearIndex: lastIndex,
-                    kind,
-                  })
-                }
-              >
-                {label(lastIndex, kind)}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Add to Year {lastIndex + 1}
+              </DropdownMenuLabel>
+              {optional.map(({ kind }) => (
+                <DropdownMenuItem
+                  key={kind}
+                  onClick={() =>
+                    dispatch({
+                      type: "add_optional_slot",
+                      yearIndex: lastIndex,
+                      kind,
+                    })
+                  }
+                >
+                  {label(lastIndex, kind)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </>
         ) : null}
       </DropdownMenuContent>

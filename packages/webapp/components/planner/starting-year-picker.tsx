@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -90,42 +91,48 @@ export function StartingYearPicker() {
           <span className="hidden sm:inline">Starts {startLabel(state)}</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel className="text-xs text-muted-foreground">
-            Intake
-          </DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={start}
-            onValueChange={(v) =>
-              dispatch({
-                type: "set_start_period",
-                period: v === "S2" ? "S2" : "S1",
-              })
-            }
-          >
-            <DropdownMenuRadioItem value="S1">
-              {PERIOD_KIND_LABEL.S1}
-              <span className="ml-auto text-xs text-muted-foreground">Feb</span>
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="S2">
-              {PERIOD_KIND_LABEL.S2}
-              <span className="ml-auto text-xs text-muted-foreground">
-                Mid-year
-              </span>
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-xs text-muted-foreground">
-            Starting year (handbook)
-          </DropdownMenuLabel>
-          {availableYears.map((y) => (
-            <DropdownMenuItem
-              key={y}
-              disabled={y === state.courseYear}
-              onClick={() => handleChange(y)}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Intake
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={start}
+              onValueChange={(v) =>
+                dispatch({
+                  type: "set_start_period",
+                  period: v === "S2" ? "S2" : "S1",
+                })
+              }
             >
-              {y}
-            </DropdownMenuItem>
-          ))}
+              <DropdownMenuRadioItem value="S1">
+                {PERIOD_KIND_LABEL.S1}
+                <span className="ml-auto text-xs text-muted-foreground">
+                  Feb
+                </span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="S2">
+                {PERIOD_KIND_LABEL.S2}
+                <span className="ml-auto text-xs text-muted-foreground">
+                  Mid-year
+                </span>
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Starting year (handbook)
+            </DropdownMenuLabel>
+            {availableYears.map((y) => (
+              <DropdownMenuItem
+                key={y}
+                disabled={y === state.courseYear}
+                onClick={() => handleChange(y)}
+              >
+                {y}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </>
