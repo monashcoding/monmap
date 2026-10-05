@@ -31,7 +31,7 @@ import {
   extractSubCourseRefs,
 } from "@monmap/db";
 import { DATABASE_URL } from "@monmap/db/env";
-import { extractCourseAosRefs } from "./parse.ts";
+import { extractCourseAosRefs, resolveSubCourseYears } from "./parse.ts";
 import { loadCurriculumOverrides } from "./overrides.ts";
 
 const force = process.argv.includes("--force");
@@ -78,6 +78,14 @@ console.log(
     `${onlyYear ? ` (year ${onlyYear})` : ""}${dryRun ? " [dry-run]" : ""}...`,
 );
 
+// Every (year, code) course row, so a component linked to an earlier
+// year's page resolves only when that row exists.
+const knownCourseKeys = new Set(
+  (
+    await db.select({ year: courses.year, code: courses.code }).from(courses)
+  ).map((r) => `${r.year}|${r.code.toUpperCase()}`),
+);
+
 let done = 0;
 let overridden = 0;
 for (const row of rows) {
@@ -96,7 +104,11 @@ for (const row of rows) {
       .set({
         requirementGroups: groups,
         embeddedSpecialisations: extractEmbeddedSpecialisations(structure),
-        subCourseRefs: extractSubCourseRefs(structure),
+        subCourseRefs: resolveSubCourseYears(
+          row.year,
+          extractSubCourseRefs(structure, row.year),
+          knownCourseKeys,
+        ),
         componentLabels: extractComponentLabels(structure),
         excludedAos: extractExcludedAos(structure),
       })
@@ -130,9 +142,21 @@ if (force && !dryRun) {
     .sort();
   for (const year of years) {
     const aosCodes = aosCodesByYear.get(year)!;
+    // Earlier years' AoS, for courses that link a previous year's page.
+    const earlierAosKeys = new Set(
+      aosRows
+        .filter((r) => r.year < year)
+        .map((r) => `${r.year}|${r.code.toUpperCase()}`),
+    );
     const yearRows = rows.filter((r) => r.year === year);
     const newRows = yearRows.flatMap((r) =>
-      extractCourseAosRefs(year, r.code, r.curriculumStructure, aosCodes),
+      extractCourseAosRefs(
+        year,
+        r.code,
+        r.curriculumStructure,
+        aosCodes,
+        earlierAosKeys,
+      ),
     );
     await db.transaction(async (tx) => {
       await tx

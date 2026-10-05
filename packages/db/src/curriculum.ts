@@ -894,6 +894,15 @@ export interface SubCourseRef {
    * naive match would strip every AoS off five Education doubles.
    */
   includedParts?: string[] | null
+  /**
+   * Handbook year of the component's page when the tree links another
+   * year's page ("/2026/courses/F2010" inside 2027 F2019, because the
+   * 2027 Bachelor of Design is not published). Absent means the
+   * component is read from the double degree's own year. Ingest keeps
+   * it only when that year's row exists and the same-year row does not
+   * (`resolveSubCourseYears`).
+   */
+  year?: string | null
 }
 
 /**
@@ -926,7 +935,10 @@ export function containerParts(title: string): Set<string> | null {
   return m ? new Set(m[1]?.match(/[A-Z]/g) ?? []) : null
 }
 
-export function extractSubCourseRefs(structure: unknown): SubCourseRef[] {
+export function extractSubCourseRefs(
+  structure: unknown,
+  courseYear?: string
+): SubCourseRef[] {
   const out: SubCourseRef[] = []
   const seen = new Set<string>()
 
@@ -970,10 +982,20 @@ export function extractSubCourseRefs(structure: unknown): SubCourseRef[] {
         const key = `${componentTitle}|${code}`
         if (seen.has(key)) continue
         seen.add(key)
+        // Only links to another year's page are recorded, so refs in a
+        // fully published year bake exactly as they did before.
+        const url = r["academic_item_url"]
+        const linkedYear =
+          typeof url === "string"
+            ? (url.trim().match(/^\/(\d{4})\/courses\//)?.[1] ?? null)
+            : null
         out.push({
           componentTitle,
           courseCode: code,
           includedParts: parseIncludedParts(childDesc),
+          ...(courseYear && linkedYear && linkedYear !== courseYear
+            ? { year: linkedYear }
+            : {}),
         })
       }
     }

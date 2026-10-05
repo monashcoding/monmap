@@ -154,6 +154,21 @@ async function _fetchCourseWithAoS(
     (r) => r.courseCode !== code && refTitleCounts.get(refTitle(r)) === 1
   )
   const componentCodes = componentRefs.map((r) => r.courseCode)
+  // A component normally comes from the double degree's own year. Ingest
+  // sets `year` only when the tree links another year's page and that
+  // row exists while the same-year row does not (2027 F2019 links
+  // `/2026/courses/F2010`), so those components load from that year.
+  const componentYear = (r: { year?: string | null }) => r.year ?? year
+  const componentCodesByYear = new Map<string, string[]>()
+  for (const r of componentRefs) {
+    const list = componentCodesByYear.get(componentYear(r)) ?? []
+    list.push(r.courseCode)
+    componentCodesByYear.set(componentYear(r), list)
+  }
+  // The course's own edges, plus each component's edges from the year
+  // the component was loaded from.
+  const ownerCodesByYear = new Map(componentCodesByYear)
+  ownerCodesByYear.set(year, [...(ownerCodesByYear.get(year) ?? []), code])
 
   // One links query covers the course itself AND its components: since
   // ~2023 CourseLoop attaches a double degree's majors/minors to the
@@ -175,7 +190,11 @@ async function _fetchCourseWithAoS(
           })
           .from(courses)
           .where(
-            and(eq(courses.year, year), inArray(courses.code, componentCodes))
+            or(
+              ...[...componentCodesByYear].map(([y, codes]) =>
+                and(eq(courses.year, y), inArray(courses.code, codes))
+              )
+            )
           )
       : Promise.resolve([]),
     db
@@ -202,9 +221,13 @@ async function _fetchCourseWithAoS(
         )
       )
       .where(
-        and(
-          eq(courseAreasOfStudy.courseYear, year),
-          inArray(courseAreasOfStudy.courseCode, [code, ...componentCodes])
+        or(
+          ...[...ownerCodesByYear].map(([y, codes]) =>
+            and(
+              eq(courseAreasOfStudy.courseYear, y),
+              inArray(courseAreasOfStudy.courseCode, codes)
+            )
+          )
         )
       ),
   ])
@@ -314,32 +337,49 @@ async function _fetchCourseWithAoS(
   const forThisShape = (groups: RequirementGroup[]): RequirementGroup[] =>
     groups.filter((g) => !g.degreeShape || g.degreeShape === degreeShape)
 
+  // Each edge names the year of the AoS it points at. That is usually
+  // the plan year, but a handbook still being published links AoS it
+  // has no page for to the previous year's page (2027 S2000 offers the
+  // 2026 APPLMTH05), so AoS data is keyed and loaded by (year, code).
+  const aosKey = (l: { aosYear: string; aosCode: string }) =>
+    `${l.aosYear}|${l.aosCode}`
+
   // Build per-AoS requirement groups from each AoS's curriculum.
   const aosGroups = new Map<string, RequirementGroup[]>()
   for (const l of offeredLinks) {
-    if (aosGroups.has(l.aosCode)) continue
+    if (aosGroups.has(aosKey(l))) continue
     aosGroups.set(
-      l.aosCode,
+      aosKey(l),
       forThisShape(
         extractRequirementGroups(l.curriculumStructure, l.creditPoints ?? 0)
       )
     )
   }
 
-  const aosCodes = [...new Set(offeredLinks.map((l) => l.aosCode))]
+  const aosCodesByYear = new Map<string, Set<string>>()
+  for (const l of offeredLinks) {
+    const set = aosCodesByYear.get(l.aosYear) ?? new Set<string>()
+    set.add(l.aosCode)
+    aosCodesByYear.set(l.aosYear, set)
+  }
   const unitRows =
-    aosCodes.length > 0
+    aosCodesByYear.size > 0
       ? await db
           .select({
+            aosYear: areaOfStudyUnits.aosYear,
             aosCode: areaOfStudyUnits.aosCode,
             unitCode: areaOfStudyUnits.unitCode,
             grouping: areaOfStudyUnits.grouping,
           })
           .from(areaOfStudyUnits)
           .where(
-            and(
-              eq(areaOfStudyUnits.aosYear, year),
-              inArray(areaOfStudyUnits.aosCode, aosCodes)
+            or(
+              ...[...aosCodesByYear].map(([y, codes]) =>
+                and(
+                  eq(areaOfStudyUnits.aosYear, y),
+                  inArray(areaOfStudyUnits.aosCode, [...codes])
+                )
+              )
             )
           )
           .orderBy(areaOfStudyUnits.grouping, areaOfStudyUnits.unitCode)
@@ -347,9 +387,9 @@ async function _fetchCourseWithAoS(
 
   const unitsByAos = new Map<string, { code: string; grouping: string }[]>()
   for (const u of unitRows) {
-    const list = unitsByAos.get(u.aosCode) ?? []
+    const list = unitsByAos.get(aosKey(u)) ?? []
     list.push({ code: u.unitCode, grouping: u.grouping })
-    unitsByAos.set(u.aosCode, list)
+    unitsByAos.set(aosKey(u), list)
   }
 
   // Collect every code that needs a validity/offering check — course
@@ -489,8 +529,8 @@ async function _fetchCourseWithAoS(
         ? refCodeByTitle.get(componentLabel.trim().toLowerCase())
         : undefined
       : l.ownerCode
-    const allUnits = unitsByAos.get(l.aosCode) ?? []
-    const groups = aosGroups.get(l.aosCode) ?? []
+    const allUnits = unitsByAos.get(aosKey(l)) ?? []
+    const groups = aosGroups.get(aosKey(l)) ?? []
     // Fall back to treating every listed unit as required if the AoS
     // has no curriculumStructure (rare — but seen on a few AoS).
     let requirements: RequirementGroup[]
@@ -1592,19 +1632,26 @@ async function _expandCourseClosure(
     .map((r) => r.code)
     .filter((c): c is string => !!c && /^[A-Z]{3}\d{4}$/.test(c))
 
-  // 2. AoS unit codes (if a major is chosen).
+  // 2. AoS unit codes (if a major is chosen). The AoS's units come from
+  // its own year: the plan year when that row exists, otherwise the
+  // earlier year a course edge of the plan year links it to (2027 S2000
+  // offers the 2026 APPLMTH05).
   let aosCodes: string[] = []
   if (aosCode) {
-    const rows = await db
-      .select({ code: areaOfStudyUnits.unitCode })
-      .from(areaOfStudyUnits)
-      .where(
-        and(
-          eq(areaOfStudyUnits.aosYear, year),
-          eq(areaOfStudyUnits.aosCode, aosCode)
-        )
+    const rows = await db.execute(sql`
+      WITH aos_year AS (
+        SELECT COALESCE(
+          (SELECT year FROM areas_of_study
+            WHERE year = ${year} AND code = ${aosCode}),
+          (SELECT max(aos_year) FROM course_areas_of_study
+            WHERE course_year = ${year} AND aos_code = ${aosCode})
+        ) AS year
       )
-    aosCodes = rows.map((r) => r.code)
+      SELECT u.unit_code AS code
+      FROM area_of_study_units u, aos_year y
+      WHERE u.aos_year = y.year AND u.aos_code = ${aosCode}
+    `)
+    aosCodes = (rows as unknown as Array<{ code: string }>).map((r) => r.code)
   }
 
   const seeds = [...new Set([...partACodes, ...aosCodes])]

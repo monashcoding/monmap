@@ -470,7 +470,7 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
       embeddedSpecialisations: hasStructure
         ? extractEmbeddedSpecialisations(structure)
         : null,
-      subCourseRefs: hasStructure ? extractSubCourseRefs(structure) : null,
+      subCourseRefs: hasStructure ? extractSubCourseRefs(structure, year) : null,
       componentLabels: hasStructure ? extractComponentLabels(structure) : null,
       excludedAos: hasStructure ? extractExcludedAos(structure) : null,
       raw,
@@ -501,12 +501,23 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
  * `academic_item_type` because courses reference AoSes via freeform
  * strings inside container titles and descriptions as well as formal
  * relationships[] leaves.
+ *
+ * Cross-year links: a handbook that is still being published links
+ * AoS it has no page for yet to the previous year's page — 2027 S2000
+ * lists `/2026/aos/APPLMTH05` and ~75 other 2026 majors and minors.
+ * `otherYearAos` holds `YEAR|CODE` keys for AoS rows in other years.
+ * A code that is missing from `aosCodes` still matches when its own
+ * leaf's `academic_item_url` names that other year and the key exists,
+ * and the edge then records that year as `aosYear`. A same-year row
+ * always wins, so years without such links produce the same rows as
+ * before.
  */
 export function extractCourseAosRefs(
   courseYear: string,
   courseCode: string,
   curriculumStructure: unknown,
   aosCodes: ReadonlySet<string>,
+  otherYearAos: ReadonlySet<string> = new Set(),
 ): Array<{
   courseYear: string;
   courseCode: string;
@@ -542,17 +553,27 @@ export function extractCourseAosRefs(
           ? (n["name"] as string)
           : null;
     const childAncestors = title ? [...ancestors, title] : ancestors;
+    const linked = linkedItem(n["academic_item_url"], "aos");
     for (const [, v] of Object.entries(n)) {
       if (typeof v === "string") {
         const upper = v.toUpperCase();
-        if (aosCodes.has(upper)) {
+        let aosYear: string | null = null;
+        if (aosCodes.has(upper)) aosYear = courseYear;
+        else if (
+          linked &&
+          linked.code === upper &&
+          linked.year !== courseYear &&
+          otherYearAos.has(`${linked.year}|${upper}`)
+        )
+          aosYear = linked.year;
+        if (aosYear) {
           const { kind, label } = chooseClassifyingAncestor(childAncestors);
           const key = `${upper}|${label}`;
           if (!out.has(key)) {
             out.set(key, {
               courseYear,
               courseCode,
-              aosYear: courseYear,
+              aosYear,
               aosCode: upper,
               kind,
               relationshipLabel: label,
@@ -567,6 +588,51 @@ export function extractCourseAosRefs(
   };
   walk(curriculumStructure, []);
   return [...out.values()];
+}
+
+/**
+ * Year and code of the handbook page a tree leaf links to, read from
+ * its `academic_item_url` ("/2026/aos/APPLMTH05"). Null when the URL is
+ * missing or points at a different kind of page than `kind`.
+ */
+export function linkedItem(
+  url: unknown,
+  kind: "aos" | "units" | "courses",
+): { year: string; code: string } | null {
+  if (typeof url !== "string") return null;
+  const m = url.trim().match(/^\/(\d{4})\/([a-z]+)\/([^/?#]+)/);
+  if (!m || m[2] !== kind) return null;
+  return { year: m[1]!, code: m[3]!.trim().toUpperCase() };
+}
+
+/**
+ * Give a double degree's component refs the year of the course page
+ * they link to when that is not the course's own year. 2027 F2019
+ * links `/2026/courses/F2010` because the 2027 Bachelor of Design is
+ * not published, so the webapp must load the component from 2026.
+ *
+ * `extractSubCourseRefs` records every other-year link as `year`; this
+ * keeps it only when the component has no row in `courseYear` and the
+ * linked (year, code) row exists in `knownCourses` (`YEAR|CODE` keys).
+ * Every other ref loses the field, so its baked JSON stays as before.
+ */
+export function resolveSubCourseYears(
+  courseYear: string,
+  refs: SubCourseRef[] | null,
+  knownCourses: ReadonlySet<string>,
+): SubCourseRef[] | null {
+  if (!refs) return refs;
+  return refs.map((r) => {
+    if (r.year === undefined) return r;
+    const { year, ...rest } = r;
+    const code = r.courseCode.toUpperCase();
+    const keep =
+      year !== null &&
+      year !== courseYear &&
+      !knownCourses.has(`${courseYear}|${code}`) &&
+      knownCourses.has(`${year}|${code}`);
+    return keep ? { ...rest, year } : rest;
+  });
 }
 
 /**

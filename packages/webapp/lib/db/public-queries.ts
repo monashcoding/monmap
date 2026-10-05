@@ -174,8 +174,17 @@ async function _fetchPublicUnit(
       )
       .where(
         and(
-          eq(areaOfStudyUnits.aosYear, year),
-          eq(areaOfStudyUnits.unitCode, code)
+          eq(areaOfStudyUnits.unitCode, code),
+          // This year's AoS, plus earlier-year AoS that this year's
+          // courses link to because the handbook has no page for them
+          // yet (2027 S2000 offers the 2026 APPLMTH05).
+          or(
+            eq(areaOfStudyUnits.aosYear, year),
+            sql`(${areaOfStudyUnits.aosYear}, ${areaOfStudyUnits.aosCode}) IN (
+              SELECT aos_year, aos_code FROM course_areas_of_study
+              WHERE course_year = ${year} AND aos_year <> ${year}
+            )`
+          )
         )
       ),
   ])

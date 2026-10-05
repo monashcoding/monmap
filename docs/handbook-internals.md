@@ -240,6 +240,18 @@ drops the referenced year for this reason — a student who took
 `FIT1008` in 2024 satisfies a 2026 unit's prereq even when the leaf's
 URL says 2021.
 
+Curriculum trees do the same thing while a handbook is still being
+published. 2027 S2000/S3001/S3002 link ~75 majors and minors to
+`/2026/aos/...`, A2000 links Psychology the same way, and five 2027
+doubles link `/2026/courses/F2010`. Ingest resolves these links only
+when the same-year row is missing and the linked (year, code) row
+exists. The course→AoS edge then stores the AoS's own `aos_year`, and
+the component's `sub_course_refs[].year` is set. Readers must load AoS
+units by the edge's `aos_year`, never by the plan year. Units are not
+resolved this way (2027 E3001 links `/2026/units/ENG1005`): no field
+tells "not yet published" apart from "retired", so a missing unit
+stays missing.
+
 ## Tree structures inside JSONB
 
 When a UI reaches into a raw curriculum tree (courses, AoS), the

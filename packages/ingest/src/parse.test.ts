@@ -1,11 +1,14 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
+import { extractSubCourseRefs } from "@monmap/db"
 import {
   collectCodeRefs,
   extractCourseAosRefs,
   extractAosUnitRefs,
   extractEnrolmentRuleRefs,
+  linkedItem,
+  resolveSubCourseYears,
 } from "./parse.ts"
 
 /* ------------------------------------------------------------------ *
@@ -163,6 +166,149 @@ test("course→AoS: same code+label de-duped", () => {
   }
   const refs = extractCourseAosRefs("2026", "X1000", structure, new Set(["MAJ01"]))
   assert.equal(refs.length, 1)
+})
+
+/* ------------------------------------------------------------------ *
+ * Cross-year links (2027 courses that link 2026 pages)
+ * ------------------------------------------------------------------ */
+
+// The leaf shape 2027 S2000 uses for a major with no 2027 page.
+const aosLeaf = (code: string, url: string) => ({
+  academic_item_code: code,
+  academic_item_type: { value: "major", label: "Major" },
+  academic_item_url: url,
+  child_record: { value: `Area of study: ${code}` },
+})
+
+const majorsTree = (...leaves: unknown[]) => ({
+  container: [{ title: "Part B. Major studies", relationship: leaves }],
+})
+
+test("course→AoS: a leaf linking an earlier year's AoS resolves to that year", () => {
+  const structure = majorsTree(aosLeaf("APPLMTH05", "/2026/aos/APPLMTH05"))
+  const refs = extractCourseAosRefs(
+    "2027",
+    "S2000",
+    structure,
+    new Set(),
+    new Set(["2026|APPLMTH05"]),
+  )
+  assert.equal(refs.length, 1)
+  assert.equal(refs[0]!.courseYear, "2027")
+  assert.equal(refs[0]!.aosYear, "2026")
+  assert.equal(refs[0]!.aosCode, "APPLMTH05")
+  assert.equal(refs[0]!.kind, "major")
+})
+
+test("course→AoS: the same-year AoS wins when both years have a row", () => {
+  const structure = majorsTree(aosLeaf("APPLMTH05", "/2026/aos/APPLMTH05"))
+  const refs = extractCourseAosRefs(
+    "2027",
+    "S2000",
+    structure,
+    new Set(["APPLMTH05"]),
+    new Set(["2026|APPLMTH05"]),
+  )
+  assert.equal(refs.length, 1)
+  assert.equal(refs[0]!.aosYear, "2027")
+})
+
+test("course→AoS: a cross-year link with no row in the linked year is dropped", () => {
+  const structure = majorsTree(aosLeaf("APPLMTH05", "/2026/aos/APPLMTH05"))
+  // A row in a year the leaf does not name is not a match either.
+  const refs = extractCourseAosRefs(
+    "2027",
+    "S2000",
+    structure,
+    new Set(),
+    new Set(["2025|APPLMTH05"]),
+  )
+  assert.equal(refs.length, 0)
+})
+
+test("course→AoS: a URL naming another code or page kind does not resolve", () => {
+  const structure = majorsTree(
+    aosLeaf("APPLMTH05", "/2026/aos/BIOCHEM05"),
+    aosLeaf("BIOCHEM05", "/2026/units/BIOCHEM05"),
+  )
+  const refs = extractCourseAosRefs(
+    "2027",
+    "S2000",
+    structure,
+    new Set(),
+    new Set(["2026|APPLMTH05", "2026|BIOCHEM05"]),
+  )
+  assert.equal(refs.length, 0)
+})
+
+test("course→AoS: without earlier-year keys, behaviour matches the same-year-only matcher", () => {
+  const structure = majorsTree(
+    aosLeaf("APPLMTH05", "/2026/aos/APPLMTH05"),
+    aosLeaf("PHYSICS09", "/2027/aos/PHYSICS09"),
+  )
+  const refs = extractCourseAosRefs("2027", "S2000", structure, new Set(["PHYSICS09"]))
+  assert.deepEqual(
+    refs.map((r) => `${r.aosYear}|${r.aosCode}`),
+    ["2027|PHYSICS09"],
+  )
+})
+
+test("linkedItem: parses year and code, and checks the page kind", () => {
+  assert.deepEqual(linkedItem("/2026/aos/applmth05", "aos"), {
+    year: "2026",
+    code: "APPLMTH05",
+  })
+  assert.deepEqual(linkedItem("/2026/courses/F2010", "courses"), {
+    year: "2026",
+    code: "F2010",
+  })
+  assert.equal(linkedItem("/2026/units/ENG1005", "aos"), null)
+  assert.equal(linkedItem("", "aos"), null)
+  assert.equal(linkedItem(undefined, "aos"), null)
+})
+
+test("extractSubCourseRefs: records the year only for a link to another year's page", () => {
+  const structure = {
+    container: [
+      {
+        title: "Design component",
+        relationship: [
+          { ...courseLeaf("F2010"), academic_item_url: "/2026/courses/F2010" },
+        ],
+      },
+      {
+        title: "Computer science component",
+        relationship: [
+          { ...courseLeaf("C2001"), academic_item_url: "/2027/courses/C2001" },
+        ],
+      },
+    ],
+  }
+  const refs = extractSubCourseRefs(structure, "2027")
+  assert.equal(refs.find((r) => r.courseCode === "F2010")!.year, "2026")
+  assert.equal("year" in refs.find((r) => r.courseCode === "C2001")!, false)
+  // Without a course year nothing is recorded (the pre-change shape).
+  assert.equal(extractSubCourseRefs(structure).some((r) => "year" in r), false)
+})
+
+test("resolveSubCourseYears: keeps the year only when the same-year row is missing and the linked row exists", () => {
+  const refs = [
+    { componentTitle: "Design component", courseCode: "F2010", year: "2026" },
+    { componentTitle: "Cyber", courseCode: "C6010", year: "2026" },
+    { componentTitle: "Science", courseCode: "S2000", year: "2026" },
+    { componentTitle: "Computer science", courseCode: "C2001" },
+  ]
+  const known = new Set(["2026|F2010", "2027|S2000", "2026|S2000"])
+  const out = resolveSubCourseYears("2027", refs, known)!
+  // F2010: no 2027 row, 2026 row exists.
+  assert.equal(out[0]!.year, "2026")
+  // C6010: no row in either year.
+  assert.equal("year" in out[1]!, false)
+  // S2000: the 2027 row exists, so it wins.
+  assert.equal("year" in out[2]!, false)
+  // Refs without a year pass through unchanged.
+  assert.equal(out[3], refs[3])
+  assert.equal(resolveSubCourseYears("2027", null, known), null)
 })
 
 /* ------------------------------------------------------------------ *

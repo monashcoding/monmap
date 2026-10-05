@@ -1,6 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import {
   areaOfStudyUnits,
   areasOfStudy,
@@ -25,6 +25,7 @@ import {
   parseAos,
   parseCourse,
   parseUnit,
+  resolveSubCourseYears,
 } from "./parse.ts";
 import { loadCurriculumOverrides } from "./overrides.ts";
 
@@ -146,12 +147,47 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
   const unitCodeSet = new Set(unitRows.map((u) => u.code.toUpperCase()));
   const aosCodeSet = new Set(aosRows.map((a) => a.code.toUpperCase()));
 
+  // A handbook that is still being published links some AoS and
+  // component courses to an earlier year's page (2027 S2000 →
+  // `/2026/aos/APPLMTH05`). Those links resolve against rows already
+  // ingested for earlier years, keyed `YEAR|CODE`.
+  const key = (r: { year: string; code: string }) =>
+    `${r.year}|${r.code.toUpperCase()}`;
+  const [earlierAos, earlierCourses] = await Promise.all([
+    db
+      .select({ year: areasOfStudy.year, code: areasOfStudy.code })
+      .from(areasOfStudy)
+      .where(lt(areasOfStudy.year, year)),
+    db
+      .select({ year: courses.year, code: courses.code })
+      .from(courses)
+      .where(lt(courses.year, year)),
+  ]);
+  const earlierAosKeys = new Set(earlierAos.map(key));
+  const knownCourseKeys = new Set([
+    ...earlierCourses.map(key),
+    ...courseRows.map((c) => key({ year, code: c.code })),
+  ]);
+
+  let crossYearComponents = 0;
+  for (const c of courseRows) {
+    c.subCourseRefs = resolveSubCourseYears(year, c.subCourseRefs, knownCourseKeys);
+    crossYearComponents += c.subCourseRefs?.filter((r) => r.year).length ?? 0;
+  }
+
   const courseAosRows: ReturnType<typeof extractCourseAosRefs> = [];
   for (const c of courseRows) {
     courseAosRows.push(
-      ...extractCourseAosRefs(year, c.code, c.curriculumStructure, aosCodeSet),
+      ...extractCourseAosRefs(
+        year,
+        c.code,
+        c.curriculumStructure,
+        aosCodeSet,
+        earlierAosKeys,
+      ),
     );
   }
+  const crossYearAos = courseAosRows.filter((r) => r.aosYear !== year).length;
 
   const aosUnitRows: ReturnType<typeof extractAosUnitRefs> = [];
   for (const a of aosRows) {
@@ -160,7 +196,9 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
     );
   }
   console.log(
-    `  cross-refs: ${courseAosRows.length} course→aos, ${aosUnitRows.length} aos→unit`,
+    `  cross-refs: ${courseAosRows.length} course→aos ` +
+      `(${crossYearAos} to earlier-year AoS), ${aosUnitRows.length} aos→unit, ` +
+      `${crossYearComponents} earlier-year component courses`,
   );
 
   /*
