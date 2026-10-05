@@ -52,7 +52,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
     <header
       className={cn(
         "sticky top-0 z-40 -mx-3 -mt-3 flex h-14 items-center gap-2 px-3 sm:-mx-5 sm:-mt-5 sm:gap-3 sm:px-5",
-        "before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-card/90 before:backdrop-blur-md",
+        "before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-card/90 before:shadow-[0_1px_0_var(--border),0_4px_12px_-6px_var(--shadow-tint)] before:backdrop-blur-md",
         "print:static print:mx-0 print:mt-0 print:before:hidden"
       )}
     >
@@ -92,9 +92,12 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         </span>
         <Link
           href="/"
-          className="rounded-control font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center gap-2 rounded-control font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           MonMap
+          <span className="hidden rounded-tag bg-primary px-1.5 py-0.5 text-[10px] leading-none font-semibold text-primary-foreground sm:inline">
+            2027 update!
+          </span>
         </Link>
       </nav>
       <PrimaryNav className="ml-3 hidden md:flex" />

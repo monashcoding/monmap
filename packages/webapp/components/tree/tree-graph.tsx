@@ -194,7 +194,7 @@ function TreeGraphInner({
           variant={BackgroundVariant.Dots}
           gap={20}
           size={1}
-          className="!bg-background"
+          className="!bg-card"
         />
         <Controls
           showInteractive={false}

@@ -95,7 +95,7 @@
   --monash-yellow-ink: #252525;
   --mac-charcoal: #252525;
 
-  --background: #fafaf7; /* warm paper */
+  --background: #f5f5f2; /* warm paper */
   --foreground: #252525;
 
   --card: #ffffff;
@@ -107,15 +107,20 @@
   --primary: var(--monash-yellow);
   --primary-foreground: var(--monash-yellow-ink);
 
+  /* Unit cards, tree nodes and control rows sit on --background
+     inside --card panels, in both themes. Values here were checked
+     for WCAG contrast (text >= 7:1, muted text >= 4.5:1, borders
+     visible on both panel and page). */
+
   /* Neutral chip / zebra surface. */
-  --secondary: #f0efeb;
+  --secondary: #efeeea;
   --secondary-foreground: #252525;
 
-  --muted: #f3f2ee;
+  --muted: #f0efeb;
   --muted-foreground: #6b6a65;
 
   /* Hover / press wash for menus, list rows and ghost controls. */
-  --accent: #efeee9;
+  --accent: #ebeae5;
   --accent-foreground: #252525;
 
   /* Selected and active marks: borders, focus rings, highlighted
@@ -135,8 +140,8 @@
   --info-foreground: oklch(0.38 0.11 245);
   --info-soft: oklch(0.94 0.05 245);
 
-  --border: #e7e5e0;
-  --input: #e2e0da;
+  --border: #d9d7d0;
+  --input: #d6d4cc;
   --ring: var(--emphasis);
 
   /* Year header strips above each study year. */
@@ -154,9 +159,9 @@
   --sidebar-foreground: #252525;
   --sidebar-primary: var(--monash-yellow);
   --sidebar-primary-foreground: var(--monash-yellow-ink);
-  --sidebar-accent: #efeee9;
+  --sidebar-accent: #ebeae5;
   --sidebar-accent-foreground: #252525;
-  --sidebar-border: #e7e5e0;
+  --sidebar-border: #d9d7d0;
   --sidebar-ring: var(--emphasis);
 
   --shadow-tint: rgba(37, 37, 37, 0.12);
@@ -164,27 +169,28 @@
 
 @media screen {
   .dark {
-    /* monashcoding.com: page #252525, cards #1e1e1e, lines #404040. */
-    --background: #252525;
+    /* Page #161616, panels #202020, popovers #2a2a2a. Unit cards sit
+       on the page colour inside panels, as in light mode. */
+    --background: #161616;
     --foreground: #ffffff;
 
-    --card: #1e1e1e;
+    --card: #202020;
     --card-foreground: #ffffff;
 
-    --popover: #2e2e2e;
+    --popover: #2a2a2a;
     --popover-foreground: #ffffff;
 
-    --secondary: #333333;
+    --secondary: #2c2c2c;
     --secondary-foreground: #ffffff;
 
-    --muted: #2c2c2c;
-    --muted-foreground: #a8a8a8;
+    --muted: #272727;
+    --muted-foreground: #a3a3a3;
 
-    --accent: #353535;
+    --accent: #313131;
     --accent-foreground: #ffffff;
 
     --emphasis: var(--monash-yellow);
-    --emphasis-soft: color-mix(in oklch, var(--monash-yellow) 16%, #1e1e1e);
+    --emphasis-soft: color-mix(in oklch, var(--monash-yellow) 16%, #202020);
 
     --destructive: oklch(0.7 0.19 22);
 
@@ -198,22 +204,23 @@
     --info-foreground: oklch(0.83 0.1 245);
     --info-soft: oklch(0.3 0.06 245);
 
-    --border: #404040;
-    --input: #4a4a4a;
+    --border: #383838;
+    --input: #424242;
 
-    --year-strip: #161616;
+    /* Lighter than the panel, so the strip still reads as a band. */
+    --year-strip: #343434;
 
     --chart-2: #ffffff;
-    --chart-3: #a8a8a8;
+    --chart-3: #a3a3a3;
     --chart-4: #5c5c5c;
 
-    --sidebar: #1e1e1e;
+    --sidebar: #202020;
     --sidebar-foreground: #ffffff;
-    --sidebar-accent: #353535;
+    --sidebar-accent: #313131;
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #404040;
+    --sidebar-border: #383838;
 
-    --shadow-tint: rgba(0, 0, 0, 0.45);
+    --shadow-tint: rgba(0, 0, 0, 0.6);
   }
 }
 
