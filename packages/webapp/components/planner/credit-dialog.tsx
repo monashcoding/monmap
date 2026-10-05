@@ -15,8 +15,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { creditEntryLabel } from "@/lib/planner/credit"
+import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
+import { TOUCH_HIT } from "./touch-target"
 
 const UNIT_CODE = /^[A-Z]{3}[0-9]{4}$/
 
@@ -106,7 +108,7 @@ export function CreditDialog({
                   variant="ghost"
                   size="sm"
                   aria-label={`Remove ${creditEntryLabel(entry)}`}
-                  className="size-6 shrink-0 p-0"
+                  className={cn("size-6 shrink-0 p-0", TOUCH_HIT)}
                   onClick={() => dispatch({ type: "remove_credit", index: i })}
                 >
                   <TrashIcon className="size-3.5" />

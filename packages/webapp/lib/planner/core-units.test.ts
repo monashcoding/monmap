@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { unitIsCore } from "./core-units.ts"
+import { coreUnitCodes, unitIsCore } from "./core-units.ts"
 import type { PlannerCourseWithAoS } from "./types.ts"
 
 const group = (
@@ -119,4 +119,17 @@ test("core: legacy rows with no autoLoad fall back to the credit-point rule", ()
     courseRequirements: [group("Pick one", ["FIT1049", "FIT1055"], 1)],
   })
   assert.equal(unitIsCore("FIT1049", choice, new Set()), false)
+})
+
+test("coreUnitCodes: mandatory options of the course and the picked AoS only", () => {
+  const c = course({
+    areasOfStudy: [
+      aos("ROBMCTRN04", [group("Part C", ["MMA2005", "ENG2005"])]),
+      aos("OTHER01", [group("Part A", ["XYZ1000"])]),
+    ],
+  })
+  const core = coreUnitCodes(c, new Set(["ROBMCTRN04"]))
+  assert.ok(core.has("MMA2005"))
+  assert.ok(!core.has("XYZ1000"), "not picked")
+  assert.equal(coreUnitCodes(null, new Set()).size, 0)
 })

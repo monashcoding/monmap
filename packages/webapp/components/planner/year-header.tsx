@@ -10,24 +10,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import { ADDABLE_SLOT_KINDS } from "@/lib/planner/teaching-period"
 import {
-  slotCalendarYear,
+  slotLabel,
   sortSlots,
   startPeriodOf,
   studyYearSpan,
 } from "@/lib/planner/timeline"
 import type { PeriodKind } from "@/lib/planner/types"
+import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
-
-const ADDABLE_SLOT_KINDS: PeriodKind[] = [
-  "S1",
-  "S2",
-  "SUMMER_A",
-  "SUMMER_B",
-  "WINTER",
-]
+import { TOUCH_HIT_ROW } from "./touch-target"
 
 /**
  * Header strip for a single study year — the charcoal banner above the
@@ -55,7 +49,7 @@ export function YearHeader({
     startPeriodOf(state)
   ).map(({ kind }) => ({
     kind,
-    label: `${PERIOD_KIND_LABEL[kind]}, ${slotCalendarYear(state, yearIndex, kind)}`,
+    label: slotLabel(state, yearIndex, { kind }),
   }))
   return (
     <div className="relative flex items-center justify-between gap-2 border-b border-white/10 bg-year-strip px-3 py-2.5 text-white sm:px-4">
@@ -63,14 +57,17 @@ export function YearHeader({
         {yearLabel}
         <span className="ml-1.5 font-medium text-white/55">({span})</span>
       </h3>
-      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+      <div className="flex shrink-0 items-center gap-2 md:gap-1">
         <Button
           variant="ghost"
           size="icon-xs"
           aria-label={`Reset ${yearLabel}`}
           disabled={!yearHasUnits}
           onClick={() => dispatch({ type: "clear_year", yearIndex })}
-          className="text-white/70 hover:bg-white/15 hover:text-white disabled:opacity-30"
+          className={cn(
+            "text-white/70 hover:bg-white/15 hover:text-white disabled:opacity-30",
+            TOUCH_HIT_ROW
+          )}
         >
           <RotateCcwIcon />
         </Button>
@@ -82,7 +79,10 @@ export function YearHeader({
                 size="icon-xs"
                 aria-label={`Add a term to ${yearLabel}`}
                 title="Add summer, winter or another term"
-                className="text-white/70 hover:bg-white/15 hover:text-white"
+                className={cn(
+                  "text-white/70 hover:bg-white/15 hover:text-white",
+                  TOUCH_HIT_ROW
+                )}
               />
             }
           >
@@ -121,7 +121,10 @@ export function YearHeader({
             size="icon-xs"
             aria-label={`Remove ${yearLabel}`}
             onClick={() => dispatch({ type: "remove_year", yearIndex })}
-            className="text-white/70 hover:bg-white/15 hover:text-white"
+            className={cn(
+              "text-white/70 hover:bg-white/15 hover:text-white",
+              TOUCH_HIT_ROW
+            )}
           >
             <Trash2Icon />
           </Button>

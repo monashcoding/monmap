@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/select"
 import type { AosSlot } from "@/lib/planner/aos-slots"
 import {
-  MAX_PICKS_PER_SLOT,
   computeAosSlotsWithRepeats,
+  higherRepeatKeys,
   legacyKeyServing,
-  repeatSlotKey,
   resolveSlotSelection,
 } from "@/lib/planner/aos-slots"
 import {
@@ -198,21 +197,6 @@ function CampusSelect({
 /** Sentinel: Base UI selects can't hold an empty value as a real choice. */
 const ALL_CAMPUSES = "__all__"
 
-/**
- * Repeat-slot keys ranked above `key`, so clearing a pick takes the
- * picks that depended on it. "major" yields major#2..#N; "major#2"
- * yields major#3..#N.
- */
-function higherRepeatKeys(key: string): string[] {
-  const hash = key.lastIndexOf("#")
-  const base = hash === -1 ? key : key.slice(0, hash)
-  const from = hash === -1 ? 2 : Number(key.slice(hash + 1)) + 1
-  const out: string[] = []
-  for (let n = from; n <= MAX_PICKS_PER_SLOT; n++)
-    out.push(repeatSlotKey(base, n))
-  return out
-}
-
 function RoleSelect({
   label,
   options,
@@ -275,7 +259,7 @@ function RoleSelect({
                 : null}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="max-h-[320px] min-w-[360px]">
+          <SelectContent className="max-h-[min(320px,var(--available-height))] min-w-[min(360px,calc(100vw-2rem))]">
             <SelectGroup>
               {sorted.map((a) => (
                 <SelectItem

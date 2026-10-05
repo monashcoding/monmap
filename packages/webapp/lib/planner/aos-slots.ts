@@ -46,7 +46,7 @@ export interface AosSlot {
   genericLabel?: string
 }
 
-const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
+export const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
   major: "Major",
   extended_major: "Extended major",
   minor: "Minor",
@@ -271,6 +271,21 @@ const REPEATABLE_KINDS: ReadonlySet<PlannerAreaOfStudy["kind"]> = new Set([
  */
 export function repeatSlotKey(baseKey: string, n: number): string {
   return `${baseKey}#${n}`
+}
+
+/**
+ * Repeat-slot keys ranked above `key`, so clearing a pick takes the
+ * picks that depended on it. "major" yields major#2..#N; "major#2"
+ * yields major#3..#N.
+ */
+export function higherRepeatKeys(key: string): string[] {
+  const hash = key.lastIndexOf("#")
+  const base = hash === -1 ? key : key.slice(0, hash)
+  const from = hash === -1 ? 2 : Number(key.slice(hash + 1)) + 1
+  const out: string[] = []
+  for (let n = from; n <= MAX_PICKS_PER_SLOT; n++)
+    out.push(repeatSlotKey(base, n))
+  return out
 }
 
 /**

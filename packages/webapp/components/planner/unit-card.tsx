@@ -27,24 +27,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { pickedAosEntries } from "@/lib/planner/aos-slots"
-import { unitIsCore } from "@/lib/planner/core-units"
+import { canPlaceUnit } from "@/lib/planner/capacity"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { perSlotCreditPoints } from "@/lib/planner/full-year"
 import { GRADE_STYLES, markToGrade } from "@/lib/planner/grades"
-import { slotLabel } from "@/lib/planner/timeline"
-import {
-  slotCapacity,
-  slotUsedWeight,
-  type PlannerCourseWithAoS,
-  type PlannerOffering,
-  type PlannerState,
-  type PlannerUnit,
+import { slotLabel, studyYearName } from "@/lib/planner/timeline"
+import type {
+  PlannerOffering,
+  PlannerState,
+  PlannerUnit,
 } from "@/lib/planner/types"
 import { keyFor } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
 
-import { usePlanner } from "./planner-context"
+import { usePlanner, usePlannerFlash } from "./planner-context"
 import { UnitDetailPopover } from "./unit-detail-popover"
 import { useWam } from "./wam-context"
 
@@ -84,9 +80,10 @@ export function UnitCard({
     validations,
     removeUnit,
     isFullYear,
-    flashVersion,
-    course,
+    fullYearCodes,
+    coreCodes,
   } = usePlanner()
+  const flashVersion = usePlannerFlash()
   const slot = state.years[yearIndex]?.slots[slotIndex]
   const slotLocked = !!slot?.locked
   const { showResults, grades, setGrade } = useWam()
@@ -103,19 +100,7 @@ export function UnitCard({
   const faculty = useMemo(() => facultyStyle(code), [code])
   // Only the AoS the student actually picked count toward "core" — a
   // unit that is core in a major they didn't choose isn't core for them.
-  const pickedAosCodes = useMemo(
-    () =>
-      course
-        ? new Set(
-            pickedAosEntries(course, state.selectedAos).map((p) => p.aos.code)
-          )
-        : new Set<string>(),
-    [course, state.selectedAos]
-  )
-  const isCore = useMemo(
-    () => unitIsCore(code, course, pickedAosCodes),
-    [code, course, pickedAosCodes]
-  )
+  const isCore = coreCodes.has(code)
   const [menuOpen, setMenuOpen] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const gradeEntry = grades.get(code)
@@ -187,6 +172,8 @@ export function UnitCard({
       data-swap-target={isSwapTarget ? "true" : undefined}
       className={cn(
         "group/card relative flex min-w-0 animate-in items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,box-shadow,border-color,opacity] duration-200 fade-in-0 slide-in-from-top-1",
+        // A long press starts a drag on a phone, not a text selection.
+        "max-md:select-none max-md:[-webkit-touch-callout:none]",
         "hover:-translate-y-px",
         isDragOverlay
           ? "cursor-grabbing"
@@ -287,19 +274,30 @@ export function UnitCard({
         <UnitMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
-          // Year-long units move as a pair, so they only move by drag.
           moveTargets={
-            isFY || slotLocked ? [] : moveTargets(state, units, offerings, code)
+            slotLocked
+              ? []
+              : moveTargets(state, units, offerings, code, yearIndex, isFY)
           }
           onMove={(t) =>
-            dispatch({
-              type: "move_unit",
-              fromYearIndex: yearIndex,
-              fromSlotIndex: slotIndex,
-              toYearIndex: t.yearIndex,
-              toSlotIndex: t.slotIndex,
-              code,
-            })
+            dispatch(
+              isFY
+                ? {
+                    type: "move_full_year_unit",
+                    fromYearIndex: yearIndex,
+                    toYearIndex: t.yearIndex,
+                    code,
+                    fullYearCodes,
+                  }
+                : {
+                    type: "move_unit",
+                    fromYearIndex: yearIndex,
+                    fromSlotIndex: slotIndex,
+                    toYearIndex: t.yearIndex,
+                    toSlotIndex: t.slotIndex,
+                    code,
+                  }
+            )
           }
           onRemove={() => {
             posthog.capture("unit_removed", {
@@ -324,26 +322,47 @@ interface MoveTarget {
   label: string
 }
 
-/** Unlocked semesters with room for `code`, other than its own. */
+/**
+ * Where the menu can move `code`: every semester that can take it,
+ * other than its own. A year-long unit moves as a pair, so it gets one
+ * target per other year that can take it, named by the year.
+ */
 function moveTargets(
   state: PlannerState,
   units: ReadonlyMap<string, PlannerUnit>,
   offerings: ReadonlyMap<string, PlannerOffering[]>,
-  code: string
+  code: string,
+  fromYearIndex: number,
+  fullYear: boolean
 ): MoveTarget[] {
   const out: MoveTarget[] = []
-  state.years.forEach((year, yearIndex) =>
+  state.years.forEach((year, yearIndex) => {
+    if (fullYear) {
+      const slotIndex = year.slots.findIndex((s) => s.kind === "S1")
+      if (yearIndex === fromYearIndex || slotIndex < 0) return
+      if (!canPlaceUnit(state, yearIndex, slotIndex, code, units, offerings).ok)
+        return
+      out.push({ yearIndex, slotIndex, label: studyYearName(yearIndex) })
+      return
+    }
     year.slots.forEach((slot, slotIndex) => {
-      if (slot.locked || slot.unitCodes.includes(code)) return
-      if (slotUsedWeight(slot, units, offerings) >= slotCapacity(slot)) return
+      if (!canPlaceUnit(state, yearIndex, slotIndex, code, units, offerings).ok)
+        return
       out.push({
         yearIndex,
         slotIndex,
         label: slotLabel(state, yearIndex, slot),
       })
     })
-  )
+  })
   return out
+}
+
+/** Keeps a press on a control inside the card from starting a drag. */
+const stopDrag = {
+  onPointerDown: (e: React.SyntheticEvent) => e.stopPropagation(),
+  onMouseDown: (e: React.SyntheticEvent) => e.stopPropagation(),
+  onTouchStart: (e: React.SyntheticEvent) => e.stopPropagation(),
 }
 
 function UnitMenu({
@@ -368,8 +387,10 @@ function UnitMenu({
               variant="ghost"
               size="icon-xs"
               aria-label="Unit options"
-              className="max-md:size-8"
-              onPointerDown={(e) => e.stopPropagation()}
+              // Below md: a 32px button with its tap area grown to 40px
+              // down and left, inside the card.
+              className="relative after:absolute after:top-0 after:right-0 after:-bottom-2 after:-left-2 max-md:size-8 md:after:hidden"
+              {...stopDrag}
             />
           }
         >
@@ -486,7 +507,7 @@ function MarkChip({
         render={
           <button
             type="button"
-            onPointerDown={(e) => e.stopPropagation()}
+            {...stopDrag}
             onKeyDown={(e) => e.stopPropagation()}
             aria-label={
               mark !== undefined
@@ -495,6 +516,8 @@ function MarkChip({
             }
             className={cn(
               "absolute right-1.5 bottom-1.5 z-10 inline-flex h-5 items-center gap-1 rounded-tag px-1.5 text-[10px] leading-none font-semibold tabular-nums transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              // Below md the tap area grows to 40px tall, up and left.
+              "after:absolute after:-top-3.5 after:-right-1.5 after:-bottom-1.5 after:-left-3 md:after:hidden",
               grade
                 ? cn(GRADE_STYLES[grade].bg, GRADE_STYLES[grade].text)
                 : "border border-dashed border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground"
@@ -511,11 +534,7 @@ function MarkChip({
           "+ Mark"
         )}
       </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="w-56 gap-3 p-3"
-        onPointerDown={(e) => e.stopPropagation()}
-      >
+      <PopoverContent align="end" className="w-56 gap-3 p-3" {...stopDrag}>
         <label htmlFor={`mark-${code}`} className="text-xs font-medium">
           Mark for {code}
         </label>

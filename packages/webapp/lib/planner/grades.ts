@@ -1,3 +1,5 @@
+import { unitLevel } from "./unit-level.ts"
+
 export type MonashGradeCode = "HD" | "D" | "C" | "P" | "N"
 
 export function markToGrade(mark: number): MonashGradeCode {
@@ -65,7 +67,7 @@ export function computeWam(units: readonly GradedUnit[]): number | null {
   let weighted = 0
   let weight = 0
   for (const u of units) {
-    const w = u.level?.match(/\d+/)?.[0] === "1" ? 0.5 : 1
+    const w = unitLevel(u.level) === 1 ? 0.5 : 1
     weighted += u.mark * u.creditPoints * w
     weight += u.creditPoints * w
   }

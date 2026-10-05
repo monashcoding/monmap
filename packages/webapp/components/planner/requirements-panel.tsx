@@ -4,15 +4,19 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
-import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
+import type { PickedAosEntry } from "@/lib/planner/aos-slots"
 import {
   detectAosOverlaps,
   summarizeAosCreditBudget,
   type AosOverlap,
   type CreditBudget,
 } from "@/lib/planner/overlap"
-import { effectiveRequired } from "@/lib/planner/reachable"
-import { summarizeAoSProgress, type AoSProgress } from "@/lib/planner/progress"
+import {
+  groupProgress,
+  summarizeAoSProgress,
+  summarizeGroups,
+  type AoSProgress,
+} from "@/lib/planner/progress"
 import type { PlannerAreaOfStudy, RequirementGroup } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
@@ -26,7 +30,7 @@ import { UnitDetailPopover } from "./unit-detail-popover"
  * places matching codes in the plan.
  */
 export function RequirementsPanel({ className }: { className?: string }) {
-  const { course, state, units, plannedCodes } = usePlanner()
+  const { course, state, units, plannedCodes, pickedAos } = usePlanner()
   const conflicts = course?.conflicts
 
   // Map each placed code to where it sits in the plan so the chip's
@@ -43,11 +47,6 @@ export function RequirementsPanel({ className }: { className?: string }) {
     }
     return map
   }, [state.years])
-
-  const pickedAos = useMemo(
-    () => (course ? pickedAosEntries(course, state.selectedAos) : []),
-    [course, state.selectedAos]
-  )
 
   // Cross-AoS double counting. summarizeAoSProgress is per-AoS by
   // design, so this is the only place that can see a unit counting
@@ -122,6 +121,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                       progress={progress}
                       plannedCodes={plannedCodes}
                       placements={placements}
+                      conflicts={conflicts}
                     />
                   ))}
                 </div>
@@ -143,6 +143,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                   progress={progress}
                   plannedCodes={plannedCodes}
                   placements={placements}
+                  conflicts={conflicts}
                 />
               ))}
           </>
@@ -162,6 +163,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
                 progress={progress}
                 plannedCodes={plannedCodes}
                 placements={placements}
+                conflicts={conflicts}
               />
             ))}
           </>
@@ -180,6 +182,7 @@ export function RequirementsPanel({ className }: { className?: string }) {
               progress={progress}
               plannedCodes={plannedCodes}
               placements={placements}
+              conflicts={conflicts}
             />
           ))
         )}
@@ -229,11 +232,13 @@ function CourseBlock({
   title?: string
 }) {
   const totals = useMemo(
-    () => computeTotals(requirements, plannedCodes, conflicts),
+    () => summarizeGroups(requirements, plannedCodes, conflicts),
     [requirements, plannedCodes, conflicts]
   )
   const completionPct =
-    totals.total === 0 ? 0 : Math.round((totals.satisfied / totals.total) * 100)
+    totals.totalRequired === 0
+      ? 0
+      : Math.round((totals.satisfiedCount / totals.totalRequired) * 100)
   const collapsible = requirements.length > COLLAPSE_GROUP_THRESHOLD
   const [open, setOpen] = useState(!collapsible)
 
@@ -251,8 +256,10 @@ function CourseBlock({
         </div>
         <div className="text-right leading-tight">
           <div className="text-[11px] tabular-nums">
-            <span className="font-semibold">{totals.satisfied}</span>
-            <span className="text-muted-foreground">/{totals.total}</span>
+            <span className="font-semibold">{totals.satisfiedCount}</span>
+            <span className="text-muted-foreground">
+              /{totals.totalRequired}
+            </span>
           </div>
           <div className="text-[9px] text-muted-foreground">required</div>
         </div>
@@ -280,6 +287,7 @@ function CourseBlock({
             requirements={requirements}
             plannedCodes={plannedCodes}
             placements={placements}
+            conflicts={conflicts}
           />
           {collapsible ? (
             <button
@@ -303,6 +311,7 @@ function AoSBlock({
   progress,
   plannedCodes,
   placements,
+  conflicts,
 }: {
   /** Kind label for the badge, e.g. "Major" or "Specialisation". */
   label: string
@@ -310,6 +319,7 @@ function AoSBlock({
   progress: AoSProgress
   plannedCodes: ReadonlySet<string>
   placements: ReadonlyMap<string, { yearIndex: number; slotIndex: number }>
+  conflicts: Readonly<Record<string, string[]>> | undefined
 }) {
   const completionPct =
     progress.totalRequired === 0
@@ -354,27 +364,10 @@ function AoSBlock({
         requirements={aos.requirements}
         plannedCodes={plannedCodes}
         placements={placements}
+        conflicts={conflicts}
       />
     </section>
   )
-}
-
-function computeTotals(
-  requirements: ReadonlyArray<RequirementGroup>,
-  plannedCodes: ReadonlySet<string>,
-  conflicts: Readonly<Record<string, string[]>> | undefined
-): { satisfied: number; total: number } {
-  let satisfied = 0
-  let total = 0
-  for (const g of requirements) {
-    // Capped at what the student can still reach — see reachable.ts.
-    const required = effectiveRequired(g, plannedCodes, conflicts)
-    total += required
-    let placed = 0
-    for (const c of g.options) if (plannedCodes.has(c)) placed++
-    satisfied += Math.min(placed, required)
-  }
-  return { satisfied, total }
 }
 
 /**
@@ -387,20 +380,23 @@ function GroupList({
   requirements,
   plannedCodes,
   placements,
+  conflicts,
 }: {
   requirements: ReadonlyArray<RequirementGroup>
   plannedCodes: ReadonlySet<string>
   placements: ReadonlyMap<string, { yearIndex: number; slotIndex: number }>
+  conflicts: Readonly<Record<string, string[]>> | undefined
 }) {
   return (
     <div className="mt-2 flex flex-col gap-2">
       {requirements.map((g) => {
-        const placedCount = g.options.reduce(
-          (n, c) => n + (plannedCodes.has(c) ? 1 : 0),
-          0
-        )
-        const isChoice = g.required < g.options.length
-        const satisfied = placedCount >= g.required
+        // Capped at what the student can still reach — see reachable.ts.
+        const {
+          required,
+          placed: placedCount,
+          satisfied,
+        } = groupProgress(g, plannedCodes, conflicts)
+        const isChoice = required < g.options.length
         const sortedOptions = [...g.options].sort((a, b) => a.localeCompare(b))
         return (
           <div key={g.grouping}>
@@ -426,7 +422,7 @@ function GroupList({
                 </span>
               ) : null}
               <span className="ml-auto text-[9px] text-muted-foreground tabular-nums">
-                {Math.min(placedCount, g.required)}/{g.required}
+                {Math.min(placedCount, required)}/{required}
               </span>
             </div>
             <ul className="flex flex-wrap gap-1">

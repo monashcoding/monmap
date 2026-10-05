@@ -4,28 +4,22 @@ import { FlagIcon, PlusIcon } from "lucide-react"
 import { useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
-import { summarizePlan } from "@/lib/planner/progress"
 import {
   nextSemesters,
   slotBlockCredit,
   slotLabel,
 } from "@/lib/planner/timeline"
-import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
+import { slotUsedWeight } from "@/lib/planner/capacity"
+import type { PlannerAction } from "@/lib/planner/state"
+import { slotCapacity, STANDARD_CP } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
 
-const CP_PER_UNIT = 6
-
-/**
- * Finish-line projection under the grid. When the plan already reaches
- * the course's credit points it says in which semester; otherwise it
- * works out how many more semesters the remaining points need at the
- * student's usual load, when that lands, and offers to add them.
- */
 /**
  * Add the next `n` semesters after the end of the plan: a missing
  * semester goes into its existing year, new years come in whole, and a
  * new year that only needs its first semester comes in as a half year.
+ * One click is one undo step.
  */
 export function useAddSemesters() {
   const { state, dispatch } = usePlanner()
@@ -36,17 +30,19 @@ export function useAddSemesters() {
       kinds.add(pos.kind)
       byYear.set(pos.yearIndex, kinds)
     }
+    const actions: PlannerAction[] = []
     for (const [yearIndex, kinds] of [...byYear].sort((x, y) => x[0] - y[0])) {
       if (yearIndex < state.years.length) {
         for (const kind of kinds)
-          dispatch({ type: "add_optional_slot", yearIndex, kind })
+          actions.push({ type: "add_optional_slot", yearIndex, kind })
       } else {
-        dispatch({
+        actions.push({
           type: "add_year",
           only: kinds.size === 1 ? "first" : undefined,
         })
       }
     }
+    dispatch({ type: "batch", actions })
   }
 }
 
@@ -68,13 +64,18 @@ export function AddSemesterButton() {
   )
 }
 
+/**
+ * Finish-line projection under the grid. When the plan already reaches
+ * the course's credit points it says in which semester; otherwise it
+ * works out how many more semesters the remaining points need at the
+ * student's usual load, when that lands, and offers to add them.
+ */
 export function FinishLine() {
-  const { state, course, units, offerings } = usePlanner()
+  const { state, course, units, offerings, summary } = usePlanner()
   const addSemesters = useAddSemesters()
 
   const projection = useMemo(() => {
     if (!course) return null
-    const summary = summarizePlan(state, course, units, offerings)
     const target = summary.targetCreditPoints
     if (target <= 0) return null
 
@@ -123,7 +124,7 @@ export function FinishLine() {
           slotCapacity(slot) - slotUsedWeight(slot, units, offerings)
         )
       }
-    const freeCp = free * CP_PER_UNIT
+    const freeCp = free * STANDARD_CP
     if (freeCp >= remaining) {
       return { kind: "room" as const, remaining }
     }
@@ -132,7 +133,7 @@ export function FinishLine() {
         loads.length ? loads.reduce((a, b) => a + b, 0) / loads.length : 4
       ) || 4
     const extra = remaining - freeCp
-    const semesters = Math.ceil(extra / (load * CP_PER_UNIT))
+    const semesters = Math.ceil(extra / (load * STANDARD_CP))
     const ahead = nextSemesters(state, semesters)
     const lastAhead = ahead.at(-1)!
     return {
@@ -142,7 +143,7 @@ export function FinishLine() {
       semesters,
       when: slotLabel(state, lastAhead.yearIndex, { kind: lastAhead.kind }),
     }
-  }, [state, course, units, offerings])
+  }, [state, course, units, offerings, summary])
 
   if (!projection) return null
 

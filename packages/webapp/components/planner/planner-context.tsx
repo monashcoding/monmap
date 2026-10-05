@@ -19,14 +19,17 @@ import {
   deleteMyPlanAction,
   getMyPlanAction,
   hydrateUnitsAction,
-  listCoursesAction,
   listMyPlansAction,
-  loadCourseAction,
+  loadPlannerYearAction,
   renameMyPlanAction,
   saveMyPlanAction,
+  type SaveResult,
 } from "@/app/actions"
+import { MAX_PLANS_PER_USER } from "@/lib/db/input"
 import type { PlanSummary } from "@/lib/db/queries"
+import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
 import { availableCampuses, courseForCampus } from "@/lib/planner/campus"
+import { coreUnitCodes } from "@/lib/planner/core-units"
 import { distribute } from "@/lib/planner/distribute"
 import { isFullYearUnit } from "@/lib/planner/full-year"
 import {
@@ -34,7 +37,11 @@ import {
   readLocalPlan,
   writeLocalPlan,
 } from "@/lib/planner/local-storage"
-import { plannedUnitCodes } from "@/lib/planner/progress"
+import {
+  plannedUnitCodes,
+  summarizePlan,
+  type ProgressSummary,
+} from "@/lib/planner/progress"
 import {
   defaultState,
   historyReducer,
@@ -51,26 +58,40 @@ import type {
   SlotUnitValidation,
 } from "@/lib/planner/types"
 import { yearsNeeded } from "@/lib/planner/timeline"
+import {
+  mergeUnitMaps,
+  unitBundleFor,
+  unitMapsFrom,
+  type UnitBundle,
+  type UnitMaps,
+} from "@/lib/planner/unit-cache"
 import { validatePlan } from "@/lib/planner/validation"
 
 import { useFullYearSelfHeal } from "./hooks/use-full-year-self-heal"
 import { useUnitDataHydration } from "./hooks/use-unit-data-hydration"
+import type { PlannerProps } from "./planner"
 
 /** ms to wait after the last edit before pushing a save to the server. */
 const SERVER_SAVE_DEBOUNCE = 800
 
+const PLAN_LIMIT_MESSAGE = `You have reached the limit of ${MAX_PLANS_PER_USER} plans. Delete a plan to make a new one.`
+
+/**
+ * What the client knows about the signed-in user: the name for the
+ * print sheet. Ids and emails stay on the server.
+ */
 export interface PlannerCurrentUser {
-  id: string
   name: string
-  email: string
-  image: string | null
 }
 
-interface Hydrated {
-  units: Record<string, PlannerUnit>
-  offerings: Record<string, PlannerOffering[]>
-  requisites: Record<string, RequisiteBlock[]>
-}
+/**
+ * Whether the current edit has been persisted yet:
+ *   - "saved"   → in sync with the persistence backend
+ *   - "saving"  → mutation in flight (signed-in only)
+ *   - "local"   → anonymous; held only in localStorage on this device
+ *   - "error"   → last server save failed; will retry on next change
+ */
+export type SaveStatus = "saved" | "saving" | "local" | "error"
 
 export interface PlannerContextValue {
   state: PlannerState
@@ -82,16 +103,8 @@ export interface PlannerContextValue {
   canUndo: boolean
   canRedo: boolean
 
-  /** Authenticated user info, or null for anonymous visitors. */
+  /** Signed-in user, or null for anonymous visitors. */
   currentUser: PlannerCurrentUser | null
-  /**
-   * Whether the current edit has been persisted yet:
-   *   - "saved"   → in sync with the persistence backend
-   *   - "saving"  → mutation in flight (signed-in only)
-   *   - "local"   → anonymous; held only in localStorage on this device
-   *   - "error"   → last server save failed; will retry on next change
-   */
-  saveStatus: "saved" | "saving" | "local" | "error"
 
   courses: PlannerCourse[]
   course: PlannerCourseWithAoS | null
@@ -112,23 +125,32 @@ export interface PlannerContextValue {
 
   /** Per-unit-in-slot validation keyed by `${year}:${slot}:${code}`. */
   validations: Map<string, SlotUnitValidation>
-  /** Codes currently placed anywhere in the plan. */
+  /** Codes placed anywhere in the plan, plus credited codes. */
   plannedCodes: Set<string>
-  /** True while a server call is in flight — lets UI show non-blocking progress. */
-  isSyncing: boolean
+  /** Credit points and unit counts for the plan, computed once per change. */
+  summary: ProgressSummary
+  /** The student's areas of study, in slot order. */
+  pickedAos: PickedAosEntry[]
+  /** Units the course or a picked area of study requires. */
+  coreCodes: ReadonlySet<string>
 
-  /** Merge additional unit data (from search results) into the local cache. */
-  mergeUnits: (units: PlannerUnit[]) => void
-  /** Merge additional offering data into the local cache, keyed by unit code. */
-  mergeOfferings: (offerings: Record<string, PlannerOffering[]>) => void
-  /** Merge additional requisite blocks into the local cache, keyed by unit code. */
-  mergeRequisites: (requisites: Record<string, RequisiteBlock[]>) => void
+  /** Merge unit data (one unit picked from search, say) into the cache. */
+  mergeUnitData: (bundle: UnitBundle) => void
   /** True if a code is a full-year unit per current offerings data. */
   isFullYear: (code: string) => boolean
   /** All FY codes currently placed anywhere in the plan. */
   fullYearCodes: string[]
-  /** Add a unit, automatically routing FY units to S1[0]+S2[0] of the year. */
-  addUnit: (yearIndex: number, slotIndex: number, code: string) => void
+  /**
+   * Add a unit, automatically routing FY units to S1[0]+S2[0] of the
+   * year. `offerings` overrides the planner's own for the full-year
+   * check, for a unit whose offerings came from a search.
+   */
+  addUnit: (
+    yearIndex: number,
+    slotIndex: number,
+    code: string,
+    offerings?: ReadonlyMap<string, PlannerOffering[]>
+  ) => void
   /** Remove a unit, stripping both halves if FY. */
   removeUnit: (yearIndex: number, slotIndex: number, code: string) => void
   /** Load and set a new course by code. */
@@ -145,17 +167,18 @@ export interface PlannerContextValue {
     codes: readonly string[],
     opts?: { mode?: "merge" | "replace"; label?: string }
   ) => Promise<void>
-
-  /**
-   * Monotonic counter bumped each time the user asks "validate" —
-   * error unit cards watch this to run a brief pulse animation. Using
-   * a counter rather than a boolean lets the effect re-fire even if
-   * the count would otherwise be unchanged.
-   */
-  flashVersion: number
+  /** Pulse the error cards (see usePlannerFlash) and scroll to the first. */
   flashErrors: () => void
+}
 
-  /* ---------- Multi-plan (signed-in only; empty for anon) ---------- */
+/**
+ * Save status and the signed-in user's plan list. Kept apart from the
+ * plan state because it changes twice after every edit ("saving",
+ * then "saved"), and only the header badge, the plan title and the
+ * print sheet read it.
+ */
+export interface PlannerSyncValue {
+  saveStatus: SaveStatus
   /** All plans the signed-in user owns, most recent first. */
   plans: PlanSummary[]
   /** Plan id whose state is currently in `state`. Null while anon, or
@@ -174,11 +197,73 @@ export interface PlannerContextValue {
 }
 
 const PlannerCtx = createContext<PlannerContextValue | null>(null)
+const PlannerSyncCtx = createContext<PlannerSyncValue | null>(null)
+const PlannerFlashCtx = createContext(0)
 
 export function usePlanner(): PlannerContextValue {
   const ctx = useContext(PlannerCtx)
   if (!ctx) throw new Error("usePlanner must be used inside <PlannerProvider>")
   return ctx
+}
+
+export function usePlannerSync(): PlannerSyncValue {
+  const ctx = useContext(PlannerSyncCtx)
+  if (!ctx)
+    throw new Error("usePlannerSync must be used inside <PlannerProvider>")
+  return ctx
+}
+
+/**
+ * Monotonic counter bumped each time the user asks "validate" — error
+ * unit cards watch this to run a brief pulse animation. Using a
+ * counter rather than a boolean lets the effect re-fire even if the
+ * count would otherwise be unchanged.
+ */
+export function usePlannerFlash(): number {
+  return useContext(PlannerFlashCtx)
+}
+
+/**
+ * Shows search results without merging them into the planner's maps,
+ * which would re-validate and re-render the whole plan after every
+ * search. Children read `bundle` layered over the planner's unit data,
+ * and adding a unit from inside merges just that unit.
+ */
+export function UnitDataOverlay({
+  bundle,
+  children,
+}: {
+  bundle: UnitBundle | null
+  children: React.ReactNode
+}) {
+  const ctx = usePlanner()
+  const value = useMemo<PlannerContextValue>(() => {
+    if (!bundle) return ctx
+    const maps = mergeUnitMaps(ctx, bundle)
+    return {
+      ...ctx,
+      ...maps,
+      isFullYear: (code) => isFullYearUnit(code, maps.offerings),
+      addUnit: (yearIndex, slotIndex, code) => {
+        ctx.mergeUnitData(unitBundleFor(maps, code))
+        ctx.addUnit(yearIndex, slotIndex, code, maps.offerings)
+      },
+    }
+  }, [ctx, bundle])
+  return <PlannerCtx.Provider value={value}>{children}</PlannerCtx.Provider>
+}
+
+/** The plan with its year moved to `fallback` when the database lacks it. */
+function withKnownYear(
+  plan: PlannerState,
+  availableYears: readonly string[],
+  fallback: string
+): PlannerState {
+  const year =
+    plan.courseYear && availableYears.includes(plan.courseYear)
+      ? plan.courseYear
+      : fallback
+  return { ...plan, courseYear: year }
 }
 
 export function PlannerProvider({
@@ -193,34 +278,13 @@ export function PlannerProvider({
   initialPlans,
   initialActivePlanId,
   requestedCourse = null,
-}: {
-  children: React.ReactNode
-  initialYear: string
-  availableYears: string[]
-  courses: PlannerCourse[]
-  defaultCourse: PlannerCourseWithAoS | null
-  prewarmed: Hydrated
-  currentUser: PlannerCurrentUser | null
-  /**
-   * Pre-fetched plan state for signed-in users (the active one); null
-   * when anonymous or when the user has no saved plans yet.
-   */
-  initialPlan: PlannerState | null
-  /** Pre-fetched plan summaries for the user; empty for anon. */
-  initialPlans: PlanSummary[]
-  /** Pre-selected plan id (whose state is `initialPlan`); null when anon
-   * or signed-in-with-no-plans. */
-  initialActivePlanId: string | null
-  /**
-   * A course from a "Plan this course" link (`/?course=`). With no
-   * saved plan the server already opened it; over a saved plan the
-   * student is offered a switch rather than losing their plan.
-   */
-  requestedCourse?: string | null
-}) {
-  const [history, dispatch] = useReducer(
-    historyReducer,
-    initialHistory(defaultState(initialYear, defaultCourse?.code ?? null, 3))
+}: Omit<PlannerProps, "initialGrades"> & { children: React.ReactNode }) {
+  const freshState = useCallback(
+    () => defaultState(initialYear, defaultCourse?.code ?? null, 3),
+    [initialYear, defaultCourse?.code]
+  )
+  const [history, dispatch] = useReducer(historyReducer, null, () =>
+    initialHistory(freshState())
   )
   const state = history.present
   const canUndo = history.past.length > 0
@@ -228,9 +292,9 @@ export function PlannerProvider({
   const undo = useCallback(() => dispatch({ type: "undo" }), [])
   const redo = useCallback(() => dispatch({ type: "redo" }), [])
 
-  const [saveStatus, setSaveStatus] = useState<
-    "saved" | "saving" | "local" | "error"
-  >(currentUser ? "saved" : "local")
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(
+    currentUser ? "saved" : "local"
+  )
 
   const [plans, setPlans] = useState<PlanSummary[]>(initialPlans)
   const [activePlanId, setActivePlanId] = useState<string | null>(
@@ -242,15 +306,18 @@ export function PlannerProvider({
   )
   const [courses, setCourses] = useState<PlannerCourse[]>(initialCourses)
 
-  const [unitsMap, setUnitsMap] = useState<Map<string, PlannerUnit>>(
-    () => new Map(Object.entries(prewarmed.units))
+  // Units, offerings and requisites live in one state object, so every
+  // write is a functional update and concurrent fetches can't drop
+  // each other's data.
+  const [unitData, setUnitData] = useState<UnitMaps>(() =>
+    unitMapsFrom(prewarmed)
   )
-  const [offeringsMap, setOfferingsMap] = useState<
-    Map<string, PlannerOffering[]>
-  >(() => new Map(Object.entries(prewarmed.offerings)))
-  const [requisitesMap, setRequisitesMap] = useState<
-    Map<string, RequisiteBlock[]>
-  >(() => new Map(Object.entries(prewarmed.requisites)))
+  const mergeUnitData = useCallback(
+    (bundle: UnitBundle, fillEmpty?: readonly string[]) =>
+      setUnitData((m) => mergeUnitMaps(m, bundle, fillEmpty)),
+    []
+  )
+  const { units: unitsMap, offerings: offeringsMap } = unitData
 
   const [, startCourseTransition] = useTransition()
 
@@ -267,16 +334,46 @@ export function PlannerProvider({
     })
   }, [])
 
-  // Identify the user in PostHog whenever a signed-in user is present.
-  // PostHog is an external system, so this is the correct place for useEffect.
-  useEffect(() => {
-    if (currentUser) {
-      posthog.identify(currentUser.id, {
-        name: currentUser.name,
-        email: currentUser.email,
+  /**
+   * Load the course and its unit data for a handbook year in one round
+   * trip, plus the course list when the year changed. A new year
+   * replaces the unit data, because another year's offerings and
+   * requisites would mis-validate; the same year merges into it.
+   * Returns the course, or null when the year lacks it.
+   */
+  const loadYearData = useCallback(
+    async (year: string, courseCode: string | null, yearChanged: boolean) => {
+      const res = await loadPlannerYearAction(year, courseCode, {
+        withCourses: yearChanged,
       })
-    }
-  }, [currentUser])
+      if (res.courses) setCourses(res.courses)
+      setCourse(res.course)
+      setUnitData((m) =>
+        yearChanged ? unitMapsFrom(res) : mergeUnitMaps(m, res)
+      )
+      return res.course
+    },
+    []
+  )
+
+  /**
+   * Save `snapshot` as a new plan, make it the active one and put it at
+   * the top of the plan list. Callers report failure their own way.
+   */
+  const createPlanRecord = useCallback(
+    async (name: string, snapshot: PlannerState) => {
+      const res = await createMyPlanAction(name, snapshot)
+      if (res.ok) {
+        setActivePlanId(res.plan.id)
+        setPlans((prev) => [
+          { id: res.plan.id, name: res.plan.name, updatedAt: new Date() },
+          ...prev,
+        ])
+      }
+      return res
+    },
+    []
+  )
 
   // Rehydrate the plan exactly once on mount. Source of truth depends
   // on auth state:
@@ -321,62 +418,44 @@ export function PlannerProvider({
 
     // The saved year may not exist in the DB anymore (e.g. old data
     // got trimmed). Fall back to the server-provided initial year.
-    const savedYear =
-      plan.courseYear && availableYears.includes(plan.courseYear)
-        ? plan.courseYear
-        : initialYear
-    const merged: PlannerState = { ...plan, courseYear: savedYear }
+    const merged = withKnownYear(plan, availableYears, initialYear)
     dispatch({ type: "hydrate", state: merged })
 
-    if (didMigrateLocal && currentUser) {
+    if (didMigrateLocal) {
       // Push the migrated plan to the server as a new named plan, then
       // clear localStorage so future logouts don't surface a stale
-      // copy. The created plan becomes the active one.
-      void createMyPlanAction("My plan", merged).then((res) => {
+      // copy. The created plan becomes the active one. (It sets state
+      // only once the server answers, not during the effect.)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void createPlanRecord("My plan", merged).then((res) => {
         if (res.ok) {
           clearLocalPlan()
-          setActivePlanId(res.plan.id)
-          setPlans((prev) => [
-            { id: res.plan.id, name: res.plan.name, updatedAt: new Date() },
-            ...prev,
-          ])
           toast.success("Your plan is now saved to your account")
+        } else if (res.reason === "limit") {
+          toast.error(PLAN_LIMIT_MESSAGE)
         }
       })
     }
 
-    const yearChanged = savedYear !== initialYear
+    // The server prewarmed the course and units for its own year and
+    // course; refetch only when the saved plan differs.
+    const yearChanged = merged.courseYear !== initialYear
     const codeChanged =
-      (plan.courseCode ?? null) !== (defaultCourse?.code ?? null)
-    // If the saved year/course differs from what the server prewarmed,
-    // refetch everything against the saved year.
+      (merged.courseCode ?? null) !== (defaultCourse?.code ?? null)
     if (yearChanged || codeChanged) {
-      const planCourseCode = plan.courseCode
-      void (async () => {
-        if (yearChanged) {
-          const list = await listCoursesAction(null, savedYear)
-          setCourses(list)
+      startCourseTransition(async () => {
+        try {
+          await loadYearData(
+            merged.courseYear,
+            merged.courseCode ?? null,
+            yearChanged
+          )
+        } catch (err) {
+          toast.error("Couldn't load the plan", {
+            description: err instanceof Error ? err.message : "Unknown error",
+          })
         }
-        const c = planCourseCode
-          ? await loadCourseAction(planCourseCode, savedYear)
-          : null
-        setCourse(c)
-        if (c) {
-          const codes = [
-            ...new Set([
-              ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
-              ...c.courseUnits.map((u) => u.code),
-              ...c.componentCourses.flatMap((cc) =>
-                cc.courseUnits.map((u) => u.code)
-              ),
-            ]),
-          ]
-          const res = await hydrateUnitsAction(codes, savedYear)
-          setUnitsMap(new Map(Object.entries(res.units)))
-          setOfferingsMap(new Map(Object.entries(res.offerings)))
-          setRequisitesMap(new Map(Object.entries(res.requisites)))
-        }
-      })()
+      })
     }
   }, [
     currentUser,
@@ -385,6 +464,8 @@ export function PlannerProvider({
     initialYear,
     availableYears,
     requestedCourse,
+    createPlanRecord,
+    loadYearData,
   ])
 
   // Persist plan state on every change. Skip the very first render
@@ -408,40 +489,30 @@ export function PlannerProvider({
     lastSnapshotRef.current = state
   }, [state])
 
-  const fallbackToLocal = useCallback(
-    (snapshot: PlannerState, finalStatus: "local" = "local") => {
-      writeLocalPlan(snapshot)
-      setSaveStatus(finalStatus)
-    },
-    []
-  )
+  const saveLocally = useCallback((snapshot: PlannerState) => {
+    writeLocalPlan(snapshot)
+    setSaveStatus("local")
+  }, [])
 
-  const handleSaveResult = useCallback(
+  /**
+   * Status after a server save or create. A lapsed session falls back
+   * to this device, so the edit isn't lost.
+   */
+  const applySaveResult = useCallback(
     (
-      res: Awaited<ReturnType<typeof saveMyPlanAction>>,
+      res: SaveResult | Awaited<ReturnType<typeof createMyPlanAction>>,
       snapshot: PlannerState
     ) => {
       if (res.ok) {
         setSaveStatus("saved")
-        // Bump our local "most recently updated" snapshot for plan list
-        // ordering. Cheap; avoids a refetch.
-        const planId = activePlanIdRef.current
-        if (planId) {
-          setPlans((prev) =>
-            [
-              ...prev.map((p) =>
-                p.id === planId ? { ...p, updatedAt: new Date() } : p
-              ),
-            ].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-          )
-        }
       } else if (res.reason === "unauthenticated") {
-        fallbackToLocal(snapshot)
+        saveLocally(snapshot)
       } else {
+        if (res.reason === "limit") toast.error(PLAN_LIMIT_MESSAGE)
         setSaveStatus("error")
       }
     },
-    [fallbackToLocal]
+    [saveLocally]
   )
 
   useEffect(() => {
@@ -464,29 +535,24 @@ export function PlannerProvider({
         const planId = activePlanIdRef.current
         if (planId) {
           void saveMyPlanAction(planId, snapshot).then((res) => {
-            handleSaveResult(res, snapshot)
+            applySaveResult(res, snapshot)
+            if (!res.ok) return
+            // Bump our local "most recently updated" snapshot for plan
+            // list ordering. Cheap; avoids a refetch.
+            setPlans((prev) =>
+              prev
+                .map((p) =>
+                  p.id === planId ? { ...p, updatedAt: new Date() } : p
+                )
+                .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+            )
           })
         } else {
           // First edit by a signed-in user with no plan yet. Promote
           // their work to a brand-new "My plan" record.
-          void createMyPlanAction("My plan", snapshot).then((res) => {
-            if (res.ok) {
-              setActivePlanId(res.plan.id)
-              setPlans((prev) => [
-                {
-                  id: res.plan.id,
-                  name: res.plan.name,
-                  updatedAt: new Date(),
-                },
-                ...prev,
-              ])
-              setSaveStatus("saved")
-            } else if (res.reason === "unauthenticated") {
-              fallbackToLocal(snapshot)
-            } else {
-              setSaveStatus("error")
-            }
-          })
+          void createPlanRecord("My plan", snapshot).then((res) =>
+            applySaveResult(res, snapshot)
+          )
         }
       }, SERVER_SAVE_DEBOUNCE)
       return () => {
@@ -495,25 +561,22 @@ export function PlannerProvider({
     }
 
     // Anonymous: keep on this device.
-    fallbackToLocal(state, "local")
-  }, [state, currentUser, fallbackToLocal, handleSaveResult])
+    saveLocally(state)
+  }, [state, currentUser, saveLocally, applySaveResult, createPlanRecord])
 
-  const { isSyncing } = useUnitDataHydration({
-    state,
-    availableYears,
-    unitsMap,
-    offeringsMap,
-    requisitesMap,
-    setUnits: setUnitsMap,
-    setOfferings: setOfferingsMap,
-    setRequisites: setRequisitesMap,
-  })
+  useUnitDataHydration({ state, availableYears, unitData, mergeUnitData })
 
   const plannedCodes = useMemo(() => plannedUnitCodes(state), [state])
 
   const validations = useMemo(
-    () => validatePlan(state, unitsMap, offeringsMap, requisitesMap),
-    [state, unitsMap, offeringsMap, requisitesMap]
+    () =>
+      validatePlan(
+        state,
+        unitData.units,
+        unitData.offerings,
+        unitData.requisites
+      ),
+    [state, unitData]
   )
 
   useFullYearSelfHeal({
@@ -522,36 +585,6 @@ export function PlannerProvider({
     plannedCodes,
     dispatch,
   })
-
-  const mergeUnits = useCallback((list: PlannerUnit[]) => {
-    setUnitsMap((m) => {
-      const next = new Map(m)
-      for (const u of list) next.set(u.code, u)
-      return next
-    })
-  }, [])
-
-  const mergeOfferings = useCallback(
-    (incoming: Record<string, PlannerOffering[]>) => {
-      setOfferingsMap((m) => {
-        const next = new Map(m)
-        for (const [k, v] of Object.entries(incoming)) next.set(k, v)
-        return next
-      })
-    },
-    []
-  )
-
-  const mergeRequisites = useCallback(
-    (incoming: Record<string, RequisiteBlock[]>) => {
-      setRequisitesMap((m) => {
-        const next = new Map(m)
-        for (const [k, v] of Object.entries(incoming)) next.set(k, v)
-        return next
-      })
-    },
-    []
-  )
 
   const isFullYear = useCallback(
     (code: string) => isFullYearUnit(code, offeringsMap),
@@ -566,8 +599,13 @@ export function PlannerProvider({
   }, [plannedCodes, offeringsMap])
 
   const addUnit = useCallback(
-    (yearIndex: number, slotIndex: number, code: string) => {
-      if (isFullYearUnit(code, offeringsMap)) {
+    (
+      yearIndex: number,
+      slotIndex: number,
+      code: string,
+      offerings: ReadonlyMap<string, PlannerOffering[]> = offeringsMap
+    ) => {
+      if (isFullYearUnit(code, offerings)) {
         dispatch({
           type: "add_full_year_unit",
           yearIndex,
@@ -584,7 +622,8 @@ export function PlannerProvider({
   const removeUnit = useCallback(
     (yearIndex: number, slotIndex: number, code: string) => {
       if (isFullYearUnit(code, offeringsMap)) {
-        dispatch({ type: "remove_full_year_unit", code })
+        // Only this year, so a retake in another year survives.
+        dispatch({ type: "remove_full_year_unit", code, yearIndex })
       } else {
         dispatch({ type: "remove_unit", yearIndex, slotIndex, code })
       }
@@ -607,31 +646,27 @@ export function PlannerProvider({
       startCourseTransition(async () => {
         try {
           const res = await hydrateUnitsAction(unique, state.courseYear)
-          const nextUnits = new Map(unitsMap)
-          for (const [k, v] of Object.entries(res.units)) nextUnits.set(k, v)
-          const nextOff = new Map(offeringsMap)
-          for (const [k, v] of Object.entries(res.offerings)) nextOff.set(k, v)
-          for (const code of unique)
-            if (!nextOff.has(code)) nextOff.set(code, [])
-          setUnitsMap(nextUnits)
-          setOfferingsMap(nextOff)
-          const nextReq = new Map(requisitesMap)
-          for (const [k, v] of Object.entries(res.requisites)) nextReq.set(k, v)
-          for (const code of unique)
-            if (!nextReq.has(code)) nextReq.set(code, [])
-          setRequisitesMap(nextReq)
-          const { placements, skipped } = distribute({
+          mergeUnitData(res, unique)
+          // distribute() needs the merged data now, not after the
+          // state update lands. The fetched codes are all written
+          // over, so a stale snapshot only affects codes it doesn't
+          // place.
+          const { placements, skipped, unplaced } = distribute({
             codes: unique,
-            units: nextUnits,
-            offerings: nextOff,
-            requisites: nextReq,
+            ...mergeUnitMaps(unitData, res, unique),
             state,
           })
           dispatch({ type: "bulk_load", placements, mode })
-          const placedMsg = `${placements.length} unit${placements.length === 1 ? "" : "s"} added`
-          const skippedMsg =
-            skipped.length > 0 ? ` (${skipped.length} already on plan)` : ""
-          toast.success(`${label}: ${placedMsg}${skippedMsg}`)
+          // A full-year unit gives two placements, one per semester.
+          const added = new Set(placements.map((p) => p.code)).size
+          const notes = [
+            skipped.length > 0 &&
+              `${skipped.length} already on plan or credited`,
+            unplaced.length > 0 && `${unplaced.length} didn't fit`,
+          ].filter(Boolean)
+          const message = `${label}: ${added} unit${added === 1 ? "" : "s"} added${notes.length > 0 ? ` (${notes.join(", ")})` : ""}`
+          if (added === 0) toast.warning(message)
+          else toast.success(message)
         } catch (err) {
           toast.error(`Couldn't load ${label}`, {
             description: err instanceof Error ? err.message : "Unknown error",
@@ -639,47 +674,23 @@ export function PlannerProvider({
         }
       })
     },
-    [state, unitsMap, offeringsMap, requisitesMap]
+    [state, unitData, mergeUnitData]
   )
 
   const switchCourse = useCallback(
     async (code: string) => {
-      const yearForFetch = state.courseYear
+      const year = state.courseYear
       startCourseTransition(async () => {
         try {
-          const c = await loadCourseAction(code, yearForFetch)
-          setCourse(c)
+          const res = await loadPlannerYearAction(year, code)
+          setCourse(res.course)
           dispatch({ type: "set_course", code })
-          if (c) {
+          // Same year, so the units already cached stay valid: merge.
+          mergeUnitData(res)
+          if (res.course) {
             dispatch({
               type: "set_year_count",
-              count: yearsNeeded(c.creditPoints),
-            })
-            const codes = [
-              ...new Set([
-                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
-                ...c.courseUnits.map((u) => u.code),
-                ...c.componentCourses.flatMap((cc) =>
-                  cc.courseUnits.map((u) => u.code)
-                ),
-              ]),
-            ]
-            const res = await hydrateUnitsAction(codes, yearForFetch)
-            setUnitsMap((m) => {
-              const next = new Map(m)
-              for (const [k, v] of Object.entries(res.units)) next.set(k, v)
-              return next
-            })
-            setOfferingsMap((m) => {
-              const next = new Map(m)
-              for (const [k, v] of Object.entries(res.offerings)) next.set(k, v)
-              return next
-            })
-            setRequisitesMap((m) => {
-              const next = new Map(m)
-              for (const [k, v] of Object.entries(res.requisites))
-                next.set(k, v)
-              return next
+              count: yearsNeeded(res.course.creditPoints),
             })
           }
         } catch (err) {
@@ -689,7 +700,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state.courseYear]
+    [state.courseYear, mergeUnitData]
   )
 
   // A "Plan this course" link landed on a saved plan for another
@@ -724,41 +735,15 @@ export function PlannerProvider({
             course_code: state.courseCode,
           })
           dispatch({ type: "set_year", year })
-          // Refetch the courses list so the picker reflects the year.
-          const list = await listCoursesAction(null, year)
-          setCourses(list)
-          // Refetch the currently-selected course (if any) against the
-          // new year. The course may not exist there — surface that as
+          // The course may not exist in the new year — surface that as
           // a null course and let the UI prompt for a new pick.
           const code = state.courseCode
-          const c = code ? await loadCourseAction(code, year) : null
-          setCourse(c)
-          if (c) {
-            const codes = [
-              ...new Set([
-                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
-                ...c.courseUnits.map((u) => u.code),
-                ...c.componentCourses.flatMap((cc) =>
-                  cc.courseUnits.map((u) => u.code)
-                ),
-              ]),
-            ]
-            const res = await hydrateUnitsAction(codes, year)
-            // Replace, don't merge — old year's offerings/requisites are
-            // stale and would mis-validate against the new year.
-            setUnitsMap(new Map(Object.entries(res.units)))
-            setOfferingsMap(new Map(Object.entries(res.offerings)))
-            setRequisitesMap(new Map(Object.entries(res.requisites)))
-          } else {
-            setUnitsMap(new Map())
-            setOfferingsMap(new Map())
-            setRequisitesMap(new Map())
-            if (code) {
-              toast.warning(`${code} isn't in the ${year} handbook`, {
-                description:
-                  "Pick another course or switch back to a year that has it.",
-              })
-            }
+          const c = await loadYearData(year, code, true)
+          if (!c && code) {
+            toast.warning(`${code} isn't in the ${year} handbook`, {
+              description:
+                "Pick another course or switch back to a year that has it.",
+            })
           }
         } catch (err) {
           toast.error("Couldn't switch year", {
@@ -767,7 +752,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state.courseYear, state.courseCode]
+    [state.courseYear, state.courseCode, loadYearData]
   )
 
   /* ---------- Multi-plan operations ---------- */
@@ -786,61 +771,29 @@ export function PlannerProvider({
     if (!currentUser || !planId) return
     setSaveStatus("saving")
     const snapshot = lastSnapshotRef.current
-    const res = await saveMyPlanAction(planId, snapshot)
-    setSaveStatus(res.ok ? "saved" : "error")
-  }, [currentUser])
+    applySaveResult(await saveMyPlanAction(planId, snapshot), snapshot)
+  }, [currentUser, applySaveResult])
 
   /**
-   * Hydrate the planner with a fetched plan: dispatch its state and
-   * refetch course/year/unit data if the new plan disagrees with the
-   * currently-rendered course or year. Identical structure to the
-   * initial-mount hydration logic, factored out so plan-switching can
-   * reuse it.
+   * Show a fetched plan: dispatch its state, then load the course and
+   * unit data for its year and course.
    */
   const hydrateFetchedPlan = useCallback(
     async (planState: PlannerState) => {
-      const targetYear =
-        planState.courseYear && availableYears.includes(planState.courseYear)
-          ? planState.courseYear
-          : initialYear
-      const merged: PlannerState = { ...planState, courseYear: targetYear }
+      const merged = withKnownYear(planState, availableYears, initialYear)
       dispatch({ type: "hydrate", state: merged })
 
       // Pause the persist effect from auto-saving the hydrated state;
       // the snapshot we just dispatched IS the canonical server state.
       firstPersistRef.current = true
 
-      // Refetch course/picker/unit data tied to the new plan.
       startCourseTransition(async () => {
         try {
-          const yearChanged = targetYear !== state.courseYear
-          if (yearChanged) {
-            const list = await listCoursesAction(null, targetYear)
-            setCourses(list)
-          }
-          const c = planState.courseCode
-            ? await loadCourseAction(planState.courseCode, targetYear)
-            : null
-          setCourse(c)
-          if (c) {
-            const codes = [
-              ...new Set([
-                ...c.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
-                ...c.courseUnits.map((u) => u.code),
-                ...c.componentCourses.flatMap((cc) =>
-                  cc.courseUnits.map((u) => u.code)
-                ),
-              ]),
-            ]
-            const res = await hydrateUnitsAction(codes, targetYear)
-            setUnitsMap(new Map(Object.entries(res.units)))
-            setOfferingsMap(new Map(Object.entries(res.offerings)))
-            setRequisitesMap(new Map(Object.entries(res.requisites)))
-          } else {
-            setUnitsMap(new Map())
-            setOfferingsMap(new Map())
-            setRequisitesMap(new Map())
-          }
+          await loadYearData(
+            merged.courseYear,
+            merged.courseCode ?? null,
+            merged.courseYear !== state.courseYear
+          )
         } catch (err) {
           toast.error("Couldn't load the plan", {
             description: err instanceof Error ? err.message : "Unknown error",
@@ -848,7 +801,7 @@ export function PlannerProvider({
         }
       })
     },
-    [availableYears, initialYear, state.courseYear]
+    [availableYears, initialYear, state.courseYear, loadYearData]
   )
 
   const switchPlan = useCallback(
@@ -876,18 +829,14 @@ export function PlannerProvider({
       await flushPendingSave()
       const seedState = opts?.fromCurrent
         ? lastSnapshotRef.current
-        : defaultState(initialYear, defaultCourse?.code ?? null, 3)
-      const trimmed = name.trim() || "My plan"
-      const res = await createMyPlanAction(trimmed, seedState)
+        : freshState()
+      const res = await createPlanRecord(name.trim() || "My plan", seedState)
       if (!res.ok) {
-        toast.error("Couldn't create plan")
+        toast.error(
+          res.reason === "limit" ? PLAN_LIMIT_MESSAGE : "Couldn't create plan"
+        )
         return
       }
-      setPlans((prev) => [
-        { id: res.plan.id, name: res.plan.name, updatedAt: new Date() },
-        ...prev,
-      ])
-      setActivePlanId(res.plan.id)
       // Hydrate so the editor reflects the new plan's seed state.
       await hydrateFetchedPlan(seedState)
       setSaveStatus("saved")
@@ -896,9 +845,9 @@ export function PlannerProvider({
     [
       currentUser,
       flushPendingSave,
+      createPlanRecord,
       hydrateFetchedPlan,
-      initialYear,
-      defaultCourse?.code,
+      freshState,
     ]
   )
 
@@ -939,21 +888,11 @@ export function PlannerProvider({
           await switchPlan(next.id)
         } else {
           setActivePlanId(null)
-          dispatch({
-            type: "hydrate",
-            state: defaultState(initialYear, defaultCourse?.code ?? null, 3),
-          })
+          dispatch({ type: "hydrate", state: freshState() })
         }
       }
     },
-    [
-      currentUser,
-      plans,
-      activePlanId,
-      switchPlan,
-      initialYear,
-      defaultCourse?.code,
-    ]
+    [currentUser, plans, activePlanId, switchPlan, freshState]
   )
 
   // Narrow the course to the student's campus before anything
@@ -972,11 +911,27 @@ export function PlannerProvider({
     [course]
   )
 
-  // Memoize the context value so a fresh object identity is only
-  // produced when one of the underlying state slices actually changes.
-  // Every callback below is already wrapped in useCallback and every
-  // derived collection is in useMemo, so the deps list here is the
-  // complete set of identity-change sources.
+  const summary = useMemo(
+    () => summarizePlan(state, scopedCourse, unitsMap, offeringsMap),
+    [state, scopedCourse, unitsMap, offeringsMap]
+  )
+
+  const pickedAos = useMemo(
+    () =>
+      scopedCourse ? pickedAosEntries(scopedCourse, state.selectedAos) : [],
+    [scopedCourse, state.selectedAos]
+  )
+
+  const coreCodes = useMemo(
+    () =>
+      coreUnitCodes(scopedCourse, new Set(pickedAos.map((p) => p.aos.code))),
+    [scopedCourse, pickedAos]
+  )
+
+  // Memoize each context value so a fresh object identity is only
+  // produced when one of its own slices changes. Every callback is
+  // wrapped in useCallback and every derived collection in useMemo, so
+  // each deps list is the complete set of identity-change sources.
   const value = useMemo<PlannerContextValue>(
     () => ({
       state,
@@ -986,26 +941,19 @@ export function PlannerProvider({
       canUndo,
       canRedo,
       currentUser,
-      saveStatus,
-      plans,
-      activePlanId,
-      switchPlan,
-      createPlan,
-      renamePlan,
-      deletePlan,
       courses,
       course: scopedCourse,
       campuses,
       availableYears,
-      units: unitsMap,
-      offerings: offeringsMap,
-      requisites: requisitesMap,
+      units: unitData.units,
+      offerings: unitData.offerings,
+      requisites: unitData.requisites,
       validations,
       plannedCodes,
-      isSyncing,
-      mergeUnits,
-      mergeOfferings,
-      mergeRequisites,
+      summary,
+      pickedAos,
+      coreCodes,
+      mergeUnitData,
       isFullYear,
       fullYearCodes,
       addUnit,
@@ -1013,7 +961,6 @@ export function PlannerProvider({
       switchCourse,
       switchYear,
       loadUnitsTemplate,
-      flashVersion,
       flashErrors,
     }),
     [
@@ -1023,26 +970,17 @@ export function PlannerProvider({
       canUndo,
       canRedo,
       currentUser,
-      saveStatus,
-      plans,
-      activePlanId,
-      switchPlan,
-      createPlan,
-      renamePlan,
-      deletePlan,
       courses,
       scopedCourse,
       campuses,
       availableYears,
-      unitsMap,
-      offeringsMap,
-      requisitesMap,
+      unitData,
       validations,
       plannedCodes,
-      isSyncing,
-      mergeUnits,
-      mergeOfferings,
-      mergeRequisites,
+      summary,
+      pickedAos,
+      coreCodes,
+      mergeUnitData,
       isFullYear,
       fullYearCodes,
       addUnit,
@@ -1050,10 +988,38 @@ export function PlannerProvider({
       switchCourse,
       switchYear,
       loadUnitsTemplate,
-      flashVersion,
       flashErrors,
     ]
   )
 
-  return <PlannerCtx.Provider value={value}>{children}</PlannerCtx.Provider>
+  const sync = useMemo<PlannerSyncValue>(
+    () => ({
+      saveStatus,
+      plans,
+      activePlanId,
+      switchPlan,
+      createPlan,
+      renamePlan,
+      deletePlan,
+    }),
+    [
+      saveStatus,
+      plans,
+      activePlanId,
+      switchPlan,
+      createPlan,
+      renamePlan,
+      deletePlan,
+    ]
+  )
+
+  return (
+    <PlannerCtx.Provider value={value}>
+      <PlannerSyncCtx.Provider value={sync}>
+        <PlannerFlashCtx.Provider value={flashVersion}>
+          {children}
+        </PlannerFlashCtx.Provider>
+      </PlannerSyncCtx.Provider>
+    </PlannerCtx.Provider>
+  )
 }

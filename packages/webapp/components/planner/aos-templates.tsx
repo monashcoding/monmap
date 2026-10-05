@@ -4,20 +4,12 @@ import { ChevronDownIcon, ChevronRightIcon, DownloadIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { KIND_LABEL } from "@/lib/planner/aos-slots"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
 import { DraggableUnitRow } from "./draggable-unit-row"
 import { usePlanner } from "./planner-context"
-
-const KIND_LABEL: Record<PlannerAreaOfStudy["kind"], string> = {
-  major: "Major",
-  extended_major: "Extended major",
-  minor: "Minor",
-  specialisation: "Specialisation",
-  elective: "Elective stream",
-  other: "Other",
-}
 
 const KIND_BADGE: Record<PlannerAreaOfStudy["kind"], string> = {
   major: "bg-primary/40 text-primary-foreground",
@@ -35,23 +27,16 @@ const KIND_BADGE: Record<PlannerAreaOfStudy["kind"], string> = {
  * distribution algorithm slots units into S1/S2 by handbook level.
  */
 export function AoSTemplates({ className }: { className?: string }) {
-  const { course, state } = usePlanner()
+  const { course, pickedAos } = usePlanner()
 
   // Only show the AoS templates for the picks the student has actually
   // made — keeps the panel compact instead of dumping every major /
   // minor / specialisation the course offers.
-  const selectedCodes = useMemo(
-    () =>
-      new Set(Object.values(state.selectedAos).filter((c): c is string => !!c)),
-    [state.selectedAos]
-  )
-  const selectedAos = useMemo(
-    () =>
-      course
-        ? course.areasOfStudy.filter((a) => selectedCodes.has(a.code))
-        : [],
-    [course, selectedCodes]
-  )
+  // In the course's own order.
+  const selectedAos = useMemo(() => {
+    const codes = new Set(pickedAos.map((p) => p.aos.code))
+    return course ? course.areasOfStudy.filter((a) => codes.has(a.code)) : []
+  }, [course, pickedAos])
 
   if (
     !course ||

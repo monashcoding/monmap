@@ -32,16 +32,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { slotUsedWeight } from "@/lib/planner/capacity"
 import {
   MAX_SLOT_CAPACITY,
   slotCapacity,
-  slotUsedWeight,
   type PlannerSlot,
 } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
 import { SemesterSlot } from "./semester-slot"
+import { TOUCH_HIT_ROW } from "./touch-target"
 
 /**
  * A single (year, slot) row. Layout:
@@ -169,7 +170,7 @@ export function SemesterRow({
       <div className="grid grid-cols-1 items-stretch border-b last:border-b-0 md:grid-cols-[180px_minmax(0,1fr)]">
         <div
           className={cn(
-            "flex items-center justify-between gap-1 border-b px-3 py-2 text-[11px] font-medium text-muted-foreground md:border-r md:border-b-0 md:py-3",
+            "flex items-center justify-between gap-2 border-b px-3 py-2 text-[11px] font-medium text-muted-foreground md:gap-1 md:border-r md:border-b-0 md:py-3",
             slot.locked ? "bg-foreground/[0.08]" : "bg-muted/20"
           )}
         >
@@ -208,7 +209,7 @@ export function SemesterRow({
             variant="ghost"
             size="icon-xs"
             aria-label={slot.locked ? "Unlock semester" : "Lock semester"}
-            className="shrink-0"
+            className={cn("shrink-0", TOUCH_HIT_ROW)}
             onClick={() =>
               dispatch({ type: "toggle_slot_lock", yearIndex, slotIndex })
             }
@@ -226,7 +227,7 @@ export function SemesterRow({
                   variant="ghost"
                   size="icon-xs"
                   aria-label={`${displayLabel} options`}
-                  className="shrink-0"
+                  className={cn("shrink-0", TOUCH_HIT_ROW)}
                 />
               }
             >

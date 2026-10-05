@@ -2,16 +2,16 @@
 
 import { useDroppable } from "@dnd-kit/core"
 import { PlusIcon } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
-import { perSlotCreditPoints } from "@/lib/planner/full-year"
-import { slotCapacity, slotUsedWeight, STANDARD_CP } from "@/lib/planner/types"
+import { slotTakesUnits, unitSlotWeight } from "@/lib/planner/capacity"
+import { slotCapacity } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
 import { UnitCard } from "./unit-card"
-import { UnitSearchDialog } from "./unit-search-dialog"
+import { useOpenUnitSearch } from "./unit-search-dialog"
 
 export function slotDropId(yearIndex: number, slotIndex: number): string {
   return `slot:${yearIndex}:${slotIndex}`
@@ -35,7 +35,7 @@ export function SemesterSlot({
   slotIndex: number
 }) {
   const { state, units, offerings } = usePlanner()
-  const [open, setOpen] = useState(false)
+  const openUnitSearch = useOpenUnitSearch()
 
   const slot = state.years[yearIndex]?.slots[slotIndex]
 
@@ -46,14 +46,12 @@ export function SemesterSlot({
   const { setNodeRef, isOver, active } = useDroppable({
     id: slotDropId(yearIndex, slotIndex),
     data: dropData,
-    disabled: !!slot.locked,
+    disabled: !!slot?.locked,
   })
 
   if (!slot) return null
 
   const capacity = slotCapacity(slot)
-  const usedWeight = slotUsedWeight(slot, units, offerings)
-  const atCapacity = usedWeight >= capacity
   const activeData = active?.data.current as
     | { kind: string; yearIndex: number; slotIndex: number; code?: string }
     | undefined
@@ -66,13 +64,11 @@ export function SemesterSlot({
   // Per-unit column spans derived from per-slot credit-point load.
   // FY twins span one column per semester (not two), matching the
   // per-slot CP a 12 CP FY unit actually contributes to each half.
-  const unitSpans = slot.unitCodes.map((code) => {
-    const cp = perSlotCreditPoints(code, slot.kind, units, offerings)
-    const effective =
-      cp > 0 ? cp : (units.get(code)?.creditPoints ?? STANDARD_CP)
-    return Math.max(1, Math.round(effective / STANDARD_CP))
-  })
+  const unitSpans = slot.unitCodes.map((code) =>
+    unitSlotWeight(code, slot.kind, units, offerings)
+  )
   const placedSpan = unitSpans.reduce((sum, s) => sum + s, 0)
+  const atCapacity = placedSpan >= capacity
   // Column count must fit all placed spans plus the add button (if visible),
   // but never collapse below the declared capacity.
   const totalColumns = Math.max(capacity, placedSpan + (atCapacity ? 0 : 1))
@@ -100,14 +96,14 @@ export function SemesterSlot({
         </div>
       ))}
 
-      {!atCapacity && !slot.locked ? (
+      {slotTakesUnits(slot) && !atCapacity ? (
         <Button
           variant="ghost"
           className={cn(
             "rounded-control border border-dashed border-border/80 bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
             "h-12 w-full md:h-[88px] md:w-auto"
           )}
-          onClick={() => setOpen(true)}
+          onClick={() => openUnitSearch(yearIndex, slotIndex)}
         >
           <div className="flex items-center gap-1.5 sm:flex-col sm:gap-0.5">
             <PlusIcon className="size-4" />
@@ -117,13 +113,6 @@ export function SemesterSlot({
           </div>
         </Button>
       ) : null}
-
-      <UnitSearchDialog
-        open={open}
-        onOpenChangeAction={setOpen}
-        yearIndex={yearIndex}
-        slotIndex={slotIndex}
-      />
     </div>
   )
 }

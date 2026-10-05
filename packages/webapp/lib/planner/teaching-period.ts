@@ -38,6 +38,17 @@ export const PERIOD_KIND_LABEL: Record<PeriodKind, string> = {
   OTHER: "Other",
 }
 
+/** Order periods are listed in wherever a unit's offerings are shown. */
+export const PERIOD_KIND_ORDER: readonly PeriodKind[] = [
+  "S1",
+  "S2",
+  "SUMMER_A",
+  "SUMMER_B",
+  "WINTER",
+  "FULL_YEAR",
+  "OTHER",
+]
+
 export const PERIOD_KIND_SHORT: Record<PeriodKind, string> = {
   S1: "S1",
   S2: "S2",

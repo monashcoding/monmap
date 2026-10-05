@@ -1,18 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
-
-import { summarizePlan } from "@/lib/planner/progress"
-
 import { usePlanner } from "./planner-context"
 
 export function SummaryBar() {
-  const { state, course, units, offerings } = usePlanner()
-
-  const summary = useMemo(
-    () => summarizePlan(state, course, units, offerings),
-    [state, course, units, offerings]
-  )
+  const { summary } = usePlanner()
 
   if (summary.duplicateUnitCodes.length === 0) return null
 

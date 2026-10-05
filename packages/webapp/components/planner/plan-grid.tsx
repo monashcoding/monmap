@@ -13,14 +13,16 @@ import {
 import { useState } from "react"
 import { toast } from "sonner"
 
-import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
+import { canPlaceUnit, type PlaceBlock } from "@/lib/planner/capacity"
 import { isFreshPlan, slotLabel, studyYearName } from "@/lib/planner/timeline"
+import type { PlannerUnit } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
 import { SemesterRow } from "./semester-row"
 import { AddSemesterButton, FinishLine } from "./finish-line"
 import { PlanSetup } from "./plan-basics"
 import { UnitCard } from "./unit-card"
+import { UnitSearchProvider } from "./unit-search-dialog"
 import { YearHeader } from "./year-header"
 
 type ActiveDrag =
@@ -35,7 +37,43 @@ type ActiveDrag =
       kind: "new-unit"
       code: string
       isFullYear?: boolean
+      /** Set when the unit may not be in the planner's maps yet. */
+      unit?: PlannerUnit
     }
+
+/** Why a drop was refused, as a toast. Nothing for a missing slot. */
+function toastBlocked(reason: PlaceBlock, code: string, fullYear: boolean) {
+  switch (reason) {
+    case "no_twin":
+      toast.info(
+        "Year-long units need both S1 and S2 - that year is missing one."
+      )
+      return
+    case "full":
+      toast.warning(
+        fullYear
+          ? "Not enough room - S1 and S2 both need an open slot for a year-long unit."
+          : "That slot is full."
+      )
+      return
+    case "locked":
+      toast.info("That semester is locked. Unlock it to change its units.")
+      return
+    case "leave":
+      toast.info("That semester is a leave of absence, so it takes no units.")
+      return
+    case "exchange":
+      toast.info("That semester is on exchange, so it takes no units.")
+      return
+    case "duplicate":
+      toast.info(
+        fullYear
+          ? `${code} is already in that year.`
+          : `${code} is already in that semester.`
+      )
+      return
+  }
+}
 
 /**
  * Wraps any children in a single dnd-kit context, so drags from the
@@ -43,8 +81,15 @@ type ActiveDrag =
  * same context as in-grid moves and swaps.
  */
 export function PlannerDnd({ children }: { children: React.ReactNode }) {
-  const { state, dispatch, fullYearCodes, units, offerings, addUnit } =
-    usePlanner()
+  const {
+    state,
+    dispatch,
+    fullYearCodes,
+    units,
+    offerings,
+    addUnit,
+    mergeUnitData,
+  } = usePlanner()
   const [active, setActive] = useState<ActiveDrag | null>(null)
 
   // Mouse: a 6px activation distance lets the unit-detail popover
@@ -80,43 +125,30 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
     if (!a || !overData) return
 
     // ── Drag from sidebar (new-unit) ───────────────────────────────
+    // Refused per slot, not per plan — the same code twice in one slot
+    // is meaningless, but in a later semester it's a retake after a
+    // fail, which students do.
     if (a.kind === "new-unit") {
-      const targetYearIdx = overData.yearIndex
-      const targetSlotIdx = overData.slotIndex
-      const target = state.years[targetYearIdx]?.slots[targetSlotIdx]
-      if (!target || target.locked) return
-      // Rejected per slot, not per plan — dropping a code into a slot
-      // that already holds it is a no-op, but dropping it into a later
-      // semester is a retake after a fail, which students do.
-      if (target.unitCodes.includes(a.code)) return
-      if (a.isFullYear) {
-        // FY needs S1+S2 of one year with both halves free.
-        const yr = state.years[targetYearIdx]
-        const s1 = yr?.slots.find((s) => s.kind === "S1")
-        const s2 = yr?.slots.find((s) => s.kind === "S2")
-        if (!s1 || !s2) {
-          toast.info(
-            "Year-long units need both S1 and S2 - that year is missing one."
-          )
-          return
-        }
-        if (
-          slotUsedWeight(s1, units, offerings) >= slotCapacity(s1) ||
-          slotUsedWeight(s2, units, offerings) >= slotCapacity(s2)
-        ) {
-          toast.warning(
-            "Not enough room - S1 and S2 both need an open slot for a year-long unit."
-          )
-          return
-        }
-        addUnit(targetYearIdx, targetSlotIdx, a.code)
+      const { yearIndex, slotIndex } = overData
+      const place = canPlaceUnit(
+        state,
+        yearIndex,
+        slotIndex,
+        a.code,
+        units,
+        offerings
+      )
+      if (!place.ok) {
+        toastBlocked(place.reason, a.code, !!a.isFullYear)
         return
       }
-      if (slotUsedWeight(target, units, offerings) >= slotCapacity(target)) {
-        toast.warning("That slot is full.")
-        return
-      }
-      addUnit(targetYearIdx, targetSlotIdx, a.code)
+      if (a.unit && !units.has(a.code))
+        mergeUnitData({
+          units: { [a.code]: a.unit },
+          offerings: {},
+          requisites: {},
+        })
+      addUnit(yearIndex, slotIndex, a.code)
       return
     }
 
@@ -183,21 +215,16 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
         return
       }
       // Need room in BOTH semesters of the target year.
-      const yr = state.years[targetYear]
-      if (!yr) return
-      const s1 = yr.slots.find((s) => s.kind === "S1")
-      const s2 = yr.slots.find((s) => s.kind === "S2")
-      if (!s1 || !s2) {
-        toast.info("Target year is missing an S1 or S2 slot.")
-        return
-      }
-      if (
-        slotUsedWeight(s1, units, offerings) >= slotCapacity(s1) ||
-        slotUsedWeight(s2, units, offerings) >= slotCapacity(s2)
-      ) {
-        toast.warning(
-          `Not enough room in ${targetYear + 1} - both S1 and S2 need an open slot for a year-long unit.`
-        )
+      const place = canPlaceUnit(
+        state,
+        targetYear,
+        targetSlotIndex,
+        a.code,
+        units,
+        offerings
+      )
+      if (!place.ok) {
+        toastBlocked(place.reason, a.code, true)
         return
       }
       dispatch({
@@ -241,12 +268,18 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
     ) {
       return
     }
-    const target = state.years[overData.yearIndex]?.slots[overData.slotIndex]
-    if (
-      target &&
-      slotUsedWeight(target, units, offerings) >= slotCapacity(target)
+    const place = canPlaceUnit(
+      state,
+      overData.yearIndex,
+      overData.slotIndex,
+      a.code,
+      units,
+      offerings
     )
+    if (!place.ok) {
+      toastBlocked(place.reason, a.code, false)
       return
+    }
     dispatch({
       type: "move_unit",
       fromYearIndex: a.yearIndex,
@@ -268,7 +301,7 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
       <DragOverlay dropAnimation={null}>
         {active ? (
           active.kind === "new-unit" ? (
-            <NewUnitDragOverlay code={active.code} />
+            <NewUnitDragOverlay code={active.code} dragged={active.unit} />
           ) : (
             <UnitCard
               code={active.code}
@@ -283,9 +316,15 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
   )
 }
 
-function NewUnitDragOverlay({ code }: { code: string }) {
+function NewUnitDragOverlay({
+  code,
+  dragged,
+}: {
+  code: string
+  dragged: PlannerUnit | undefined
+}) {
   const { units } = usePlanner()
-  const unit = units.get(code)
+  const unit = dragged ?? units.get(code)
   return (
     <div className="flex items-center gap-2 rounded-control border bg-card px-3 py-2 shadow-2xl ring-2 ring-primary/40">
       <span className="text-xs font-semibold tabular-nums">{code}</span>
@@ -319,38 +358,46 @@ export function PlanGrid() {
   if (isFreshPlan(state)) return <PlanSetup />
 
   return (
-    <div className="flex min-w-0 flex-col gap-0">
-      {state.years.map((year, yearIndex) => (
-        <div key={yearIndex} className="flex flex-col">
-          <YearHeader
-            yearIndex={yearIndex}
-            yearLabel={studyYearName(yearIndex)}
-            yearSlotKinds={year.slots.map((s) => s.kind)}
-            removableYear={state.years.length > 1}
-            yearHasUnits={year.slots.some((s) => s.unitCodes.length > 0)}
-          />
-          {year.slots.map((slot, slotIndex) => (
-            <SemesterRow
-              key={`${yearIndex}:${slotIndex}:${slot.kind}`}
+    <UnitSearchProvider>
+      <div className="flex min-w-0 flex-col gap-0">
+        {state.years.map((year, yearIndex) => (
+          <div key={yearIndex} className="flex flex-col">
+            <YearHeader
               yearIndex={yearIndex}
-              slotIndex={slotIndex}
-              slot={slot}
-              yearLabel={slotLabel(state, yearIndex, slot)}
+              yearLabel={studyYearName(yearIndex)}
+              yearSlotKinds={year.slots.map((s) => s.kind)}
+              removableYear={state.years.length > 1}
+              yearHasUnits={year.slots.some((s) => s.unitCodes.length > 0)}
             />
-          ))}
-        </div>
-      ))}
+            {year.slots.map((slot, slotIndex) => (
+              <SemesterRow
+                key={`${yearIndex}:${slotIndex}:${slot.kind}`}
+                yearIndex={yearIndex}
+                slotIndex={slotIndex}
+                slot={slot}
+                yearLabel={slotLabel(state, yearIndex, slot)}
+              />
+            ))}
+          </div>
+        ))}
 
-      {!course ? (
-        <div className="px-6 py-10 text-center text-xs text-muted-foreground">
-          Pick a course on the right to get started.
-        </div>
-      ) : (
-        <>
-          <FinishLine />
-          <AddSemesterButton />
-        </>
-      )}
-    </div>
+        {!course ? (
+          <div className="px-6 py-10 text-center text-xs text-muted-foreground">
+            {/* Phones have the course panel in a sheet, not on the right. */}
+            <span className="md:hidden">
+              Tap the button at the bottom right to pick a course.
+            </span>
+            <span className="hidden md:inline">
+              Pick a course on the right to get started.
+            </span>
+          </div>
+        ) : (
+          <>
+            <FinishLine />
+            <AddSemesterButton />
+          </>
+        )}
+      </div>
+    </UnitSearchProvider>
   )
 }

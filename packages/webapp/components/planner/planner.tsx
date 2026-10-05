@@ -6,11 +6,9 @@ import type { PlanSummary } from "@/lib/db/queries"
 import type {
   PlannerCourse,
   PlannerCourseWithAoS,
-  PlannerOffering,
   PlannerState,
-  PlannerUnit,
-  RequisiteBlock,
 } from "@/lib/planner/types"
+import type { UnitBundle } from "@/lib/planner/unit-cache"
 
 import { AppHeader } from "@/components/app-header"
 
@@ -25,51 +23,45 @@ import { RightSidebar } from "./right-sidebar"
 import { SummaryBar } from "./summary-bar"
 import { WamProvider } from "./wam-context"
 
-interface PlannerProps {
+export interface PlannerProps {
   initialYear: string
   availableYears: string[]
   courses: PlannerCourse[]
   defaultCourse: PlannerCourseWithAoS | null
-  prewarmed: {
-    units: Record<string, PlannerUnit>
-    offerings: Record<string, PlannerOffering[]>
-    requisites: Record<string, RequisiteBlock[]>
-  }
+  /** Unit data the server already loaded for the course and the plan. */
+  prewarmed: UnitBundle
   currentUser: PlannerCurrentUser | null
+  /**
+   * Pre-fetched plan state for signed-in users (the active one); null
+   * when anonymous or when the user has no saved plans yet.
+   */
   initialPlan: PlannerState | null
+  /** Pre-fetched plan summaries for the user; empty for anon. */
   initialPlans: PlanSummary[]
+  /** Pre-selected plan id (whose state is `initialPlan`); null when anon
+   * or signed-in-with-no-plans. */
   initialActivePlanId: string | null
   initialGrades: Record<string, number> | null
+  /**
+   * A course from a "Plan this course" link (`/?course=`). With no
+   * saved plan the server already opened it; over a saved plan the
+   * student is offered a switch rather than losing their plan.
+   */
   requestedCourse?: string | null
 }
 
 /**
- * Three-column layout matching MonPlan:
- *   ┌──────────────────────────────────────────────────────────────┐
- *   │ header                                                       │
- *   ├────────┬──────────────────────────────────────┬──────────────┤
- *   │ left   │ credit summary                       │ right        │
- *   │ rail   │ semester rows (label | unit cards)   │ progression  │
- *   │        │                                      │ guide        │
- *   └────────┴──────────────────────────────────────┴──────────────┘
+ * Two columns under the header: the plan sheet (plan toolbar, repeated
+ * units note, semester grid, then the plan map), and from lg up a
+ * 340px course panel beside it. Below lg the course panel stacks under
+ * the plan; below md it moves into a bottom sheet.
  */
-export function Planner(props: PlannerProps) {
+export function Planner({ initialGrades, ...props }: PlannerProps) {
   return (
-    <PlannerProvider
-      initialYear={props.initialYear}
-      availableYears={props.availableYears}
-      courses={props.courses}
-      defaultCourse={props.defaultCourse}
-      prewarmed={props.prewarmed}
-      currentUser={props.currentUser}
-      initialPlan={props.initialPlan}
-      initialPlans={props.initialPlans}
-      initialActivePlanId={props.initialActivePlanId}
-      requestedCourse={props.requestedCourse}
-    >
+    <PlannerProvider {...props}>
       <WamProvider
         signedIn={props.currentUser !== null}
-        initialGrades={props.initialGrades}
+        initialGrades={initialGrades}
       >
         {/* `contents` keeps the screen layout flat inside <main>'s flex
             column; `print:hidden` swaps the whole interactive app out

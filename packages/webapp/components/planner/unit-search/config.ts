@@ -1,4 +1,7 @@
+import type { SortKey } from "@/lib/planner/search-filters"
 import type { PeriodKind } from "@/lib/planner/types"
+
+export type { SortKey }
 
 /**
  * Static lookup tables used by the unit-search panel. Lifted out of the
@@ -27,9 +30,7 @@ export const SORT_OPTIONS = [
   { key: "level-desc", label: "Level (high → low)", short: "Level ↓" },
   { key: "credit", label: "Credit points (low → high)", short: "Credits ↑" },
   { key: "code", label: "Unit code (A → Z)", short: "Code A-Z" },
-] as const
-
-export type SortKey = (typeof SORT_OPTIONS)[number]["key"]
+] as const satisfies readonly { key: SortKey; label: string; short: string }[]
 
 export const CHIP_BASE =
   "flex items-center justify-center rounded-control text-xs font-medium transition-all border"
@@ -37,13 +38,6 @@ export const CHIP_ACTIVE =
   "border-primary bg-primary text-primary-foreground shadow-sm"
 export const CHIP_IDLE =
   "border-transparent bg-muted text-foreground hover:border-primary/60 hover:bg-primary/40"
-
-/** Extract the numeric level from a level string like "Level 2". */
-export function extractLevelNum(level: string | null): number | null {
-  if (!level) return null
-  const m = level.match(/\d+/)
-  return m ? Number(m[0]) : null
-}
 
 /** Immutable Set toggle. */
 export function toggleInSet<T>(set: Set<T>, val: T): Set<T> {

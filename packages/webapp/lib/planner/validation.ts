@@ -6,6 +6,7 @@ import {
   evaluateRequisiteTree,
   referencedCodes,
 } from "./requisites.ts"
+import { PERIOD_KIND_LABEL } from "./teaching-period.ts"
 import type {
   PeriodKind,
   PlannerOffering,
@@ -88,10 +89,10 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     const issue: ValidationIssue = {
       kind: "not_offered_in_period",
       message: termOnly
-        ? `${input.unit.code} runs on a non-standard schedule (${formatPeriodList(input.offerings)}); verify it overlaps ${periodLabel(input.slotKind)}.`
+        ? `${input.unit.code} runs on a non-standard schedule (${formatPeriodList(input.offerings)}); verify it overlaps ${PERIOD_KIND_LABEL[input.slotKind]}.`
         : dataIsReliable
-          ? `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} for ${input.unit.year}.`
-          : `${input.unit.code} isn't offered in ${periodLabel(input.slotKind)} in the ${input.unit.year} handbook - ${expectedYear} offerings may differ.`,
+          ? `${input.unit.code} isn't offered in ${PERIOD_KIND_LABEL[input.slotKind]} for ${input.unit.year}.`
+          : `${input.unit.code} isn't offered in ${PERIOD_KIND_LABEL[input.slotKind]} in the ${input.unit.year} handbook - ${expectedYear} offerings may differ.`,
     }
     if (termOnly || !dataIsReliable) warnings.push(issue)
     else errors.push(issue)
@@ -176,25 +177,6 @@ export function isOfferedInPeriod(
     }
     return false
   })
-}
-
-export function periodLabel(period: PeriodKind): string {
-  switch (period) {
-    case "S1":
-      return "Semester 1"
-    case "S2":
-      return "Semester 2"
-    case "SUMMER_A":
-      return "Summer A"
-    case "SUMMER_B":
-      return "Summer B"
-    case "WINTER":
-      return "Winter"
-    case "FULL_YEAR":
-      return "Full year"
-    case "OTHER":
-      return "Other"
-  }
 }
 
 /**

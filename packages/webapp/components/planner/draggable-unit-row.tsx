@@ -10,15 +10,29 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  canPlaceUnit,
+  slotUsedWeight,
+  type PlaceBlock,
+} from "@/lib/planner/capacity"
 import { facultyStyle } from "@/lib/planner/faculty-color"
-import { slotCapacity, slotUsedWeight } from "@/lib/planner/types"
+import { slotCapacity, STANDARD_CP } from "@/lib/planner/types"
 import { RatingCompact } from "@/components/reviews/stars"
 import { useRating } from "@/components/reviews/use-ratings"
 import { cn } from "@/lib/utils"
 import { slotLabel } from "@/lib/planner/timeline"
 
 import { usePlanner } from "./planner-context"
+import { TOUCH_HIT } from "./touch-target"
 import { UnitDetailPopover } from "./unit-detail-popover"
+
+/** What "Add to…" shows for a semester that takes no units. */
+const BLOCKED_LABEL: Partial<Record<PlaceBlock, string>> = {
+  leave: "On leave",
+  exchange: "Exchange",
+  locked: "Locked",
+  duplicate: "on plan",
+}
 
 /**
  * Compact unit row used by both the search panel and the templates
@@ -35,9 +49,11 @@ export function DraggableUnitRow({ code }: { code: string }) {
   const rating = useRating("unit", code)
   const fy = isFullYear(code)
 
+  // The unit rides along so a drop can show it before its data loads:
+  // a search result isn't in the planner's maps yet.
   const dragData = useMemo(
-    () => ({ kind: "new-unit" as const, code, isFullYear: fy }),
-    [code, fy]
+    () => ({ kind: "new-unit" as const, code, isFullYear: fy, unit }),
+    [code, fy, unit]
   )
   const faculty = useMemo(() => facultyStyle(code), [code])
   // Disable drag while either popover is open so the trigger button
@@ -68,6 +84,8 @@ export function DraggableUnitRow({ code }: { code: string }) {
       className={cn(
         "group/row flex items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,box-shadow,opacity] duration-200",
         "cursor-grab hover:-translate-y-px active:cursor-grabbing data-[dragging=true]:opacity-30",
+        // A long press starts a drag on a phone, not a text selection.
+        "max-md:select-none max-md:[-webkit-touch-callout:none]",
         // Dimmed as a hint that it's already somewhere on the plan —
         // still draggable, since a retake is a legitimate second copy.
         placed && "opacity-60"
@@ -85,7 +103,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold tabular-nums">{code}</span>
               <span className="text-[9px] text-muted-foreground">
-                {unit?.creditPoints ?? 6}cp
+                {unit?.creditPoints ?? STANDARD_CP}cp
               </span>
               {rating ? (
                 <RatingCompact summary={rating} className="ml-auto" />
@@ -106,14 +124,18 @@ export function DraggableUnitRow({ code }: { code: string }) {
                 size="sm"
                 variant="ghost"
                 aria-label={`Add ${code}`}
-                className="size-6 shrink-0 rounded-control p-0"
+                className={cn("size-6 shrink-0 rounded-control p-0", TOUCH_HIT)}
               >
                 <PlusIcon className="size-3.5" />
               </Button>
             }
           />
-          <PopoverContent align="end" sideOffset={4} className="w-52 p-0">
-            <div className="border-b px-3 py-2.5">
+          <PopoverContent
+            align="end"
+            sideOffset={4}
+            className="max-h-(--available-height) w-52 overflow-y-auto p-0"
+          >
+            <div className="shrink-0 border-b px-3 py-2.5">
               <p className="text-xs font-semibold text-muted-foreground">
                 Add to…
               </p>
@@ -121,12 +143,17 @@ export function DraggableUnitRow({ code }: { code: string }) {
             <div className="p-1.5">
               {state.years.map((year, yi) =>
                 year.slots.map((slot, si) => {
-                  const cap = slotCapacity(slot)
-                  const used = slotUsedWeight(slot, units, offerings)
                   // Blocked per slot, not per plan: the same code twice in
                   // one slot is meaningless, in two slots it's a retake.
-                  const inSlot = slot.unitCodes.includes(code)
-                  const full = used >= cap || inSlot
+                  const place = canPlaceUnit(
+                    state,
+                    yi,
+                    si,
+                    code,
+                    units,
+                    offerings
+                  )
+                  const full = !place.ok
                   const label = slotLabel(state, yi, slot)
                   return (
                     <button
@@ -146,7 +173,8 @@ export function DraggableUnitRow({ code }: { code: string }) {
                     >
                       <span className="truncate">{label}</span>
                       <span className="ml-2 shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                        {inSlot ? "on plan" : `${used}/${cap}`}
+                        {(!place.ok && BLOCKED_LABEL[place.reason]) ||
+                          `${slotUsedWeight(slot, units, offerings)}/${slotCapacity(slot)}`}
                       </span>
                     </button>
                   )

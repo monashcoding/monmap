@@ -5,6 +5,7 @@ import {
   MAX_PICKS_PER_SLOT,
   computeAosSlots,
   computeAosSlotsWithRepeats,
+  higherRepeatKeys,
   legacyKeyServing,
   pickedAosEntries,
   resolveSlotSelection,
@@ -334,7 +335,7 @@ test("a 60-option slot (2020 S2006 minors) repeats without losing options", () =
 })
 
 test("clearing a base pick strands nothing: higher slots stop being offered", () => {
-  // Pairs with higherRepeatKeys() in aos-picker.tsx, which clears them
+  // Pairs with higherRepeatKeys(), which the picker uses to clear them
   // from state. Without that, "major#3" would sit in selectedAos
   // invisible behind an empty "major#2".
   const c = repeatCourse("major", ["M1", "M2", "M3"])
@@ -344,4 +345,11 @@ test("clearing a base pick strands nothing: higher slots stop being offered", ()
   const cleared = { ...full, major: undefined }
   const keys = computeAosSlotsWithRepeats(c, cleared).map((s) => s.key)
   assert.deepEqual(keys, ["major"], "no repeat slots survive an empty base")
+})
+
+test("higherRepeatKeys: a base key yields every repeat, a repeat the ones above it", () => {
+  assert.equal(MAX_PICKS_PER_SLOT, 2)
+  assert.deepEqual(higherRepeatKeys("major"), ["major#2"])
+  assert.deepEqual(higherRepeatKeys("major#2"), [])
+  assert.deepEqual(higherRepeatKeys("minor@Clayton"), ["minor@Clayton#2"])
 })

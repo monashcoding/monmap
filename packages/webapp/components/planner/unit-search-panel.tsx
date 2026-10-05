@@ -4,36 +4,30 @@ import { SearchIcon, XIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import { searchUnitsAction } from "@/app/actions"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { suggestionPool } from "@/lib/planner/personalize-search"
+import {
+  applyFiltersAndSort,
+  emptyFilters,
+  type FiltersValue,
+} from "@/lib/planner/search-filters"
 import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
-import type { PeriodKind, PlannerUnit } from "@/lib/planner/types"
+import { handbookYearFor } from "@/lib/planner/timeline"
+import type { PlannerUnit } from "@/lib/planner/types"
+import type { UnitBundle } from "@/lib/planner/unit-cache"
 
 import { DraggableUnitRow } from "./draggable-unit-row"
-import { usePlanner } from "./planner-context"
+import { UnitDataOverlay, usePlanner } from "./planner-context"
 import {
   ActiveFilterChips,
   type ActiveChip,
 } from "./unit-search/active-filter-chips"
-import {
-  extractLevelNum,
-  MODE_OPTIONS,
-  toggleInSet,
-  type SortKey,
-} from "./unit-search/config"
-import {
-  FiltersPopover,
-  type FiltersValue,
-} from "./unit-search/filters-popover"
+import { MODE_OPTIONS, toggleInSet, type SortKey } from "./unit-search/config"
+import { FiltersPopover } from "./unit-search/filters-popover"
 import { EmptyResultState, ResultSection } from "./unit-search/result-section"
 import { SortPopover } from "./unit-search/sort-popover"
 
-function useDebounced<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = useState(value)
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delayMs)
-    return () => clearTimeout(t)
-  }, [value, delayMs])
-  return debounced
-}
+const SUGGESTION_LIMIT = 8
 
 /**
  * Sidebar (and mobile bottom-sheet) panel for searching, filtering and
@@ -42,75 +36,62 @@ function useDebounced<T>(value: T, delayMs: number): T {
  * live in their own files under `./unit-search/` for clarity.
  */
 export function UnitSearchPanel() {
-  const { state, course, units, offerings, availableYears, mergeUnits } =
+  const { state, course, units, offerings, availableYears, plannedCodes } =
     usePlanner()
 
   const [query, setQuery] = useState("")
-  const [results, setResults] = useState<PlannerUnit[]>([])
-  const [loading, setLoading] = useState(false)
+  // The latest search's results. They stay out of the planner's maps
+  // (see UnitDataOverlay); a unit joins them once it is placed.
+  const [found, setFound] = useState<{
+    query: string
+    units: PlannerUnit[]
+  } | null>(null)
 
-  const [filters, setFilters] = useState<FiltersValue>(() => ({
-    level: new Set<number>(),
-    cp: new Set<number>(),
-    period: new Set<PeriodKind>(),
-    campus: new Set<string>(),
-    mode: new Set<string>(),
-  }))
+  const [filters, setFilters] = useState<FiltersValue>(emptyFilters)
   const [sortBy, setSortBy] = useState<SortKey>("relevance")
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
 
-  const debounced = useDebounced(query, 180)
+  const q = useDebouncedValue(query, 180).trim()
 
-  const handbookYear = useMemo(() => {
-    const target = state.courseYear
-    if (availableYears.includes(target)) return target
-    return [...availableYears].sort().at(-1) ?? state.courseYear
-  }, [state.courseYear, availableYears])
+  const handbookYear = handbookYearFor(0, state.courseYear, availableYears)
 
-  const suggestions = useMemo<PlannerUnit[]>(() => {
-    if (!course) return []
-    const placed = new Set<string>()
-    for (const y of state.years)
-      for (const s of y.slots) for (const c of s.unitCodes) placed.add(c)
-    const seen = new Set<string>()
-    const out: PlannerUnit[] = []
-    for (const aos of course.areasOfStudy) {
-      for (const u of aos.units) {
-        if (placed.has(u.code) || seen.has(u.code)) continue
-        seen.add(u.code)
-        const full = units.get(u.code)
-        if (full) out.push(full)
-        if (out.length >= 8) break
-      }
-      if (out.length >= 8) break
-    }
-    return out
-  }, [course, state.years, units])
+  // The same pool the search dialog suggests from, in course order.
+  const suggestions = useMemo<PlannerUnit[]>(
+    () =>
+      course
+        ? suggestionPool(course, plannedCodes, units).slice(0, SUGGESTION_LIMIT)
+        : [],
+    [course, plannedCodes, units]
+  )
 
   useEffect(() => {
+    if (!q) return
     let cancelled = false
-    if (!debounced.trim()) return
-    const t = setTimeout(() => setLoading(true), 0)
-    searchUnitsAction(debounced, handbookYear)
+    searchUnitsAction(q, handbookYear)
       .then((list) => {
-        if (cancelled) return
-        setResults(list)
-        setLoading(false)
-        mergeUnits(list)
+        if (!cancelled) setFound({ query: q, units: list })
       })
       .catch(() => {
-        if (cancelled) return
-        setResults([])
-        setLoading(false)
+        if (!cancelled) setFound({ query: q, units: [] })
       })
     return () => {
       cancelled = true
-      clearTimeout(t)
     }
-  }, [debounced, mergeUnits, handbookYear])
+  }, [q, handbookYear])
 
-  const hasQuery = !!debounced.trim()
+  const hasQuery = q !== ""
+  const loading = hasQuery && found?.query !== q
+  const results = useMemo(() => found?.units ?? [], [found])
+  const resultBundle = useMemo<UnitBundle>(
+    () => ({
+      units: Object.fromEntries(results.map((u) => [u.code, u])),
+      offerings: {},
+      requisites: {},
+    }),
+    [results]
+  )
+
   const hasActiveFilters =
     filters.level.size > 0 ||
     filters.cp.size > 0 ||
@@ -124,13 +105,7 @@ export function UnitSearchPanel() {
   )
 
   function clearFilters() {
-    setFilters({
-      level: new Set(),
-      cp: new Set(),
-      period: new Set(),
-      campus: new Set(),
-      mode: new Set(),
-    })
+    setFilters(emptyFilters())
   }
 
   const activeChips: ActiveChip[] = []
@@ -219,31 +194,33 @@ export function UnitSearchPanel() {
       <ActiveFilterChips chips={activeChips} onClearAll={clearFilters} />
 
       {hasQuery && (
-        <ResultSection
-          title="Search results"
-          count={loading ? null : searchItems.length}
-        >
-          {loading ? (
-            <EmptyResultState message="Searching…" />
-          ) : searchItems.length === 0 ? (
-            results.length === 0 ? (
-              <EmptyResultState message={`No matches for "${debounced}"`} />
+        <UnitDataOverlay bundle={resultBundle}>
+          <ResultSection
+            title="Search results"
+            count={loading ? null : searchItems.length}
+          >
+            {loading ? (
+              <EmptyResultState message="Searching…" />
+            ) : searchItems.length === 0 ? (
+              results.length === 0 ? (
+                <EmptyResultState message={`No matches for "${q}"`} />
+              ) : (
+                <EmptyResultState
+                  message="No results match your filters"
+                  action={
+                    hasActiveFilters
+                      ? { label: "Clear filters", onClick: clearFilters }
+                      : undefined
+                  }
+                />
+              )
             ) : (
-              <EmptyResultState
-                message="No results match your filters"
-                action={
-                  hasActiveFilters
-                    ? { label: "Clear filters", onClick: clearFilters }
-                    : undefined
-                }
-              />
-            )
-          ) : (
-            searchItems.map((u) => (
-              <DraggableUnitRow key={u.code} code={u.code} />
-            ))
-          )}
-        </ResultSection>
+              searchItems.map((u) => (
+                <DraggableUnitRow key={u.code} code={u.code} />
+              ))
+            )}
+          </ResultSection>
+        </UnitDataOverlay>
       )}
 
       <div className="-mx-3 border-t px-3 pt-3">
@@ -269,78 +246,4 @@ export function UnitSearchPanel() {
       </div>
     </div>
   )
-}
-
-/**
- * Pure filter+sort transformation applied to the raw API results. Kept
- * out of the component so it's easy to unit-test (and easy to read).
- */
-function applyFiltersAndSort(
-  input: PlannerUnit[],
-  filters: FiltersValue,
-  sortBy: SortKey,
-  offerings: ReadonlyMap<
-    string,
-    {
-      periodKind: PeriodKind
-      location: string | null
-      attendanceModeCode: string | null
-    }[]
-  >
-): PlannerUnit[] {
-  let list = [...input]
-
-  if (filters.level.size > 0) {
-    list = list.filter((u) => {
-      const n = extractLevelNum(u.level)
-      return n !== null && filters.level.has(n)
-    })
-  }
-
-  if (filters.cp.size > 0) {
-    list = list.filter((u) => filters.cp.has(u.creditPoints))
-  }
-
-  if (
-    filters.period.size > 0 ||
-    filters.campus.size > 0 ||
-    filters.mode.size > 0
-  ) {
-    list = list.filter((u) => {
-      const offs = offerings.get(u.code)
-      if (!offs || offs.length === 0) return true
-      return offs.some((o) => {
-        if (filters.period.size > 0 && !filters.period.has(o.periodKind))
-          return false
-        if (filters.campus.size > 0 && !filters.campus.has(o.location ?? ""))
-          return false
-        if (
-          filters.mode.size > 0 &&
-          !filters.mode.has(o.attendanceModeCode ?? "")
-        )
-          return false
-        return true
-      })
-    })
-  }
-
-  if (sortBy === "level-asc") {
-    list.sort((a, b) => {
-      const la = extractLevelNum(a.level) ?? 99
-      const lb = extractLevelNum(b.level) ?? 99
-      return la - lb
-    })
-  } else if (sortBy === "level-desc") {
-    list.sort((a, b) => {
-      const la = extractLevelNum(a.level) ?? -1
-      const lb = extractLevelNum(b.level) ?? -1
-      return lb - la
-    })
-  } else if (sortBy === "credit") {
-    list.sort((a, b) => a.creditPoints - b.creditPoints)
-  } else if (sortBy === "code") {
-    list.sort((a, b) => a.code.localeCompare(b.code))
-  }
-
-  return list
 }

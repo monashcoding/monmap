@@ -13,6 +13,7 @@ import posthog from "posthog-js"
 
 import { migrateMyGradesAction, setMyGradeAction } from "@/app/actions"
 import { computeGpa, computeWam, type GradedUnit } from "@/lib/planner/grades"
+import { STANDARD_CP } from "@/lib/planner/types"
 
 import { usePlanner } from "./planner-context"
 
@@ -200,7 +201,7 @@ export function WamProvider({
       const unit = units.get(code)
       out.push({
         mark,
-        creditPoints: unit?.creditPoints ?? 6,
+        creditPoints: unit?.creditPoints ?? STANDARD_CP,
         level: unit?.level,
       })
     }

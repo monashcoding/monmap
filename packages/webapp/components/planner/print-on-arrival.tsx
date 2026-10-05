@@ -31,8 +31,9 @@ export function PrintOnArrival() {
     const url = new URL(window.location.href)
     url.searchParams.delete("print")
     window.history.replaceState(null, "", url)
-    // Let the print sheet paint with the loaded data first.
-    requestAnimationFrame(() => window.print())
+    // Let the print sheet paint with the loaded data first. It renders
+    // at low priority (see PrintSheet), so give it a moment to catch up.
+    setTimeout(() => window.print(), 300)
   }, [wanted, ready, timedOut])
 
   return null

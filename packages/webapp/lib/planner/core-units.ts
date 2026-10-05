@@ -3,8 +3,9 @@ import { groupIsMandatory } from "../db/curriculum.ts"
 import type { PlannerCourseWithAoS, RequirementGroup } from "./types.ts"
 
 /**
- * Is this unit "core" — i.e. does something the student has committed
- * to actually require it?
+ * The "core" units of a course — the ones something the student has
+ * committed to actually requires. The planner computes this once per
+ * change of course or picks, and each unit card reads it.
  *
  * "Core" means exactly what the auto-fill template means by it: the
  * credit-point maths proves every option in the group is required
@@ -20,15 +21,24 @@ import type { PlannerCourseWithAoS, RequirementGroup } from "./types.ts"
  * Areas of study count only when the student has picked them: a unit
  * that is core in a major they didn't choose is not core for them.
  */
+export function coreUnitCodes(
+  course: PlannerCourseWithAoS | null,
+  pickedAosCodes: ReadonlySet<string>
+): Set<string> {
+  const out = new Set<string>()
+  if (!course) return out
+  for (const g of courseRequirementGroups(course, pickedAosCodes))
+    if (groupIsMandatory(g)) for (const code of g.options) out.add(code)
+  return out
+}
+
+/** Is this one unit core? See coreUnitCodes. */
 export function unitIsCore(
   code: string,
   course: PlannerCourseWithAoS | null,
   pickedAosCodes: ReadonlySet<string>
 ): boolean {
-  if (!course) return false
-  return courseRequirementGroups(course, pickedAosCodes).some(
-    (g) => groupIsMandatory(g) && g.options.includes(code)
-  )
+  return coreUnitCodes(course, pickedAosCodes).has(code)
 }
 
 /**

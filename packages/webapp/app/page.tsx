@@ -169,16 +169,8 @@ async function PlannerData({
       courses={courses}
       defaultCourse={defaultCourse}
       prewarmedPromise={prewarmedPromise}
-      currentUser={
-        currentUser
-          ? {
-              id: currentUser.id,
-              name: currentUser.name,
-              email: currentUser.email,
-              image: currentUser.image ?? null,
-            }
-          : null
-      }
+      // Only the name: the client never needs the id or email.
+      currentUser={currentUser ? { name: currentUser.name } : null}
       initialPlan={initialPlanState}
       initialPlans={userPlans}
       initialActivePlanId={activePlanId}

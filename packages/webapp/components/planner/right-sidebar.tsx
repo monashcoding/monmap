@@ -7,7 +7,7 @@ import {
   PanelRightOpenIcon,
   XIcon,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 
 import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -21,13 +21,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { summarizePlan } from "@/lib/planner/progress"
 import { cn } from "@/lib/utils"
 
 import { AoSTemplates } from "./aos-templates"
 import { CoursePicker } from "./course-picker"
 import { usePlanner } from "./planner-context"
 import { RequirementsPanel } from "./requirements-panel"
+import { TOUCH_HIT_ROW } from "./touch-target"
 import { UnitSearchPanel } from "./unit-search-panel"
 import { useWam } from "./wam-context"
 
@@ -214,11 +214,7 @@ function TabButton({
 }
 
 function ProgressTab() {
-  const { state, course, units, offerings } = usePlanner()
-  const summary = useMemo(
-    () => summarizePlan(state, course, units, offerings),
-    [state, course, units, offerings]
-  )
+  const { summary } = usePlanner()
 
   const pct =
     summary.targetCreditPoints > 0
@@ -270,7 +266,7 @@ function ResultsSection() {
     <section className="flex flex-col gap-3 px-4 py-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Results</h3>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 md:gap-1">
           {gradedUnitCount > 0 ? (
             <Button
               variant="ghost"
@@ -278,6 +274,7 @@ function ResultsSection() {
               onClick={() => setHidden((v) => !v)}
               aria-label={hidden ? "Show WAM and GPA" : "Hide WAM and GPA"}
               title={hidden ? "Show" : "Hide"}
+              className={TOUCH_HIT_ROW}
             >
               {hidden ? <EyeOffIcon /> : <EyeIcon />}
             </Button>

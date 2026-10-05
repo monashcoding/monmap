@@ -6,6 +6,7 @@ import {
   personalScore,
   rankCandidates,
   slotContextFor,
+  suggestionPool,
   topFeatures,
 } from "./personalize-search.ts"
 import {
@@ -308,4 +309,44 @@ test("buildPersonalSignals: a group capped by a prohibition stops filling gaps",
   const s = planState([{ S1: ["A", "C"], S2: [] }])
   const signals = buildPersonalSignals(s, c, new Map())
   assert.ok(!signals.fillsGap.has("B"))
+})
+
+test("personalScore: a level 10 unit is far from first year, not level 1", () => {
+  const signals = buildPersonalSignals(state(), course(), new Map())
+  const slot = slotContextFor(state(), 0, 0)
+  const score = (level: string) =>
+    personalScore({
+      unit: unit("X", level),
+      offerings: [],
+      requisites: [],
+      signals,
+      slot,
+    }).levelMatch
+  assert.equal(score("Level 1"), 1)
+  assert.equal(score("Postgraduate Level 10"), 0)
+})
+
+test("suggestionPool: course template, then AoS units, minus planned and unloaded", () => {
+  const c = course()
+  c.componentCourses = [
+    {
+      componentTitle: "Other component",
+      courseCode: "C3000",
+      courseTitle: "Other",
+      courseUnits: [{ code: "ENG1005", grouping: "Core" }],
+      courseRequirements: [],
+    },
+  ]
+  const units = new Map(
+    ["FIT1008", "ENG1005", "FIT2014", "FIT3144"].map((code) => [
+      code,
+      unit(code),
+    ])
+  )
+  const pool = suggestionPool(c, new Set(["FIT1008"]), units)
+  // FIT1008 is planned; FIT2099 has no unit data yet.
+  assert.deepEqual(
+    pool.map((u) => u.code),
+    ["ENG1005", "FIT2014", "FIT3144"]
+  )
 })

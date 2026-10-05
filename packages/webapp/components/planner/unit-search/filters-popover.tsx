@@ -12,6 +12,7 @@ import {
   PERIOD_KIND_LABEL,
   PERIOD_KIND_SHORT,
 } from "@/lib/planner/teaching-period"
+import type { FiltersValue } from "@/lib/planner/search-filters"
 import type { PeriodKind } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
@@ -27,13 +28,7 @@ import {
   toggleInSet,
 } from "./config"
 
-export interface FiltersValue {
-  level: Set<number>
-  cp: Set<number>
-  period: Set<PeriodKind>
-  campus: Set<string>
-  mode: Set<string>
-}
+export type { FiltersValue }
 
 export function FiltersPopover({
   open,
@@ -86,9 +81,9 @@ export function FiltersPopover({
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="w-[min(280px,calc(100vw-2rem))] p-0"
+        className="max-h-(--available-height) w-[min(280px,calc(100vw-2rem))] overflow-y-auto p-0"
       >
-        <div className="flex items-center justify-between border-b px-4 py-2">
+        <div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
           <p className="text-sm font-semibold">Filters</p>
           {hasActive && (
             <button

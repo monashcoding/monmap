@@ -2,7 +2,7 @@
 
 import { CheckIcon, CloudIcon, TriangleAlertIcon } from "lucide-react"
 
-import { usePlanner } from "./planner-context"
+import { usePlannerSync } from "./planner-context"
 
 /**
  * Reads the planner's save state and renders a compact status pill
@@ -11,10 +11,10 @@ import { usePlanner } from "./planner-context"
  * anonymous banner in the action rail communicates that).
  */
 export function SaveStatusBadge() {
-  const { isSyncing, saveStatus, currentUser } = usePlanner()
-  if (!currentUser) return null
+  // Anonymous plans are always "local", which renders nothing.
+  const { saveStatus } = usePlannerSync()
 
-  if (isSyncing || saveStatus === "saving") {
+  if (saveStatus === "saving") {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
         <CloudIcon className="size-3.5 animate-pulse" />

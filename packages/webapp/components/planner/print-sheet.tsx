@@ -1,10 +1,17 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { memo, useDeferredValue, useEffect, useMemo } from "react"
 
+import { pickedAosEntries } from "@/lib/planner/aos-slots"
+import { slotCreditPoints } from "@/lib/planner/capacity"
+import { creditPointsFromCredit } from "@/lib/planner/credit"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { markToGrade } from "@/lib/planner/grades"
-import { summarizePlan } from "@/lib/planner/progress"
+import {
+  placedUnitCodes,
+  summarizePlan,
+  type ProgressSummary,
+} from "@/lib/planner/progress"
 import {
   slotBlockCredit,
   slotLabel,
@@ -22,7 +29,7 @@ import {
 } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
-import { usePlanner } from "./planner-context"
+import { usePlanner, usePlannerSync } from "./planner-context"
 import { useWam } from "./wam-context"
 
 /**
@@ -36,8 +43,8 @@ import { useWam } from "./wam-context"
  * A study year never splits across pages (`break-inside-avoid`).
  */
 export function PrintSheet() {
-  const { state, course, units, offerings, plans, activePlanId, currentUser } =
-    usePlanner()
+  const { state, course, units, offerings, summary, currentUser } = usePlanner()
+  const { plans, activePlanId } = usePlannerSync()
   const { grades, wam, gpa } = useWam()
   const planName =
     plans.find((p) => p.id === activePlanId)?.name ?? "Course map"
@@ -61,12 +68,23 @@ export function PrintSheet() {
     }
   }, [planName])
 
+  // The sheet is hidden on screen, so it re-renders at low priority,
+  // after each edit has painted, rather than on the edit itself. It
+  // stays mounted so printing never depends on a beforeprint event,
+  // which iOS Safari doesn't reliably fire.
+  const deferredState = useDeferredValue(state)
+  const deferredCourse = useDeferredValue(course)
+  const deferredUnits = useDeferredValue(units)
+  const deferredOfferings = useDeferredValue(offerings)
+  const deferredSummary = useDeferredValue(summary)
+
   return (
-    <PrintSheetView
-      state={state}
-      course={course}
-      units={units}
-      offerings={offerings}
+    <MemoPrintSheetView
+      state={deferredState}
+      course={deferredCourse}
+      units={deferredUnits}
+      offerings={deferredOfferings}
+      summary={deferredSummary}
       grades={grades}
       wam={wam}
       gpa={gpa}
@@ -86,7 +104,11 @@ export interface PrintSheetViewProps {
   gpa: number | null
   planName: string
   userName: string | null
+  /** The plan's summary when the caller already has it. */
+  summary?: ProgressSummary
 }
+
+const MemoPrintSheetView = memo(PrintSheetView)
 
 /**
  * Presentational half, split out so it can be rendered from a test or
@@ -102,25 +124,25 @@ export function PrintSheetView({
   gpa,
   planName,
   userName,
+  summary: given,
 }: PrintSheetViewProps) {
   const summary = useMemo(
-    () => summarizePlan(state, course, units, offerings),
-    [state, course, units, offerings]
+    () => given ?? summarizePlan(state, course, units, offerings),
+    [given, state, course, units, offerings]
   )
 
-  const selectedAos = useMemo(() => {
-    if (!course) return []
-    const codes = new Set(
-      Object.values(state.selectedAos).filter((c): c is string => Boolean(c))
-    )
-    return [...codes].flatMap((code) => {
-      const aos = course.areasOfStudy.find((a) => a.code === code)
-      return aos ? [aos] : []
-    })
-  }, [course, state.selectedAos])
+  // In the requirements panel's order.
+  const selectedAos = useMemo(
+    () =>
+      course
+        ? pickedAosEntries(course, state.selectedAos).map((p) => p.aos)
+        : [],
+    [course, state.selectedAos]
+  )
 
   const credit = state.credit ?? []
-  const creditTotal = credit.reduce((n, c) => n + c.creditPoints, 0)
+  // A code credited twice, or credited and placed, counts once.
+  const creditTotal = creditPointsFromCredit(state, placedUnitCodes(state))
 
   const printedOn = new Date().toLocaleDateString("en-AU", {
     day: "numeric",
@@ -204,6 +226,7 @@ export function PrintSheetView({
                 label={slotLabel(state, yearIndex, slot)}
                 slot={slot}
                 units={units}
+                offerings={offerings}
                 grades={grades}
               />
             ))}
@@ -276,16 +299,16 @@ function SlotRow({
   label,
   slot,
   units,
+  offerings,
   grades,
 }: {
   label: string
   slot: PlannerSlot
   units: ReadonlyMap<string, PlannerUnit>
+  offerings: ReadonlyMap<string, PlannerOffering[]>
   grades: ReadonlyMap<string, number>
 }) {
-  const slotCp =
-    slot.unitCodes.reduce((n, c) => n + (units.get(c)?.creditPoints ?? 6), 0) +
-    slotBlockCredit(slot)
+  const slotCp = slotCreditPoints(slot, units, offerings)
   // Four columns like the planner; a part-time or summer slot still
   // lines up with the semesters above and below it.
   const columns = Math.max(4, slot.unitCodes.length)

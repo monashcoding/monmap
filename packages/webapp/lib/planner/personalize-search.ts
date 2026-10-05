@@ -9,6 +9,7 @@ import type {
   PlannerUnit,
   RequisiteBlock,
 } from "./types.ts"
+import { unitLevel } from "./unit-level.ts"
 import { completedBefore, isOfferedInPeriod } from "./validation.ts"
 
 /**
@@ -193,16 +194,6 @@ export function slotContextFor(
   }
 }
 
-/**
- * Extract the leading digit from a level string like "Level 3" or
- * "Postgraduate Level 4". Returns null when no digit is present.
- */
-function extractLevelDigit(level: string | null | undefined): number | null {
-  if (!level) return null
-  const m = level.match(/\d/)
-  return m ? Number(m[0]) : null
-}
-
 export function personalScore(args: {
   unit: PlannerUnit
   offerings: readonly PlannerOffering[]
@@ -242,7 +233,7 @@ export function personalScore(args: {
   // 4/5 only really applies to honours/postgrad which our 3-year BIT
   // doesn't index cleanly; we treat farther distances as 0.
   let levelMatch = 0
-  const lvl = extractLevelDigit(unit.level)
+  const lvl = unitLevel(unit.level)
   if (lvl !== null) {
     const distance = Math.abs(lvl - (slot.yearIndex + 1))
     levelMatch = Math.max(0, 1 - distance / 3)
@@ -280,6 +271,34 @@ export function personalScore(args: {
     prohibited,
     total: totalScore,
   }
+}
+
+/**
+ * Units the course could still put on the plan, in course order: its
+ * own template, each component degree's, then every area of study.
+ * Planned codes (placed or credited) and units whose data hasn't
+ * loaded are left out. Both unit search surfaces suggest from this
+ * pool, so they agree.
+ */
+export function suggestionPool(
+  course: Pick<
+    PlannerCourseWithAoS,
+    "courseUnits" | "componentCourses" | "areasOfStudy"
+  >,
+  plannedCodes: ReadonlySet<string>,
+  units: ReadonlyMap<string, PlannerUnit>
+): PlannerUnit[] {
+  const pool = new Map<string, PlannerUnit>()
+  for (const { code } of [
+    ...course.courseUnits,
+    ...course.componentCourses.flatMap((c) => c.courseUnits),
+    ...course.areasOfStudy.flatMap((a) => a.units),
+  ]) {
+    if (pool.has(code) || plannedCodes.has(code)) continue
+    const unit = units.get(code)
+    if (unit) pool.set(code, unit)
+  }
+  return [...pool.values()]
 }
 
 export function rankCandidates(

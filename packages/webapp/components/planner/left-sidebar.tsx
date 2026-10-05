@@ -27,7 +27,7 @@ import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
 
 import { CreditDialog } from "./credit-dialog"
 import { PlanStartControl } from "./plan-basics"
-import { usePlanner } from "./planner-context"
+import { usePlanner, usePlannerSync } from "./planner-context"
 import { useWam } from "./wam-context"
 
 /**
@@ -43,16 +43,15 @@ export function LeftSidebar() {
     dispatch,
     validations,
     units,
+    offerings,
     flashErrors,
-    plans,
-    activePlanId,
     currentUser,
-    renamePlan,
     undo,
     redo,
     canUndo,
     canRedo,
   } = usePlanner()
+  const { plans, activePlanId, renamePlan } = usePlannerSync()
   const activePlan = plans.find((p) => p.id === activePlanId)
 
   const [editingName, setEditingName] = useState(false)
@@ -96,12 +95,12 @@ export function LeftSidebar() {
 
   const onExport = useCallback(() => {
     downloadBlob(
-      buildCsv(state, { units, grades }),
+      buildCsv(state, { units, offerings, grades }),
       planFileName(activePlan?.name ?? "MonMap plan", "csv"),
       "text/csv"
     )
     toast.success("Plan exported to CSV")
-  }, [state, units, grades, activePlan?.name])
+  }, [state, units, offerings, grades, activePlan?.name])
 
   const onPrint = useCallback(() => {
     window.print()

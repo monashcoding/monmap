@@ -23,7 +23,6 @@ export function unit(
     title: code,
     creditPoints: 6,
     level: null,
-    synopsis: null,
     school: null,
     ...overrides,
   }

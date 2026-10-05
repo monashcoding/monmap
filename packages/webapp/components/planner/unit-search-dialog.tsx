@@ -1,13 +1,28 @@
 "use client"
 
-import { CheckIcon, SearchIcon } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  InfoIcon,
+  SearchIcon,
+  XIcon,
+} from "lucide-react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 import posthog from "posthog-js"
 
 import { searchUnitsRichAction } from "@/app/actions"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -17,56 +32,86 @@ import {
   buildPersonalSignals,
   rankCandidates,
   slotContextFor,
+  suggestionPool,
   topFeatures,
-  type ScoreBreakdown,
+  type RankedCandidate,
 } from "@/lib/planner/personalize-search"
 import {
   PERIOD_KIND_LABEL,
+  PERIOD_KIND_ORDER,
   PERIOD_KIND_SHORT,
 } from "@/lib/planner/teaching-period"
+import {
+  handbookYearFor,
+  slotLabel as timelineSlotLabel,
+} from "@/lib/planner/timeline"
 import type {
   PeriodKind,
   PlannerOffering,
   PlannerUnit,
 } from "@/lib/planner/types"
+import type { UnitBundle } from "@/lib/planner/unit-cache"
 import { isOfferedInPeriod } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
-import {
-  slotCalendarYear,
-  slotLabel as timelineSlotLabel,
-} from "@/lib/planner/timeline"
 
-import { usePlanner } from "./planner-context"
+import { UnitDataOverlay, usePlanner } from "./planner-context"
 import { UnitDetailView } from "./unit-detail-popover"
-
-const PERIOD_CHIP_ORDER: PeriodKind[] = [
-  "S1",
-  "S2",
-  "SUMMER_A",
-  "SUMMER_B",
-  "WINTER",
-  "FULL_YEAR",
-  "OTHER",
-]
 
 const SEARCH_DISPLAY_LIMIT = 50
 const SUGGEST_DISPLAY_LIMIT = 25
 
-/**
- * Debounce helper — small inline implementation so we don't drag in
- * a library for one use. The caller invokes the fn immediately but
- * the wrapped callback is only invoked after `delayMs` of quiet.
- */
-function useDebounced<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = useState(value)
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delayMs)
-    return () => clearTimeout(t)
-  }, [value, delayMs])
-  return debounced
+const OpenUnitSearchCtx = createContext<
+  (yearIndex: number, slotIndex: number) => void
+>(() => {})
+
+/** Opens the plan's unit search dialog for one semester. */
+export function useOpenUnitSearch() {
+  return useContext(OpenUnitSearchCtx)
 }
 
-export function UnitSearchDialog({
+/**
+ * One unit search dialog for the whole plan; each semester's "Add
+ * unit" button opens it for that semester. The target outlives the
+ * close, so the dialog keeps its content through the exit animation.
+ */
+export function UnitSearchProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const [target, setTarget] = useState<{
+    yearIndex: number
+    slotIndex: number
+  } | null>(null)
+  const [open, setOpen] = useState(false)
+  const openFor = useCallback((yearIndex: number, slotIndex: number) => {
+    setTarget({ yearIndex, slotIndex })
+    setOpen(true)
+  }, [])
+
+  return (
+    <OpenUnitSearchCtx.Provider value={openFor}>
+      {children}
+      {target ? (
+        <UnitSearchDialog
+          open={open}
+          onOpenChangeAction={setOpen}
+          yearIndex={target.yearIndex}
+          slotIndex={target.slotIndex}
+        />
+      ) : null}
+    </OpenUnitSearchCtx.Provider>
+  )
+}
+
+/** Results of the latest search, kept out of the planner's own maps. */
+interface Found {
+  query: string
+  bundle: UnitBundle
+  rank: Map<string, number>
+}
+
+function UnitSearchDialog({
   open,
   onOpenChangeAction,
   yearIndex,
@@ -77,13 +122,58 @@ export function UnitSearchDialog({
   yearIndex: number
   slotIndex: number
 }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChangeAction}>
+      {/* Below md the dialog is a full-screen sheet. */}
+      <DialogContent
+        className="h-[min(82vh,720px)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 max-md:inset-0 max-md:h-dvh max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:ring-0 sm:max-w-[960px]"
+        showCloseButton={false}
+      >
+        {/* The popup mounts its children only while open, so a closed
+            dialog does no ranking, and each opening starts fresh. */}
+        <UnitSearchBody
+          key={`${yearIndex}:${slotIndex}`}
+          yearIndex={yearIndex}
+          slotIndex={slotIndex}
+          onClose={() => onOpenChangeAction(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function UnitSearchBody(props: {
+  yearIndex: number
+  slotIndex: number
+  onClose: () => void
+}) {
+  const [found, setFound] = useState<Found | null>(null)
+  return (
+    <UnitDataOverlay bundle={found?.bundle ?? null}>
+      <UnitSearchView {...props} found={found} onFound={setFound} />
+    </UnitDataOverlay>
+  )
+}
+
+function UnitSearchView({
+  yearIndex,
+  slotIndex,
+  onClose,
+  found,
+  onFound,
+}: {
+  yearIndex: number
+  slotIndex: number
+  onClose: () => void
+  found: Found | null
+  onFound: (found: Found) => void
+}) {
+  // Inside the overlay: units, offerings and requisites include the
+  // search results.
   const {
     addUnit,
     state,
     course,
-    mergeUnits,
-    mergeOfferings,
-    mergeRequisites,
     units,
     offerings,
     requisites,
@@ -91,14 +181,12 @@ export function UnitSearchDialog({
     availableYears,
   } = usePlanner()
   const [query, setQuery] = useState("")
-  const [results, setResults] = useState<PlannerUnit[]>([])
-  const [searchRank, setSearchRank] = useState<Map<string, number>>(
-    () => new Map()
-  )
-  const [loading, setLoading] = useState(false)
   const [focusIndex, setFocusIndex] = useState(0)
+  // Below md the list and the details take turns: the code shown in
+  // place of the list, or null for the list.
+  const [mobileDetail, setMobileDetail] = useState<string | null>(null)
 
-  const debounced = useDebounced(query, 180)
+  const q = useDebouncedValue(query, 180).trim()
   const slot = state.years[yearIndex]?.slots[slotIndex]
   const slotKind = slot?.kind
   // Adding is blocked per-SLOT, not per-plan: a student who failed a
@@ -112,19 +200,12 @@ export function UnitSearchDialog({
   )
   const slotLabel = slot
     ? timelineSlotLabel(state, yearIndex, slot)
-    : slotKind
-      ? timelineSlotLabel(state, yearIndex, { kind: slotKind })
-      : "this slot"
-
-  // Use the handbook year that corresponds to this study year, falling
-  // back to the latest available if the exact year isn't in the DB.
-  const handbookYear = useMemo(() => {
-    const target = String(
-      slotCalendarYear(state, yearIndex, slot?.kind ?? slotKind ?? "S1")
-    )
-    if (availableYears.includes(target)) return target
-    return [...availableYears].sort().at(-1) ?? state.courseYear
-  }, [state, yearIndex, slot?.kind, slotKind, availableYears])
+    : "this slot"
+  const handbookYear = handbookYearFor(
+    yearIndex,
+    state.courseYear,
+    availableYears
+  )
 
   // Personalisation signals — derived from the plan + course graph
   // once per plan change. Cheap O(units-in-plan); we memoise so a
@@ -135,129 +216,83 @@ export function UnitSearchDialog({
     [state, course, requisites]
   )
   const slotCtx = useMemo(
-    () => slotContextFor(state, yearIndex, slotIndex),
-    [state, yearIndex, slotIndex]
+    () => slotContextFor(state, yearIndex, slotIndex, units),
+    [state, yearIndex, slotIndex, units]
   )
-
-  // Empty-query suggestions: the full pool of course / AoS units the
-  // student could still take, ranked by personal score with no text
-  // signal. The top of the list ends up being "fits the slot,
-  // satisfies an unmet requirement group, and is the right level for
-  // this year" — i.e. literally the next move.
-  const suggestions = useMemo<PlannerUnit[]>(() => {
-    if (!course) return []
-    const seen = new Set<string>()
-    const pool: PlannerUnit[] = []
-    const consider = (code: string) => {
-      if (seen.has(code) || plannedCodes.has(code)) return
-      seen.add(code)
-      const u = units.get(code)
-      if (u) pool.push(u)
-    }
-    for (const cu of course.courseUnits) consider(cu.code)
-    for (const aos of course.areasOfStudy)
-      for (const u of aos.units) consider(u.code)
-    if (pool.length === 0) return []
-    return rankCandidates(pool, {
-      signals,
-      slot: slotCtx,
-      offeringsByCode: offerings,
-      requisitesByCode: requisites,
-    })
-      .slice(0, SUGGEST_DISPLAY_LIMIT)
-      .map((r) => r.unit)
-  }, [course, units, offerings, requisites, signals, slotCtx, plannedCodes])
 
   // Search: one network roundtrip pulls a wider candidate pool plus
   // their offerings + requisites in a single bundle. We then rerank
   // locally with `signals` so the right slot / AoS / level wins.
   useEffect(() => {
+    if (!q) return
     let cancelled = false
-    if (!debounced.trim()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResults([])
-      setSearchRank(new Map())
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    searchUnitsRichAction(debounced, handbookYear)
-      .then((res) => {
-        if (cancelled) return
-        const unitsList = Object.values(res.units)
-        const rank = new Map(Object.entries(res.rank))
-        setResults(unitsList)
-        setSearchRank(rank)
-        setLoading(false)
-        mergeUnits(unitsList)
-        mergeOfferings(res.offerings)
-        mergeRequisites(res.requisites)
+    searchUnitsRichAction(q, handbookYear)
+      .then(({ rank, ...bundle }) => {
+        if (!cancelled)
+          onFound({ query: q, bundle, rank: new Map(Object.entries(rank)) })
       })
       .catch(() => {
-        if (cancelled) return
-        setResults([])
-        setSearchRank(new Map())
-        setLoading(false)
+        if (!cancelled)
+          onFound({
+            query: q,
+            bundle: { units: {}, offerings: {}, requisites: {} },
+            rank: new Map(),
+          })
       })
     return () => {
       cancelled = true
     }
-  }, [debounced, handbookYear, mergeUnits, mergeOfferings, mergeRequisites])
+  }, [q, handbookYear, onFound])
+  const loading = q !== "" && found?.query !== q
+  const resultCount = found ? Object.keys(found.bundle.units).length : 0
 
-  useEffect(() => {
-    if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setQuery("")
-      setResults([])
-      setSearchRank(new Map())
-      setFocusIndex(0)
+  // Display list — ranked by `personalScore`. With no query: the
+  // course / AoS units the student could still take, ranked with no
+  // text signal, so the top is "fits the slot, satisfies an unmet
+  // requirement group, and is the right level for this year" — i.e.
+  // literally the next move. With a query: the server's text-match
+  // candidates, reranked so the textRank becomes one feature among
+  // many rather than the only sort key.
+  const ranked = useMemo<RankedCandidate[]>(() => {
+    const args = {
+      signals,
+      slot: slotCtx,
+      offeringsByCode: offerings,
+      requisitesByCode: requisites,
     }
-  }, [open])
-
-  // Final display list — ranked by `personalScore`. For empty queries
-  // we already ranked the suggestions pool above; for searches we
-  // rerank the server's text-match candidates here so the textRank
-  // becomes one feature among many rather than the only sort key.
-  const ranked = useMemo(() => {
-    if (debounced.trim()) {
-      return rankCandidates(results, {
-        signals,
-        slot: slotCtx,
-        offeringsByCode: offerings,
-        requisitesByCode: requisites,
-        rankByCode: searchRank,
-      }).slice(0, SEARCH_DISPLAY_LIMIT)
+    if (!q) {
+      if (!course) return []
+      return rankCandidates(
+        suggestionPool(course, plannedCodes, units),
+        args
+      ).slice(0, SUGGEST_DISPLAY_LIMIT)
     }
-    return suggestions.map((u) => ({
-      unit: u,
-      // For suggestions we already ranked above; we still want the
-      // breakdown for the add-event, so recompute cheaply.
-      score: null as ScoreBreakdown | null,
-    }))
+    if (!found) return []
+    return rankCandidates(Object.values(found.bundle.units), {
+      ...args,
+      rankByCode: found.rank,
+    }).slice(0, SEARCH_DISPLAY_LIMIT)
   }, [
-    debounced,
-    results,
-    suggestions,
-    signals,
-    slotCtx,
+    q,
+    found,
+    course,
+    plannedCodes,
+    units,
     offerings,
     requisites,
-    searchRank,
+    signals,
+    slotCtx,
   ])
 
   const items = useMemo(() => ranked.map((r) => r.unit), [ranked])
-  const scoreByCode = useMemo(() => {
-    const m = new Map<string, ScoreBreakdown>()
-    for (const r of ranked) if (r.score) m.set(r.unit.code, r.score)
-    return m
-  }, [ranked])
+  const scoreByCode = useMemo(
+    () => new Map(ranked.map((r) => [r.unit.code, r.score])),
+    [ranked]
+  )
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (focusIndex >= items.length) setFocusIndex(Math.max(0, items.length - 1))
-  }, [items.length, focusIndex])
-
-  const focused = items[focusIndex]
+  const focusAt = Math.min(focusIndex, Math.max(0, items.length - 1))
+  const focused = items[focusAt]
+  const detailCode = mobileDetail ?? focused?.code
 
   const addAndClose = useCallback(
     (code: string) => {
@@ -270,7 +305,7 @@ export function UnitSearchDialog({
         year_index: yearIndex,
         slot_index: slotIndex,
         slot_kind: slotKind,
-        from_search: !!debounced.trim(),
+        from_search: !!q,
         // Personalisation telemetry — lets us later learn weights from
         // which features mattered for the units users actually add.
         rank_score: score?.total,
@@ -280,133 +315,168 @@ export function UnitSearchDialog({
         rank_prereq_ready: score?.prereqReady,
       })
       addUnit(yearIndex, slotIndex, code)
-      onOpenChangeAction(false)
+      onClose()
     },
-    [
-      addUnit,
-      yearIndex,
-      slotIndex,
-      slotKind,
-      debounced,
-      units,
-      scoreByCode,
-      onOpenChangeAction,
-    ]
+    [addUnit, yearIndex, slotIndex, slotKind, q, units, scoreByCode, onClose]
   )
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChangeAction}>
-      <DialogContent
-        className="h-[min(82vh,720px)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[960px]"
-        showCloseButton={false}
-      >
-        <DialogHeader className="sr-only">
-          <DialogTitle>Search for a unit to add to {slotLabel}</DialogTitle>
-        </DialogHeader>
+    <>
+      <DialogHeader className="sr-only">
+        <DialogTitle>Search for a unit to add to {slotLabel}</DialogTitle>
+      </DialogHeader>
 
-        <div className="flex items-center gap-3 border-b px-4 py-3">
-          <SearchIcon className="size-4 text-muted-foreground" />
-          <Input
-            autoFocus
-            placeholder={`Search units for ${slotKind ? PERIOD_KIND_SHORT[slotKind] : "this slot"}…  (try FIT1045 or "algorithms")`}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowDown") {
-                e.preventDefault()
-                setFocusIndex((i) => Math.min(items.length - 1, i + 1))
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault()
-                setFocusIndex((i) => Math.max(0, i - 1))
-              } else if (e.key === "Enter") {
-                e.preventDefault()
-                const picked = items[focusIndex]
-                if (picked && !slotCodes.has(picked.code)) {
-                  addAndClose(picked.code)
-                }
+      <div className="flex items-center gap-3 border-b px-4 py-3 max-md:gap-2 max-md:py-2 max-md:pr-2">
+        {mobileDetail ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              aria-label="Back to results"
+              className="-ml-2 md:hidden"
+              onClick={() => setMobileDetail(null)}
+            >
+              <ArrowLeftIcon />
+            </Button>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold md:hidden">
+              {mobileDetail}
+            </span>
+          </>
+        ) : null}
+        <SearchIcon
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground",
+            mobileDetail && "max-md:hidden"
+          )}
+        />
+        <Input
+          autoFocus
+          placeholder={`Search units for ${slotKind ? PERIOD_KIND_SHORT[slotKind] : "this slot"}…  (try FIT1045 or "algorithms")`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault()
+              setFocusIndex(Math.min(items.length - 1, focusAt + 1))
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault()
+              setFocusIndex(Math.max(0, focusAt - 1))
+            } else if (e.key === "Enter") {
+              e.preventDefault()
+              if (focused && !slotCodes.has(focused.code)) {
+                addAndClose(focused.code)
               }
-            }}
-            className="h-9 border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
-          />
-        </div>
+            }
+          }}
+          className={cn(
+            "h-9 border-none bg-transparent px-0 shadow-none focus-visible:ring-0",
+            mobileDetail && "max-md:hidden"
+          )}
+        />
+        <DialogClose
+          render={
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              aria-label="Close"
+              className="shrink-0 md:hidden"
+            />
+          }
+        >
+          <XIcon />
+        </DialogClose>
+      </div>
 
-        <div className="grid min-h-0 grid-cols-1 md:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-          {/* List pane */}
-          <div className="min-h-0 overflow-y-auto md:border-r">
-            <div className="p-1.5">
-              {!debounced.trim() && suggestions.length > 0 ? (
-                <GroupHeading>Best picks for {slotLabel}</GroupHeading>
-              ) : null}
-              {debounced.trim() && loading ? (
-                <div className="py-10 text-center text-sm text-muted-foreground">
-                  Searching…
-                </div>
-              ) : null}
-              {debounced.trim() && !loading && results.length === 0 ? (
-                <div className="py-10 text-center text-sm text-muted-foreground">
-                  No matches for &ldquo;{debounced}&rdquo;
-                </div>
-              ) : null}
-
-              <ul className="flex flex-col gap-0.5">
-                {items.map((u, i) => {
-                  const offs = offerings.get(u.code) ?? []
-                  const inSlot = slotCodes.has(u.code)
-                  return (
-                    <li key={u.code}>
-                      <UnitRow
-                        unit={u}
-                        offerings={offs}
-                        slotKind={slotKind}
-                        placed={inSlot}
-                        onPlanElsewhere={!inSlot && plannedCodes.has(u.code)}
-                        focused={i === focusIndex}
-                        onHover={() => setFocusIndex(i)}
-                        onClick={() => {
-                          if (!inSlot) addAndClose(u.code)
-                        }}
-                      />
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          </div>
-
-          {/* Details pane — visible on md+ */}
-          <div className="hidden min-h-0 flex-col bg-muted/20 md:flex">
-            {focused ? (
-              <FocusedDetails
-                key={focused.code}
-                code={focused.code}
-                slotKind={slotKind}
-                fits={
-                  slotKind
-                    ? isOfferedInPeriod(
-                        offerings.get(focused.code) ?? [],
-                        slotKind
-                      )
-                    : true
-                }
-                hasOfferingData={
-                  offerings.has(focused.code) ||
-                  (offerings.get(focused.code) ?? []).length > 0
-                }
-                placed={slotCodes.has(focused.code)}
-                slotLabel={slotLabel}
-                onAdd={() => addAndClose(focused.code)}
-              />
-            ) : (
-              <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-                {debounced.trim()
-                  ? "No unit selected."
-                  : "Start typing to search the handbook."}
+      <div className="grid min-h-0 grid-cols-1 md:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        {/* List pane */}
+        <div
+          className={cn(
+            "min-h-0 overflow-y-auto md:border-r",
+            mobileDetail && "max-md:hidden"
+          )}
+        >
+          <div className="p-1.5">
+            {!q && items.length > 0 ? (
+              <GroupHeading>Best picks for {slotLabel}</GroupHeading>
+            ) : null}
+            {q && loading ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                Searching…
               </div>
-            )}
+            ) : null}
+            {q && !loading && resultCount === 0 ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                No matches for &ldquo;{q}&rdquo;
+              </div>
+            ) : null}
+
+            <ul className="flex flex-col gap-0.5">
+              {items.map((u, i) => {
+                const offs = offerings.get(u.code) ?? []
+                const inSlot = slotCodes.has(u.code)
+                return (
+                  <li key={u.code} className="flex">
+                    <UnitRow
+                      unit={u}
+                      offerings={offs}
+                      slotKind={slotKind}
+                      placed={inSlot}
+                      onPlanElsewhere={!inSlot && plannedCodes.has(u.code)}
+                      focused={i === focusAt}
+                      onHover={() => setFocusIndex(i)}
+                      onClick={() => {
+                        if (!inSlot) addAndClose(u.code)
+                      }}
+                    />
+                    {/* Phones have no details pane beside the list. */}
+                    <button
+                      type="button"
+                      aria-label={`Details for ${u.code}`}
+                      onClick={() => setMobileDetail(u.code)}
+                      className="flex w-11 shrink-0 items-center justify-center rounded-control text-muted-foreground hover:bg-muted md:hidden"
+                    >
+                      <InfoIcon className="size-4" />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Details pane — beside the list on md+, in its place below */}
+        <div
+          className={cn(
+            "hidden min-h-0 flex-col bg-muted/20 md:flex",
+            mobileDetail && "max-md:flex"
+          )}
+        >
+          {detailCode ? (
+            <FocusedDetails
+              key={detailCode}
+              code={detailCode}
+              slotKind={slotKind}
+              fits={
+                slotKind
+                  ? isOfferedInPeriod(offerings.get(detailCode) ?? [], slotKind)
+                  : true
+              }
+              hasOfferingData={
+                offerings.has(detailCode) ||
+                (offerings.get(detailCode) ?? []).length > 0
+              }
+              placed={slotCodes.has(detailCode)}
+              slotLabel={slotLabel}
+              onAdd={() => addAndClose(detailCode)}
+            />
+          ) : (
+            <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
+              {q ? "No unit selected." : "Start typing to search the handbook."}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -442,7 +512,7 @@ function UnitRow({
   const periods = useMemo(() => {
     const s = new Set<PeriodKind>()
     for (const o of offerings) s.add(o.periodKind)
-    return PERIOD_CHIP_ORDER.filter((p) => s.has(p))
+    return PERIOD_KIND_ORDER.filter((p) => s.has(p))
   }, [offerings])
 
   return (
@@ -453,7 +523,7 @@ function UnitRow({
       onClick={onClick}
       aria-disabled={placed ? "true" : undefined}
       className={cn(
-        "flex w-full flex-col gap-1 rounded-control px-3 py-2 text-left text-sm transition-colors",
+        "flex w-full min-w-0 flex-col gap-1 rounded-control px-3 py-2 text-left text-sm transition-colors",
         focused ? "bg-accent text-accent-foreground" : "hover:bg-muted",
         // Non-fitting units are NOT dimmed at the row level — the chip
         // colours alone signal which period a unit runs in. Units already
@@ -465,7 +535,9 @@ function UnitRow({
         <span className="shrink-0 text-xs font-semibold tabular-nums">
           {unit.code}
         </span>
-        <span className="min-w-0 flex-1 truncate">{unit.title}</span>
+        <span className="min-w-0 flex-1 truncate max-md:line-clamp-2 max-md:whitespace-normal">
+          {unit.title}
+        </span>
         <span
           className={cn(
             "shrink-0 text-[10px] tabular-nums",

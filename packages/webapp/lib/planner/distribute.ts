@@ -14,6 +14,7 @@ import {
   type PlannerYear,
   type RequisiteBlock,
 } from "./types.ts"
+import { unitLevel } from "./unit-level.ts"
 
 export interface Placement {
   code: string
@@ -306,10 +307,9 @@ export function distribute(args: {
   return { placements, skipped, unplaced }
 }
 
+/** A unit's level, with no level sorting last. */
 function levelOf(level: string | null | undefined): number {
-  if (!level) return 9
-  const m = /Level\s+(\d+)/i.exec(level)
-  return m ? Number(m[1]) : 9
+  return unitLevel(level) ?? 9
 }
 
 function yearForLevel(
