@@ -21,7 +21,7 @@ export const PRIMARY_NAV_ITEMS: readonly PrimaryNavItem[] = [
   {
     href: "/search",
     label: "Search Units & Courses",
-    match: (p: string) => p.startsWith("/search"),
+    match: (p: string) => /^\/(search|units|courses|aos)(\/|$)/.test(p),
   },
 ] as const
 

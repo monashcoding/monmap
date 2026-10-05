@@ -45,6 +45,12 @@ export interface TreeGraphProps {
   fitAll?: boolean
   minimap?: boolean
   interactive?: boolean
+  /**
+   * Whether the scroll wheel zooms. Defaults to `interactive`. A graph
+   * inside a long page turns it off so the wheel scrolls the page;
+   * pinch, drag and the zoom buttons still work.
+   */
+  scrollZoom?: boolean
   className?: string
 }
 
@@ -74,6 +80,7 @@ function TreeGraphInner({
   fitAll = false,
   minimap = true,
   interactive = true,
+  scrollZoom = interactive,
   className,
 }: TreeGraphProps) {
   const lineage = useMemo(
@@ -205,12 +212,12 @@ function TreeGraphInner({
         onNodeClick={interactive ? handleNodeClick : undefined}
         onPaneClick={interactive ? () => onFocus(null) : undefined}
         panOnDrag
-        zoomOnScroll={interactive}
+        zoomOnScroll={scrollZoom}
         zoomOnPinch
         zoomOnDoubleClick={interactive}
         // False lets a two-finger scroll reach the page; ReactFlow still
         // takes a trackpad pinch (a ctrl+wheel event) as zoom.
-        preventScrolling={interactive}
+        preventScrolling={scrollZoom}
         fitView
         fitViewOptions={
           fitAll

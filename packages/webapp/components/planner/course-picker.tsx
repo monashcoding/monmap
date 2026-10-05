@@ -93,7 +93,7 @@ export function CoursePicker({ className }: { className?: string }) {
           {course ? (
             <div className="absolute top-3.5 right-10 z-10 flex items-center gap-3">
               <a
-                href={`/search?course=${course.code}&year=${course.year}`}
+                href={`/courses/${course.code}/${course.year}`}
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
               >

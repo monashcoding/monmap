@@ -1,6 +1,7 @@
 "use client"
 
-import { ExternalLinkIcon, XIcon } from "lucide-react"
+import Link from "next/link"
+import { ExternalLinkIcon, FileTextIcon, XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -44,10 +45,13 @@ export function TreeSidePanel({
   year,
   onClose,
   variant = "floating",
+  detailsHref,
 }: {
   detail: FocusedUnitDetail | null
   year: string
   onClose: () => void
+  /** The unit's MonMap page; shows a "View details" link when set. */
+  detailsHref?: string
   /** "floating": styled as a card (desktop side panel). "flush": no
    *  card chrome, fills its container (mobile bottom sheet). */
   variant?: "floating" | "flush"
@@ -74,11 +78,23 @@ export function TreeSidePanel({
               {unit.creditPoints}cp
             </span>
           ) : null}
+          {detailsHref ? (
+            <Link
+              href={detailsHref}
+              className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
+            >
+              <FileTextIcon className="size-3" />
+              View details
+            </Link>
+          ) : null}
           <a
             href={`https://handbook.monash.edu/${year}/units/${node.code}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
+            className={cn(
+              "inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline",
+              !detailsHref && "ml-auto"
+            )}
           >
             <ExternalLinkIcon className="size-3" />
             Handbook

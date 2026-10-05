@@ -243,6 +243,72 @@
 }
 
 /*
+ * Monash handbook HTML (synopses, rules, overviews) as it arrives from
+ * the handbook: paragraphs, lists, bold text and links. The project has
+ * no typography plugin, so this styles the few tags the handbook uses.
+ */
+@utility handbook-prose {
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+  & p {
+    margin-block: 0.6em;
+  }
+  & p:empty {
+    display: none;
+  }
+  & > :first-child {
+    margin-top: 0;
+  }
+  & > :last-child {
+    margin-bottom: 0;
+  }
+  & ul {
+    list-style: disc;
+    padding-left: 1.25em;
+    margin-block: 0.5em;
+  }
+  & ol {
+    list-style: decimal;
+    padding-left: 1.25em;
+    margin-block: 0.5em;
+  }
+  & li {
+    margin-block: 0.25em;
+  }
+  & a {
+    color: var(--info-foreground);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  & strong,
+  & b {
+    font-weight: 600;
+  }
+  & h1,
+  & h2,
+  & h3,
+  & h4 {
+    font-weight: 600;
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+  }
+  & table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-block: 0.75em;
+  }
+  & th,
+  & td {
+    border: 1px solid var(--border);
+    padding: 0.35em 0.6em;
+    text-align: left;
+    vertical-align: top;
+  }
+}
+
+/*
  * Short attention-grabbing pulse for error unit cards when the user
  * presses Validate. Three beats of a red ring + 2 % scale-up is enough
  * to catch the eye; any longer feels like an alarm.

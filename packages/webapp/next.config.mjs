@@ -27,24 +27,11 @@ const nextConfig = {
   // rather than treat them as prebuilt deps.
   transpilePackages: ["@monmap/db", "@monmap/scraper"],
 
-  // The per-entity SEO pages (/units/[code], /courses/[code]) were
-  // retired — their lazy-ISR rendering blew through Vercel's free-tier
-  // ISR/edge quotas. The workbench at /search is the single SPA now;
-  // these redirects keep previously shared/indexed entity URLs working.
-  // /search was called /tree until 2026-10, so /tree redirects too.
-  // Extra query params (?direction=, ?aos=) pass through untouched.
+  // /search was called /tree until 2026-10. Old /tree?unit= and
+  // ?course= links reach /search, which redirects them to the
+  // /units/[code] and /courses/[code] pages.
   async redirects() {
     return [
-      {
-        source: "/units/:code",
-        destination: "/search?unit=:code",
-        permanent: true,
-      },
-      {
-        source: "/courses/:code",
-        destination: "/search?course=:code",
-        permanent: true,
-      },
       {
         source: "/tree",
         destination: "/search",

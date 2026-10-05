@@ -11,10 +11,9 @@ export default function robots(): MetadataRoute.Robots {
       rules: [{ userAgent: "*", disallow: "/" }],
     }
   }
-  // /units/[code] and /courses/[code] used to be per-entity SEO pages
-  // but were retired with the move back to a SPA — they now redirect
-  // into the /search workbench (see next.config.mjs). Crawling is
-  // allowed by default; we only mention what to block.
+  // Crawling is allowed by default; this lists only what to block.
+  // The handbook pages (/units, /courses, /aos) are listed in the
+  // sitemap index at /sitemap.xml.
   return {
     rules: [
       {

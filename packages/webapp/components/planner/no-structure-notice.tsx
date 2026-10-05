@@ -54,7 +54,7 @@ export function NoStructureNotice({
         </a>
         {structureYear ? (
           <a
-            href={`/search?course=${course.code}&year=${structureYear}`}
+            href={`/courses/${course.code}/${structureYear}`}
             className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
           >
             <Share2Icon />

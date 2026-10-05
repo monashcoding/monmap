@@ -103,8 +103,7 @@ export default function RootLayout({
       name: "Monash University",
       sameAs: "https://www.monash.edu/",
     },
-    // No sitewide SearchAction — the workbench at /search has its own
-    // course/unit pickers and isn't a query-string search route.
+    // The SearchAction for /search?q= is declared on the search page.
   }
   return (
     <html
