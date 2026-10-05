@@ -272,10 +272,6 @@ function UserMenu() {
             </DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setGradesOpen(true)}>
-            <NotebookPenIcon className="size-3.5" />
-            My grades
-          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => router.push("/my-reviews")}
             className="items-start py-2.5"
@@ -291,6 +287,10 @@ function UserMenu() {
                 . Others see these initials, never your name or photo.
               </span>
             </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setGradesOpen(true)}>
+            <NotebookPenIcon className="size-3.5" />
+            My grades
           </DropdownMenuItem>
           {isAdmin ? (
             <DropdownMenuItem onClick={() => router.push("/admin/reviews")}>
