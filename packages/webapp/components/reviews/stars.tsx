@@ -1,6 +1,7 @@
 import { StarIcon } from "lucide-react"
 
-import type { RatingSummary } from "@/lib/reviews/types"
+import { formatRating, reviewCount } from "@/lib/reviews/format"
+import { NO_RATINGS, type RatingSummary } from "@/lib/reviews/types"
 import { cn } from "@/lib/utils"
 
 const SIZE = {
@@ -56,15 +57,9 @@ export function Stars({
   )
 }
 
-export function formatRating(average: number): string {
-  return average.toFixed(1)
-}
-
 export function ratingLabel(summary: RatingSummary): string {
   if (summary.count === 0 || summary.average == null) return "No reviews yet"
-  return `Rated ${formatRating(summary.average)} out of 5 from ${summary.count} ${
-    summary.count === 1 ? "review" : "reviews"
-  }`
+  return `Rated ${formatRating(summary.average)} out of 5 from ${reviewCount(summary.count)}`
 }
 
 /**
@@ -81,7 +76,7 @@ export function RatingInline({
   size?: StarSize
   className?: string
 }) {
-  const s = summary ?? { average: null, count: 0 }
+  const s = summary ?? NO_RATINGS
   const has = s.count > 0 && s.average != null
   return (
     <span
@@ -115,7 +110,7 @@ export function RatingCompact({
   summary: RatingSummary | null | undefined
   className?: string
 }) {
-  const s = summary ?? { average: null, count: 0 }
+  const s = summary ?? NO_RATINGS
   const has = s.count > 0 && s.average != null
   return (
     <span

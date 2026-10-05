@@ -15,3 +15,8 @@ export function reviewDate(iso: string): string {
 export function reviewCount(n: number): string {
   return `${n.toLocaleString("en-AU")} ${n === 1 ? "review" : "reviews"}`
 }
+
+/** "4.3": one decimal place, the way ratings show everywhere. */
+export function formatRating(average: number): string {
+  return average.toFixed(1)
+}

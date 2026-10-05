@@ -15,7 +15,7 @@ import type { EntityKind } from "./links.ts"
 import { aosKind, aosKindWord } from "./kinds.ts"
 import type { RequisiteContainer } from "../planner/types.ts"
 import { REVIEW_AXES } from "../reviews/axes.ts"
-import { reviewCount } from "../reviews/format.ts"
+import { formatRating, reviewCount } from "../reviews/format.ts"
 
 /** A piece of text, or a link to a unit, course or area of study. */
 export type Seg = string | { kind: EntityKind; code: string; text?: string }
@@ -82,7 +82,7 @@ const plural = (n: number, one: string, many = `${one}s`) =>
   `${n.toLocaleString("en-AU")} ${n === 1 ? one : many}`
 
 export const ratingText = (r: RatingFacts) =>
-  `${(r.average ?? 0).toFixed(1)} out of 5 from ${reviewCount(r.count)}`
+  `${formatRating(r.average ?? 0)} out of 5 from ${reviewCount(r.count)}`
 
 /**
  * "hard" for a mean difficulty of 3.9, or null with no ratings. The
@@ -627,7 +627,7 @@ const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 const ratedBy = (r: RatingFacts) =>
   r.count > 0
-    ? `, rated ${(r.average ?? 0).toFixed(1)}/5 by ${plural(r.count, "student")}`
+    ? `, rated ${formatRating(r.average ?? 0)}/5 by ${plural(r.count, "student")}`
     : ""
 
 /**

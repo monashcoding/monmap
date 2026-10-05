@@ -16,6 +16,7 @@ import {
   listReviewsForAdmin,
 } from "@/lib/db/reviews"
 import { entityHref } from "@/lib/handbook/links"
+import { firstParam } from "@/lib/handbook/search-url"
 import { isReviewAdmin } from "@/lib/reviews/admin"
 import { REVIEW_AXES } from "@/lib/reviews/axes"
 import { reviewDate } from "@/lib/reviews/format"
@@ -56,10 +57,6 @@ const STATUS_STYLE: Record<AdminReview["status"], string> = {
 
 type Params = Promise<Record<string, string | string[] | undefined>>
 
-function one(v: string | string[] | undefined): string {
-  return (Array.isArray(v) ? v[0] : v) ?? ""
-}
-
 /**
  * Every review, for the admins in REVIEW_ADMIN_EMAILS. Everyone else
  * gets a 404, so the page doesn't reveal that it exists. Authors show
@@ -75,12 +72,12 @@ export default async function ReviewModerationPage({
   if (!user || !isReviewAdmin(user.email)) notFound()
 
   const sp = await searchParams
-  const rawFilter = one(sp.status)
+  const rawFilter = firstParam(sp.status) ?? ""
   const filter: AdminFilter = FILTERS.some((f) => f.id === rawFilter)
     ? (rawFilter as AdminFilter)
     : "flagged"
-  const q = one(sp.q).trim().slice(0, 100)
-  const page = Math.max(1, Number.parseInt(one(sp.page), 10) || 1)
+  const q = (firstParam(sp.q) ?? "").slice(0, 100)
+  const page = Math.max(1, Number.parseInt(firstParam(sp.page) ?? "", 10) || 1)
 
   const [{ reviews, total }, counts] = await Promise.all([
     listReviewsForAdmin(filter, q, (page - 1) * ADMIN_PAGE_SIZE),

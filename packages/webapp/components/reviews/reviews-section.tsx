@@ -13,7 +13,9 @@ import { reviewCount } from "@/lib/reviews/format"
 import { cn } from "@/lib/utils"
 
 import { ReviewsClient } from "./reviews-client"
-import { formatRating, RatingInline, Stars } from "./stars"
+import { formatRating } from "@/lib/reviews/format"
+
+import { RatingInline, Stars } from "./stars"
 
 const FIRST_PAGE = 5
 
