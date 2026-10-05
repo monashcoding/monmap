@@ -45,8 +45,10 @@ export function ThemeChoice() {
           onClick={() => setTheme(value)}
           className={cn(
             "flex h-10 items-center justify-center gap-1 rounded-tag text-[13px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            // In dark mode a card fill barely differs from the muted
+            // track and the shadow does not show, so lighten it instead.
             current === value
-              ? "bg-card font-medium text-foreground shadow-sm"
+              ? "bg-card font-medium text-foreground shadow-sm dark:bg-foreground/15"
               : "text-muted-foreground hover:text-foreground"
           )}
         >

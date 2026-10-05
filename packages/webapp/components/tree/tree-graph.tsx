@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { useEffect, useRef, useState } from "react"
 
 import type { TreeEdge, TreeNode } from "@/lib/tree/types"
 import { cn } from "@/lib/utils"
@@ -9,11 +10,12 @@ import { cn } from "@/lib/utils"
 // pages with a map don't wait for them; the server renders the frame.
 const TreeGraphCanvas = dynamic(
   () => import("./tree-graph-canvas").then((m) => m.TreeGraphCanvas),
-  {
-    ssr: false,
-    loading: () => <div className="h-full w-full animate-pulse bg-muted/40" />,
-  }
+  { ssr: false, loading: () => <CanvasPlaceholder /> }
 )
+
+function CanvasPlaceholder() {
+  return <div className="h-full w-full animate-pulse bg-muted/40" />
+}
 
 export interface TreeGraphProps {
   /** Hydrated nodes (after equivalence collapse, plan-status, badges). */
@@ -49,6 +51,11 @@ export interface TreeGraphProps {
   scrollZoom?: boolean
   /** Drawn over the canvas, such as the plan map's unit card. */
   overlay?: React.ReactNode
+  /**
+   * Load and mount the canvas only when the frame comes near the
+   * viewport, for a map further down a page.
+   */
+  lazy?: boolean
   className?: string
 }
 
@@ -61,10 +68,33 @@ export interface TreeGraphProps {
  * Edges are bezier; arrows always point from prerequisite → dependant
  * so the chain reads left-to-right by level.
  */
-export function TreeGraph({ overlay, className, ...canvas }: TreeGraphProps) {
+export function TreeGraph({
+  overlay,
+  lazy = false,
+  className,
+  ...canvas
+}: TreeGraphProps) {
+  const frameRef = useRef<HTMLDivElement>(null)
+  const [near, setNear] = useState(!lazy)
+
+  useEffect(() => {
+    const frame = frameRef.current
+    if (near || !frame) return
+    // A wide margin starts the chunk download a little before the
+    // reader scrolls the map into view.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setNear(true)
+      },
+      { rootMargin: "300px" }
+    )
+    observer.observe(frame)
+    return () => observer.disconnect()
+  }, [near])
+
   return (
-    <TreeGraphFrame className={className}>
-      <TreeGraphCanvas {...canvas} />
+    <TreeGraphFrame ref={frameRef} className={className}>
+      {near ? <TreeGraphCanvas {...canvas} /> : <CanvasPlaceholder />}
       {overlay}
     </TreeGraphFrame>
   )
@@ -75,14 +105,17 @@ export function TreeGraph({ overlay, className, ...canvas }: TreeGraphProps) {
  * plan map below lg) render it empty so the layout keeps its size.
  */
 export function TreeGraphFrame({
+  ref,
   className,
   children,
 }: {
+  ref?: React.Ref<HTMLDivElement>
   className?: string
   children?: React.ReactNode
 }) {
   return (
     <div
+      ref={ref}
       className={cn(
         "relative h-full min-h-[480px] w-full overflow-hidden rounded-panel border bg-card shadow-card",
         className

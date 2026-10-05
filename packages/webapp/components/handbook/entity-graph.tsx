@@ -175,20 +175,26 @@ export function EntityGraph({
         <div
           className={`relative overflow-hidden rounded-control border ${height}`}
         >
-          <TreeGraph
-            // Remount on new data so the map fits the new layout.
-            key={payload.graph.nodes.join(",")}
-            nodes={nodes}
-            edges={edges}
-            focused={isMobile ? null : focused}
-            variantCounts={variantCounts}
-            onFocus={setFocused}
-            fitAll
-            minimap={false}
-            scrollZoom={false}
-            interactive={!isMobile}
-            className="h-full min-h-0 rounded-none border-0 shadow-none"
-          />
+          {/* The map usually sits below the fold, so it loads when the
+              reader scrolls near it. While the phone's full-screen map
+              is open, the preview unmounts so only one map runs. */}
+          {isMobile && expanded ? null : (
+            <TreeGraph
+              // Remount on new data so the map fits the new layout.
+              key={payload.graph.nodes.join(",")}
+              nodes={nodes}
+              edges={edges}
+              focused={isMobile ? null : focused}
+              variantCounts={variantCounts}
+              onFocus={setFocused}
+              fitAll
+              minimap={false}
+              scrollZoom={false}
+              interactive={!isMobile}
+              lazy
+              className="h-full min-h-0 rounded-none border-0 shadow-none"
+            />
+          )}
           {isMobile ? (
             // On a phone the inline map is a preview. A swipe over it
             // scrolls the page; a tap opens the map full screen.

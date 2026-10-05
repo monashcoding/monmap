@@ -5,13 +5,15 @@ name: Build & publish image
 # prebuilt image and runs it — so three apps can share one Oracle box
 # without their builds fighting over RAM/CPU.
 
+# Pull requests run only the verify job; pushes to main also build.
 on:
   push:
     branches: [main]
-    # Only rebuild when something that affects the image changes.
-    paths:
+    # Only run when something the checks or the image cover changes.
+    paths: &paths
       - "packages/webapp/**"
       - "packages/db/**"
+      - "packages/ingest/**"
       - "packages/scraper/**"
       - "Dockerfile"
       - ".dockerignore"
@@ -19,6 +21,8 @@ on:
       - "pnpm-workspace.yaml"
       - "package.json"
       - ".github/workflows/deploy.yml"
+  pull_request:
+    paths: *paths
   workflow_dispatch: {} # allow manual "Run workflow"
 
 env:
@@ -52,6 +56,7 @@ jobs:
 
   build:
     needs: verify
+    if: github.event_name != 'pull_request'
     # Native ARM64 runner — Oracle Ampere is arm64, and this is free on
     # public repos. Avoids ~5x slower QEMU cross-compilation.
     runs-on: ubuntu-24.04-arm

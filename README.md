@@ -156,7 +156,9 @@ pnpm ingest:all                  # load every year present in the data dir
 
 CI (the `verify` job in `.github/workflows/deploy.yml`) runs `pnpm lint`,
 `pnpm typecheck`, `pnpm test` and a critical-advisory `pnpm audit` on
-every push to `main`, and builds the Docker image only when they pass.
+every pull request and push to `main` that changes a package, the
+Dockerfile or the root workspace files. On `main` it then builds the
+Docker image, but only when the checks pass.
 
 > `drizzle-kit push` is deliberately not wired up. Schema changes go
 > through `db:generate` + `db:migrate` so the history stays auditable
