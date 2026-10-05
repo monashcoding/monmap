@@ -94,7 +94,6 @@ export async function CoursePage({
       unitCode: null,
       direction: "upstream",
       year: r.year,
-      useMyPlan: false,
     }),
   ])
   if (!c) notFound()

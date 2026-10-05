@@ -21,7 +21,7 @@ MonMap URL by changing the domain.
 - A lowercase code redirects to the uppercase one (308).
 - A year with no page for the code redirects to the bare URL (307).
 - An unknown code is a 404.
-- `/search?unit=`, `?course=` and `?aos=` (the old workbench links)
+- `/search?unit=`, `?course=` and `?aos=` (the old search screen's links)
   redirect to the matching page. `/tree` redirects to `/search`.
 
 The page components live in `packages/webapp/components/handbook/`.

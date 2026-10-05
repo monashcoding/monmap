@@ -63,8 +63,8 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
     >
       <MobileNavTrigger />
       {/* Brand bug — intentionally NOT an <h1>. Each route owns its own
-          h1 (the unit/course title on canonical pages, "Start
-          exploring" on the empty workbench, etc.) so Google sees a
+          h1 (the unit or course title on handbook pages, "Search
+          units & courses" on /search, etc.) so Google sees a
           unique main topic per URL instead of "MonMap" repeated across
           every page. */}
       <nav

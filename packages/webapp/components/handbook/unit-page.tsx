@@ -83,7 +83,6 @@ export async function UnitPage({
       aosCode: null,
       direction: "both",
       year: r.year,
-      useMyPlan: false,
     }),
   ])
   if (!u) notFound()

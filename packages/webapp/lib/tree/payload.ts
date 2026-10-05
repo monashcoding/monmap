@@ -25,7 +25,6 @@ export interface TreeControlsValue {
   unitCode: string | null
   direction: TreeDirection
   year: string
-  useMyPlan: boolean
 }
 
 /**

@@ -2,7 +2,6 @@
 
 import { getCurrentUser } from "@/lib/auth-server"
 import { getPostHogClient } from "@/lib/posthog-server"
-import { fetchPublicCourse, fetchPublicUnit } from "@/lib/db/public-queries"
 import {
   bulkUpsertUserGrades,
   createUserPlan,
@@ -232,38 +231,6 @@ export async function fetchPlanGraphAction(
     units: Object.fromEntries(hydrated.units),
   }
 }
-
-/**
- * Fetch the full "public" details for the currently-seeded entity
- * (unit or course). Drives the below-the-workbench facts panel in
- * `<EntityFacts>` — overview/synopsis HTML, AoS membership, modes,
- * CRICOS code, etc. Returns null fields when nothing's seeded, which
- * the panel renders as the "Start exploring" empty state.
- *
- * Kept separate from `fetchTreeDataAction` so picker changes that only
- * affect the graph closure don't refetch the heavier overview HTML,
- * and vice versa.
- */
-export async function fetchEntityDetailsAction(
-  controls: TreeControlsValue
-): Promise<{
-  unit: PublicUnitForAction | null
-  course: PublicCourseForAction | null
-}> {
-  if (controls.mode === "unit" && controls.unitCode) {
-    const unit = await fetchPublicUnit(controls.unitCode, controls.year)
-    return { unit, course: null }
-  }
-  if (controls.mode === "course" && controls.courseCode) {
-    const course = await fetchPublicCourse(controls.courseCode, controls.year)
-    return { unit: null, course }
-  }
-  return { unit: null, course: null }
-}
-export type PublicUnitForAction = Awaited<ReturnType<typeof fetchPublicUnit>>
-export type PublicCourseForAction = Awaited<
-  ReturnType<typeof fetchPublicCourse>
->
 
 /* ------------------------------------------------------------------ *
  * Per-user plan persistence (multi-plan)

@@ -87,7 +87,6 @@ export function EntityGraph({
       unitCode: null,
       direction: "upstream",
       year,
-      useMyPlan: false,
     }).then((data) => {
       if (cancelled) return
       setPayload(data)

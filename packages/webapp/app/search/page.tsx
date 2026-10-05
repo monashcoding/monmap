@@ -93,7 +93,7 @@ export default async function SearchPage({
 }) {
   const sp = await searchParams
 
-  // /search?unit=, ?course= and ?aos= were the old workbench's links.
+  // /search?unit=, ?course= and ?aos= were the old search screen's links.
   const legacyYear = typeof sp.year === "string" ? sp.year : null
   for (const [param, kind] of [
     ["unit", "unit"],
