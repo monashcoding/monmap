@@ -60,7 +60,7 @@ export function AddSemesterButton() {
     <button
       type="button"
       onClick={() => addSemesters(1)}
-      className="flex w-full items-center justify-center gap-1.5 border-t border-dashed bg-muted/20 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors outline-none hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40 print:hidden"
+      className="flex min-h-20 w-full items-center justify-center gap-1.5 border-t border-dashed bg-muted/20 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors outline-none hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40 print:hidden"
     >
       <PlusIcon className="size-3.5" />
       Add {label}
