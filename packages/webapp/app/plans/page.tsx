@@ -21,6 +21,7 @@ import {
   type CourseMeta,
   type PlanWithState,
 } from "@/lib/db/queries"
+import { summarizePlan } from "@/lib/planner/progress"
 import type { PlannerState } from "@/lib/planner/types"
 
 import { NewPlanButton, NewPlanCard } from "./new-plan-button"
@@ -36,6 +37,25 @@ function allUnitCodes(state: PlannerState): string[] {
     }
   }
   return [...seen]
+}
+
+/**
+ * The plan's credit points as the planner's progress ring counts them:
+ * each unit once, plus exchange blocks and advanced standing. A
+ * malformed stored state counts as 0.
+ */
+function planCreditPoints(
+  state: PlannerState,
+  cpMap: Record<string, number>
+): number {
+  const units = new Map(
+    Object.entries(cpMap).map(([code, cp]) => [code, { creditPoints: cp }])
+  )
+  try {
+    return summarizePlan(state, null, units).totalCreditPoints
+  } catch {
+    return 0
+  }
 }
 
 export interface PlanPageData {
@@ -109,16 +129,12 @@ export default async function PlansPage({
 
   const pageData: PlanPageData[] = plans.map((plan) => {
     const cpMap = cpMaps.get(plan.state.courseYear) ?? {}
-    const totalCreditPoints = allUnitCodes(plan.state).reduce(
-      (sum, code) => sum + (cpMap[code] ?? 6),
-      0
-    )
     return {
       plan,
       course:
         courseMap.get(`${plan.state.courseCode}:${plan.state.courseYear}`) ??
         null,
-      totalCreditPoints,
+      totalCreditPoints: planCreditPoints(plan.state, cpMap),
     }
   })
 

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 
 import { Checkbox } from "@/components/ui/checkbox"
+import { useMediaQuery } from "@/hooks/use-mobile"
 
 import { PlanMap } from "./plan-map"
 import { usePlanner } from "./planner-context"
@@ -17,6 +18,9 @@ export function PlanMapSection() {
   const { grades } = useWam()
   // Off by default: the map is about the student's own units.
   const [showUntaken, setShowUntaken] = useState(false)
+  // The section only shows from lg up, so narrower screens skip the
+  // map's fetch, layout and React Flow altogether.
+  const wide = useMediaQuery("(min-width: 1024px)")
 
   // Units the course and the picked areas of study list, so the map
   // can show the ones the plan leaves out.
@@ -55,6 +59,7 @@ export function PlanMapSection() {
         requirementCodes={showUntaken ? requirementCodes : undefined}
         knownUnits={units}
         grades={grades}
+        enabled={wide}
         className="h-[640px] min-h-0 rounded-none border-0 shadow-none"
       />
     </section>

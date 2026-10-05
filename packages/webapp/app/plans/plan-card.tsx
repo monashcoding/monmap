@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useSyncExternalStore, useTransition } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import posthog from "posthog-js"
+import { toast } from "sonner"
 import {
   BookOpenIcon,
   ChevronRightIcon,
@@ -33,8 +34,10 @@ import {
 } from "@/app/actions"
 
 import type { PlanPageData } from "./page"
+import { MAX_PLANS_PER_USER } from "@/lib/db/input"
 import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
 import { PlanMap } from "@/components/planner/plan-map"
+import { useMediaQuery } from "@/hooks/use-mobile"
 import type { PlannerState } from "@/lib/planner/types"
 
 import { PlanPreview } from "./plan-preview"
@@ -104,7 +107,13 @@ export function PlanCard({ data }: { data: PlanPageData }) {
       total_credit_points: totalCreditPoints,
     })
     startTransition(async () => {
-      await duplicateMyPlanAction(plan.id)
+      const res = await duplicateMyPlanAction(plan.id)
+      if (!res.ok && res.reason === "limit") {
+        toast.error(
+          `You have reached the limit of ${MAX_PLANS_PER_USER} plans. Delete a plan to make a new one.`
+        )
+        return
+      }
       router.refresh()
     })
   }
@@ -275,6 +284,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
                   downloadBlob(
                     buildCsv(plan.state, {
                       units: new Map(Object.entries(hydrated.units)),
+                      offerings: new Map(Object.entries(hydrated.offerings)),
                       grades: new Map(Object.entries(grades)),
                     }),
                     planFileName(plan.name, "csv"),
@@ -342,15 +352,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
  * only at that width, so narrower screens don't fetch the graph.
  */
 function PlanMapThumbnail({ state }: { state: PlannerState }) {
-  const wide = useSyncExternalStore(
-    (onChange) => {
-      const mql = window.matchMedia("(min-width: 1280px)")
-      mql.addEventListener("change", onChange)
-      return () => mql.removeEventListener("change", onChange)
-    },
-    () => window.matchMedia("(min-width: 1280px)").matches,
-    () => false
-  )
+  const wide = useMediaQuery("(min-width: 1280px)")
   if (!wide) return null
   return (
     <div className="relative min-h-48">

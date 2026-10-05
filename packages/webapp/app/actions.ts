@@ -1,6 +1,6 @@
 "use server"
 
-import { getCurrentUser } from "@/lib/auth-server"
+import { getClaims, getCurrentUser } from "@/lib/auth-server"
 import { getPostHogClient } from "@/lib/posthog-server"
 import {
   cleanCodes,
@@ -25,6 +25,7 @@ import {
   duplicateUserPlan,
   expandRequisiteGraph,
   fetchCourseWithAoS,
+  fetchUnitText,
   getUserPlanById,
   hydratePlannerUnits,
   hydratePlannerUnitsMultiYear,
@@ -50,6 +51,7 @@ import {
   type PlannerState,
   type PlannerUnit,
   type RequisiteBlock,
+  type UnitText,
 } from "@/lib/planner/types"
 import { defaultState } from "@/lib/planner/state"
 import type { TreeControlsValue, TreeGraphPayload } from "@/lib/tree/payload"
@@ -182,9 +184,26 @@ export async function hydrateUnitsAction(
   return plain(await hydratePlannerUnits(list, y))
 }
 
+/** One unit and its equivalents: what one detail panel shows. */
+const MAX_TEXT_CODES = 12
+
+/**
+ * The synopsis and enrolment rules of the unit a detail panel opens
+ * (and its equivalents). Every other payload leaves this prose out.
+ */
+export async function fetchUnitTextAction(
+  codes: string[],
+  year: string
+): Promise<Record<string, UnitText>> {
+  const y = await knownYear(year)
+  const list = cleanCodes(codes, MAX_TEXT_CODES)
+  if (!y || list.length === 0) return {}
+  return fetchUnitText(list, y)
+}
+
 /**
  * The requisite graph for the current controls, with every unit's
- * data, offerings, structured rules and enrolment-rule prose. The
+ * data, offerings, structured rules and enrolment gates. The
  * handbook pages render the first paint with the same function.
  */
 export async function fetchTreeDataAction(
@@ -236,28 +255,28 @@ const isPlanId = (v: unknown): v is string =>
   typeof v === "string" && v.length > 0 && v.length <= 64
 
 export async function listMyPlansAction(): Promise<PlanSummary[]> {
-  const u = await getCurrentUser()
-  if (!u) return []
-  return listUserPlans(u.id)
+  const claims = await getClaims()
+  if (!claims) return []
+  return listUserPlans(claims.macUserId)
 }
 
 export async function getMyPlanAction(
   planId: string
 ): Promise<{ id: string; name: string; state: PlannerState } | null> {
-  const u = await getCurrentUser()
-  if (!u || !isPlanId(planId)) return null
-  return getUserPlanById(planId, u.id)
+  const claims = await getClaims()
+  if (!claims || !isPlanId(planId)) return null
+  return getUserPlanById(planId, claims.macUserId)
 }
 
 export async function saveMyPlanAction(
   planId: string,
   state: PlannerState
 ): Promise<SaveResult> {
-  const u = await getCurrentUser()
-  if (!u) return { ok: false, reason: "unauthenticated" }
+  const claims = await getClaims()
+  if (!claims) return { ok: false, reason: "unauthenticated" }
   if (!isPlanId(planId) || !isPlannerState(state))
     return { ok: false, reason: "invalid" }
-  const ok = await updateUserPlanState(planId, u.id, state)
+  const ok = await updateUserPlanState(planId, claims.macUserId, state)
   return ok ? { ok: true } : { ok: false, reason: "not_found" }
 }
 
@@ -311,7 +330,7 @@ export async function createBlankPlanAction(
   posthog.capture({
     distinctId: u.id,
     event: "plan_created_server",
-    properties: { plan_name: name, handbook_year: year },
+    properties: { handbook_year: year },
   })
   await posthog.flush()
   redirect(`/?plan=${plan.id}`)
@@ -321,19 +340,19 @@ export async function renameMyPlanAction(
   planId: string,
   name: string
 ): Promise<SaveResult> {
-  const u = await getCurrentUser()
-  if (!u) return { ok: false, reason: "unauthenticated" }
+  const claims = await getClaims()
+  if (!claims) return { ok: false, reason: "unauthenticated" }
   const trimmed = cleanPlanName(name)
   if (!isPlanId(planId) || !trimmed) return { ok: false, reason: "invalid" }
-  const ok = await renameUserPlan(planId, u.id, trimmed)
+  const ok = await renameUserPlan(planId, claims.macUserId, trimmed)
   return ok ? { ok: true } : { ok: false, reason: "not_found" }
 }
 
 export async function deleteMyPlanAction(planId: string): Promise<SaveResult> {
-  const u = await getCurrentUser()
-  if (!u) return { ok: false, reason: "unauthenticated" }
+  const claims = await getClaims()
+  if (!claims) return { ok: false, reason: "unauthenticated" }
   if (!isPlanId(planId)) return { ok: false, reason: "invalid" }
-  const ok = await deleteUserPlan(planId, u.id)
+  const ok = await deleteUserPlan(planId, claims.macUserId)
   return ok ? { ok: true } : { ok: false, reason: "not_found" }
 }
 
@@ -343,12 +362,12 @@ export async function duplicateMyPlanAction(
   | { ok: true; plan: { id: string; name: string } }
   | { ok: false; reason: "unauthenticated" | "not_found" | "limit" }
 > {
-  const u = await getCurrentUser()
-  if (!u) return { ok: false, reason: "unauthenticated" }
+  const claims = await getClaims()
+  if (!claims) return { ok: false, reason: "unauthenticated" }
   if (!isPlanId(planId)) return { ok: false, reason: "not_found" }
-  if ((await countUserPlans(u.id)) >= MAX_PLANS_PER_USER)
+  if ((await countUserPlans(claims.macUserId)) >= MAX_PLANS_PER_USER)
     return { ok: false, reason: "limit" }
-  const plan = await duplicateUserPlan(planId, u.id)
+  const plan = await duplicateUserPlan(planId, claims.macUserId)
   return plan ? { ok: true, plan } : { ok: false, reason: "not_found" }
 }
 
@@ -360,17 +379,17 @@ export async function duplicateMyPlanAction(
  * ------------------------------------------------------------------ */
 
 export async function listMyGradesAction(): Promise<Record<string, number>> {
-  const u = await getCurrentUser()
-  if (!u) return {}
-  return listUserGrades(u.id)
+  const claims = await getClaims()
+  if (!claims) return {}
+  return listUserGrades(claims.macUserId)
 }
 
 export async function listMyGradesWithTitlesAction(): Promise<
   UserGradeWithTitle[]
 > {
-  const u = await getCurrentUser()
-  if (!u) return []
-  return listUserGradesWithTitles(u.id)
+  const claims = await getClaims()
+  if (!claims) return []
+  return listUserGradesWithTitles(claims.macUserId)
 }
 
 export async function setMyGradeAction(

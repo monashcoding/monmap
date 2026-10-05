@@ -10,11 +10,8 @@ import type {
   RequisiteBlock,
 } from "@/lib/planner/types"
 import { buildEquivalence, collapseEdges } from "@/lib/tree/equivalence"
-import { parseLevel } from "@/lib/tree/layout"
 import type { TreeGraphPayload } from "@/lib/tree/payload"
-import type { TreeEdge, TreeNode } from "@/lib/tree/types"
-
-import type { FocusedUnitDetail } from "./tree-side-panel"
+import type { FocusedUnitDetail, TreeEdge, TreeNode } from "@/lib/tree/types"
 
 const NO_CODES: ReadonlySet<string> = new Set()
 
@@ -28,7 +25,7 @@ export function useTreeModel(
   focused: string | null,
   inPlan: ReadonlySet<string> = NO_CODES
 ) {
-  const { graph, units, offerings, requisites, enrolmentRules } = payload
+  const { graph, units, offerings, requisites, gated } = payload
 
   const eq = useMemo(() => {
     const u = new Map<string, PlannerUnit | null>(
@@ -44,19 +41,17 @@ export function useTreeModel(
 
   const nodes = useMemo<TreeNode[]>(() => {
     const seeds = new Set(graph.seeds.map((s) => eq.canonicalOf.get(s) ?? s))
+    const gates = new Set(gated)
     return [...eq.groups.keys()].map((code) => ({
       code,
       unit: units[code] ?? null,
-      level: parseLevel(code),
       prefix: code.slice(0, 3).toUpperCase(),
       isSeed: seeds.has(code),
-      hasEnrolmentGate: (enrolmentRules[code] ?? []).some(
-        (r) => r.description && r.description.trim().length > 0
-      ),
+      hasEnrolmentGate: gates.has(code),
       periodBadge: periodBadge(offerings[code] ?? []),
       planStatus: inPlan.has(code) ? "placed" : null,
     }))
-  }, [eq, graph.seeds, units, offerings, enrolmentRules, inPlan])
+  }, [eq, graph.seeds, units, offerings, gated, inPlan])
 
   const variantCounts = useMemo(
     () =>
@@ -72,24 +67,22 @@ export function useTreeModel(
     if (!node) return null
     const members = eq.groups.get(focused)?.members ?? [focused]
     // Equivalent units are interchangeable, so the panel shows the
-    // union of their offerings, rules and enrolment rules.
+    // union of their offerings and rules (and, once loaded, of their
+    // enrolment rules).
     const reqs: RequisiteBlock[] = []
     const offs: PlannerOffering[] = []
-    const rules: FocusedUnitDetail["enrolmentRules"] = []
     for (const m of members) {
       reqs.push(...(requisites[m] ?? []))
       offs.push(...(offerings[m] ?? []))
-      rules.push(...(enrolmentRules[m] ?? []))
     }
     return {
       node,
       variants: members.filter((m) => m !== focused),
       offerings: offs,
       requisites: reqs,
-      enrolmentRules: rules,
       completed: inPlan,
     }
-  }, [focused, nodes, eq, requisites, offerings, enrolmentRules, inPlan])
+  }, [focused, nodes, eq, requisites, offerings, inPlan])
 
   return { nodes, edges, variantCounts, detail }
 }

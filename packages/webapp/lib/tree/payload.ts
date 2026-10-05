@@ -6,6 +6,7 @@
  */
 
 import type {
+  EnrolmentRule,
   PlannerOffering,
   PlannerUnit,
   RequisiteBlock,
@@ -39,8 +40,18 @@ export interface TreeGraphPayload {
   units: Record<string, PlannerUnit>
   offerings: Record<string, PlannerOffering[]>
   requisites: Record<string, RequisiteBlock[]>
-  enrolmentRules: Record<
-    string,
-    Array<{ ruleType: string | null; description: string | null }>
-  >
+  /**
+   * Codes with an enrolment rule, for the lock on their node. The rule
+   * text loads with the detail panel, so the payload stays small.
+   */
+  gated: string[]
+}
+
+/** Codes with at least one enrolment rule that has text. */
+export function gatedCodes(
+  rules: ReadonlyMap<string, readonly EnrolmentRule[]>
+): string[] {
+  return [...rules]
+    .filter(([, list]) => list.some((r) => r.description?.trim()))
+    .map(([code]) => code)
 }

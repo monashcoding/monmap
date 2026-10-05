@@ -1,7 +1,7 @@
 /**
  * Server-side helpers that load everything a requisite graph needs for
  * its first paint: the closure, unit data, offerings, requisites and
- * enrolment rules.
+ * which units have enrolment rules.
  */
 import {
   expandCourseClosure,
@@ -12,6 +12,7 @@ import {
 
 import {
   FIXED_TREE_DEPTH,
+  gatedCodes,
   type TreeControlsValue,
   type TreeGraphPayload,
 } from "./payload.ts"
@@ -23,7 +24,7 @@ export const EMPTY_TREE_PAYLOAD: TreeGraphPayload = {
   units: {},
   offerings: {},
   requisites: {},
-  enrolmentRules: {},
+  gated: [],
 }
 
 async function hydrateGraph(
@@ -40,7 +41,7 @@ async function hydrateGraph(
     units: Object.fromEntries(units),
     offerings: Object.fromEntries(offerings),
     requisites: Object.fromEntries(requisites),
-    enrolmentRules: Object.fromEntries(enrolment),
+    gated: gatedCodes(enrolment),
   }
 }
 

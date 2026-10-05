@@ -14,6 +14,7 @@ import { review, reviewAuthorBan } from "@monmap/db"
 import { and, eq, gt, isNull, sql, type SQL } from "drizzle-orm"
 
 import { getDb } from "./client.ts"
+import { containsPattern } from "./like.ts"
 import { REVIEW_AXES, type ReviewKind } from "../reviews/axes.ts"
 import type { ModerationResult } from "../reviews/classifier.ts"
 import { classifierColumns, statusAfterSave } from "../reviews/moderation.ts"
@@ -421,7 +422,7 @@ function adminWhere(filter: AdminFilter, q: string): SQL {
   if (filter === "unchecked") parts.push(sql`r.classifier_error IS NOT NULL`)
   else if (filter !== "all") parts.push(sql`r.status = ${filter}`)
   if (q) {
-    const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
+    const like = containsPattern(q)
     parts.push(sql`(r.entity_code ILIKE ${like} OR r.body ILIKE ${like})`)
   }
   return sql.join(parts, sql` AND `)

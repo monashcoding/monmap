@@ -29,6 +29,7 @@ import {
 import { sanitizeHandbookHtml } from "../handbook/sanitize.ts"
 import { classifyTeachingPeriod } from "../planner/teaching-period.ts"
 import type {
+  EnrolmentRule,
   PlannerAreaOfStudy,
   PlannerCourse,
   PlannerCourseComponent,
@@ -37,6 +38,7 @@ import type {
   PlannerState,
   PlannerUnit,
   RequisiteBlock,
+  UnitText,
 } from "../planner/types.ts"
 import type { TreeDirection, TreeEdge, TreeGraphRaw } from "../tree/types.ts"
 
@@ -848,7 +850,6 @@ async function _fetchUnitsByCode(
       title: units.title,
       creditPoints: units.creditPoints,
       level: units.level,
-      synopsis: units.handbookSynopsis,
       school: units.school,
     })
     .from(units)
@@ -860,7 +861,6 @@ async function _fetchUnitsByCode(
     title: r.title,
     creditPoints: r.creditPoints ?? 0,
     level: r.level,
-    synopsis: r.synopsis && sanitizeHandbookHtml(r.synopsis),
     school: r.school,
   }))
 }
@@ -889,7 +889,6 @@ async function _searchUnits(
       title: units.title,
       creditPoints: units.creditPoints,
       level: units.level,
-      synopsis: units.handbookSynopsis,
       school: units.school,
     })
     .from(units)
@@ -905,7 +904,6 @@ async function _searchUnits(
     title: r.title,
     creditPoints: r.creditPoints ?? 0,
     level: r.level,
-    synopsis: r.synopsis && sanitizeHandbookHtml(r.synopsis),
     school: r.school,
   }))
 }
@@ -1044,13 +1042,7 @@ export async function fetchRequisitesForCodes(
 async function _fetchEnrolmentRulesRows(
   codes: readonly string[],
   year: string
-): Promise<
-  Array<{
-    unitCode: string
-    ruleType: string | null
-    description: string | null
-  }>
-> {
+): Promise<Array<EnrolmentRule & { unitCode: string }>> {
   if (codes.length === 0) return []
   const db = getDb()
   const rows = await db
@@ -1075,13 +1067,8 @@ const _fetchEnrolmentRulesRowsCached = cacheHandbook(_fetchEnrolmentRulesRows)
 export async function fetchEnrolmentRulesForCodes(
   codes: readonly string[],
   year: string
-): Promise<
-  Map<string, { ruleType: string | null; description: string | null }[]>
-> {
-  const out = new Map<
-    string,
-    { ruleType: string | null; description: string | null }[]
-  >()
+): Promise<Map<string, EnrolmentRule[]>> {
+  const out = new Map<string, EnrolmentRule[]>()
   if (codes.length === 0) return out
   const rows = await _fetchEnrolmentRulesRowsCached([...codes].sort(), year)
   for (const r of rows) {
@@ -1334,6 +1321,53 @@ export async function hydratePlannerUnitsMultiYear(
   }
 }
 
+async function _fetchUnitText(
+  codes: readonly string[],
+  year: string
+): Promise<Record<string, UnitText>> {
+  if (codes.length === 0) return {}
+  const db = getDb()
+  const [rows, rules] = await Promise.all([
+    db
+      .select({ code: units.code, synopsis: units.handbookSynopsis })
+      .from(units)
+      .where(and(eq(units.year, year), inArray(units.code, [...codes]))),
+    fetchEnrolmentRulesForCodes(codes, year),
+  ])
+  return Object.fromEntries(
+    rows.map((r) => [
+      r.code,
+      {
+        synopsis: r.synopsis && sanitizeHandbookHtml(r.synopsis),
+        enrolmentRules: rules.get(r.code) ?? [],
+      },
+    ])
+  )
+}
+const _fetchUnitTextCached = cacheHandbook(_fetchUnitText)
+
+/**
+ * The synopsis and enrolment rules of a few units, for the detail
+ * panel of the one unit a student opens. The planner and graph
+ * payloads leave this prose out because it is most of their bytes.
+ * A code with no row in `year` falls back like hydratePlannerUnits.
+ */
+export async function fetchUnitText(
+  codes: readonly string[],
+  year: string
+): Promise<Record<string, UnitText>> {
+  const own = await _fetchUnitTextCached([...codes].sort(), year)
+  const missing = codes.filter((c) => !own[c])
+  if (missing.length === 0) return own
+  const links = await fetchUnitYearLinks(missing, year)
+  const fallbacks = await Promise.all(
+    [...codesByLinkedYear(links)].map(([y, cs]) =>
+      _fetchUnitTextCached(cs.sort(), y)
+    )
+  )
+  return Object.assign({}, own, ...fallbacks)
+}
+
 /* ------------------------------------------------------------------ *
  * Per-user plan persistence
  *
@@ -1431,7 +1465,7 @@ async function _fetchUnitCreditPointsBatch(
     .select({ code: units.code, creditPoints: units.creditPoints })
     .from(units)
     .where(and(eq(units.year, year), inArray(units.code, codes)))
-  return Object.fromEntries(rows.map((r) => [r.code, r.creditPoints ?? 6]))
+  return Object.fromEntries(rows.map((r) => [r.code, r.creditPoints ?? 0]))
 }
 const _fetchUnitCreditPointsBatchCached = cacheHandbook(
   _fetchUnitCreditPointsBatch

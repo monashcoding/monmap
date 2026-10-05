@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react"
 import { fetchPlanGraphAction } from "@/app/actions"
 import { RatingInline } from "@/components/reviews/stars"
 import { useRating } from "@/components/reviews/use-ratings"
-import { TreeGraph } from "@/components/tree/tree-graph"
+import { TreeGraph, TreeGraphFrame } from "@/components/tree/tree-graph"
 import { Button } from "@/components/ui/button"
 import { entityHref } from "@/lib/handbook/links"
 import type { PlannerState, PlannerUnit } from "@/lib/planner/types"
@@ -23,6 +23,11 @@ export interface PlanMapProps {
   grades?: ReadonlyMap<string, number>
   /** "thumbnail" is zoomed out, with only pinch-zoom and drag-to-pan. */
   variant?: "full" | "thumbnail"
+  /**
+   * False holds the map back: no fetch and no graph, only its empty
+   * frame. The planner passes false where CSS hides the map.
+   */
+  enabled?: boolean
   className?: string
 }
 
@@ -39,6 +44,7 @@ export function PlanMap({
   knownUnits,
   grades,
   variant = "full",
+  enabled = true,
   className,
 }: PlanMapProps) {
   const interactive = variant === "full"
@@ -56,8 +62,17 @@ export function PlanMap({
     [requirementCodes, planned]
   )
 
-  const codes = useMemo(() => [...planned, ...untaken], [planned, untaken])
-  const codesKey = useMemo(() => [...codes].sort().join(","), [codes])
+  const codesKey = [...planned, ...untaken].sort().join(",")
+  const untakenKey = untaken.join(",")
+  // The map's units in plan order, kept while the set of units stays
+  // the same: a move or reorder then reuses the layout, which depends
+  // on the order (see layoutTree).
+  const codes = useMemo(
+    () => [...planned, ...untaken],
+    // codesKey stands in for planned and untaken.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [codesKey]
+  )
 
   const [data, setData] = useState<{
     edges: TreeEdge[]
@@ -67,7 +82,7 @@ export function PlanMap({
   // Refetch when the set of units changes, not on every move; the
   // short delay batches a burst of edits into one request.
   useEffect(() => {
-    if (codes.length === 0) return
+    if (!enabled || codes.length === 0) return
     let cancelled = false
     const timer = setTimeout(() => {
       void fetchPlanGraphAction(codes, state.courseYear).then((res) => {
@@ -80,14 +95,13 @@ export function PlanMap({
     }
     // codesKey stands in for codes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codesKey, state.courseYear])
+  }, [enabled, codesKey, state.courseYear])
 
   const nodes = useMemo<TreeNode[]>(() => {
-    const untakenSet = new Set(untaken)
+    const untakenSet = new Set(untakenKey.split(","))
     return codes.map((code) => ({
       code,
       unit: data?.units[code] ?? knownUnits?.get(code) ?? null,
-      level: Number(code.match(/\d/)?.[0] ?? 0),
       prefix: code.slice(0, 3).toUpperCase(),
       isSeed: false,
       hasEnrolmentGate: false,
@@ -98,7 +112,7 @@ export function PlanMap({
           ? "completed"
           : null,
     }))
-  }, [codes, untaken, data, knownUnits, grades])
+  }, [codes, untakenKey, data, knownUnits, grades])
 
   // Edges from an earlier fetch may name units that have since left
   // the plan; keep only those between nodes on the map.
@@ -118,6 +132,8 @@ export function PlanMap({
       </div>
     ) : null
   }
+
+  if (!enabled) return <TreeGraphFrame className={className} />
 
   return (
     <TreeGraph

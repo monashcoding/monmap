@@ -2,6 +2,7 @@
 
 import { CheckIcon, MinusIcon } from "lucide-react"
 
+import { normalizeConnector } from "@/lib/planner/requisites"
 import type {
   RequisiteContainer,
   RequisiteLeaf,
@@ -66,7 +67,7 @@ function ContainerNode({
   isProhibition: boolean
   units?: ReadonlyMap<string, { title: string }>
 }) {
-  const connector = (container.parent_connector?.value ?? "AND").toUpperCase()
+  const connector = normalizeConnector(container.parent_connector?.value)
   const children = [
     ...(container.containers ?? []).map((c, i) => (
       <ContainerNode

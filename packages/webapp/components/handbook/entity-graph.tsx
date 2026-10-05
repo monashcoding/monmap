@@ -210,6 +210,7 @@ export function EntityGraph({
                 <TreeSidePanel
                   detail={detail}
                   year={year}
+                  linkYear={linkYear}
                   detailsHref={detailsHref}
                   onClose={() => setFocused(null)}
                 />
@@ -270,6 +271,7 @@ export function EntityGraph({
                 <TreeSidePanel
                   detail={detail}
                   year={year}
+                  linkYear={linkYear}
                   detailsHref={detailsHref}
                   onClose={() => setFocused(null)}
                   variant="flush"

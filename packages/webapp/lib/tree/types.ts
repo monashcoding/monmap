@@ -9,7 +9,11 @@
  * accurate.
  */
 
-import type { PlannerUnit } from "../planner/types.ts"
+import type {
+  PlannerOffering,
+  PlannerUnit,
+  RequisiteBlock,
+} from "../planner/types.ts"
 
 export type TreeEdgeType = "prerequisite" | "corequisite" | "prohibition"
 
@@ -40,8 +44,6 @@ export interface TreeNode {
   code: string
   /** May be null if the code is decommissioned in this year. */
   unit: PlannerUnit | null
-  /** Level digit parsed from the code (1..9). 0 if not parseable. */
-  level: number
   /** Faculty prefix — first 3 letters of the code. */
   prefix: string
   /** Whether this node was an anchor seed (highlighted differently). */
@@ -55,6 +57,23 @@ export interface TreeNode {
    * unit the course lists that the plan doesn't include (plan map).
    */
   planStatus: "completed" | "placed" | "untaken" | null
+}
+
+/**
+ * What the unit detail panel shows for the focused node. The synopsis
+ * and enrolment-rule prose are not here: the panel loads them for the
+ * node's codes when it opens (see useUnitText).
+ */
+export interface FocusedUnitDetail {
+  node: TreeNode
+  /** Codes equivalent to this one (excluding the canonical itself). */
+  variants: string[]
+  /** Offerings for the focused unit. */
+  offerings: PlannerOffering[]
+  /** Structured prereq/coreq/prohibition rules. */
+  requisites: RequisiteBlock[]
+  /** Codes the student already has in their plan (for ✓ marks). */
+  completed: ReadonlySet<string>
 }
 
 /**

@@ -1,56 +1,42 @@
 "use client"
 
-import Link from "next/link"
-import { ExternalLinkIcon, XIcon } from "lucide-react"
+import { XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { RequisiteTreeView } from "@/components/planner/requisite-tree-view"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
-import type {
-  PeriodKind,
-  PlannerOffering,
-  RequisiteBlock,
-  RequisiteRule,
-} from "@/lib/planner/types"
-import type { TreeNode } from "@/lib/tree/types"
 import { RatingInline } from "@/components/reviews/stars"
 import { useRating } from "@/components/reviews/use-ratings"
+import { OfferingsGrid } from "@/components/unit-detail/offerings-grid"
+import {
+  blocksWithRules,
+  RequisiteRuleBlock,
+} from "@/components/unit-detail/requisite-block"
+import { UnitDetailHeader } from "@/components/unit-detail/unit-detail-header"
+import { UnitSynopsis } from "@/components/unit-detail/unit-synopsis"
+import { useUnitText } from "@/components/unit-detail/use-unit-text"
+import { rewriteHandbookHtml } from "@/lib/handbook/links"
+import type { FocusedUnitDetail } from "@/lib/tree/types"
 import { cn } from "@/lib/utils"
-
-export interface FocusedUnitDetail {
-  node: TreeNode
-  /** Codes equivalent to this one (excluding the canonical itself). */
-  variants: string[]
-  /** Offerings for the focused unit. */
-  offerings: PlannerOffering[]
-  /** Structured prereq/coreq/prohibition rules. */
-  requisites: RequisiteBlock[]
-  /** Free-text enrolment rules (course-locked, permission, cp gates). */
-  enrolmentRules: Array<{
-    ruleType: string | null
-    description: string | null
-  }>
-  /** Codes the student already has in their plan (for ✓ marks). */
-  completed: ReadonlySet<string>
-}
 
 /**
  * Right-side detail panel. Shows everything the structured graph hides:
  * AND/OR rule semantics, enrolment-rule prose, offerings, equivalent
- * codes. Deliberately mirrors the layout of the planner's
- * `UnitDetailPopover` so a student moving between Planner and Tree
- * sees the same information architecture.
+ * codes. Built from the same pieces as the planner's `UnitDetailView`
+ * (components/unit-detail), so a student moving between the planner
+ * and a map sees the same information architecture.
  */
 export function TreeSidePanel({
   detail,
   year,
+  linkYear = null,
   onClose,
   variant = "floating",
   detailsHref,
 }: {
   detail: FocusedUnitDetail | null
   year: string
+  /** Year segment for handbook links in the unit's prose. */
+  linkYear?: string | null
   onClose: () => void
   /** The unit's MonMap page; shows a "View details" link when set. */
   detailsHref?: string
@@ -59,11 +45,15 @@ export function TreeSidePanel({
   variant?: "floating" | "flush"
 }) {
   const rating = useRating("unit", detail?.node.code)
+  // The synopsis is the focused unit's; the enrolment rules are the
+  // union over its equivalents, like the offerings and rules.
+  const codes = detail ? [detail.node.code, ...detail.variants] : []
+  const { text, loading } = useUnitText(codes, detail ? year : null)
   if (!detail) return null
-  const { node, variants, offerings, requisites, enrolmentRules, completed } =
-    detail
+  const { node, variants, offerings, requisites, completed } = detail
   const unit = node.unit
-  const filteredRules = requisites.filter((r) => r.rule && r.rule.length > 0)
+  const filteredRules = blocksWithRules(requisites)
+  const enrolmentRules = codes.flatMap((c) => text[c]?.enrolmentRules ?? [])
 
   return (
     <aside
@@ -73,60 +63,29 @@ export function TreeSidePanel({
           : "flex h-full flex-col overflow-y-auto bg-card"
       }
     >
-      <header className="sticky top-0 z-10 flex flex-col gap-1 border-b bg-card px-4 pt-4 pb-3">
-        <div className="flex items-baseline gap-2">
-          {detailsHref ? (
-            <Link
-              href={detailsHref}
-              className="text-base font-bold tabular-nums underline-offset-2 hover:underline"
-            >
-              {node.code}
-            </Link>
-          ) : (
-            <span className="text-base font-bold tabular-nums">
-              {node.code}
-            </span>
-          )}
-          {unit ? (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {unit.creditPoints}cp
-            </span>
-          ) : null}
-          {detailsHref ? (
-            <Link
-              href={detailsHref}
-              className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
-            >
-              <ExternalLinkIcon className="size-3" />
-              View Details
-            </Link>
-          ) : null}
+      <UnitDetailHeader
+        code={node.code}
+        href={detailsHref}
+        creditPoints={unit?.creditPoints}
+        title={unit?.title ?? null}
+        fallback={
+          <span className="text-muted-foreground italic">
+            Not offered in {year}
+          </span>
+        }
+        close={
           <Button
             variant="ghost"
             size="icon-xs"
             onClick={onClose}
             aria-label="Close detail panel"
-            className={cn(!detailsHref && "ml-auto")}
+            className={cn("max-md:size-10", !detailsHref && "ml-auto")}
           >
-            <XIcon className="size-3.5" />
+            <XIcon className="size-3.5 max-md:size-4" />
           </Button>
-        </div>
-        <h3 className="text-sm leading-snug font-medium">
-          {unit && detailsHref ? (
-            <Link
-              href={detailsHref}
-              className="underline-offset-2 hover:underline"
-            >
-              {unit.title}
-            </Link>
-          ) : unit ? (
-            unit.title
-          ) : (
-            <span className="text-muted-foreground italic">
-              Not offered in {year}
-            </span>
-          )}
-        </h3>
+        }
+        className="sticky top-0 z-10 bg-card px-4 pt-4 pb-3"
+      >
         {rating ? (
           <RatingInline summary={rating} size="xs" className="self-start" />
         ) : null}
@@ -158,7 +117,7 @@ export function TreeSidePanel({
             </Badge>
           ) : null}
         </div>
-      </header>
+      </UnitDetailHeader>
 
       {variants.length > 0 ? (
         <section className="border-b px-4 pt-3 pb-4">
@@ -182,17 +141,12 @@ export function TreeSidePanel({
         </section>
       ) : null}
 
-      {unit?.synopsis ? (
-        <section className="border-b px-4 pt-3 pb-4">
-          <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-            About
-          </h4>
-          <div
-            className="prose-sm line-clamp-6 text-xs leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_br]:hidden [&_p]:mt-0 [&_p]:mb-2 [&_p:empty]:hidden [&_p:last-child]:mb-0"
-            dangerouslySetInnerHTML={{ __html: unit.synopsis }}
-          />
-        </section>
-      ) : null}
+      <UnitSynopsis
+        html={text[node.code]?.synopsis}
+        loading={loading && !!unit}
+        linkYear={linkYear}
+        className="border-b px-4 pt-3 pb-4"
+      />
 
       <section className="border-b px-4 pt-3 pb-4">
         <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
@@ -203,14 +157,14 @@ export function TreeSidePanel({
             No offerings listed.
           </p>
         ) : (
-          <OfferingsGrid offerings={offerings} />
+          <OfferingsGrid offerings={offerings} labelClassName="w-14" />
         )}
       </section>
 
       {filteredRules.length > 0 ? (
         <section className="border-b px-4 pt-3 pb-4">
           {filteredRules.map((block, i) => (
-            <RuleBlock key={i} block={block} completed={completed} />
+            <RequisiteRuleBlock key={i} block={block} completed={completed} />
           ))}
         </section>
       ) : null}
@@ -230,7 +184,9 @@ export function TreeSidePanel({
                     "[&_a]:underline [&_a]:underline-offset-2 [&_br]:hidden [&_p]:mb-1 [&_p:last-child]:mb-0",
                     i > 0 && "border-t border-primary-foreground/15 pt-2"
                   )}
-                  dangerouslySetInnerHTML={{ __html: er.description ?? "" }}
+                  dangerouslySetInnerHTML={{
+                    __html: rewriteHandbookHtml(er.description, linkYear),
+                  }}
                 />
               ))}
             </ul>
@@ -242,85 +198,5 @@ export function TreeSidePanel({
         </section>
       ) : null}
     </aside>
-  )
-}
-
-function OfferingsGrid({ offerings }: { offerings: PlannerOffering[] }) {
-  const grouped = new Map<
-    PeriodKind,
-    { location: string; attendance: string | null }[]
-  >()
-  for (const o of offerings) {
-    const list = grouped.get(o.periodKind) ?? []
-    list.push({ location: o.location ?? "-", attendance: o.attendanceModeCode })
-    grouped.set(o.periodKind, list)
-  }
-  const ordered: PeriodKind[] = [
-    "S1",
-    "S2",
-    "SUMMER_A",
-    "SUMMER_B",
-    "WINTER",
-    "FULL_YEAR",
-    "OTHER",
-  ]
-  return (
-    <ul className="flex flex-col gap-1.5 text-xs">
-      {ordered
-        .filter((k) => grouped.has(k))
-        .map((k) => (
-          <li key={k} className="flex items-baseline gap-2">
-            <span className="w-14 shrink-0 text-[10px] tracking-wide text-muted-foreground uppercase">
-              {PERIOD_KIND_LABEL[k]}
-            </span>
-            <span className="flex flex-wrap gap-1">
-              {grouped.get(k)!.map((o, i) => (
-                <Badge
-                  key={i}
-                  variant="secondary"
-                  className="text-[10px] font-normal"
-                >
-                  {o.location}
-                  {o.attendance ? (
-                    <span className="ml-1 text-muted-foreground">
-                      - {o.attendance}
-                    </span>
-                  ) : null}
-                </Badge>
-              ))}
-            </span>
-          </li>
-        ))}
-    </ul>
-  )
-}
-
-function RuleBlock({
-  block,
-  completed,
-}: {
-  block: { requisiteType: string; rule: RequisiteRule | null }
-  completed: ReadonlySet<string>
-}) {
-  const label =
-    block.requisiteType[0].toUpperCase() + block.requisiteType.slice(1) + "s"
-  return (
-    <div className="mb-3 last:mb-0">
-      <h4
-        className={cn(
-          "mb-1.5 text-[10px] tracking-wide uppercase",
-          block.requisiteType === "prohibition"
-            ? "text-destructive"
-            : "text-muted-foreground"
-        )}
-      >
-        {label}
-      </h4>
-      <RequisiteTreeView
-        rule={block.rule}
-        completed={completed}
-        isProhibition={block.requisiteType === "prohibition"}
-      />
-    </div>
   )
 }

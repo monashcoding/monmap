@@ -11,7 +11,9 @@
  * dependant on the right) and feed dagre the same dimensions used by
  * the renderer, so positions are pixel-accurate.
  *
- * The function is pure and deterministic given the same input.
+ * The function is pure and deterministic given the same input. Dagre
+ * breaks ties by insertion order, so the same codes in a different
+ * order can lay out differently.
  */
 
 import dagre from "@dagrejs/dagre"
@@ -23,11 +25,6 @@ export interface LayoutInput {
   nodes: readonly string[]
   /** Every edge whose endpoints are both in `nodes`. */
   edges: readonly TreeEdge[]
-  /**
-   * Per-node display metadata. Currently only used for stable
-   * tiebreaking in dagre's `order` field.
-   */
-  meta: ReadonlyMap<string, { level: number; isSeed: boolean }>
 }
 
 export interface PositionedNode {
@@ -119,10 +116,4 @@ export function layoutTree(input: LayoutInput): LayoutResult {
     width: maxRight + PADDING,
     height: maxBottom + PADDING,
   }
-}
-
-export function parseLevel(code: string): number {
-  // Monash codes: 3 letters then 4 digits. The first digit is the level.
-  const m = /^[A-Za-z]{3}(\d)/.exec(code)
-  return m ? Number(m[1]) : 0
 }

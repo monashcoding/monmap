@@ -1,11 +1,7 @@
 "use client"
 
-import {
-  CalendarIcon,
-  ChevronDownIcon,
-  ExternalLinkIcon,
-  InfoIcon,
-} from "lucide-react"
+import { CalendarIcon, ChevronDownIcon, InfoIcon } from "lucide-react"
+import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { hydrateUnitsAction } from "@/app/actions"
@@ -21,10 +17,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
-import { keyFor, withEquivalents } from "@/lib/planner/validation"
+import { OfferingsGrid } from "@/components/unit-detail/offerings-grid"
+import {
+  blocksWithRules,
+  RequisiteRuleBlock,
+} from "@/components/unit-detail/requisite-block"
+import { UnitDetailHeader } from "@/components/unit-detail/unit-detail-header"
+import { UnitSynopsis } from "@/components/unit-detail/unit-synopsis"
+import { useUnitText } from "@/components/unit-detail/use-unit-text"
+import { entityHref } from "@/lib/handbook/links"
+import { handbookYearFor } from "@/lib/planner/timeline"
+import {
+  completedBefore,
+  keyFor,
+  withEquivalents,
+} from "@/lib/planner/validation"
 import type {
-  PeriodKind,
   PlannerOffering,
   PlannerUnit,
   RequisiteBlock,
@@ -34,12 +42,11 @@ import { useRating } from "@/components/reviews/use-ratings"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
-import { RequisiteTreeView } from "./requisite-tree-view"
 
 /**
  * Popover that shows everything the student might want to see about
  * a unit:
- *   - synopsis (HTML from handbook)
+ *   - synopsis (HTML from handbook, loaded when the view opens)
  *   - offerings (which periods + locations are offered)
  *   - prerequisite / corequisite trees (with student's completion state)
  *   - prohibitions
@@ -138,14 +145,17 @@ export function UnitDetailView({
   const isPlaced = yearIndex !== undefined && slotIndex !== undefined
   const rating = useRating("unit", code)
 
-  // Default to the year the planner's unit data was loaded for so the
-  // view renders instantly from context; year-switching is opt-in and
-  // fetches a one-off snapshot for just this code.
+  // Default to the handbook year the planner uses for this slot (or
+  // the plan's first year when unplaced), so the view usually renders
+  // from context; year-switching is opt-in and fetches a one-off
+  // snapshot for just this code.
   const defaultYear = useMemo(() => {
+    if (yearIndex !== undefined)
+      return handbookYearFor(yearIndex, state.courseYear, availableYears)
     return availableYears.includes(state.courseYear)
       ? state.courseYear
       : ([...availableYears].sort().at(-1) ?? state.courseYear)
-  }, [state.courseYear, availableYears])
+  }, [yearIndex, state.courseYear, availableYears])
 
   const [selectedYear, setSelectedYear] = useState(defaultYear)
 
@@ -168,7 +178,13 @@ export function UnitDetailView({
     setLastActive(active)
   }
 
-  const usingCurrentYear = selectedYear === state.courseYear
+  // Context data serves the view only when it is the selected year's:
+  // the planner may hold this code from another plan year. A fallback
+  // unit (see PlannerUnit.fallbackFor) stands in for its requested year.
+  const contextUnit = units.get(code)
+  const usingCurrentYear =
+    selectedYear ===
+    (contextUnit ? (contextUnit.fallbackFor ?? contextUnit.year) : defaultYear)
 
   const [otherYearData, setOtherYearData] = useState<{
     year: string
@@ -239,68 +255,51 @@ export function UnitDetailView({
   // Expand with equivalents so a requisite leaf naming FIT1045 reads as
   // satisfied when the student took its twin FIT1053 — keeping the tree's
   // checkmarks consistent with validateUnitInSlot, which does the same.
+  // completedBefore already adds credit and equivalents.
   const completed = useMemo(
     () =>
-      withEquivalents(
-        isPlaced
-          ? collectCompletedBefore(state, yearIndex, slotIndex)
-          : plannedCodes,
-        units
-      ),
+      isPlaced
+        ? completedBefore(state, yearIndex, slotIndex, units)
+        : withEquivalents(plannedCodes, units),
     [isPlaced, state, yearIndex, slotIndex, plannedCodes, units]
+  )
+
+  // Links name the year whose data is shown: a fallback unit's page is
+  // its own year's.
+  const linkYear = unit?.year ?? selectedYear
+  const href = entityHref("unit", code, linkYear)
+  const { text, loading: textLoading } = useUnitText(
+    [code],
+    active && unit ? unit.year : null
   )
 
   return (
     <div className={className}>
-      <header className="flex flex-col gap-1 border-b pb-3">
-        <div className="flex items-baseline gap-2">
-          <a
-            href={`/units/${code}/${selectedYear}`}
-            className="text-base font-semibold tabular-nums underline-offset-2 hover:underline"
-          >
-            {code}
-          </a>
-          {unit ? (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {unit.creditPoints}cp
-            </span>
-          ) : null}
+      <UnitDetailHeader
+        code={code}
+        href={href}
+        creditPoints={unit?.creditPoints}
+        title={unit?.title ?? null}
+        fallback={loading ? "Loading…" : "Not in this year's handbook"}
+        codeClassName="font-semibold"
+        afterCode={
           <YearPicker
             year={selectedYear}
             years={availableYears}
             onChange={setSelectedYear}
             isDefault={selectedYear === defaultYear}
           />
-          <a
-            href={`/units/${code}/${selectedYear}`}
-            className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
-          >
-            <ExternalLinkIcon className="size-3" />
-            View Details
-          </a>
-        </div>
-        <h3 className="text-sm leading-snug font-medium">
-          {unit ? (
-            <a
-              href={`/units/${code}/${selectedYear}`}
-              className="underline-offset-2 hover:underline"
-            >
-              {unit.title}
-            </a>
-          ) : loading ? (
-            "Loading…"
-          ) : (
-            "Not in this year's handbook"
-          )}
-        </h3>
+        }
+        className="pb-3"
+      >
         <div className="min-h-4">
           {rating ? (
-            <a
-              href={`/units/${code}#reviews`}
+            <Link
+              href={`${entityHref("unit", code)}#reviews`}
               className="rounded-tag underline-offset-2 hover:underline"
             >
               <RatingInline summary={rating} size="xs" />
-            </a>
+            </Link>
           ) : null}
         </div>
         {unit?.fallbackFor ? (
@@ -323,7 +322,7 @@ export function UnitDetailView({
             ) : null}
           </div>
         ) : null}
-      </header>
+      </UnitDetailHeader>
 
       {validation &&
       (validation.errors.length > 0 || validation.warnings.length > 0) ? (
@@ -354,17 +353,12 @@ export function UnitDetailView({
         </section>
       ) : null}
 
-      {unit?.synopsis ? (
-        <section className="border-b pt-2 pb-4">
-          <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
-            About
-          </h4>
-          <div
-            className="prose-sm line-clamp-6 text-xs leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_br]:hidden [&_p]:mt-0 [&_p]:mb-2 [&_p:empty]:hidden [&_p:last-child]:mb-0"
-            dangerouslySetInnerHTML={{ __html: unit.synopsis }}
-          />
-        </section>
-      ) : null}
+      <UnitSynopsis
+        html={text[code]?.synopsis}
+        loading={textLoading}
+        linkYear={linkYear}
+        className="border-b pt-2 pb-4"
+      />
 
       <section className="border-b pt-2 pb-4">
         <h4 className="mb-1.5 text-[10px] tracking-wide text-muted-foreground uppercase">
@@ -375,17 +369,23 @@ export function UnitDetailView({
             {loading ? "Loading…" : "No offerings listed."}
           </p>
         ) : (
-          <OfferingsGrid offerings={unitOfferings} />
+          <OfferingsGrid
+            offerings={unitOfferings}
+            labelClassName="w-22 whitespace-nowrap"
+          />
         )}
       </section>
 
       {unitReqs.length > 0 ? (
         <section className="pt-2">
-          {unitReqs
-            .filter((r) => r.rule && r.rule.length > 0)
-            .map((block, i) => (
-              <RequisiteBlockView key={i} block={block} completed={completed} />
-            ))}
+          {blocksWithRules(unitReqs).map((block, i) => (
+            <RequisiteRuleBlock
+              key={i}
+              block={block}
+              completed={completed}
+              units={units}
+            />
+          ))}
         </section>
       ) : null}
     </div>
@@ -437,104 +437,4 @@ function YearPicker({
       </DropdownMenuContent>
     </DropdownMenu>
   )
-}
-
-function OfferingsGrid({ offerings }: { offerings: PlannerOffering[] }) {
-  // Group by period-kind so a student sees "S1: Clayton, Malaysia · S2: Clayton"
-  const grouped = new Map<
-    PeriodKind,
-    { location: string; attendance: string | null }[]
-  >()
-  for (const o of offerings) {
-    const list = grouped.get(o.periodKind) ?? []
-    list.push({ location: o.location ?? "-", attendance: o.attendanceModeCode })
-    grouped.set(o.periodKind, list)
-  }
-
-  const ordered: PeriodKind[] = [
-    "S1",
-    "S2",
-    "SUMMER_A",
-    "SUMMER_B",
-    "WINTER",
-    "FULL_YEAR",
-    "OTHER",
-  ]
-  return (
-    <ul className="flex flex-col gap-1.5 text-xs">
-      {ordered
-        .filter((k) => grouped.has(k))
-        .map((k) => (
-          <li key={k} className="flex items-baseline gap-2">
-            <span className="w-22 shrink-0 text-[10px] tracking-wide whitespace-nowrap text-muted-foreground uppercase">
-              {PERIOD_KIND_LABEL[k]}
-            </span>
-            <span className="flex flex-wrap gap-1">
-              {grouped.get(k)!.map((o, i) => (
-                <Badge
-                  key={i}
-                  variant="secondary"
-                  className="text-[10px] font-normal"
-                >
-                  {o.location}
-                  {o.attendance ? (
-                    <span className="ml-1 text-muted-foreground">
-                      - {o.attendance}
-                    </span>
-                  ) : null}
-                </Badge>
-              ))}
-            </span>
-          </li>
-        ))}
-    </ul>
-  )
-}
-
-function RequisiteBlockView({
-  block,
-  completed,
-}: {
-  block: RequisiteBlock
-  completed: ReadonlySet<string>
-}) {
-  const { units } = usePlanner()
-  const label =
-    block.requisiteType[0].toUpperCase() + block.requisiteType.slice(1) + "s"
-  return (
-    <div className="mb-3 last:mb-0">
-      <h4
-        className={cn(
-          "mb-1.5 text-[10px] tracking-wide uppercase",
-          block.requisiteType === "prohibition"
-            ? "text-destructive"
-            : "text-muted-foreground"
-        )}
-      >
-        {label}
-      </h4>
-      <RequisiteTreeView
-        rule={block.rule}
-        completed={completed}
-        isProhibition={block.requisiteType === "prohibition"}
-        units={units}
-      />
-    </div>
-  )
-}
-
-function collectCompletedBefore(
-  state: ReturnType<typeof usePlanner>["state"],
-  yearIndex: number,
-  slotIndex: number
-): Set<string> {
-  const out = new Set<string>()
-  for (let y = 0; y <= yearIndex; y++) {
-    const year = state.years[y]
-    for (let s = 0; s < year.slots.length; s++) {
-      if (y === yearIndex && s >= slotIndex) break
-      for (const c of year.slots[s].unitCodes) out.add(c)
-    }
-  }
-  return out
 }

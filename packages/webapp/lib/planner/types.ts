@@ -28,7 +28,6 @@ export interface PlannerUnit {
   title: string
   creditPoints: number
   level: string | null
-  synopsis: string | null
   school: string | null
   /**
    * Codes this unit is equivalent to — same content under a different
@@ -88,6 +87,25 @@ export interface RequisiteBlock {
     | "other"
   /** May be null — unit has an enrolment rule prose block but no structured tree. */
   rule: RequisiteRule | null
+}
+
+/**
+ * One enrolment rule: handbook HTML prose (course-locked, permission,
+ * credit-point gates), sanitized on the server. See
+ * docs/handbook-internals.md for how it differs from a requisite.
+ */
+export interface EnrolmentRule {
+  ruleType: string | null
+  description: string | null
+}
+
+/**
+ * A unit's handbook prose, which list payloads leave out and the
+ * detail views load for the one unit they show.
+ */
+export interface UnitText {
+  synopsis: string | null
+  enrolmentRules: EnrolmentRule[]
 }
 
 /**
@@ -258,57 +276,6 @@ export const STANDARD_CP = 6
 
 export function slotCapacity(slot: PlannerSlot): number {
   return slot.capacity ?? DEFAULT_SLOT_CAPACITY
-}
-
-/**
- * Credit-weighted slots used in a slot. A 12 CP unit counts as 2,
- * an 18 CP unit as 3, a 24 CP unit as 4 — treating 6 CP as the baseline 1.
- * Unknown units (not yet loaded) default to 1.
- *
- * When `offerings` is supplied, full-year units in S1/S2 contribute
- * their half-year CP rather than the full unit CP — a 12 CP FY twin
- * weighs 1, not 2, in each semester it sits in. Passing offerings is
- * the right thing to do everywhere the FY twins are visible; the
- * optional shape keeps drop-target checks that don't yet know FY
- * status backwards-compatible (they overestimate, which is the safe
- * direction for capacity).
- */
-export function slotUsedWeight(
-  slot: PlannerSlot,
-  units: ReadonlyMap<string, { creditPoints: number }>,
-  offerings?: ReadonlyMap<string, PlannerOffering[]>
-): number {
-  return slot.unitCodes.reduce((sum, code) => {
-    const fullCp = units.get(code)?.creditPoints ?? STANDARD_CP
-    const cp =
-      offerings && isFullYearTwinSlot(code, slot.kind, offerings)
-        ? fullCp / 2
-        : fullCp
-    return sum + Math.max(1, Math.round(cp / STANDARD_CP))
-  }, 0)
-}
-
-/**
- * Local FY-twin check used to keep slotUsedWeight free of a cycle
- * back into full-year.ts. Equivalent to `isFullYearUnit && slot is
- * S1/S2`; collapsed inline so the import graph stays one-way (the
- * planner helpers in full-year.ts and friends depend on these types,
- * not the other way around).
- */
-function isFullYearTwinSlot(
-  code: string,
-  slotKind: PeriodKind,
-  offerings: ReadonlyMap<string, PlannerOffering[]>
-): boolean {
-  if (slotKind !== "S1" && slotKind !== "S2") return false
-  const list = offerings.get(code)
-  if (!list || list.length === 0) return false
-  let hasFullYear = false
-  for (const o of list) {
-    if (o.periodKind === "S1" || o.periodKind === "S2") return false
-    if (o.periodKind === "FULL_YEAR") hasFullYear = true
-  }
-  return hasFullYear
 }
 
 /** Output of validating a single slot/unit pairing. */
