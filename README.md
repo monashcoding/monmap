@@ -100,11 +100,14 @@ server renders you as signed out (the avatar may still show, because the
 browser asks auth.monashcoding.com directly). To sign in locally, serve
 the app from a `monashcoding.com` hostname instead:
 
-1. Point `local.monashcoding.com` at your machine. Add this line to
-   `/etc/hosts` (needs `sudo`):
+1. Point `local.monashcoding.com` at your machine. Add these lines to
+   `/etc/hosts` (needs `sudo`). The IPv6 line matters: without it the
+   system still gets Cloudflare's IPv6 address from public DNS (the
+   `*.monashcoding.com` wildcard), and browsers try IPv6 first.
 
    ```
    127.0.0.1 local.monashcoding.com
+   ::1 local.monashcoding.com
    ```
 
 2. Run the HTTPS dev server and open https://local.monashcoding.com:3000:
