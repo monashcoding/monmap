@@ -110,12 +110,7 @@ the app from a `monashcoding.com` hostname instead:
    ::1 local.monashcoding.com
    ```
 
-2. Run the HTTPS dev server and open https://local.monashcoding.com
-   (no port: it listens on 443, because the auth service trusts
-   `*.monashcoding.com` origins only without a port, so sign-in and
-   sign-out fail with "Invalid origin" on `:3000`). macOS lets normal
-   users bind 443; on Linux you may need
-   `sudo setcap cap_net_bind_service=+ep $(which node)`.
+2. Run the HTTPS dev server and open https://local.monashcoding.com:3000:
 
    ```bash
    pnpm dev:sso
@@ -124,6 +119,12 @@ the app from a `monashcoding.com` hostname instead:
    The first run creates a local certificate authority with `mkcert`
    and may ask for your password to trust it. The certificate lands in
    `packages/webapp/certificates/`, which is git-ignored.
+
+The auth service must list `https://local.monashcoding.com:3000` in its
+`TRUSTED_ORIGINS` setting (monashcoding/mac-auth). Its built-in
+`https://*.monashcoding.com` wildcard does not match an origin with a
+port, so without that entry sign-in and sign-out fail with "Invalid
+origin" even though the session still shows.
 
 Signed in this way, you read and write your real plans in whatever
 database `DATABASE_URL` points at.
