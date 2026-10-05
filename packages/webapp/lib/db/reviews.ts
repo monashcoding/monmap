@@ -192,20 +192,42 @@ export async function getUserReview(
 export interface OwnReview extends PublicReview {
   kind: ReviewKind
   code: string
+  /** The entity's latest handbook title. */
+  title: string | null
 }
+
+/** The latest handbook title of the reviewed unit, course or AoS. */
+const ENTITY_TITLE = sql`CASE r.entity_kind
+  WHEN 'unit' THEN (SELECT title FROM units WHERE code = r.entity_code ORDER BY year DESC LIMIT 1)
+  WHEN 'course' THEN (SELECT title FROM courses WHERE code = r.entity_code ORDER BY year DESC LIMIT 1)
+  ELSE (SELECT title FROM areas_of_study WHERE code = r.entity_code ORDER BY year DESC LIMIT 1)
+END`
 
 /** Every review the user wrote, newest first, whatever its status. */
 export async function listUserReviews(userId: string): Promise<OwnReview[]> {
-  const r = await getDb()
-    .select({
-      ...PUBLIC_COLUMNS,
-      kind: review.entityKind,
-      code: review.entityCode,
-    })
-    .from(review)
-    .where(eq(review.userId, userId))
-    .orderBy(sql`${review.updatedAt} DESC`)
-  return r.map((x) => ({ ...toPublic(x), kind: x.kind, code: x.code }))
+  const r = await rows<Record<string, unknown>>(sql`
+    SELECT r.id, r.overall, r.ratings, r.body, r.year_taken,
+      r.author_initials, r.created_at, r.updated_at, r.entity_kind,
+      r.entity_code, ${ENTITY_TITLE} AS title
+    FROM review r
+    WHERE r.user_id = ${userId}
+    ORDER BY r.updated_at DESC
+  `)
+  return r.map((x) => ({
+    ...toPublic({
+      id: x.id as string,
+      overall: x.overall as number,
+      ratings: x.ratings as Record<string, number>,
+      body: x.body as string,
+      yearTaken: (x.year_taken as string | null) ?? null,
+      initials: x.author_initials as string,
+      createdAt: new Date(x.created_at as string),
+      updatedAt: new Date(x.updated_at as string),
+    }),
+    kind: x.entity_kind as ReviewKind,
+    code: x.entity_code as string,
+    title: (x.title as string | null) ?? null,
+  }))
 }
 
 /** Reviews the user created in the last 24 hours, for the daily cap. */
@@ -364,11 +386,7 @@ export async function listReviewsForAdmin(
         left(md5('review-author:' || r.user_id), 6) AS author_tag,
         (SELECT count(*)::int FROM review o WHERE o.user_id = r.user_id)
           AS author_reviews,
-        CASE r.entity_kind
-          WHEN 'unit' THEN (SELECT title FROM units WHERE code = r.entity_code ORDER BY year DESC LIMIT 1)
-          WHEN 'course' THEN (SELECT title FROM courses WHERE code = r.entity_code ORDER BY year DESC LIMIT 1)
-          ELSE (SELECT title FROM areas_of_study WHERE code = r.entity_code ORDER BY year DESC LIMIT 1)
-        END AS title
+        ${ENTITY_TITLE} AS title
       FROM review r
       WHERE ${where}
       ORDER BY r.created_at DESC

@@ -100,111 +100,113 @@ export default async function ReviewModerationPage({
   const active = FILTERS.find((f) => f.id === filter)!
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1100px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
+    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
       <AppHeader />
-      <header className="flex flex-col gap-4 rounded-panel border bg-card p-5 shadow-card sm:p-7">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">Review moderation</h1>
-          <p className="text-sm text-muted-foreground">
-            Shadowbanned and flagged reviews stay visible to their authors and
-            to no one else.
-          </p>
-        </div>
-        <nav aria-label="Review status" className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => (
-            <Link
-              key={f.id}
-              href={href({ status: f.id })}
-              aria-current={f.id === filter ? "page" : undefined}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm",
-                f.id === filter
-                  ? "border-transparent bg-primary font-semibold text-primary-foreground"
-                  : "bg-card hover:bg-muted"
-              )}
-            >
-              {f.label}
-              <span className="text-xs tabular-nums opacity-70">
-                {counts[f.id]}
-              </span>
-            </Link>
-          ))}
-        </nav>
-        <form action="/admin/reviews" className="flex max-w-md gap-2">
-          {filter !== "flagged" ? (
-            <input type="hidden" name="status" value={filter} />
-          ) : null}
-          <label className="sr-only" htmlFor="admin-q">
-            Search reviews
-          </label>
-          <div className="relative flex-1">
-            <SearchIcon
-              className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <input
-              id="admin-q"
-              name="q"
-              defaultValue={q}
-              placeholder="Code or words in the review"
-              className="h-9 w-full rounded-control border border-input bg-field pr-3 pl-8 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-            />
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-3 sm:gap-5">
+        <header className="flex flex-col gap-4 rounded-panel border bg-card p-5 shadow-card sm:p-7">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-semibold">Review moderation</h1>
+            <p className="text-sm text-muted-foreground">
+              Shadowbanned and flagged reviews stay visible to their authors and
+              to no one else.
+            </p>
           </div>
-          <button
-            type="submit"
-            className="h-9 rounded-control border px-3 text-sm hover:bg-muted"
-          >
-            Search
-          </button>
-        </form>
-      </header>
-
-      <section
-        aria-label={`${active.label} reviews`}
-        className="flex flex-col gap-3"
-      >
-        <p className="px-1 text-sm text-muted-foreground">
-          {total.toLocaleString("en-AU")} {total === 1 ? "review" : "reviews"}
-          {q ? ` matching "${q}"` : ""}. {active.hint}
-        </p>
-        {reviews.length === 0 ? (
-          <p className="rounded-panel border bg-card px-5 py-10 text-center text-sm text-muted-foreground shadow-card">
-            Nothing here.
-          </p>
-        ) : (
-          <ol className="flex flex-col gap-3">
-            {reviews.map((r) => (
-              <li key={r.id}>
-                <AdminReviewCard review={r} />
-              </li>
+          <nav aria-label="Review status" className="flex flex-wrap gap-1.5">
+            {FILTERS.map((f) => (
+              <Link
+                key={f.id}
+                href={href({ status: f.id })}
+                aria-current={f.id === filter ? "page" : undefined}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm",
+                  f.id === filter
+                    ? "border-transparent bg-primary font-semibold text-primary-foreground"
+                    : "bg-card hover:bg-muted"
+                )}
+              >
+                {f.label}
+                <span className="text-xs tabular-nums opacity-70">
+                  {counts[f.id]}
+                </span>
+              </Link>
             ))}
-          </ol>
-        )}
-        {pageCount > 1 ? (
-          <nav
-            aria-label="Pages"
-            className="flex items-center justify-between gap-3 px-1 text-sm"
-          >
-            {page > 1 ? (
-              <Link href={href({ page: page - 1 })} className="underline">
-                Previous
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span className="text-muted-foreground">
-              Page {page} of {pageCount}
-            </span>
-            {page < pageCount ? (
-              <Link href={href({ page: page + 1 })} className="underline">
-                Next
-              </Link>
-            ) : (
-              <span />
-            )}
           </nav>
-        ) : null}
-      </section>
+          <form action="/admin/reviews" className="flex max-w-md gap-2">
+            {filter !== "flagged" ? (
+              <input type="hidden" name="status" value={filter} />
+            ) : null}
+            <label className="sr-only" htmlFor="admin-q">
+              Search reviews
+            </label>
+            <div className="relative flex-1">
+              <SearchIcon
+                className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <input
+                id="admin-q"
+                name="q"
+                defaultValue={q}
+                placeholder="Code or words in the review"
+                className="h-9 w-full rounded-control border border-input bg-field pr-3 pl-8 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+              />
+            </div>
+            <button
+              type="submit"
+              className="h-9 rounded-control border px-3 text-sm hover:bg-muted"
+            >
+              Search
+            </button>
+          </form>
+        </header>
+
+        <section
+          aria-label={`${active.label} reviews`}
+          className="flex flex-col gap-3"
+        >
+          <p className="px-1 text-sm text-muted-foreground">
+            {total.toLocaleString("en-AU")} {total === 1 ? "review" : "reviews"}
+            {q ? ` matching "${q}"` : ""}. {active.hint}
+          </p>
+          {reviews.length === 0 ? (
+            <p className="rounded-panel border bg-card px-5 py-10 text-center text-sm text-muted-foreground shadow-card">
+              Nothing here.
+            </p>
+          ) : (
+            <ol className="flex flex-col gap-3">
+              {reviews.map((r) => (
+                <li key={r.id}>
+                  <AdminReviewCard review={r} />
+                </li>
+              ))}
+            </ol>
+          )}
+          {pageCount > 1 ? (
+            <nav
+              aria-label="Pages"
+              className="flex items-center justify-between gap-3 px-1 text-sm"
+            >
+              {page > 1 ? (
+                <Link href={href({ page: page - 1 })} className="underline">
+                  Previous
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span className="text-muted-foreground">
+                Page {page} of {pageCount}
+              </span>
+              {page < pageCount ? (
+                <Link href={href({ page: page + 1 })} className="underline">
+                  Next
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          ) : null}
+        </section>
+      </div>
     </main>
   )
 }

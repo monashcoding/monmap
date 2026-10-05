@@ -1,17 +1,15 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { MessageSquareTextIcon } from "lucide-react"
+import { ChevronRightIcon, MessageSquareTextIcon } from "lucide-react"
 
 import { AppHeader } from "@/components/app-header"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { KindBadge } from "@/components/handbook/parts"
-import { ReviewAvatar } from "@/components/reviews/review-avatar"
-import { Stars } from "@/components/reviews/stars"
+import { ReviewCard } from "@/components/reviews/review-card"
 import { getCurrentUser } from "@/lib/auth-server"
 import { listUserReviews } from "@/lib/db/reviews"
 import { entityHref } from "@/lib/handbook/links"
-import { OVERALL_LABELS } from "@/lib/reviews/axes"
-import { reviewDate } from "@/lib/reviews/format"
+import { reviewCount } from "@/lib/reviews/format"
 
 export const metadata: Metadata = {
   title: "My reviews",
@@ -28,78 +26,86 @@ export default async function MyReviewsPage() {
   const reviews = user ? await listUserReviews(user.id) : []
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[900px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
+    // Same frame as every other page, so the header keeps its width;
+    // the reviews sit in a narrower reading column inside it.
+    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
       <AppHeader />
-      <header className="flex flex-col gap-1 rounded-panel border bg-card p-5 shadow-card sm:p-7">
-        <h1 className="text-2xl font-semibold">My reviews</h1>
-        <p className="text-sm text-muted-foreground">
-          Your reviews of units, courses and areas of study. Others see your
-          initials only.
-        </p>
-      </header>
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:gap-5">
+        <header className="flex flex-wrap items-end justify-between gap-3 rounded-panel border bg-card p-5 shadow-card sm:p-7">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-semibold">My reviews</h1>
+            <p className="text-sm text-muted-foreground">
+              Others see your initials only.
+            </p>
+          </div>
+          {reviews.length > 0 ? (
+            <span className="text-sm text-muted-foreground">
+              {reviewCount(reviews.length)}
+            </span>
+          ) : null}
+        </header>
 
-      {!user ? (
-        <div className="flex flex-col items-center gap-4 rounded-panel border bg-card py-16 text-center shadow-card">
-          <p className="text-base font-semibold">Sign in to see your reviews</p>
-          <GoogleSignInButton callbackURL="/my-reviews" />
-        </div>
-      ) : reviews.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-panel border bg-card py-16 text-center shadow-card">
-          <MessageSquareTextIcon
-            className="size-10 text-muted-foreground/40"
-            aria-hidden
-          />
-          <p className="text-base font-semibold">No reviews yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Find a unit you have taken and rate it from its page.
-          </p>
-          <Link
-            href="/search?type=units"
-            className="text-sm font-medium text-info-foreground underline-offset-2 hover:underline"
-          >
-            Search units
-          </Link>
-        </div>
-      ) : (
-        <ol className="flex flex-col gap-3">
-          {reviews.map((r) => (
-            <li
-              key={r.id}
-              className="flex flex-col gap-2.5 rounded-panel border bg-card p-4 shadow-card sm:p-5"
+        {!user ? (
+          <div className="flex flex-col items-center gap-4 rounded-panel border bg-card px-5 py-14 text-center shadow-card">
+            <p className="text-base font-semibold">
+              Sign in to see your reviews
+            </p>
+            <GoogleSignInButton callbackURL="/my-reviews" />
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-panel border bg-card px-5 py-14 text-center shadow-card">
+            <span className="flex size-10 items-center justify-center rounded-control bg-primary text-primary-foreground">
+              <MessageSquareTextIcon className="size-5" aria-hidden />
+            </span>
+            <p className="text-base font-semibold">No reviews yet</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Rate the units you have taken from their pages. Your reviews help
+              other students plan.
+            </p>
+            <Link
+              href="/search?type=units"
+              className="text-sm font-medium text-info-foreground underline-offset-2 hover:underline"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              Search units
+            </Link>
+          </div>
+        ) : (
+          <ol className="flex flex-col gap-3">
+            {reviews.map((r) => (
+              <li
+                key={r.id}
+                className="overflow-hidden rounded-panel border bg-card shadow-card"
+              >
                 <Link
                   href={`${entityHref(r.kind, r.code)}#reviews`}
-                  className="flex items-center gap-2 text-sm font-semibold underline-offset-2 hover:underline"
+                  className="group flex items-center gap-3 border-b px-4 py-3 hover:bg-muted/40 sm:px-5"
                 >
-                  <KindBadge kind={r.kind} />
-                  {r.code}
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <KindBadge kind={r.kind} />
+                      <span className="font-semibold tabular-nums">
+                        {r.code}
+                      </span>
+                    </span>
+                    <span className="truncate text-sm font-medium underline-offset-2 group-hover:underline">
+                      {r.title ?? r.code}
+                    </span>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                    Edit
+                    <ChevronRightIcon className="size-4" aria-hidden />
+                  </span>
                 </Link>
-                <span className="text-xs text-muted-foreground">
-                  {reviewDate(r.createdAt)}
-                  {r.edited ? " · edited" : ""}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ReviewAvatar initials={r.initials} size={28} />
-                <Stars value={r.overall} size="sm" />
-                <span className="text-xs font-medium">
-                  {OVERALL_LABELS[r.overall - 1]}
-                </span>
-              </div>
-              <p className="line-clamp-4 text-sm leading-relaxed whitespace-pre-line text-foreground/90">
-                {r.body}
-              </p>
-              <Link
-                href={`${entityHref(r.kind, r.code)}#reviews`}
-                className="self-start text-xs font-medium text-info-foreground underline-offset-2 hover:underline"
-              >
-                Edit on the {r.kind === "aos" ? "area of study" : r.kind} page
-              </Link>
-            </li>
-          ))}
-        </ol>
-      )}
+                <ReviewCard
+                  review={r}
+                  kind={r.kind}
+                  className="px-4 py-4 sm:px-5"
+                />
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </main>
   )
 }
