@@ -287,10 +287,16 @@
   }
   html {
     @apply font-sans;
-    /* The top bar's backdrop is 100vw wide, which includes a classic
-       scrollbar's width on Windows and Linux. Clip (not hidden) so it
-       can't cause sideways scroll without breaking position: sticky. */
+    /* The top bar is 100vw wide, which includes a classic scrollbar's
+       width on Windows and Linux. Clip (not hidden) so it can't cause
+       sideways scroll without breaking position: sticky. */
     overflow-x: clip;
+  }
+  html,
+  body {
+    /* No rubber-band bounce past the top or bottom on macOS and iOS:
+       it drags the sticky top bar down with the page. */
+    overscroll-behavior-y: none;
   }
 }
 

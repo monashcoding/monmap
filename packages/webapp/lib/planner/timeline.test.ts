@@ -226,6 +226,8 @@ test("shrinking the year count keeps years that are in use", () => {
 test("a plan is fresh until it has content or setup is done", () => {
   let st = defaultState("2027", "C2001", 3)
   assert.equal(isFreshPlan(st), true)
+  st = plannerReducer(st, { type: "set_aos", role: "major", code: "COMPSCI03" })
+  assert.equal(isFreshPlan(st), true)
   st = plannerReducer(st, { type: "complete_setup" })
   assert.equal(isFreshPlan(st), false)
   const withUnit = plannerReducer(defaultState("2027", null, 1), {
