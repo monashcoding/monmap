@@ -38,9 +38,10 @@ write, a save or a delete, is also limited to one every 5 seconds and
   name or email.
 - The admin page shows initials and an anonymous author tag so admins
   can spot one person posting many reviews, without learning who they
-  are. The tag is the first 6 characters of `md5(secret || ':' ||
-  user_id)`, keyed with `REVIEW_TAG_SECRET`, so knowing a user id does
-  not reveal their tag.
+  are. The tag is the first 6 hex characters of an HMAC-SHA256 of the
+  user id, keyed with `REVIEW_TAG_SECRET`, so knowing a user id does
+  not reveal their tag. The server computes it in Node: the key never
+  goes to Postgres, and the user id never leaves `lib/db/reviews.ts`.
 
 ## Moderation
 
@@ -62,7 +63,9 @@ write, a save or a delete, is also limited to one every 5 seconds and
 Flagged and shadowbanned reviews are shadow-hidden: their author still
 sees them on the page and on `/my-reviews` as if they were published.
 
-These rules keep a hidden review hidden:
+These rules keep a hidden review hidden. `statusAfterSave` and
+`historyAfterSave` in `lib/reviews/moderation.ts` hold the save rules,
+with tests; the delete rule is SQL in `deleteUserReview`.
 
 - Editing a shadowbanned review keeps it shadowbanned.
 - If the classifier fails while a flagged review is edited, the review
@@ -78,7 +81,7 @@ These rules keep a hidden review hidden:
   lifts the ban.
 - An edit keeps `moderated_by` and `moderated_at` only while the review
   stays flagged or shadowbanned. An edit to a published review clears
-  them.
+  them. A deleted review that is written again gets a new `created_at`.
 
 ## Where ratings show
 
@@ -112,7 +115,8 @@ cached HTML is shared.
 
 - `REVIEW_ADMIN_EMAILS`: comma-separated admin emails.
 - `CLASSIFIER_API_KEY` (optional): a classifier.dev workspace key for
-  higher rate limits. `CLASSIFIER_URL` overrides the endpoint.
+  higher rate limits. `CLASSIFIER_URL` overrides the endpoint; an
+  empty value falls back to classifier.dev.
 - `REVIEW_TAG_SECRET` (optional): the key for the admin author tag.
   Without it, each server process picks a random key, so tags change
   on restart.

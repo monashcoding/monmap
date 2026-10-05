@@ -18,16 +18,22 @@ export interface WriteLimit {
   gapMs: number
   /** The most writes by one user in 24 hours. */
   perDay: number
+  /** Past this many tracked users, sweep idle ones. Tests lower it. */
+  sweepAt?: number
 }
 
 /**
  * Returns `take(userId)`, which records a write and returns true, or
  * returns false without recording when the user is over the limit.
  */
-export function createWriteLimiter({ gapMs, perDay }: WriteLimit) {
+export function createWriteLimiter({
+  gapMs,
+  perDay,
+  sweepAt = SWEEP_AT,
+}: WriteLimit) {
   const writes = new Map<string, number[]>()
-  return function take(userId: string, now = Date.now()): boolean {
-    if (writes.size > SWEEP_AT) {
+  function take(userId: string, now = Date.now()): boolean {
+    if (writes.size > sweepAt) {
       for (const [id, times] of writes) {
         if (now - (times.at(-1) ?? 0) >= DAY_MS) writes.delete(id)
       }
@@ -41,6 +47,9 @@ export function createWriteLimiter({ gapMs, perDay }: WriteLimit) {
     else writes.delete(userId)
     return allowed
   }
+  /** How many users the limiter tracks, for tests. */
+  take.tracked = () => writes.size
+  return take
 }
 
 export const takeReviewWrite = createWriteLimiter({

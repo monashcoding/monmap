@@ -122,6 +122,13 @@ test("sends only the review text and opts out of data sharing", async () => {
   assert.equal(headers.authorization, undefined)
 })
 
+test("an empty CLASSIFIER_URL falls back to classifier.dev", async () => {
+  process.env.CLASSIFIER_URL = ""
+  const calls = stub(verdict(0.9))
+  assert.equal((await moderateReview("x")).ok, true)
+  assert.equal(calls[0].url, "https://classifier.dev/v1/classify")
+})
+
 test("sends the API key only when one is set", async () => {
   process.env.CLASSIFIER_API_KEY = "classifier_agent_test"
   const calls = stub(verdict(0.9))

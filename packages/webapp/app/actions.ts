@@ -1,7 +1,7 @@
 "use server"
 
 import { getClaims, getCurrentUser } from "@/lib/auth-server"
-import { getPostHogClient } from "@/lib/posthog-server"
+import { captureServer } from "@/lib/posthog-server"
 import {
   cleanGradeCode,
   cleanMark,
@@ -132,13 +132,7 @@ export async function createBlankPlanAction(
     cleanPlanName(formData?.get("name")?.toString()) ?? "Default plan"
   const state = defaultState(year, null, 3)
   const plan = await createUserPlan(u.id, name, state)
-  const posthog = getPostHogClient()
-  posthog.capture({
-    distinctId: u.id,
-    event: "plan_created_server",
-    properties: { handbook_year: year },
-  })
-  await posthog.flush()
+  await captureServer(u.id, "plan_created_server", { handbook_year: year })
   redirect(`/?plan=${plan.id}`)
 }
 

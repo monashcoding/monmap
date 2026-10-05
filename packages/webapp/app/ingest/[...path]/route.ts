@@ -7,59 +7,61 @@
  * forwards every request header. That includes the shared
  * `.monashcoding.com` session cookie, which signs its holder in to every
  * MAC app. This handler forwards a short allowlist of headers, never a
- * cookie, and drops PostHog's set-cookie.
+ * cookie, and drops PostHog's set-cookie. The path and header rules
+ * live in lib/ingest-proxy.ts.
  */
 
-const API_HOST = "https://us.i.posthog.com"
-const ASSET_HOST = "https://us-assets.i.posthog.com"
-
-const REQUEST_HEADERS = [
-  "accept",
-  "content-type",
-  "content-encoding",
-  "user-agent",
-  // The client's IP from the reverse proxy, for PostHog's geo-IP.
-  "x-forwarded-for",
-]
-
-// Node's fetch decompresses the body, so content-encoding and
-// content-length must not be copied.
-const RESPONSE_HEADERS = ["content-type", "cache-control"]
+import {
+  BodyTooLarge,
+  capBody,
+  forwardRequestHeaders,
+  forwardResponseHeaders,
+  ingestTarget,
+  MAX_BODY,
+} from "@/lib/ingest-proxy"
 
 export const dynamic = "force-dynamic"
 
 async function proxy(req: Request): Promise<Response> {
   const url = new URL(req.url)
-  const path = url.pathname.replace(/^\/ingest/, "")
-  const host = /^\/(static|array)\//.test(path) ? ASSET_HOST : API_HOST
-
-  const headers = new Headers()
-  for (const name of REQUEST_HEADERS) {
-    const value = req.headers.get(name)
-    if (value) headers.set(name, value)
+  const target = ingestTarget(url.pathname, url.search)
+  if (!target) return new Response(null, { status: 404 })
+  if (Number(req.headers.get("content-length")) > MAX_BODY) {
+    return new Response(null, { status: 413 })
   }
-  const hasBody = req.method !== "GET" && req.method !== "HEAD"
+  const body = req.method === "GET" || req.method === "HEAD" ? null : req.body
+
+  // Node's fetch needs `duplex` to stream a request body; the DOM
+  // RequestInit type does not list it yet.
+  const init: RequestInit & { duplex: "half" } = {
+    method: req.method,
+    headers: forwardRequestHeaders(req.headers),
+    // posthog-js sends gzip or base64 bodies; stream the bytes through
+    // with a cap instead of buffering them.
+    body: body?.pipeThrough(capBody(MAX_BODY)),
+    duplex: "half",
+    cache: "no-store",
+    // Set before the body is read, so it bounds the upload too.
+    signal: AbortSignal.timeout(10_000),
+    // A redirect to another host must not be fetched from the server.
+    redirect: "manual",
+  }
 
   let upstream: Response
   try {
-    upstream = await fetch(`${host}${path}${url.search}`, {
-      method: req.method,
-      headers,
-      // posthog-js sends gzip or base64 bodies; pass the bytes through.
-      body: hasBody ? await req.arrayBuffer() : undefined,
-      cache: "no-store",
-      signal: AbortSignal.timeout(10_000),
-    })
-  } catch {
+    upstream = await fetch(target, init)
+  } catch (e) {
+    const tooLarge = e instanceof Error && e.cause instanceof BodyTooLarge
+    return new Response(null, { status: tooLarge ? 413 : 502 })
+  }
+  if (upstream.status >= 300 && upstream.status < 400) {
     return new Response(null, { status: 502 })
   }
 
-  const out = new Headers()
-  for (const name of RESPONSE_HEADERS) {
-    const value = upstream.headers.get(name)
-    if (value) out.set(name, value)
-  }
-  return new Response(upstream.body, { status: upstream.status, headers: out })
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: forwardResponseHeaders(upstream.headers),
+  })
 }
 
 export const GET = proxy

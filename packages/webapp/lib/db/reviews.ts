@@ -8,7 +8,7 @@
  * without its status: a flagged or shadowbanned review looks published
  * to its author.
  */
-import { randomBytes } from "node:crypto"
+import { createHmac, randomBytes } from "node:crypto"
 
 import { review, reviewAuthorBan } from "@monmap/db"
 import { and, eq, gt, isNull, sql, type SQL } from "drizzle-orm"
@@ -17,7 +17,11 @@ import { getDb } from "./client.ts"
 import { containsPattern } from "./like.ts"
 import { REVIEW_AXES, type ReviewKind } from "../reviews/axes.ts"
 import type { ModerationResult } from "../reviews/classifier.ts"
-import { classifierColumns, statusAfterSave } from "../reviews/moderation.ts"
+import {
+  classifierColumns,
+  historyAfterSave,
+  statusAfterSave,
+} from "../reviews/moderation.ts"
 import {
   type PublicReview,
   REVIEW_PAGE_SIZE,
@@ -283,7 +287,8 @@ export interface ReviewWrite {
 /**
  * Create or replace the user's review of one entity. `statusAfterSave`
  * decides the status from the current row, the author ban list and the
- * classifier's verdict. The current row is locked while it decides, so
+ * classifier's verdict, and `historyAfterSave` decides which moderation
+ * history survives. The current row is locked while it decides, so
  * an admin's decision made at the same moment is not lost. Writing a
  * deleted hidden review again revives it as a new review that keeps its
  * status.
@@ -309,11 +314,10 @@ export async function upsertReview(w: ReviewWrite): Promise<PublicReview> {
       ban != null,
       w.moderation
     )
-    // A hidden status kept from an admin or an earlier flag keeps its
-    // history. An edit to a published review clears it, because no
-    // admin has seen the new text.
-    const kept =
-      previous != null && previous.status === status && status !== "published"
+    const { resetCreatedAt, ...history } = historyAfterSave(
+      previous ?? null,
+      status
+    )
     const now = new Date()
     const content = {
       overall: w.overall,
@@ -337,10 +341,9 @@ export async function upsertReview(w: ReviewWrite): Promise<PublicReview> {
         target: [review.userId, review.entityKind, review.entityCode],
         set: {
           ...content,
-          moderatedBy: kept ? previous.moderatedBy : null,
-          moderatedAt: kept ? previous.moderatedAt : null,
+          ...history,
           deletedAt: null,
-          ...(previous?.deletedAt ? { createdAt: now } : {}),
+          ...(resetCreatedAt ? { createdAt: now } : {}),
           updatedAt: now,
         },
       })
@@ -352,7 +355,9 @@ export async function upsertReview(w: ReviewWrite): Promise<PublicReview> {
 /**
  * Delete the user's review of one entity. A flagged or shadowbanned
  * review is only marked deleted: it disappears for its author too, but
- * writing it again keeps its status (see upsertReview).
+ * writing it again keeps its status (see upsertReview). This rule lives
+ * in SQL, not in moderation.ts, and docs/reviews.md lists it with the
+ * others.
  */
 export async function deleteUserReview(
   userId: string,
@@ -416,6 +421,17 @@ function authorTagKey(): string {
   return tagKey
 }
 
+/**
+ * Computed here, not in SQL, so the key never travels to Postgres,
+ * where a query log could keep it.
+ */
+function authorTag(userId: string): string {
+  return createHmac("sha256", authorTagKey())
+    .update(userId)
+    .digest("hex")
+    .slice(0, 6)
+}
+
 function adminWhere(filter: AdminFilter, q: string): SQL {
   // Deleted reviews are hidden from everyone, admins included.
   const parts: SQL[] = [sql`r.deleted_at IS NULL`]
@@ -439,7 +455,7 @@ export async function listReviewsForAdmin(
       SELECT ${PUBLIC_SQL}, r.entity_kind, r.entity_code, r.status,
         r.classifier_label, r.classifier_confidence, r.classifier_scores,
         r.classifier_error, r.moderated_by, r.moderated_at,
-        left(md5(${authorTagKey()} || ':' || r.user_id), 6) AS author_tag,
+        r.user_id AS author_id,
         (SELECT count(*)::int FROM review o
           WHERE o.user_id = r.user_id AND o.deleted_at IS NULL)
           AS author_reviews,
@@ -473,7 +489,8 @@ export async function listReviewsForAdmin(
       moderatedAt: x.moderated_at
         ? new Date(x.moderated_at as string).toISOString()
         : null,
-      authorTag: x.author_tag as string,
+      // The user id stays here: only its tag leaves this function.
+      authorTag: authorTag(x.author_id as string),
       authorReviews: x.author_reviews as number,
     })),
   }

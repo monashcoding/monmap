@@ -60,6 +60,20 @@ test("only http, https, mailto and relative links keep their href", () => {
   assert.equal(safeHref("   "), null)
 })
 
+test("backslash protocol-relative links are dropped", () => {
+  // Browsers read `\` as `/`, so each of these leaves the site.
+  assert.equal(safeHref("/\\evil.example/x"), null)
+  assert.equal(safeHref("\\\\evil.example"), null)
+  assert.equal(safeHref("\\/evil.example"), null)
+  assert.equal(safeHref("/&#92;evil.example"), null)
+  assert.equal(clean('<a href="/\\evil.example">x</a>'), "<a>x</a>")
+  // A web URL with a backslash still opens as an external link.
+  assert.equal(
+    rewriteHandbookHtml('<a href="https:/\\evil.example">x</a>', null),
+    '<a href="https:/\\evil.example" target="_blank" rel="noopener noreferrer">x</a>'
+  )
+})
+
 test("a quote inside a link cannot break out of the attribute", () => {
   assert.equal(
     clean(`<a href='mailto:x" onclick="alert(1)'>x</a>`),
@@ -136,4 +150,14 @@ test("rewriteHandbookHtml is idempotent", () => {
     '<p><a href="/units/FIT1045/2025">FIT1045</a> <a href="https://www.monash.edu/it" target="_blank" rel="noopener noreferrer">IT</a> <a href="mailto:a@b.c">m</a></p>'
   )
   assert.equal(rewriteHandbookHtml(once, "2025"), once)
+})
+
+test("a long run of unclosed tags is escaped in linear time", () => {
+  for (const unit of ["<a x", '<a x="', "<a x='<a y=\" ", '<a x="1" <']) {
+    const html = unit.repeat(50_000)
+    const start = performance.now()
+    const out = clean(html)
+    assert.ok(performance.now() - start < 200, `slow on ${unit}`)
+    assert.ok(!out.includes("<"), `raw < on ${unit}`)
+  }
 })

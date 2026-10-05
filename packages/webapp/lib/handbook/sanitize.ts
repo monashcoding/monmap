@@ -68,9 +68,12 @@ const DROP_WITH_CONTENT = new Set([
 
 // One start or end tag, with quoted or bare attribute values. A `<`
 // that does not start a well-formed tag is text and gets escaped.
+// Attribute names and bare values never hold `<`, so a failed match
+// stops at the next `<` instead of scanning to the end: without that,
+// a run of unclosed `<a x` takes quadratic time.
 const TAG =
-  /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*\/?>/y
-const ATTR = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g
+  /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^\s"'>/=<]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*\/?>/y
+const ATTR = /([^\s"'>/=<]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g
 
 const NAMED: Record<string, string> = {
   amp: "&",
@@ -119,14 +122,16 @@ function escapeText(s: string): string {
 /**
  * The href to keep, decoded, or null to drop it. Browsers ignore
  * whitespace and control characters inside a scheme ("java\tscript:"),
- * so the scheme is read with those removed.
+ * and read `\` as `/` in web URLs, so the probe removes the first and
+ * turns the second into `/`.
  */
 export function safeHref(raw: string): string | null {
   const url = decodeEntities(raw).trim()
   if (!url) return null
-  const probe = url.replace(/[\u0000- \u007f-\u009f]/g, "")
-  // Protocol-relative URLs ("//host") would leave the site unmarked.
-  if (probe.startsWith("//") || probe.startsWith("\\")) return null
+  const probe = url.replace(/[\u0000- \u007f-\u009f]/g, "").replace(/\\/g, "/")
+  // Protocol-relative URLs ("//host", "/\host") would leave the site
+  // unmarked.
+  if (probe.startsWith("//")) return null
   const scheme = probe.match(/^([a-z][a-z0-9+.-]*):/i)
   if (!scheme) return url
   return /^(https?|mailto)$/i.test(scheme[1]) ? url : null

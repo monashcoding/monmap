@@ -1,6 +1,6 @@
 /**
- * How a save changes a review's status. Kept apart from the database
- * code so `node --test` can check every case.
+ * How a save changes a review's status and moderation history. Kept
+ * apart from the database code so `node --test` can check every case.
  */
 
 import type { ModerationResult } from "./classifier.ts"
@@ -27,6 +27,43 @@ export function statusAfterSave(
   if (authorBanned || previous === "shadowbanned") return "shadowbanned"
   if (!m.ok) return previous === "flagged" ? "flagged" : "published"
   return m.flagged ? "flagged" : "published"
+}
+
+/** The moderation columns of the review row a save replaces. */
+export interface PreviousReview {
+  status: ReviewStatus
+  deletedAt: Date | null
+  moderatedBy: string | null
+  moderatedAt: Date | null
+}
+
+/**
+ * The moderation history a save leaves on the row (docs/reviews.md):
+ *
+ * - A hidden status kept from an admin or an earlier flag keeps its
+ *   moderatedBy and moderatedAt.
+ * - Any other save clears them. That includes an edit to a published
+ *   review, because no admin has seen the new text.
+ * - Writing a deleted review again revives it as a new review, so its
+ *   createdAt resets. Its status is still kept (see statusAfterSave).
+ *
+ * `previous` is null for a new review.
+ */
+export function historyAfterSave(
+  previous: PreviousReview | null,
+  status: ReviewStatus
+): {
+  moderatedBy: string | null
+  moderatedAt: Date | null
+  resetCreatedAt: boolean
+} {
+  const kept =
+    previous != null && previous.status === status && status !== "published"
+  return {
+    moderatedBy: kept ? previous.moderatedBy : null,
+    moderatedAt: kept ? previous.moderatedAt : null,
+    resetCreatedAt: previous?.deletedAt != null,
+  }
 }
 
 /** The classifier's verdict as `review` columns, for the admin page. */

@@ -2,8 +2,12 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import type { ModerationResult } from "./classifier.ts"
-import { classifierColumns, statusAfterSave } from "./moderation.ts"
-import { createWriteLimiter } from "./rate-limit.ts"
+import {
+  classifierColumns,
+  historyAfterSave,
+  type PreviousReview,
+  statusAfterSave,
+} from "./moderation.ts"
 
 const fair: ModerationResult = {
   ok: true,
@@ -59,23 +63,68 @@ test("classifier columns record the verdict or the error", () => {
   })
 })
 
-test("the write limiter spaces writes and caps them per day", () => {
-  const take = createWriteLimiter({ gapMs: 10_000, perDay: 3 })
-  const day = 24 * 60 * 60 * 1000
-  assert.ok(take("a", 0))
-  assert.ok(!take("a", 9_999), "too soon")
-  assert.ok(take("b", 9_999), "other users are separate")
-  assert.ok(take("a", 10_000))
-  assert.ok(take("a", 20_000))
-  assert.ok(!take("a", 60_000), "fourth write in a day")
-  // Refused writes do not count; a write frees its slot 24 hours later.
-  assert.ok(take("a", day))
-  assert.ok(!take("a", day + 5_000), "too soon")
+const decided = new Date("2026-10-01T00:00:00Z")
+const row = (
+  status: PreviousReview["status"],
+  deletedAt: Date | null = null
+): PreviousReview => ({
+  status,
+  deletedAt,
+  moderatedBy: "admin@monashcoding.com",
+  moderatedAt: decided,
+})
+const cleared = { moderatedBy: null, moderatedAt: null }
+const keptHistory = {
+  moderatedBy: "admin@monashcoding.com",
+  moderatedAt: decided,
+}
 
-  const capped = createWriteLimiter({ gapMs: 0, perDay: 2 })
-  assert.ok(capped("a", 0))
-  assert.ok(capped("a", 1))
-  assert.ok(!capped("a", day - 1))
-  assert.ok(capped("a", day))
-  assert.ok(!capped("a", day))
+test("a new review has no history", () => {
+  assert.deepEqual(historyAfterSave(null, "published"), {
+    ...cleared,
+    resetCreatedAt: false,
+  })
+  assert.deepEqual(historyAfterSave(null, "shadowbanned"), {
+    ...cleared,
+    resetCreatedAt: false,
+  })
+})
+
+test("a kept hidden status keeps its history", () => {
+  assert.deepEqual(historyAfterSave(row("shadowbanned"), "shadowbanned"), {
+    ...keptHistory,
+    resetCreatedAt: false,
+  })
+  assert.deepEqual(historyAfterSave(row("flagged"), "flagged"), {
+    ...keptHistory,
+    resetCreatedAt: false,
+  })
+})
+
+test("an edit to a published review, or a status change, clears the history", () => {
+  // No admin has seen the new text.
+  assert.deepEqual(historyAfterSave(row("published"), "published"), {
+    ...cleared,
+    resetCreatedAt: false,
+  })
+  assert.deepEqual(historyAfterSave(row("flagged"), "published"), {
+    ...cleared,
+    resetCreatedAt: false,
+  })
+  assert.deepEqual(historyAfterSave(row("published"), "flagged"), {
+    ...cleared,
+    resetCreatedAt: false,
+  })
+})
+
+test("a deleted review written again is new but keeps its hidden status history", () => {
+  const deleted = new Date("2026-10-02T00:00:00Z")
+  assert.deepEqual(
+    historyAfterSave(row("shadowbanned", deleted), "shadowbanned"),
+    { ...keptHistory, resetCreatedAt: true }
+  )
+  assert.deepEqual(historyAfterSave(row("flagged", deleted), "published"), {
+    ...cleared,
+    resetCreatedAt: true,
+  })
 })

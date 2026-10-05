@@ -43,7 +43,9 @@ export type ModerationResult =
   | { ok: false; error: string }
 
 export async function moderateReview(text: string): Promise<ModerationResult> {
-  const base = process.env.CLASSIFIER_URL ?? "https://classifier.dev"
+  // `||`, not `??`: an empty CLASSIFIER_URL= line must not send every
+  // request to a relative URL, which fails and publishes the review.
+  const base = process.env.CLASSIFIER_URL || "https://classifier.dev"
   const key = process.env.CLASSIFIER_API_KEY
   try {
     const res = await fetch(`${base}/v1/classify`, {
