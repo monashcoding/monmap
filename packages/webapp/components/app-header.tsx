@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   LogOutIcon,
   MenuIcon,
+  MessageSquareTextIcon,
   NotebookPenIcon,
   ShieldCheckIcon,
 } from "lucide-react"
@@ -19,7 +20,6 @@ import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { PRIMARY_NAV_ITEMS, PrimaryNav } from "@/components/primary-nav"
 import { ReviewAvatar } from "@/components/reviews/review-avatar"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -239,26 +239,19 @@ function UserMenu() {
     return <AnonymousBadge />
   }
 
-  const initials = user.name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase()
   // What reviews show instead of the name (lib/reviews/initials).
   const reviewAs = reviewInitials(user.name, user.email)
 
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Avatar>
-            {user.image ? (
-              <AvatarImage src={user.image} alt={user.name} />
-            ) : null}
-            <AvatarFallback>{initials || "?"}</AvatarFallback>
-          </Avatar>
+        {/* The same generated avatar reviews show, so the student sees
+            how they appear to others. */}
+        <DropdownMenuTrigger
+          aria-label={`Account menu for ${user.name}`}
+          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ReviewAvatar initials={reviewAs} size={32} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-auto">
           <DropdownMenuGroup>
@@ -274,9 +267,9 @@ function UserMenu() {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => router.push("/my-reviews")}
-            className="items-start py-2.5"
+            className="items-start"
           >
-            <ReviewAvatar initials={reviewAs} size={28} />
+            <MessageSquareTextIcon className="mt-0.5 size-3.5" />
             <span className="flex flex-col gap-0.5">
               <span>My reviews</span>
               <span className="max-w-52 text-[11px] leading-snug font-normal text-muted-foreground">
