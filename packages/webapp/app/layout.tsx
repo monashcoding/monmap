@@ -15,13 +15,13 @@ const poppins = Poppins({
 })
 
 const SITE_DESCRIPTION =
-  "Plan your Monash degree visually: drag units into semesters, check prereqs, and track WAM. Free, open-source unit and course explorer for Monash University students."
+  "Plan your Monash degree: drag units into semesters, check prerequisites and track your WAM. Read student reviews and see requisite maps for every Monash unit and course."
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     template: "%s - MonMap",
-    default: "MonMap - Monash course planner & unit explorer",
+    default: "MonMap: Monash Course Planner, Unit Reviews & Prerequisite Maps",
   },
   description: SITE_DESCRIPTION,
   applicationName: "MonMap",
@@ -33,6 +33,8 @@ export const metadata: Metadata = {
     "MonPlan",
     "Monash handbook",
     "prerequisites",
+    "unit reviews",
+    "Monash unit reviews",
     "WAM",
     "Australia",
   ],
@@ -41,7 +43,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "MonMap - Monash course planner & unit explorer",
+    title: "MonMap: Monash Course Planner, Unit Reviews & Prerequisite Maps",
     description: SITE_DESCRIPTION,
     siteName: "MonMap",
     type: "website",
@@ -50,7 +52,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MonMap - Monash course planner & unit explorer",
+    title: "MonMap: Monash Course Planner, Unit Reviews & Prerequisite Maps",
     description: SITE_DESCRIPTION,
   },
   robots: {

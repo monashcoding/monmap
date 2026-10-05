@@ -96,14 +96,5 @@ warm a part first.
 
 ## SEO
 
-- `/sitemap.xml` is a sitemap index of `/sitemaps/pages.xml`,
-  `courses.xml`, `aos.xml` and `units.xml`. Each lists every code once,
-  at its bare URL. The routes render per request and are memoised.
-- Each page sets a title, a description, a canonical URL and Open
-  Graph data, and has a share image (`opengraph-image.tsx`).
-- Pages carry JSON-LD: `Course` for units,
-  `EducationalOccupationalProgram` for courses, `WebPage` for areas of
-  study, and a `BreadcrumbList` on each.
-- Only the bare `/search` is indexed. Queries, tabs, filters and
-  result pages are `noindex, follow`, so crawlers follow their links
-  without indexing every combination. Filter links are `rel="nofollow"`.
+See [`docs/seo.md`](seo.md) for the strategy: what is indexed, why, and
+where each page's unique content comes from.

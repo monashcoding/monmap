@@ -2,6 +2,7 @@ import { Suspense } from "react"
 
 import { PlannerSkeleton } from "@/components/planner/planner-skeleton"
 import { PlannerStreaming } from "@/components/planner/planner-streaming"
+import { HomeAbout } from "@/components/home-about"
 import { getCurrentUser } from "@/lib/auth-server"
 import { HANDBOOK_YEAR } from "@/lib/db/client"
 import {
@@ -29,10 +30,10 @@ import {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; plan?: string }>
+  searchParams: Promise<{ year?: string; plan?: string; course?: string }>
 }) {
   const [params, availableYears, currentUser] = await Promise.all([
-    searchParams as Promise<{ year?: string; plan?: string }>,
+    searchParams as Promise<{ year?: string; plan?: string; course?: string }>,
     listAvailableYears(),
     getCurrentUser(),
   ])
@@ -80,14 +81,24 @@ export default async function Page({
   // picked a year (their plan may not match that year). No hardcoded
   // fallback — if there's no plan, the planner renders without a
   // pre-selected course and the user picks one from the rail.
-  const courseCode = !explicitYear
-    ? (initialPlanState?.courseCode ?? null)
-    : null
+  //
+  // ?course=… (the "Plan this course" button on course pages) opens
+  // that course when there's no saved plan to show. Over a saved plan
+  // the planner offers the switch instead (see PlannerProvider).
+  const courses = await listCoursesForPicker(null, 500, year)
+  const rawCourse = params.course?.trim().toUpperCase() ?? null
+  const requestedCourse =
+    rawCourse && courses.some((c) => c.code === rawCourse) ? rawCourse : null
+  const courseCode =
+    requestedCourse && !initialPlanState
+      ? requestedCourse
+      : !explicitYear
+        ? (initialPlanState?.courseCode ?? null)
+        : null
 
-  const [courses, defaultCourse] = await Promise.all([
-    listCoursesForPicker(null, 500, year),
-    courseCode ? fetchCourseWithAoS(courseCode, year) : Promise.resolve(null),
-  ])
+  const defaultCourse = courseCode
+    ? await fetchCourseWithAoS(courseCode, year)
+    : null
 
   const prewarmCodes = defaultCourse
     ? [
@@ -114,6 +125,11 @@ export default async function Page({
 
   return (
     <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-24 sm:gap-5 sm:px-5 sm:pt-5 sm:pb-12">
+      {/* The planner has no visible page title; this names the page for
+          search engines and screen readers. */}
+      <h1 className="sr-only">
+        MonMap: Monash course planner, unit reviews and prerequisite maps
+      </h1>
       <Suspense fallback={<PlannerSkeleton />}>
         <PlannerStreaming
           initialYear={year}
@@ -135,8 +151,10 @@ export default async function Page({
           initialPlans={userPlans}
           initialActivePlanId={activePlanId}
           initialGrades={initialGrades}
+          requestedCourse={requestedCourse}
         />
       </Suspense>
+      <HomeAbout />
     </main>
   )
 }

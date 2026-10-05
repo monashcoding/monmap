@@ -40,6 +40,7 @@ interface PlannerProps {
   initialPlans: PlanSummary[]
   initialActivePlanId: string | null
   initialGrades: Record<string, number> | null
+  requestedCourse?: string | null
 }
 
 /**
@@ -64,6 +65,7 @@ export function Planner(props: PlannerProps) {
       initialPlan={props.initialPlan}
       initialPlans={props.initialPlans}
       initialActivePlanId={props.initialActivePlanId}
+      requestedCourse={props.requestedCourse}
     >
       <WamProvider
         signedIn={props.currentUser !== null}

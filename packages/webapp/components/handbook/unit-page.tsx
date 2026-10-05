@@ -30,6 +30,21 @@ import {
 
 import { EntityGraph } from "./entity-graph"
 import { JsonLd, breadcrumbLd, ratingLd } from "./json-ld"
+import { QuickAnswers, SegText } from "./quick-answers"
+import {
+  isExam,
+  levelNumber,
+  unitFacts,
+  workloadHours,
+} from "@/lib/handbook/facts"
+import {
+  downstreamReach,
+  plain,
+  ruleSegs,
+  unitDescription,
+  unitLede,
+  unitQuestions,
+} from "@/lib/handbook/summary"
 import {
   fetchEntityReviews,
   ReviewsSection,
@@ -49,10 +64,6 @@ import {
   YearLinks,
 } from "./parts"
 
-function levelNumber(level: string | null): string | null {
-  return level?.match(/\d+/)?.[0] ?? null
-}
-
 function periodSummary(u: UnitPageData): string | null {
   const kinds = [...new Set(u.offerings.map((o) => o.periodKind))].filter(
     (k) => k !== "OTHER"
@@ -67,9 +78,6 @@ function campusSummary(u: UnitPageData): string | null {
     ? `${campuses.slice(0, 3).join(", ")} and ${campuses.length - 3} more`
     : campuses.join(", ")
 }
-
-const isExam = (a: { name: string; type: string | null }) =>
-  /exam/i.test(`${a.type ?? ""} ${a.name}`)
 
 /** "Exam 60%" or "No exam", the question students ask first. */
 function assessmentStat(u: UnitPageData) {
@@ -90,11 +98,6 @@ function assessmentStat(u: UnitPageData) {
         value: "No exam",
         hint: `${u.assessments.length} task${u.assessments.length === 1 ? "" : "s"}`,
       }
-}
-
-function workloadHours(u: UnitPageData): string | null {
-  const m = stripHtml(u.workload).match(/(\d+)\s*hours/i)
-  return m ? `${m[1]} hours` : null
 }
 
 const MODE_LABEL: Record<string, string> = {
@@ -128,26 +131,21 @@ export async function unitMetadata(
   rawYear: string | null
 ): Promise<Metadata> {
   const r = await resolveEntity("unit", rawCode, rawYear)
-  const u = await fetchUnitPage(r.code, r.year)
+  const [u, reviews] = await Promise.all([
+    fetchUnitPage(r.code, r.year),
+    fetchEntityReviews("unit", r.code),
+  ])
   if (!u) return { title: r.code, robots: { index: false } }
-  const yearNote = r.linkYear ? ` (${r.year})` : ""
-  const facts = [
-    `${u.creditPoints} credit points`,
-    u.level,
-    u.undergradPostgrad,
-    periodSummary(u) ? `offered ${periodSummary(u)}` : null,
-  ]
-    .filter(Boolean)
-    .join(", ")
-  const description = truncate(
-    `${u.code} ${u.title} at Monash University${yearNote}: ${facts}. ${stripHtml(u.synopsis)}`,
-    160
-  )
-  const title = `${u.code} ${u.title}${yearNote}`
+  const yearNote = r.linkYear ? ` (${r.year} handbook)` : ""
+  // The searches this page answers: "FIT2004 review", "FIT2004
+  // prerequisites". The facts in the description are MonMap's own.
+  const title = `${u.code} ${u.title}${yearNote}: Reviews & Prerequisites`
+  const description = unitDescription(unitFacts(u, reviews.summary, 0))
   return {
     title,
     description,
     alternates: { canonical: r.canonical },
+    robots: r.indexable ? undefined : { index: false, follow: true },
     openGraph: { title, description, type: "article", url: r.canonical },
     twitter: { card: "summary_large_image", title, description },
   }
@@ -177,6 +175,11 @@ export async function UnitPage({
 
   const { linkYear } = r
   const linkable = new Set(u.linkable)
+  const facts = unitFacts(
+    u,
+    reviews.summary,
+    downstreamReach(u.code, graph.graph.edges)
+  )
   const yearHref = (y: string) =>
     entityHref("unit", u.code, y === r.latest ? null : y)
   const lvl = levelNumber(u.level)
@@ -254,6 +257,13 @@ export async function UnitPage({
         yearHref={yearHref}
         handbookUrl={monashHandbookUrl("unit", u.code, r.year)}
         rating={reviews.summary}
+        lede={
+          <SegText
+            segs={unitLede(facts)}
+            linkYear={linkYear}
+            linkableUnits={linkable}
+          />
+        }
         notice={notice}
       />
 
@@ -277,6 +287,7 @@ export async function UnitPage({
             ? { id: "where-it-fits", label: "Where it fits" }
             : null,
           u.contacts.length > 0 ? { id: "contacts", label: "Contacts" } : null,
+          { id: "faq", label: "Common questions" },
           { id: "details", label: "More details" },
         ]}
       >
@@ -635,6 +646,12 @@ export async function UnitPage({
           </Section>
         ) : null}
 
+        <QuickAnswers
+          items={unitQuestions(facts)}
+          linkYear={linkYear}
+          linkableUnits={linkable}
+        />
+
         <Section id="details" title="More details" icon={InfoIcon}>
           <div className="grid gap-x-10 md:grid-cols-2">
             <FactList
@@ -703,6 +720,10 @@ export async function UnitPage({
               sameAs: "https://www.monash.edu/",
             },
             sameAs: monashHandbookUrl("unit", u.code, r.year),
+            coursePrerequisites: facts.prerequisites
+              ? plain(ruleSegs(facts.prerequisites) ?? [])
+              : undefined,
+            hasCourseInstance: courseInstancesLd(u),
             ...ratingLd(reviews.summary, reviews.reviews),
           },
           breadcrumbLd([
@@ -714,6 +735,29 @@ export async function UnitPage({
       />
     </HandbookMain>
   )
+}
+
+/** One schema.org CourseInstance per teaching period and campus. */
+function courseInstancesLd(u: UnitPageData) {
+  const seen = new Set<string>()
+  const out: object[] = []
+  for (const o of u.offerings) {
+    const key = `${o.teachingPeriod}|${o.location}|${o.attendanceModeCode}`
+    if (seen.has(key) || out.length >= 12) continue
+    seen.add(key)
+    out.push({
+      "@type": "CourseInstance",
+      name: `${o.teachingPeriod} ${u.year}`,
+      courseMode:
+        o.attendanceModeCode === "ONLINE"
+          ? "Online"
+          : o.attendanceModeCode === "BLENDED"
+            ? "Blended"
+            : "Onsite",
+      location: o.location ?? undefined,
+    })
+  }
+  return out.length ? out : undefined
 }
 
 /** "After" list: the first eight, then the rest behind a toggle. */

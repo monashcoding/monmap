@@ -192,6 +192,7 @@ export function PlannerProvider({
   initialPlan,
   initialPlans,
   initialActivePlanId,
+  requestedCourse = null,
 }: {
   children: React.ReactNode
   initialYear: string
@@ -210,6 +211,12 @@ export function PlannerProvider({
   /** Pre-selected plan id (whose state is `initialPlan`); null when anon
    * or signed-in-with-no-plans. */
   initialActivePlanId: string | null
+  /**
+   * A course from a "Plan this course" link (`/?course=`). With no
+   * saved plan the server already opened it; over a saved plan the
+   * student is offered a switch rather than losing their plan.
+   */
+  requestedCourse?: string | null
 }) {
   const [history, dispatch] = useReducer(
     historyReducer,
@@ -285,6 +292,7 @@ export function PlannerProvider({
   // value) is to keep the SSR and the first client render byte-identical
   // — hydrating mid-render would diff.
   const restoredRef = useRef(false)
+  const offerCourseRef = useRef<string | null>(null)
   useEffect(() => {
     if (restoredRef.current) return
     restoredRef.current = true
@@ -307,6 +315,9 @@ export function PlannerProvider({
     }
 
     if (!plan) return
+    if (requestedCourse && (plan.courseCode ?? null) !== requestedCourse) {
+      offerCourseRef.current = requestedCourse
+    }
 
     // The saved year may not exist in the DB anymore (e.g. old data
     // got trimmed). Fall back to the server-provided initial year.
@@ -373,6 +384,7 @@ export function PlannerProvider({
     defaultCourse?.code,
     initialYear,
     availableYears,
+    requestedCourse,
   ])
 
   // Persist plan state on every change. Skip the very first render
@@ -679,6 +691,27 @@ export function PlannerProvider({
     },
     [state.courseYear]
   )
+
+  // A "Plan this course" link landed on a saved plan for another
+  // course: offer the switch once. The ref keeps the click on the
+  // switchCourse of the moment, which knows the plan's restored year.
+  const switchCourseRef = useRef(switchCourse)
+  useEffect(() => {
+    switchCourseRef.current = switchCourse
+  }, [switchCourse])
+  useEffect(() => {
+    const code = offerCourseRef.current
+    if (!code) return
+    offerCourseRef.current = null
+    toast("Opened your saved plan", {
+      description: `You followed a link to plan ${code}.`,
+      duration: 12000,
+      action: {
+        label: `Switch to ${code}`,
+        onClick: () => void switchCourseRef.current(code),
+      },
+    })
+  }, [state.courseCode])
 
   const switchYear = useCallback(
     async (year: string) => {

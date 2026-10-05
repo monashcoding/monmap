@@ -39,6 +39,7 @@ interface Props {
   initialPlans: PlanSummary[]
   initialActivePlanId: string | null
   initialGrades: Record<string, number> | null
+  requestedCourse?: string | null
 }
 
 /**
@@ -61,6 +62,7 @@ export function PlannerStreaming(props: Props) {
       initialPlans={props.initialPlans}
       initialActivePlanId={props.initialActivePlanId}
       initialGrades={props.initialGrades}
+      requestedCourse={props.requestedCourse}
     />
   )
 }

@@ -1151,11 +1151,101 @@ export const listSearchFacets = cacheHandbook(_listSearchFacets)
  * Sitemap
  * ------------------------------------------------------------------ */
 
-async function _listSitemapCodes(kind: EntityKind): Promise<string[]> {
-  const r = await rows<{ code: string }>(
-    sql`SELECT DISTINCT code FROM ${TABLE[kind]} ORDER BY code`
-  )
-  return r.map((x) => x.code)
+export interface SitemapEntry {
+  code: string
+  /** When its newest published review changed, if it has any. */
+  lastmod: string | null
 }
-/** Every code that has a page in any handbook year. */
+
+async function _listSitemapCodes(kind: EntityKind): Promise<SitemapEntry[]> {
+  // Only current codes: in one of the two newest handbooks. Retired
+  // codes keep their pages but are noindex (see resolveEntity).
+  const r = await rows<{ code: string; lastmod: string | null }>(sql`
+    WITH latest AS (
+      SELECT code, max(year)::int AS year FROM ${TABLE[kind]} GROUP BY code
+    )
+    SELECT l.code, max(r.updated_at) AS lastmod
+    FROM latest l
+    LEFT JOIN review r
+      ON r.entity_kind = ${kind} AND r.entity_code = l.code
+      AND r.status = 'published'
+    WHERE l.year >= (SELECT max(year)::int FROM units) - 1
+    GROUP BY l.code
+    ORDER BY l.code
+  `)
+  return r.map((x) => ({
+    code: x.code,
+    lastmod: x.lastmod ? new Date(x.lastmod).toISOString() : null,
+  }))
+}
+/** Every current code, with the date its reviews last changed. */
 export const listSitemapCodes = cacheHandbook(_listSitemapCodes)
+
+/* ------------------------------------------------------------------ *
+ * Hub pages: /courses and /aos
+ * ------------------------------------------------------------------ */
+
+export interface HubEntry {
+  code: string
+  title: string
+  year: string
+  school: string | null
+  /** Courses: the AQF level text. Areas of study: the kind. */
+  group: string | null
+  creditPoints: number | null
+}
+
+async function _listCurrentCourses(): Promise<HubEntry[]> {
+  return rows<HubEntry>(sql`
+    SELECT DISTINCT ON (code) code, title, year, school,
+      aqf_level AS "group", credit_points AS "creditPoints"
+    FROM courses
+    WHERE year::int >= (SELECT max(year)::int FROM units) - 1
+    ORDER BY code, year DESC
+  `)
+}
+/** Every current course at its latest year. */
+export const listCurrentCourses = cacheHandbook(_listCurrentCourses)
+
+async function _listCurrentAos(): Promise<HubEntry[]> {
+  const r = await rows<HubEntry>(sql`
+    SELECT DISTINCT ON (a.code) a.code, a.title, a.year, a.school,
+      (SELECT c.kind::text FROM course_areas_of_study c
+        WHERE c.aos_code = a.code
+        GROUP BY c.kind ORDER BY count(*) DESC LIMIT 1) AS "group",
+      a.credit_points AS "creditPoints"
+    FROM areas_of_study a
+    WHERE a.year::int >= (SELECT max(year)::int FROM units) - 1
+    ORDER BY a.code, a.year DESC
+  `)
+  return r.map((a) => ({ ...a, group: a.group ?? kindFromCode(a.code) }))
+}
+/** Every current area of study at its latest year, with its kind. */
+export const listCurrentAos = cacheHandbook(_listCurrentAos)
+
+/* ------------------------------------------------------------------ *
+ * Home page lists
+ * ------------------------------------------------------------------ */
+
+async function _listPopularCourses(
+  limit: number
+): Promise<Array<{ code: string; title: string }>> {
+  // The courses students plan most. Only the order leaves this query:
+  // no counts and nothing about any plan or user.
+  return rows<{ code: string; title: string }>(sql`
+    WITH planned AS (
+      SELECT state->>'courseCode' AS code, count(*) AS n
+      FROM user_plan
+      WHERE state->>'courseCode' IS NOT NULL
+      GROUP BY 1
+    )
+    SELECT p.code, c.title
+    FROM planned p
+    JOIN LATERAL (
+      SELECT title FROM courses WHERE code = p.code ORDER BY year DESC LIMIT 1
+    ) c ON TRUE
+    ORDER BY p.n DESC, p.code
+    LIMIT ${limit}
+  `)
+}
+export const listPopularCourses = cacheHandbook(_listPopularCourses)

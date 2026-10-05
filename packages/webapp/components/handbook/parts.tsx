@@ -121,6 +121,7 @@ export function EntityHero({
   title,
   facts,
   subtitle,
+  lede,
   stats = [],
   breadcrumbs,
   year,
@@ -128,6 +129,7 @@ export function EntityHero({
   yearHref,
   handbookUrl,
   rating,
+  actions,
   notice,
 }: {
   kind: EntityKind
@@ -137,6 +139,10 @@ export function EntityHero({
   /** Short labels beside the kind badge, such as "Level 2". */
   facts: Array<string | null | undefined | false>
   subtitle?: string | null
+  /** A summary in MonMap's words, under the title. */
+  lede?: React.ReactNode
+  /** Calls to action beside the rating, such as "Plan this course". */
+  actions?: React.ReactNode
   stats?: Array<HeroStat | null | false>
   breadcrumbs: Crumb[]
   year: string
@@ -190,13 +196,23 @@ export function EntityHero({
         {subtitle ? (
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         ) : null}
-        {rating ? (
-          <a
-            href="#reviews"
-            className="self-start rounded-tag underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <RatingInline summary={rating} size="md" />
-          </a>
+        {rating || actions ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {rating ? (
+              <a
+                href="#reviews"
+                className="rounded-tag underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <RatingInline summary={rating} size="md" />
+              </a>
+            ) : null}
+            {actions}
+          </div>
+        ) : null}
+        {lede ? (
+          <p className="max-w-3xl pt-1 text-[15px] leading-relaxed text-foreground/80">
+            {lede}
+          </p>
         ) : null}
       </div>
 
@@ -319,8 +335,11 @@ export function Prose({
   className?: string
 }) {
   if (!html) return null
+  // data-nosnippet: this text is Monash's, also on handbook.monash.edu,
+  // so search results should quote MonMap's own summary instead.
   return (
     <div
+      data-nosnippet=""
       className={cn("handbook-prose", className)}
       dangerouslySetInnerHTML={{ __html: rewriteHandbookHtml(html, linkYear) }}
     />
@@ -373,6 +392,9 @@ export function YearLinks({
           <Link
             key={y}
             href={href(y)}
+            // Year pages are noindex; crawlers needn't spend time on
+            // them. The latest year's link is the bare, indexed URL.
+            rel={href(y).endsWith(`/${y}`) ? "nofollow" : undefined}
             className="font-normal text-info-foreground underline-offset-2 hover:underline"
           >
             {y}

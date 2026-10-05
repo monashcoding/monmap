@@ -18,6 +18,18 @@ export interface ResolvedEntity {
   linkYear: string | null
   /** The canonical path: bare for the latest year, else with the year. */
   canonical: string
+  /**
+   * Whether search engines should index this URL. Only the latest
+   * year of a code that is still current is: older years repeat the
+   * same page with small changes, and codes gone from the last two
+   * handbooks are retired. Both stay reachable and followable.
+   */
+  indexable: boolean
+}
+
+/** A code is current if it is in either of the two newest handbooks. */
+export function isCurrent(latest: string, siteLatest: string): boolean {
+  return Number(latest) >= Number(siteLatest) - 1
 }
 
 /**
@@ -48,14 +60,16 @@ export async function resolveEntity(
   }
   const year = rawYear ?? latest
   const isLatest = year === latest
+  const siteLatest = siteYears.at(-1) ?? latest
   return {
     code,
     year,
     years,
     latest,
-    siteLatest: siteYears.at(-1) ?? latest,
+    siteLatest,
     linkYear: isLatest ? null : year,
     canonical: entityHref(kind, code, isLatest ? null : year),
+    indexable: isLatest && isCurrent(latest, siteLatest),
   }
 }
 

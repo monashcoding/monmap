@@ -24,6 +24,9 @@ import {
   ReviewsSection,
 } from "@/components/reviews/reviews-section"
 import { JsonLd, breadcrumbLd } from "./json-ld"
+import { QuickAnswers, SegText } from "./quick-answers"
+import { aosDescription, aosLede, aosQuestions } from "@/lib/handbook/summary"
+import { aosFacts } from "@/lib/handbook/facts"
 import {
   CurriculumTree,
   DetailLayout,
@@ -42,19 +45,20 @@ export async function aosMetadata(
   rawYear: string | null
 ): Promise<Metadata> {
   const r = await resolveEntity("aos", rawCode, rawYear)
-  const a = await fetchAosPage(r.code, r.year)
+  const [a, reviews] = await Promise.all([
+    fetchAosPage(r.code, r.year),
+    fetchEntityReviews("aos", r.code),
+  ])
   if (!a) return { title: r.code, robots: { index: false } }
   const kind = a.kind ? AOS_KIND_LABEL[a.kind] : "Area of study"
-  const yearNote = r.linkYear ? ` (${r.year})` : ""
-  const title = `${a.title} ${kind.toLowerCase()} (${a.code})${yearNote}`
-  const description = truncate(
-    `${a.title}, a ${a.studyLevel ? `${a.studyLevel.toLowerCase()} ` : ""}${kind.toLowerCase()} at Monash University${yearNote}: ${a.creditPoints ? `${a.creditPoints} credit points, ` : ""}its units, structure and the courses that offer it. ${stripHtml(a.description)}`,
-    160
-  )
+  const yearNote = r.linkYear ? ` (${r.year} handbook)` : ""
+  const title = `${a.title} ${kind} (${a.code})${yearNote}: Reviews & Units`
+  const description = aosDescription(aosFacts(a, reviews.summary))
   return {
     title,
     description,
     alternates: { canonical: r.canonical },
+    robots: r.indexable ? undefined : { index: false, follow: true },
     openGraph: { title, description, type: "article", url: r.canonical },
     twitter: { card: "summary_large_image", title, description },
   }
@@ -79,6 +83,7 @@ export async function AosPage({
   const yearHref = (y: string) =>
     entityHref("aos", a.code, y === r.latest ? null : y)
   const kindLabel = a.kind ? AOS_KIND_LABEL[a.kind] : "Area of study"
+  const facts = aosFacts(a, reviews.summary)
 
   const notice =
     r.year !== r.latest ? (
@@ -120,7 +125,7 @@ export async function AosPage({
         ]}
         breadcrumbs={[
           { label: "Search", href: "/search" },
-          { label: "Areas of study", href: "/search?type=aos" },
+          { label: "Areas of study", href: "/aos" },
           { label: a.code },
         ]}
         year={r.year}
@@ -128,6 +133,13 @@ export async function AosPage({
         yearHref={yearHref}
         handbookUrl={monashHandbookUrl("aos", a.code, r.year)}
         rating={reviews.summary}
+        lede={
+          <SegText
+            segs={aosLede(facts)}
+            linkYear={linkYear}
+            linkableUnits={new Set(a.linkableUnits)}
+          />
+        }
         notice={notice}
       />
 
@@ -145,6 +157,7 @@ export async function AosPage({
             ? { id: "outcomes", label: "Learning outcomes" }
             : null,
           a.contacts.length > 0 ? { id: "contacts", label: "Contacts" } : null,
+          { id: "faq", label: "Common questions" },
           { id: "details", label: "Details" },
         ]}
       >
@@ -249,6 +262,12 @@ export async function AosPage({
           </Section>
         ) : null}
 
+        <QuickAnswers
+          items={aosQuestions(facts)}
+          linkYear={linkYear}
+          linkableUnits={new Set(a.linkableUnits)}
+        />
+
         <Section id="details" title={`${kindLabel} details`} icon={InfoIcon}>
           <div className="grid gap-x-10 md:grid-cols-2">
             <FactList
@@ -301,7 +320,7 @@ export async function AosPage({
           },
           breadcrumbLd([
             { name: "Search", path: "/search" },
-            { name: "Areas of study", path: "/search?type=aos" },
+            { name: "Areas of study", path: "/aos" },
             { name: `${a.title} (${a.code})`, path: r.canonical },
           ]),
         ]}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { fetchCoursePage } from "@/lib/db/handbook"
@@ -25,6 +26,13 @@ import {
   ReviewsSection,
 } from "@/components/reviews/reviews-section"
 import { JsonLd, breadcrumbLd } from "./json-ld"
+import { QuickAnswers, SegText } from "./quick-answers"
+import {
+  courseDescription,
+  courseLede,
+  courseQuestions,
+} from "@/lib/handbook/summary"
+import { courseFacts, qualification } from "@/lib/handbook/facts"
 import {
   CurriculumTree,
   DetailLayout,
@@ -57,9 +65,9 @@ const KIND_HEADING: Record<string, string> = {
   other: "Other areas of study",
 }
 
-/** "Bachelor Degree" from "Level 7 - Bachelor Degree / Level 7 - ...". */
-function qualification(aqf: string | null): string | null {
-  return aqf?.split(" / ")[0]?.replace(/^Level \d+ - /, "") ?? null
+/** The planner, opened on this course and year. */
+export function planCourseHref(code: string, year: string): string {
+  return `/?course=${encodeURIComponent(code)}&year=${year}`
 }
 
 export async function courseMetadata(
@@ -67,25 +75,19 @@ export async function courseMetadata(
   rawYear: string | null
 ): Promise<Metadata> {
   const r = await resolveEntity("course", rawCode, rawYear)
-  const c = await fetchCoursePage(r.code, r.year)
+  const [c, reviews] = await Promise.all([
+    fetchCoursePage(r.code, r.year),
+    fetchEntityReviews("course", r.code),
+  ])
   if (!c) return { title: r.code, robots: { index: false } }
-  const yearNote = r.linkYear ? ` (${r.year})` : ""
-  const facts = [
-    `${c.creditPoints} credit points`,
-    c.fullTime ? `${c.fullTime.toLowerCase()} full time` : null,
-    c.locations,
-  ]
-    .filter(Boolean)
-    .join(", ")
-  const description = truncate(
-    `${c.code} ${c.title} at Monash University${yearNote}: ${facts}. Course structure, majors and the units it requires. ${stripHtml(c.overview)}`,
-    160
-  )
-  const title = `${c.code} ${c.title}${yearNote}`
+  const yearNote = r.linkYear ? ` (${r.year} handbook)` : ""
+  const title = `${c.title} (${c.code})${yearNote}: Reviews & Course Map`
+  const description = courseDescription(courseFacts(c, reviews.summary))
   return {
     title,
     description,
     alternates: { canonical: r.canonical },
+    robots: r.indexable ? undefined : { index: false, follow: true },
     openGraph: { title, description, type: "article", url: r.canonical },
     twitter: { card: "summary_large_image", title, description },
   }
@@ -152,6 +154,7 @@ export async function CoursePage({
 
   // "70; International: ..." leads with the domestic guaranteed ATAR.
   const atar = c.atar?.split(";")[0]?.trim() || null
+  const facts = courseFacts(c, reviews.summary)
   const campuses = c.modes.length
     ? [...new Set(c.modes.flatMap((m) => m.locations))].join(", ")
     : c.locations
@@ -188,7 +191,7 @@ export async function CoursePage({
         ]}
         breadcrumbs={[
           { label: "Search", href: "/search" },
-          { label: "Courses", href: "/search?type=courses" },
+          { label: "Courses", href: "/courses" },
           { label: c.code },
         ]}
         year={r.year}
@@ -196,6 +199,16 @@ export async function CoursePage({
         yearHref={yearHref}
         handbookUrl={monashHandbookUrl("course", c.code, r.year)}
         rating={reviews.summary}
+        actions={
+          <Link
+            href={planCourseHref(c.code, r.year)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-control bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-primary/80"
+          >
+            <MapIcon className="size-3.5" aria-hidden />
+            Plan this course
+          </Link>
+        }
+        lede={<SegText segs={courseLede(facts)} linkYear={linkYear} />}
         notice={notice}
       />
 
@@ -216,6 +229,7 @@ export async function CoursePage({
           hasEntry ? { id: "entry", label: "Entry requirements" } : null,
           hasMore ? { id: "more", label: "More information" } : null,
           c.contacts.length > 0 ? { id: "contacts", label: "Contacts" } : null,
+          { id: "faq", label: "Common questions" },
           { id: "details", label: "Course details" },
         ]}
       >
@@ -430,6 +444,8 @@ export async function CoursePage({
           </Section>
         ) : null}
 
+        <QuickAnswers items={courseQuestions(facts)} linkYear={linkYear} />
+
         <Section id="details" title="Course details" icon={InfoIcon}>
           <div className="grid gap-x-10 md:grid-cols-2">
             <FactList
@@ -511,7 +527,7 @@ export async function CoursePage({
           },
           breadcrumbLd([
             { name: "Search", path: "/search" },
-            { name: "Courses", path: "/search?type=courses" },
+            { name: "Courses", path: "/courses" },
             { name: `${c.code} ${c.title}`, path: r.canonical },
           ]),
         ]}
