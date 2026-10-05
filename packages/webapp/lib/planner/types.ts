@@ -176,6 +176,18 @@ export interface PlannerCourse {
   aqfLevel: string | null
   type: string | null
   overview: string | null
+  /**
+   * False when the handbook publishes no structure for the course in
+   * this year: no requirement groups, areas of study or component
+   * degrees (Monash College diplomas, or a new degree still being
+   * written). Absent on older payloads; treat absent as true.
+   */
+  hasStructure?: boolean
+  /**
+   * For a course without a structure, the latest earlier year in which
+   * the same code has one, if any, so the planner can point to it.
+   */
+  structureYear?: string | null
 }
 
 /** Core units for one degree inside a double degree. */

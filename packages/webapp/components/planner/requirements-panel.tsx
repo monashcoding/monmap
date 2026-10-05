@@ -17,6 +17,7 @@ import type { PlannerAreaOfStudy, RequirementGroup } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
+import { courseHasStructure, NoStructureNotice } from "./no-structure-notice"
 import { UnitDetailPopover } from "./unit-detail-popover"
 
 /**
@@ -163,11 +164,11 @@ export function RequirementsPanel({ className }: { className?: string }) {
               />
             ))}
           </>
+        ) : course && !courseHasStructure(course) ? (
+          <NoStructureNotice course={course} />
         ) : withProgress.length === 0 ? (
           <div className="px-4 py-6 text-center text-[11px] text-muted-foreground">
-            {course && course.areasOfStudy.length === 0
-              ? "The handbook has no structured requirements for this course."
-              : "Pick a major, minor or specialisation to see listed units."}
+            Pick a major, minor or specialisation to see listed units.
           </div>
         ) : (
           withProgress.map(({ slotKey, label, aos, progress }) => (

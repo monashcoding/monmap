@@ -147,6 +147,14 @@ export function CoursePicker({ className }: { className?: string }) {
                           {c.title}
                         </span>
                       </div>
+                      {c.hasStructure === false ? (
+                        <span
+                          title="Monash hasn't published this course's structure yet"
+                          className="shrink-0 rounded-tag bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        >
+                          No structure yet
+                        </span>
+                      ) : null}
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {c.creditPoints}cp
                       </span>

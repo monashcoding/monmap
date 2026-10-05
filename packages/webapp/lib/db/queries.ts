@@ -74,6 +74,27 @@ async function _listCoursesForPicker(
       aqfLevel: courses.aqfLevel,
       type: courses.type,
       overview: courses.overview,
+      hasStructure: sql<boolean>`(
+        coalesce(jsonb_array_length(${courses.requirementGroups}), 0) > 0
+        or coalesce(jsonb_array_length(${courses.subCourseRefs}), 0) > 0
+        or exists (
+          select 1 from course_areas_of_study x
+          where x.course_year = ${courses.year} and x.course_code = ${courses.code}
+        )
+      )`,
+      // Only looked up for courses without a structure (see below).
+      structureYear: sql<string | null>`(
+        select max(c2.year) from courses c2
+        where c2.code = ${courses.code} and c2.year < ${courses.year}
+          and (
+            coalesce(jsonb_array_length(c2.requirement_groups), 0) > 0
+            or coalesce(jsonb_array_length(c2.sub_course_refs), 0) > 0
+            or exists (
+              select 1 from course_areas_of_study x2
+              where x2.course_year = c2.year and x2.course_code = c2.code
+            )
+          )
+      )`,
     })
     .from(courses)
     .where(and(...conds))
@@ -88,6 +109,8 @@ async function _listCoursesForPicker(
     aqfLevel: r.aqfLevel,
     type: r.type,
     overview: r.overview,
+    hasStructure: r.hasStructure,
+    structureYear: r.hasStructure ? null : r.structureYear,
   }))
 }
 export const listCoursesForPicker = cacheHandbook(_listCoursesForPicker)
