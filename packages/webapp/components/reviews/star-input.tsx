@@ -40,7 +40,12 @@ export function StarInput({
       role="radiogroup"
       aria-label={label}
       aria-describedby={describedBy}
-      className="inline-flex"
+      // Below md each star is a 44px touch target. The negative margin
+      // keeps the first star in line with the label above it.
+      className={cn(
+        "inline-flex",
+        size === "lg" ? "max-md:-ml-0.5" : "max-md:-ml-1.5"
+      )}
       onMouseLeave={() => setHover(null)}
     >
       {[1, 2, 3, 4, 5].map((n) => (
@@ -72,15 +77,15 @@ export function StarInput({
             }
           }}
           className={cn(
-            "rounded-tag p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            size === "lg" ? "p-1" : "p-0.5"
+            "rounded-tag outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            size === "lg" ? "p-1 max-md:p-1.5" : "p-0.5 max-md:p-2"
           )}
         >
           <StarIcon
             aria-hidden
             strokeWidth={1.5}
             className={cn(
-              size === "lg" ? "size-8" : "size-5",
+              size === "lg" ? "size-8" : "size-5 max-md:size-7",
               "transition-colors",
               n <= shown ? "fill-star text-star" : "fill-muted text-border"
             )}
@@ -148,7 +153,7 @@ export function ScaleInput({
               }
             }}
             className={cn(
-              "min-h-9 rounded-tag border px-1 py-1.5 text-[11px] leading-tight transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "min-h-9 rounded-tag border px-1 py-1.5 text-[11px] leading-tight transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-md:min-h-11",
               on
                 ? "border-transparent bg-primary font-semibold text-primary-foreground"
                 : "bg-card text-muted-foreground hover:bg-muted hover:text-foreground"

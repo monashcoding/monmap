@@ -81,7 +81,7 @@ export function ReviewCard({
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="self-start text-xs font-medium text-info-foreground underline-offset-2 hover:underline"
+          className="self-start text-xs font-medium text-info-foreground underline-offset-2 hover:underline max-md:py-1"
         >
           {open ? "Show less" : "Read more"}
         </button>

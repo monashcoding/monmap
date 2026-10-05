@@ -22,6 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { useHydrated } from "@/hooks/use-hydrated"
+import { useSession } from "@/lib/auth-client"
 import type { PublicReview, ReviewSort } from "@/lib/reviews/types"
 import type { ReviewKind } from "@/lib/reviews/axes"
 
@@ -40,6 +42,9 @@ type Mine =
   | { state: "anonymous" }
   | { state: "ready"; review: PublicReview | null }
 
+/** The server's answer for one user and page. */
+type Own = { key: string; signedIn: boolean; review: PublicReview | null }
+
 /**
  * The interactive part of a page's Reviews section: the visitor's own
  * review (or a prompt to write one), and the list with sorting and
@@ -48,7 +53,9 @@ type Mine =
  *
  * The visitor's own review is fetched after load because the page HTML
  * is cached and shared. It always shows to its author, even when
- * moderation hid it from everyone else.
+ * moderation hid it from everyone else. Anonymous visitors, most of
+ * the traffic, skip that request: the client session already says
+ * there is no one to fetch for.
  */
 export function ReviewsClient({
   kind,
@@ -64,7 +71,11 @@ export function ReviewsClient({
   total: number
 }) {
   const pathname = usePathname()
-  const [mine, setMine] = useState<Mine>({ state: "loading" })
+  const session = useSession()
+  const hydrated = useHydrated()
+  const userId = session.data?.user?.id
+  const key = userId ? `${userId} ${kind} ${code}` : null
+  const [own, setOwn] = useState<Own | null>(null)
   const [editing, setEditing] = useState(false)
   const [startOverall, setStartOverall] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -83,19 +94,30 @@ export function ReviewsClient({
   }
 
   useEffect(() => {
+    if (!key) return
     let cancelled = false
     void getMyReviewAction(kind, code).then((r) => {
-      if (cancelled) return
-      setMine(
-        r.signedIn
-          ? { state: "ready", review: r.review }
-          : { state: "anonymous" }
-      )
+      if (!cancelled) setOwn({ key, ...r })
     })
     return () => {
       cancelled = true
     }
-  }, [kind, code])
+  }, [key, kind, code])
+
+  // Hold the skeleton until hydration, as the header's UserMenu does:
+  // the session can resolve before this hydrates, and the first client
+  // render must match the server's skeleton.
+  let mine: Mine = { state: "loading" }
+  if (hydrated && !session.isPending) {
+    if (!key) mine = { state: "anonymous" }
+    else if (own?.key === key)
+      mine = own.signedIn
+        ? { state: "ready", review: own.review }
+        : { state: "anonymous" }
+  }
+  const setMyReview = (review: PublicReview | null) => {
+    if (key) setOwn({ key, signedIn: true, review })
+  }
 
   const myReview = mine.state === "ready" ? mine.review : null
   const others = list.filter((r) => r.id !== myReview?.id)
@@ -121,7 +143,7 @@ export function ReviewsClient({
       const res = await deleteReviewAction(kind, code)
       setConfirmDelete(false)
       if (res.ok) {
-        setMine({ state: "ready", review: null })
+        setMyReview(null)
         toast.success("Review deleted")
       } else {
         toast.error("Couldn't delete your review. Try again.")
@@ -158,7 +180,7 @@ export function ReviewsClient({
           startOverall={startOverall}
           onCancel={() => setEditing(false)}
           onSaved={(review) => {
-            setMine({ state: "ready", review })
+            setMyReview(review)
             setEditing(false)
             toast.success(myReview ? "Review updated" : "Review posted", {
               description: "Thanks for helping other students.",
@@ -176,6 +198,7 @@ export function ReviewsClient({
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="max-md:h-10"
                   onClick={() => {
                     setStartOverall(null)
                     setEditing(true)
@@ -187,6 +210,7 @@ export function ReviewsClient({
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="max-md:h-10"
                   onClick={() => setConfirmDelete(true)}
                   aria-label="Delete your review"
                 >
@@ -227,7 +251,7 @@ export function ReviewsClient({
               <select
                 value={sort}
                 onChange={(e) => changeSort(e.target.value as ReviewSort)}
-                className="h-8 rounded-control border border-input bg-field px-2 text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+                className="h-8 rounded-control border border-input bg-field px-2 text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 max-md:h-10"
               >
                 {(Object.keys(SORT_LABEL) as ReviewSort[]).map((s) => (
                   <option key={s} value={s}>

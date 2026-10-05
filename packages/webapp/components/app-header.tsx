@@ -10,7 +10,7 @@ import {
   NotebookPenIcon,
   ShieldCheckIcon,
 } from "lucide-react"
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { isReviewAdminAction } from "@/app/review-actions"
@@ -38,6 +38,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { useHydrated } from "@/hooks/use-hydrated"
 import { signOut, useSession } from "@/lib/auth-client"
 import { reviewInitials } from "@/lib/reviews/initials"
 import { cn } from "@/lib/utils"
@@ -230,39 +231,42 @@ function MobileNavTrigger() {
   )
 }
 
-const subscribeToNothing = () => () => {}
+// Whether each user may moderate reviews, asked once per user per tab.
+// The header remounts on every navigation, so without this each page
+// view would cost another server action.
+const adminChecks = new Map<string, Promise<boolean>>()
 
-/**
- * False during SSR and on the hydrating render, true forever after.
- *
- * `getServerSnapshot` (the third argument) is what React uses both on
- * the server and while hydrating on the client, so this reports false
- * on exactly the renders that must agree with the server HTML, with no
- * effect and no extra render pass.
- */
-function useHydrated(): boolean {
-  return useSyncExternalStore(
-    subscribeToNothing,
-    () => true,
-    () => false
-  )
+function checkReviewAdmin(userId: string): Promise<boolean> {
+  let check = adminChecks.get(userId)
+  if (!check) {
+    check = isReviewAdminAction().catch(() => {
+      // Ask again next time rather than caching a failed request.
+      adminChecks.delete(userId)
+      return false
+    })
+    adminChecks.set(userId, check)
+  }
+  return check
 }
 
 function UserMenu() {
   const { data, isPending } = useSession()
   const router = useRouter()
   const [gradesOpen, setGradesOpen] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [admin, setAdmin] = useState<{ userId: string; ok: boolean } | null>(
+    null
+  )
   const hydrated = useHydrated()
   const userId = data?.user?.id
+  const isAdmin = admin != null && admin.userId === userId && admin.ok
 
   // Only admins see the moderation link. The server decides; the page
   // itself 404s for everyone else.
   useEffect(() => {
     if (!userId) return
     let cancelled = false
-    void isReviewAdminAction().then((ok) => {
-      if (!cancelled) setIsAdmin(ok)
+    void checkReviewAdmin(userId).then((ok) => {
+      if (!cancelled) setAdmin({ userId, ok })
     })
     return () => {
       cancelled = true

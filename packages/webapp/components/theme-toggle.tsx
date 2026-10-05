@@ -2,7 +2,7 @@
 
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useRef, useSyncExternalStore } from "react"
+import { useRef } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,6 +12,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useHydrated } from "@/hooks/use-hydrated"
 import { cn } from "@/lib/utils"
 
 const OPTIONS = [
@@ -20,8 +21,6 @@ const OPTIONS = [
   { value: "system", label: "System", Icon: MonitorIcon },
 ] as const
 
-const subscribe = () => () => {}
-
 /**
  * Light, dark and system as a row of buttons, for the mobile menu
  * sheet. It switches at once: the sheet covers the page, so the
@@ -29,11 +28,7 @@ const subscribe = () => () => {}
  */
 export function ThemeChoice() {
   const { theme, setTheme } = useTheme()
-  const mounted = useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false
-  )
+  const mounted = useHydrated()
   const current = mounted ? (theme ?? "system") : null
   return (
     <div
@@ -127,11 +122,7 @@ export function ThemeToggle({ className }: { className?: string }) {
   }
   // The theme is only known on the client; render a neutral icon on
   // the server so hydration matches.
-  const mounted = useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false
-  )
+  const mounted = useHydrated()
   const Icon = !mounted
     ? SunIcon
     : resolvedTheme === "dark"

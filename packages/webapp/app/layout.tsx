@@ -10,7 +10,9 @@ import { cn } from "@/lib/utils"
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  // 800 is the 404 and error headings (font-extrabold). Nothing uses
+  // 900, and each weight is another preloaded font file.
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-sans",
 })
 
@@ -64,7 +66,9 @@ export const metadata: Metadata = {
   },
 }
 
-// Browser chrome follows the page colour in each theme.
+// Browser chrome follows the page colour in each theme. ThemeColorSync
+// (components/theme-provider.tsx) switches these tags to the theme the
+// student picked when it differs from the OS scheme.
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fafaf7" },

@@ -174,14 +174,14 @@ function GradeRow({
           defaultValue={row.mark}
           onChange={(e) => onMarkChange(e.target.value)}
           aria-label={`Mark for ${row.unitCode}`}
-          className="h-9 w-16 px-2 text-right text-sm tabular-nums"
+          className="h-9 w-16 px-2 text-right tabular-nums"
         />
         <Button
           variant="ghost"
           size="icon-sm"
           aria-label={`Delete grade for ${row.unitCode}`}
           onClick={onRemove}
-          className="text-muted-foreground hover:text-destructive"
+          className="text-muted-foreground hover:text-destructive max-md:size-10"
         >
           <Trash2Icon className="size-4" />
         </Button>

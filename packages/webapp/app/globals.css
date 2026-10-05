@@ -384,6 +384,29 @@
 }
 
 /*
+ * iOS Safari zooms the page when a field under 16px takes focus, and
+ * does not zoom back out. Below md, every text field is at least 16px,
+ * whatever size class it carries for desktop. The rule sits outside the
+ * layers so it beats `text-sm` and friends; fields already larger than
+ * 16px keep their size.
+ */
+@media (width < 48rem) {
+  input:not(
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="file"],
+    .text-lg,
+    .text-xl,
+    .text-2xl
+  ),
+  select,
+  textarea:not(.text-lg, .text-xl, .text-2xl) {
+    font-size: 1rem;
+  }
+}
+
+/*
  * Print: the interactive planner is hidden by `print:hidden` in
  * planner.tsx and <PrintSheet /> takes over, so all that is left here
  * is the page itself — kill the decorative gradient, the on-screen
