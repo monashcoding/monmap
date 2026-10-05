@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { LogOutIcon, MenuIcon, NotebookPenIcon } from "lucide-react"
 import { useState, useSyncExternalStore } from "react"
+import { toast } from "sonner"
 
 import { AnonymousBadge } from "@/components/anonymous-badge"
 import { HeaderLinks } from "@/components/header-links"
@@ -248,7 +249,15 @@ function UserMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={async () => {
-              await signOut()
+              const { error } = await signOut()
+              if (error) {
+                // e.g. the auth service rejecting this origin. Say so
+                // instead of leaving the student signed in silently.
+                toast.error("Couldn't sign out", {
+                  description: error.message ?? "Try again in a moment.",
+                })
+                return
+              }
               router.refresh()
             }}
           >

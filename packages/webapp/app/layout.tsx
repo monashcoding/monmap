@@ -4,6 +4,7 @@ import { Poppins } from "next/font/google"
 import "./globals.css"
 import { PostHogIdentify } from "@/components/posthog-identify"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 import { siteUrl } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
@@ -115,6 +116,7 @@ export default function RootLayout({
         <ThemeProvider>
           <PostHogIdentify />
           {children}
+          <Toaster position="bottom-right" richColors closeButton />
         </ThemeProvider>
         <script
           type="application/ld+json"

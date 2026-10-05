@@ -110,7 +110,12 @@ the app from a `monashcoding.com` hostname instead:
    ::1 local.monashcoding.com
    ```
 
-2. Run the HTTPS dev server and open https://local.monashcoding.com:3000:
+2. Run the HTTPS dev server and open https://local.monashcoding.com
+   (no port: it listens on 443, because the auth service trusts
+   `*.monashcoding.com` origins only without a port, so sign-in and
+   sign-out fail with "Invalid origin" on `:3000`). macOS lets normal
+   users bind 443; on Linux you may need
+   `sudo setcap cap_net_bind_service=+ep $(which node)`.
 
    ```bash
    pnpm dev:sso

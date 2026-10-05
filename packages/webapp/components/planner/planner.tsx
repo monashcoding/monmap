@@ -1,6 +1,5 @@
 "use client"
 
-import { Toaster } from "@/components/ui/sonner"
 import type { PlanSummary } from "@/lib/db/queries"
 import type {
   PlannerCourse,
@@ -89,8 +88,6 @@ export function Planner(props: PlannerProps) {
 
         <PrintSheet />
       </WamProvider>
-
-      <Toaster position="bottom-right" richColors closeButton />
     </PlannerProvider>
   )
 }
