@@ -39,6 +39,7 @@ import type {
   RequisiteBlock,
 } from "@/lib/planner/types"
 import { defaultState } from "@/lib/planner/state"
+import type { TreeEdge } from "@/lib/tree/types"
 import { HANDBOOK_YEAR } from "@/lib/db/client"
 import { redirect } from "next/navigation"
 
@@ -207,6 +208,28 @@ export async function fetchTreeDataAction(
     offerings: Object.fromEntries(offerings),
     requisites: Object.fromEntries(requisites),
     enrolmentRules: Object.fromEntries(enrolment),
+  }
+}
+
+/**
+ * The prerequisite links between a fixed set of units, for the
+ * planner's read-only map of a plan: no closure walk (depth 0), so
+ * only the plan's own units (and any requirement units the caller
+ * adds) come back, with their titles.
+ */
+export async function fetchPlanGraphAction(
+  codes: string[],
+  year: string
+): Promise<{ edges: TreeEdge[]; units: Record<string, PlannerUnit> }> {
+  const unique = [...new Set(codes)].sort().slice(0, 400)
+  if (unique.length === 0) return { edges: [], units: {} }
+  const [graph, hydrated] = await Promise.all([
+    expandRequisiteGraph(unique, year, "both", 0),
+    hydratePlannerUnits(unique, year),
+  ])
+  return {
+    edges: graph.edges,
+    units: Object.fromEntries(hydrated.units),
   }
 }
 

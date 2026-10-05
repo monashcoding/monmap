@@ -13,7 +13,7 @@ export function Legend() {
           Seed (the unit / major you picked)
         </li>
         <li className="flex items-center gap-2">
-          <Swatch className="bg-background ring-1 ring-success/50" />
+          <Swatch className="bg-card ring-1 ring-success/50" />
           In your plan
         </li>
         <li className="flex items-center gap-2">

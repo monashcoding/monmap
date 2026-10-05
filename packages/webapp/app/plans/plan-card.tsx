@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useSyncExternalStore, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import posthog from "posthog-js"
@@ -34,6 +34,9 @@ import {
 
 import type { PlanPageData } from "./page"
 import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
+import { PlanMap } from "@/components/planner/plan-map"
+import type { PlannerState } from "@/lib/planner/types"
+
 import { PlanPreview } from "./plan-preview"
 
 function ProgressBar({ pct }: { pct: number }) {
@@ -131,8 +134,9 @@ export function PlanCard({ data }: { data: PlanPageData }) {
       </AlertDialog>
 
       <div className="overflow-hidden rounded-panel border bg-card shadow-card">
-        {/* Body: stacked on mobile, side-by-side on md+. */}
-        <div className="grid grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)] md:divide-x">
+        {/* Body: stacked on mobile, side-by-side on md+, with the
+            prerequisite map as a third column on wide screens. */}
+        <div className="grid grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)] md:divide-x xl:grid-cols-[260px_auto_minmax(0,1fr)]">
           <div className="flex flex-col gap-3 p-4 sm:p-5">
             <div>
               {editingName ? (
@@ -218,6 +222,8 @@ export function PlanCard({ data }: { data: PlanPageData }) {
           <div className="hidden items-start border-t p-4 sm:flex md:border-t-0">
             <PlanPreview state={plan.state} />
           </div>
+
+          <PlanMapThumbnail state={plan.state} />
         </div>
 
         {/* Footer */}
@@ -327,5 +333,32 @@ export function PlanCard({ data }: { data: PlanPageData }) {
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * A zoomed-out, static prerequisite map of the plan, filling the
+ * card's third column on wide screens. It mounts only at that width,
+ * so narrower screens don't fetch the graph at all.
+ */
+function PlanMapThumbnail({ state }: { state: PlannerState }) {
+  const wide = useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia("(min-width: 1280px)")
+      mql.addEventListener("change", onChange)
+      return () => mql.removeEventListener("change", onChange)
+    },
+    () => window.matchMedia("(min-width: 1280px)").matches,
+    () => false
+  )
+  if (!wide) return null
+  return (
+    <div className="relative min-h-48">
+      <PlanMap
+        state={state}
+        variant="thumbnail"
+        className="absolute inset-0 h-full min-h-0 rounded-none border-0 shadow-none"
+      />
+    </div>
   )
 }

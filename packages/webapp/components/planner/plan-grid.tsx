@@ -279,7 +279,7 @@ function NewUnitDragOverlay({ code }: { code: string }) {
   const { units } = usePlanner()
   const unit = units.get(code)
   return (
-    <div className="flex items-center gap-2 rounded-control border bg-background px-3 py-2 shadow-2xl ring-2 ring-primary/40">
+    <div className="flex items-center gap-2 rounded-control border bg-card px-3 py-2 shadow-2xl ring-2 ring-primary/40">
       <span className="text-xs font-semibold tabular-nums">{code}</span>
       {unit ? (
         <span className="text-[9px] text-muted-foreground">

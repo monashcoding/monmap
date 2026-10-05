@@ -26,7 +26,8 @@ export type UnitNodeData = TreeNode & {
  *   - Lock icon when the unit has an enrolment-rule gate beyond
  *     prereqs.
  *   - Subtle plan-status ring (green = completed in plan,
- *     primary = placed in plan).
+ *     primary = placed in plan); a dashed outline for a unit the
+ *     course lists but the plan doesn't include.
  */
 function UnitNodeInner({ data, selected }: NodeProps) {
   const d = data as unknown as UnitNodeData
@@ -35,7 +36,7 @@ function UnitNodeInner({ data, selected }: NodeProps) {
     <div
       data-status={d.planStatus ?? "none"}
       className={cn(
-        "group/tree-node relative flex h-[64px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-control border bg-background shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
+        "group/tree-node relative flex h-[64px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
         "hover:-translate-y-px hover:shadow-md",
         d.isFocused || selected
           ? "border-emphasis ring-2 ring-emphasis/40"
@@ -45,7 +46,11 @@ function UnitNodeInner({ data, selected }: NodeProps) {
         d.isDimmed && "opacity-40",
         d.isSeed && "ring-1 ring-primary/40",
         d.planStatus === "completed" && "ring-1 ring-success/50",
-        d.planStatus === "placed" && "ring-1 ring-primary/60"
+        d.planStatus === "placed" && "ring-1 ring-primary/60",
+        // Listed by the course but not in the plan: a dashed outline,
+        // like the requirements panel's unticked chips.
+        d.planStatus === "untaken" &&
+          "border-dashed bg-transparent opacity-70 shadow-none"
       )}
     >
       <Handle

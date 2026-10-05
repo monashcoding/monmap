@@ -89,7 +89,7 @@ export function CreditDialog({
             {entries.map((entry, i) => (
               <li
                 key={`${entry.code ?? "block"}:${i}`}
-                className="flex items-center gap-2 rounded-control border bg-background px-3 py-2"
+                className="flex items-center gap-2 rounded-control border bg-card px-3 py-2"
               >
                 <span className="min-w-0 flex-1 truncate text-xs font-semibold">
                   {creditEntryLabel(entry)}

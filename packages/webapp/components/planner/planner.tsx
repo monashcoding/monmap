@@ -17,6 +17,7 @@ import { AppHeader } from "@/components/app-header"
 import { SaveStatusBadge } from "./save-status-badge"
 import { LeftSidebar } from "./left-sidebar"
 import { PlanGrid, PlannerDnd } from "./plan-grid"
+import { PlanMapSection } from "./plan-map-section"
 import { PlannerProvider, type PlannerCurrentUser } from "./planner-context"
 import { PrintOnArrival } from "./print-on-arrival"
 import { PrintSheet } from "./print-sheet"
@@ -81,12 +82,15 @@ export function Planner(props: PlannerProps) {
                 the course panel. Inside each sheet, sections are split
                 by hairlines rather than nested floating cards. */}
             <div className="grid flex-1 items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="flex min-w-0 flex-col overflow-hidden rounded-panel border bg-card shadow-card">
-                <div className="border-b px-3 py-3 sm:px-4">
-                  <LeftSidebar />
+              <div className="flex min-w-0 flex-col gap-3 sm:gap-5">
+                <div className="flex min-w-0 flex-col overflow-hidden rounded-panel border bg-card shadow-card">
+                  <div className="border-b px-3 py-3 sm:px-4">
+                    <LeftSidebar />
+                  </div>
+                  <SummaryBar />
+                  <PlanGrid />
                 </div>
-                <SummaryBar />
-                <PlanGrid />
+                <PlanMapSection />
               </div>
 
               <RightSidebar />

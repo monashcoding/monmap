@@ -248,7 +248,7 @@ function AoSCard({ aos }: { aos: PlannerAreaOfStudy }) {
   )
 
   return (
-    <div className="rounded-control border bg-background">
+    <div className="rounded-control border bg-card">
       <div className="flex items-start gap-2 px-2.5 py-2">
         <button
           type="button"

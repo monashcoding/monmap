@@ -63,7 +63,7 @@ export function CourseBlock({
             render={
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-control border bg-background px-3 py-2 text-left hover:border-muted-foreground/40"
+                className="flex w-full items-center justify-between rounded-control border border-input bg-field px-3 py-2 text-left hover:border-muted-foreground/40"
               >
                 <span className="min-w-0 truncate text-xs">
                   {selectedCourse ? (

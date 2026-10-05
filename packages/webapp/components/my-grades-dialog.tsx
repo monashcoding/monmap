@@ -148,7 +148,7 @@ function GradeRow({
   const letter = markToGrade(row.mark)
   const style = GRADE_STYLES[letter]
   return (
-    <li className="flex items-center gap-3 rounded-control border bg-background px-3 py-2.5 shadow-sm">
+    <li className="flex items-center gap-3 rounded-control border bg-card px-3 py-2.5 shadow-sm">
       <span
         className={cn(
           "shrink-0 rounded-tag px-1.5 py-1 text-[11px] font-bold tabular-nums",

@@ -64,7 +64,7 @@ export function UnitBlock({
               render={
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-2 rounded-control border bg-background py-2 pr-9 pl-3 text-left hover:border-muted-foreground/40"
+                  className="flex w-full items-center justify-between gap-2 rounded-control border border-input bg-field py-2 pr-9 pl-3 text-left hover:border-muted-foreground/40"
                 >
                   <span className="inline-flex items-center gap-2 text-xs">
                     <SearchIcon className="size-3.5 text-muted-foreground" />
@@ -92,7 +92,7 @@ export function UnitBlock({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="e.g. FIT2004 or algorithms"
-                className="mb-1.5 w-full rounded-control border bg-background px-2.5 py-1.5 text-xs"
+                className="mb-1.5 w-full rounded-control border border-input bg-field px-2.5 py-1.5 text-xs"
               />
               <ul className="max-h-60 overflow-y-auto">
                 {visibleResults.length === 0 && qReady ? (
@@ -145,7 +145,7 @@ export function UnitBlock({
                 "rounded-control border px-2 py-1.5 text-[10px] leading-tight font-semibold transition-colors",
                 direction === d.value
                   ? "border-emphasis bg-emphasis-soft text-emphasis"
-                  : "border-border bg-background text-muted-foreground hover:border-muted-foreground/40"
+                  : "border-border bg-card text-muted-foreground hover:border-muted-foreground/40"
               )}
             >
               {d.label}

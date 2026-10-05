@@ -57,7 +57,7 @@ export function PlanPreview({ state }: { state: PlannerState }) {
                     return (
                       <div
                         key={i}
-                        className="flex shrink-0 items-center overflow-hidden rounded-tag border border-border/60 bg-background"
+                        className="flex shrink-0 items-center overflow-hidden rounded-tag border border-border/60 bg-card"
                         style={{ width: CELL_W, height: 26 }}
                       >
                         <div

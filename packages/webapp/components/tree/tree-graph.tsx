@@ -18,6 +18,7 @@ import { useMemo } from "react"
 
 import { layoutTree, NODE_DIMS } from "@/lib/tree/layout"
 import type { TreeEdge, TreeNode } from "@/lib/tree/types"
+import { cn } from "@/lib/utils"
 
 import { UnitNode, type UnitNodeData } from "./unit-node"
 
@@ -34,6 +35,16 @@ export interface TreeGraphProps {
   variantCounts: ReadonlyMap<string, number>
   /** Click → set focus. Click empty canvas → null. */
   onFocus: (code: string | null) => void
+  /**
+   * The plan map's options. `fitAll` zooms out as far as needed to show
+   * every node on load; `minimap` hides the corner overview when false;
+   * `interactive` false makes a static thumbnail with no pan, zoom,
+   * clicks or controls.
+   */
+  fitAll?: boolean
+  minimap?: boolean
+  interactive?: boolean
+  className?: string
 }
 
 /**
@@ -59,6 +70,10 @@ function TreeGraphInner({
   focused,
   variantCounts,
   onFocus,
+  fitAll = false,
+  minimap = true,
+  interactive = true,
+  className,
 }: TreeGraphProps) {
   const lineage = useMemo(
     () => computeLineage(focused, edges),
@@ -172,20 +187,34 @@ function TreeGraphInner({
   }, [rfNodes])
 
   return (
-    <div className="relative h-full min-h-[480px] w-full overflow-hidden rounded-panel border bg-card shadow-card">
+    <div
+      className={cn(
+        "relative h-full min-h-[480px] w-full overflow-hidden rounded-panel border bg-card shadow-card",
+        className
+      )}
+    >
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
         nodeTypes={NODE_TYPES}
         nodesDraggable={false}
         nodesConnectable={false}
-        elementsSelectable
+        elementsSelectable={interactive}
         proOptions={{ hideAttribution: true }}
-        onNodeClick={handleNodeClick}
-        onPaneClick={() => onFocus(null)}
+        onNodeClick={interactive ? handleNodeClick : undefined}
+        onPaneClick={interactive ? () => onFocus(null) : undefined}
+        panOnDrag={interactive}
+        zoomOnScroll={interactive}
+        zoomOnPinch={interactive}
+        zoomOnDoubleClick={interactive}
+        preventScrolling={interactive}
         fitView
-        fitViewOptions={{ padding: 0.18, maxZoom: 1, minZoom: 0.4 }}
-        minZoom={0.25}
+        fitViewOptions={
+          fitAll
+            ? { padding: 0.06, maxZoom: 1, minZoom: 0.05 }
+            : { padding: 0.18, maxZoom: 1, minZoom: 0.4 }
+        }
+        minZoom={fitAll ? 0.05 : 0.25}
         maxZoom={1.5}
         translateExtent={translateExtent}
         defaultEdgeOptions={{ type: "smoothstep" }}
@@ -196,21 +225,25 @@ function TreeGraphInner({
           size={1}
           className="!bg-card"
         />
-        <Controls
-          showInteractive={false}
-          className="!rounded-control !border !bg-card !shadow-card [&_button]:!border-none [&_button]:!bg-transparent [&_button:hover]:!bg-muted"
-        />
-        <MiniMap
-          pannable
-          zoomable
-          maskColor="var(--color-muted)"
-          nodeColor={(n) =>
-            (n.data as unknown as UnitNodeData).isFocused
-              ? "var(--emphasis)"
-              : "var(--color-foreground)"
-          }
-          className="!hidden !rounded-control !border !bg-card/90 !shadow-card sm:!block"
-        />
+        {interactive ? (
+          <Controls
+            showInteractive={false}
+            className="!rounded-control !border !bg-card !shadow-card [&_button]:!border-none [&_button]:!bg-transparent [&_button:hover]:!bg-muted"
+          />
+        ) : null}
+        {interactive && minimap ? (
+          <MiniMap
+            pannable
+            zoomable
+            maskColor="var(--color-muted)"
+            nodeColor={(n) =>
+              (n.data as unknown as UnitNodeData).isFocused
+                ? "var(--emphasis)"
+                : "var(--color-foreground)"
+            }
+            className="!hidden !rounded-control !border !bg-card/90 !shadow-card sm:!block"
+          />
+        ) : null}
       </ReactFlow>
     </div>
   )

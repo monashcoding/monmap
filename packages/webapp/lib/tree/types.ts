@@ -50,8 +50,11 @@ export interface TreeNode {
   hasEnrolmentGate: boolean
   /** Compact period badge: 'S1' | 'S2' | 'S1+S2' | 'Su' | 'FY' | null. */
   periodBadge: string | null
-  /** Plan placement: 'completed' | 'placed' | null. */
-  planStatus: "completed" | "placed" | null
+  /**
+   * Plan placement: 'completed' | 'placed' | null. 'untaken' marks a
+   * unit the course lists that the plan doesn't include (plan map).
+   */
+  planStatus: "completed" | "placed" | "untaken" | null
 }
 
 /**
