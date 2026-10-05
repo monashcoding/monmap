@@ -8,6 +8,8 @@
  * on a Monash link gives the matching MonMap page.
  */
 
+import { sanitizeHandbookHtml } from "./sanitize.ts"
+
 export type EntityKind = "unit" | "course" | "aos"
 
 export const ENTITY_SEGMENT: Record<EntityKind, string> = {
@@ -33,6 +35,107 @@ export function entityHref(
 ): string {
   const base = `/${ENTITY_SEGMENT[kind]}/${encodeURIComponent(code.toUpperCase())}`
   return year ? `${base}/${year}` : base
+}
+
+export interface ResolvedEntity {
+  code: string
+  /** The year this page shows. */
+  year: string
+  /** Every year with a page for the code, oldest first. */
+  years: string[]
+  /** The code's latest year: what the bare URL shows. */
+  latest: string
+  /** The newest handbook year in the database. */
+  siteLatest: string
+  /** Year segment for links on this page; null on latest-year pages. */
+  linkYear: string | null
+  /**
+   * The canonical path: always the bare URL. Year pages repeat the
+   * same unit with small changes, so they point search engines at the
+   * bare page, which collects their links and is the one indexed.
+   */
+  canonical: string
+  /**
+   * Whether the code should be in search results at all. Codes gone
+   * from the two newest handbooks are retired: their pages stay up but
+   * are noindex, follow.
+   */
+  indexable: boolean
+}
+
+/** What a handbook URL does: 404, redirect, or go on. */
+export type EntityRoute<T> =
+  | { action: "notFound" }
+  | { action: "redirect"; permanent: boolean; to: string }
+  | ({ action: "ok" } & T)
+
+/** A code is current if it is in either of the two newest handbooks. */
+export function isCurrent(latest: string, siteLatest: string): boolean {
+  return Number(latest) >= Number(siteLatest) - 1
+}
+
+/**
+ * The code a handbook URL names. Next.js has decoded the segment once
+ * already; a second decode turns `%2520` style double-encoding into the
+ * code, and a malformed escape is a 404, not an error. A lowercase code
+ * redirects to the uppercase one. One combined course is coded
+ * "M6011 M6019", so a single space between two parts is allowed.
+ */
+export function parseEntityUrl(
+  kind: EntityKind,
+  rawCode: string,
+  rawYear: string | null
+): EntityRoute<{ code: string }> {
+  let decoded: string
+  try {
+    decoded = decodeURIComponent(rawCode)
+  } catch {
+    return { action: "notFound" }
+  }
+  const code = decoded.toUpperCase()
+  if (!/^[A-Z0-9-]{2,16}(?: [A-Z0-9-]{2,16})?$/.test(code))
+    return { action: "notFound" }
+  if (decoded !== code)
+    return {
+      action: "redirect",
+      permanent: true,
+      to: entityHref(kind, code, rawYear),
+    }
+  if (rawYear != null && !/^\d{4}$/.test(rawYear)) return { action: "notFound" }
+  return { action: "ok", code }
+}
+
+/**
+ * The page for `code` once its years are known. An unknown code is a
+ * 404, and a year without a page for the code redirects to the bare
+ * URL, which shows the latest year.
+ */
+export function planEntityPage(
+  kind: EntityKind,
+  code: string,
+  rawYear: string | null,
+  years: string[],
+  siteYears: string[]
+): EntityRoute<{ entity: ResolvedEntity }> {
+  const latest = years.at(-1)
+  if (!latest) return { action: "notFound" }
+  if (rawYear != null && !years.includes(rawYear))
+    return { action: "redirect", permanent: false, to: entityHref(kind, code) }
+  const year = rawYear ?? latest
+  const siteLatest = siteYears.at(-1) ?? latest
+  return {
+    action: "ok",
+    entity: {
+      code,
+      year,
+      years,
+      latest,
+      siteLatest,
+      linkYear: year === latest ? null : year,
+      canonical: entityHref(kind, code),
+      indexable: isCurrent(latest, siteLatest),
+    },
+  }
 }
 
 /** The same entity's page on handbook.monash.edu. */
@@ -75,22 +178,26 @@ export function handbookLinkToHref(
 }
 
 /**
- * Point the handbook links inside Monash's HTML prose at MonMap pages,
- * so a prerequisite named in an enrolment rule opens its MonMap page.
- * Other links are kept, and open in a new tab.
+ * Sanitize Monash's HTML prose (see sanitize.ts) and point its handbook
+ * links at MonMap pages, so a prerequisite named in an enrolment rule
+ * opens its MonMap page. Other web links open in a new tab. Running it
+ * twice gives the same output, so HTML the server already cleaned can
+ * go through it again.
  */
 export function rewriteHandbookHtml(
   html: string | null | undefined,
   linkYear: string | null
 ): string {
-  if (!html) return ""
-  return html.replace(/<a\b([^>]*)>/gi, (tag, attrs: string) => {
-    const href = attrs.match(/\bhref\s*=\s*("([^"]*)"|'([^']*)')/i)
-    const url = href ? (href[2] ?? href[3] ?? "") : ""
-    const internal = url ? handbookLinkToHref(url, linkYear) : null
-    if (internal) return `<a href="${internal}">`
-    if (/^mailto:/i.test(url)) return `<a href="${url}">`
-    if (!url) return tag
-    return `<a href="${url.replace(/"/g, "&quot;")}" target="_blank" rel="noopener noreferrer">`
-  })
+  // After sanitizing, every link is exactly `<a>` or `<a href="...">`
+  // with an escaped, allowlisted href.
+  return sanitizeHandbookHtml(html).replace(
+    /<a href="([^"]*)">/g,
+    (tag, escaped: string) => {
+      const url = escaped.replace(/&amp;/g, "&")
+      const internal = handbookLinkToHref(url, linkYear)
+      if (internal) return `<a href="${internal}">`
+      if (!/^https?:/i.test(url)) return tag
+      return `<a href="${escaped}" target="_blank" rel="noopener noreferrer">`
+    }
+  )
 }

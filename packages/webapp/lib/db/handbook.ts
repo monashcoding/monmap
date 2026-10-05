@@ -3,8 +3,9 @@
  * /courses/[code], /aos/[code] and the sitemap.
  *
  * Every page query is memoised per process (cacheHandbook), and the
- * pages themselves are cached as ISR HTML, so a page costs its queries
- * once per week per server rather than once per visit.
+ * entity pages themselves are cached as ISR HTML for a day, so a page
+ * costs its queries about once a day per server rather than once per
+ * visit.
  */
 import {
   areaOfStudyUnits,
@@ -15,9 +16,18 @@ import {
   unitOfferings,
   units,
 } from "@monmap/db"
-import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm"
+import {
+  and,
+  asc,
+  eq,
+  getTableColumns,
+  inArray,
+  sql,
+  type SQL,
+} from "drizzle-orm"
 
 import { getDb } from "./client.ts"
+import { likeEscape } from "./like.ts"
 import { cacheHandbook } from "./memo.ts"
 import {
   fetchCourseWithAoS,
@@ -45,6 +55,19 @@ type Row = Record<string, unknown>
 
 async function rows<T = Row>(query: SQL): Promise<T[]> {
   return (await getDb().execute(query)) as unknown as T[]
+}
+
+/**
+ * Every column of a handbook table except the generated `search_vector`,
+ * which only search reads. The page queries select this instead of the
+ * whole row.
+ */
+function pageColumns<
+  T extends typeof units | typeof courses | typeof areasOfStudy,
+>(table: T): Omit<T["_"]["columns"], "searchVector"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { searchVector, ...rest } = getTableColumns(table)
+  return rest
 }
 
 const TABLE: Record<EntityKind, SQL> = {
@@ -168,7 +191,7 @@ async function _fetchUnitPage(
 ): Promise<UnitPageData | null> {
   const db = getDb()
   const [unit] = await db
-    .select()
+    .select(pageColumns(units))
     .from(units)
     .where(and(eq(units.year, year), eq(units.code, code)))
     .limit(1)
@@ -378,18 +401,39 @@ async function _fetchCoursePage(
   year: string
 ): Promise<CoursePageData | null> {
   const db = getDb()
+  // The year list and the planner's course load depend only on the
+  // code, so they run alongside the row query. On a missing course
+  // their results are dropped (both are memoised reads).
+  const yearsP = listEntityYears("course", code)
+  const withAosP = fetchCourseWithAoS(code, year)
   const [course] = await db
-    .select()
+    .select({
+      code: courses.code,
+      title: courses.title,
+      abbreviatedName: courses.abbreviatedName,
+      creditPoints: courses.creditPoints,
+      aqfLevel: courses.aqfLevel,
+      type: courses.type,
+      school: courses.school,
+      cricosCode: courses.cricosCode,
+      overview: courses.overview,
+      raw: courses.raw,
+      curriculumStructure: courses.curriculumStructure,
+    })
     .from(courses)
     .where(and(eq(courses.year, year), eq(courses.code, code)))
     .limit(1)
-  if (!course) return null
+  if (!course) {
+    yearsP.catch(() => {})
+    withAosP.catch(() => {})
+    return null
+  }
   const r = course.raw as Record<string, unknown>
   const curriculum = buildCurriculumTree(course.curriculumStructure)
 
   const [years, withAos, linkableUnits] = await Promise.all([
-    listEntityYears("course", code),
-    fetchCourseWithAoS(code, year),
+    yearsP,
+    withAosP,
     filterExistingUnits(curriculumUnitCodes(curriculum).sort()),
   ])
 
@@ -478,7 +522,7 @@ async function _fetchAosPage(
 ): Promise<AosPageData | null> {
   const db = getDb()
   const [aos] = await db
-    .select()
+    .select(pageColumns(areasOfStudy))
     .from(areasOfStudy)
     .where(and(eq(areasOfStudy.year, year), eq(areasOfStudy.code, code)))
     .limit(1)
@@ -639,10 +683,6 @@ const COURSE_STUDY = sql`CASE
   WHEN c.aqf_level ~* 'Level 9|graduate (certificate|diploma)' THEN 'Postgraduate'
   WHEN c.aqf_level ~* 'honours' THEN 'Honours'
 END`
-
-function likeEscape(s: string): string {
-  return s.replace(/[\\%_]/g, "\\$&")
-}
 
 function tokens(q: string): string[] {
   return [
@@ -1159,7 +1199,7 @@ export interface SitemapEntry {
 
 async function _listSitemapCodes(kind: EntityKind): Promise<SitemapEntry[]> {
   // Only current codes: in one of the two newest handbooks. Retired
-  // codes keep their pages but are noindex (see resolveEntity).
+  // codes keep their pages but are noindex (see isCurrent in links.ts).
   const r = await rows<{ code: string; lastmod: string | null }>(sql`
     WITH latest AS (
       SELECT code, max(year)::int AS year FROM ${TABLE[kind]} GROUP BY code
@@ -1169,7 +1209,7 @@ async function _listSitemapCodes(kind: EntityKind): Promise<SitemapEntry[]> {
     LEFT JOIN review r
       ON r.entity_kind = ${kind} AND r.entity_code = l.code
       AND r.status = 'published'
-    WHERE l.year >= (SELECT max(year)::int FROM units) - 1
+    WHERE l.year >= (SELECT max(year)::int FROM courses) - 1
     GROUP BY l.code
     ORDER BY l.code
   `)
@@ -1200,7 +1240,7 @@ async function _listCurrentCourses(): Promise<HubEntry[]> {
     SELECT DISTINCT ON (code) code, title, year, school,
       aqf_level AS "group", credit_points AS "creditPoints"
     FROM courses
-    WHERE year::int >= (SELECT max(year)::int FROM units) - 1
+    WHERE year::int >= (SELECT max(year)::int FROM courses) - 1
     ORDER BY code, year DESC
   `)
 }
@@ -1208,14 +1248,23 @@ async function _listCurrentCourses(): Promise<HubEntry[]> {
 export const listCurrentCourses = cacheHandbook(_listCurrentCourses)
 
 async function _listCurrentAos(): Promise<HubEntry[]> {
+  // Each AoS's most common kind across course edges, computed once for
+  // all codes (a per-row subquery scanned the edge table 700 times).
+  // Ties go to the enum order, `x.kind` not the text alias.
   const r = await rows<HubEntry>(sql`
+    WITH k AS (
+      SELECT DISTINCT ON (x.aos_code) x.aos_code, x.kind::text AS kind
+      FROM (
+        SELECT aos_code, kind, count(*) AS n
+        FROM course_areas_of_study GROUP BY 1, 2
+      ) x
+      ORDER BY x.aos_code, x.n DESC, x.kind
+    )
     SELECT DISTINCT ON (a.code) a.code, a.title, a.year, a.school,
-      (SELECT c.kind::text FROM course_areas_of_study c
-        WHERE c.aos_code = a.code
-        GROUP BY c.kind ORDER BY count(*) DESC LIMIT 1) AS "group",
-      a.credit_points AS "creditPoints"
+      k.kind AS "group", a.credit_points AS "creditPoints"
     FROM areas_of_study a
-    WHERE a.year::int >= (SELECT max(year)::int FROM units) - 1
+    LEFT JOIN k ON k.aos_code = a.code
+    WHERE a.year::int >= (SELECT max(year)::int FROM courses) - 1
     ORDER BY a.code, a.year DESC
   `)
   return r.map((a) => ({ ...a, group: a.group ?? kindFromCode(a.code) }))

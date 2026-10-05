@@ -9,6 +9,7 @@ import {
   HandbookMain,
   Section,
 } from "./parts"
+import { loadRatings } from "./ratings"
 
 export interface HubGroup {
   id: string
@@ -19,9 +20,9 @@ export interface HubGroup {
 /**
  * A browsable list of every current course or area of study, grouped,
  * with ratings. It gives crawlers and students a path to every page
- * without the search box.
+ * without the search box. Ratings load in one query for all groups.
  */
-export function HubPage({
+export async function HubPage({
   year,
   title,
   intro,
@@ -37,6 +38,7 @@ export function HubPage({
   groups: HubGroup[]
 }) {
   const shown = groups.filter((g) => g.rows.length > 0)
+  const ratings = await loadRatings(shown.flatMap((g) => g.rows))
   return (
     <HandbookMain year={year}>
       <header className="flex flex-col gap-4 rounded-panel border bg-card p-5 shadow-card sm:p-7">
@@ -76,7 +78,7 @@ export function HubPage({
               </span>
             }
           >
-            <EntityRows rows={g.rows} linkYear={null} />
+            <EntityRows rows={g.rows} linkYear={null} ratings={ratings} />
           </Section>
         ))}
       </DetailLayout>

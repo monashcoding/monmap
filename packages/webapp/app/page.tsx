@@ -5,15 +5,19 @@ import { PlannerSkeleton } from "@/components/planner/planner-skeleton"
 import { PlannerStreaming } from "@/components/planner/planner-streaming"
 import { HomeAbout } from "@/components/home-about"
 import { getCurrentUser } from "@/lib/auth-server"
-import { HANDBOOK_YEAR } from "@/lib/db/client"
+import { isCode } from "@/lib/db/input"
 import {
   fetchCourseWithAoS,
+  getActiveUserPlan,
   hydratePlannerUnits,
+  hydratePlannerUnitsMultiYear,
   listAvailableYears,
   listCoursesForPicker,
   listUserGrades,
-  listUserPlansWithState,
+  listUserPlans,
 } from "@/lib/db/queries"
+import { codesToHydrate } from "@/lib/planner/hydration"
+import { plannerUnitCodes, type PlannerState } from "@/lib/planner/types"
 
 // Only the home page claims "/" as canonical; a layout-level canonical
 // would leak onto every page without its own, 404s included. Query
@@ -22,9 +26,45 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 }
 
+// A repeated key (?plan=a&plan=b) arrives as an array.
+type SearchParams = {
+  year?: string | string[]
+  plan?: string | string[]
+  course?: string | string[]
+}
+
+/** The param when it is a single string, else null. */
+const one = (v: string | string[] | undefined) =>
+  typeof v === "string" ? v : null
+
 /**
- * Server-component shell. Fetches the picker list and pre-warms units
- * so the planner renders fully populated.
+ * Page shell. Nothing here waits on data: the heading, the skeleton
+ * and the about section stream in the first chunk, and PlannerData
+ * fills the boundary once the user, plan and course are loaded.
+ */
+export default function Page({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
+  return (
+    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-24 sm:gap-5 sm:px-5 sm:pt-5 sm:pb-12">
+      {/* The planner has no visible page title; this names the page for
+          search engines and screen readers. */}
+      <h1 className="sr-only">
+        MonMap: Monash course planner, unit reviews and prerequisite maps
+      </h1>
+      <Suspense fallback={<PlannerSkeleton />}>
+        <PlannerData searchParams={searchParams} />
+      </Suspense>
+      <HomeAbout />
+    </main>
+  )
+}
+
+/**
+ * Fetches the picker list and pre-warms units so the planner renders
+ * fully populated.
  *
  * Year/course resolution order:
  *   1. ?year=… search param — explicit override
@@ -32,48 +72,41 @@ export const metadata: Metadata = {
  *   3. most recent year in the DB, no course (planner renders empty,
  *      prompting the user to pick one)
  *
- * Prewarming the *saved* course (when there is one) means a returning
- * user lands on their plan with no client-side refetch needed.
+ * Prewarming the *saved* course and the plan's own units (when there
+ * is a plan) means a returning user lands on their plan with no
+ * client-side refetch needed.
  */
-export default async function Page({
+async function PlannerData({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; plan?: string; course?: string }>
+  searchParams: Promise<SearchParams>
 }) {
   const [params, availableYears, currentUser] = await Promise.all([
-    searchParams as Promise<{ year?: string; plan?: string; course?: string }>,
+    searchParams,
     listAvailableYears(),
     getCurrentUser(),
   ])
 
-  // Signed-in users: list their plans (with state) in one round-trip,
-  // pick the most-recently-updated as the active one. Anon users get an
-  // empty list and no active plan.
-  const [fullPlans, initialGrades] = currentUser
+  // Signed-in users: their plan list (no state) and the active plan's
+  // state, in parallel. ?plan=<id> lets the plans page link directly to
+  // a specific plan; otherwise the most recently updated one opens.
+  // Anon users get an empty list and no active plan.
+  const requestedPlanId = one(params.plan)
+  const [userPlans, activePlan, initialGrades] = currentUser
     ? await Promise.all([
-        listUserPlansWithState(currentUser.id),
+        listUserPlans(currentUser.id),
+        getActiveUserPlan(currentUser.id, requestedPlanId),
         listUserGrades(currentUser.id),
       ])
-    : [[], null]
-  // Client only needs metadata; strip state before serialising the list.
-  const userPlans = fullPlans.map((p) => ({
-    id: p.id,
-    name: p.name,
-    updatedAt: p.updatedAt,
-  }))
-  // ?plan=<id> lets the plans page link directly to a specific plan.
-  const requestedPlanId = params.plan ?? null
-  const activePlanId =
-    requestedPlanId && fullPlans.some((p) => p.id === requestedPlanId)
-      ? requestedPlanId
-      : (fullPlans[0]?.id ?? null)
-  const initialPlanState =
-    fullPlans.find((p) => p.id === activePlanId)?.state ?? null
+    : [[], null, null]
+  const activePlanId = activePlan?.id ?? null
+  const initialPlanState = activePlan?.state ?? null
 
-  // Most recent year wins as default; fall back to HANDBOOK_YEAR if
-  // the DB is empty (fresh setup).
-  const fallbackYear = availableYears.at(-1) ?? HANDBOOK_YEAR
-  const requestedYear = params.year
+  // Most recent year wins as default. On an empty database (fresh
+  // setup) the planner renders its empty state against the current
+  // calendar year.
+  const fallbackYear = availableYears.at(-1) ?? String(new Date().getFullYear())
+  const requestedYear = one(params.year)
   const explicitYear =
     requestedYear && availableYears.includes(requestedYear)
       ? requestedYear
@@ -84,6 +117,7 @@ export default async function Page({
       ? initialPlanState.courseYear
       : null
   const year = explicitYear ?? planYear ?? fallbackYear
+  const clientYears = availableYears.length > 0 ? availableYears : [year]
 
   // Pick the course to prewarm: saved plan unless the user explicitly
   // picked a year (their plan may not match that year). No hardcoded
@@ -93,76 +127,128 @@ export default async function Page({
   // ?course=… (the "Plan this course" button on course pages) opens
   // that course when there's no saved plan to show. Over a saved plan
   // the planner offers the switch instead (see PlannerProvider).
-  const courses = await listCoursesForPicker(null, 500, year)
-  const rawCourse = params.course?.trim().toUpperCase() ?? null
+  const rawCourse = one(params.course)?.trim().toUpperCase() ?? null
+  const wantedCourse = initialPlanState
+    ? !explicitYear
+      ? (initialPlanState.courseCode ?? null)
+      : null
+    : isCode(rawCourse)
+      ? rawCourse
+      : null
+  // The course list and the course load in parallel.
+  const [courses, wantedCourseData] = await Promise.all([
+    listCoursesForPicker(null, 500, year),
+    wantedCourse ? fetchCourseWithAoS(wantedCourse, year) : null,
+  ])
   const requestedCourse =
     rawCourse && courses.some((c) => c.code === rawCourse) ? rawCourse : null
-  const courseCode =
-    requestedCourse && !initialPlanState
-      ? requestedCourse
-      : !explicitYear
-        ? (initialPlanState?.courseCode ?? null)
-        : null
-
-  const defaultCourse = courseCode
-    ? await fetchCourseWithAoS(courseCode, year)
-    : null
-
-  const prewarmCodes = defaultCourse
-    ? [
-        ...new Set([
-          ...defaultCourse.areasOfStudy.flatMap((a) =>
-            a.units.map((u) => u.code)
-          ),
-          ...defaultCourse.courseUnits.map((u) => u.code),
-        ]),
-      ]
-    : []
+  const defaultCourse =
+    initialPlanState || requestedCourse ? wantedCourseData : null
 
   // Build (don't await) the unit-hydration payload so React streams the
-  // page shell first. The promise is consumed inside PlannerStreaming
-  // via React 19 `use()`; the surrounding <Suspense> renders the
-  // skeleton until it resolves.
-  const prewarmedPromise = hydratePlannerUnits(prewarmCodes, year).then(
-    (h) => ({
-      units: Object.fromEntries(h.units),
-      offerings: Object.fromEntries(h.offerings),
-      requisites: Object.fromEntries(h.requisites),
-    })
-  )
+  // planner before unit data arrives. The promise is consumed inside
+  // PlannerStreaming via React 19 `use()`.
+  const prewarmedPromise = prewarm({
+    codes: defaultCourse ? plannerUnitCodes(defaultCourse) : [],
+    year,
+    // The client keeps this prewarm only when the plan opens on the
+    // year and course it was built for (PlannerProvider's mount check).
+    plan:
+      initialPlanState &&
+      initialPlanState.courseYear === year &&
+      (initialPlanState.courseCode ?? null) === (defaultCourse?.code ?? null)
+        ? initialPlanState
+        : null,
+    availableYears: clientYears,
+  })
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-24 sm:gap-5 sm:px-5 sm:pt-5 sm:pb-12">
-      {/* The planner has no visible page title; this names the page for
-          search engines and screen readers. */}
-      <h1 className="sr-only">
-        MonMap: Monash course planner, unit reviews and prerequisite maps
-      </h1>
-      <Suspense fallback={<PlannerSkeleton />}>
-        <PlannerStreaming
-          initialYear={year}
-          availableYears={availableYears.length > 0 ? availableYears : [year]}
-          courses={courses}
-          defaultCourse={defaultCourse}
-          prewarmedPromise={prewarmedPromise}
-          currentUser={
-            currentUser
-              ? {
-                  id: currentUser.id,
-                  name: currentUser.name,
-                  email: currentUser.email,
-                  image: currentUser.image ?? null,
-                }
-              : null
-          }
-          initialPlan={initialPlanState}
-          initialPlans={userPlans}
-          initialActivePlanId={activePlanId}
-          initialGrades={initialGrades}
-          requestedCourse={requestedCourse}
-        />
-      </Suspense>
-      <HomeAbout />
-    </main>
+    <PlannerStreaming
+      initialYear={year}
+      availableYears={clientYears}
+      courses={courses}
+      defaultCourse={defaultCourse}
+      prewarmedPromise={prewarmedPromise}
+      currentUser={
+        currentUser
+          ? {
+              id: currentUser.id,
+              name: currentUser.name,
+              email: currentUser.email,
+              image: currentUser.image ?? null,
+            }
+          : null
+      }
+      initialPlan={initialPlanState}
+      initialPlans={userPlans}
+      initialActivePlanId={activePlanId}
+      initialGrades={initialGrades}
+      requestedCourse={requestedCourse}
+    />
   )
+}
+
+/**
+ * Unit data for the course's units from `year`, plus the plan's placed
+ * and credited units from the handbook year each study year reads
+ * (codesToHydrate, the client's own rule), fetched in parallel. With
+ * both in the payload the client's hydration hook finds nothing to
+ * fetch on mount.
+ */
+async function prewarm({
+  codes,
+  year,
+  plan,
+  availableYears,
+}: {
+  codes: string[]
+  year: string
+  plan: PlannerState | null
+  availableYears: string[]
+}) {
+  const none = new Map<string, never>()
+  const planCodes = plan
+    ? codesToHydrate({
+        state: plan,
+        availableYears,
+        units: none,
+        offerings: none,
+        requisites: none,
+        empty: new Set(),
+      })
+    : new Map<string, string[]>()
+  // Course-year codes the course list already covers need no second
+  // fetch.
+  const courseCodes = new Set(codes)
+  const rest = new Map(
+    [...planCodes]
+      .map(
+        ([y, cs]) =>
+          [y, y === year ? cs.filter((c) => !courseCodes.has(c)) : cs] as const
+      )
+      .filter(([, cs]) => cs.length > 0)
+  )
+  const [course, placed] = await Promise.all([
+    hydratePlannerUnits(codes, year),
+    hydratePlannerUnitsMultiYear(rest),
+  ])
+  // Later-year data wins for placed codes, as on the client. Like the
+  // client's hydration hook, every placed code with a unit gets
+  // offerings and requisites entries (empty when there are none), so
+  // the hook does not ask for it again.
+  const units = Object.fromEntries([...course.units, ...placed.units])
+  const offerings = Object.fromEntries([
+    ...course.offerings,
+    ...placed.offerings,
+  ])
+  const requisites = Object.fromEntries([
+    ...course.requisites,
+    ...placed.requisites,
+  ])
+  for (const code of [...planCodes.values()].flat()) {
+    if (!units[code]) continue
+    offerings[code] ??= []
+    requisites[code] ??= []
+  }
+  return { units, offerings, requisites }
 }

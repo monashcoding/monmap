@@ -14,17 +14,19 @@ import {
 } from "@monmap/db"
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 
-import { getDb, HANDBOOK_YEAR } from "./client.ts"
-import { cacheHandbook } from "./memo.ts"
+import { getDb } from "./client.ts"
+import { containsPattern } from "./like.ts"
+import { cacheHandbook, MEMO_TTL_MS } from "./memo.ts"
+import { slimRequisiteRule } from "./requisite-rule.ts"
 import {
   containerParts,
   extractRequirementGroups,
   pickDefaultUnits,
   type DegreeShape,
   type EmbeddedSpecialisation,
-  type ExcludedAos,
   type RequirementGroup,
 } from "./curriculum.ts"
+import { sanitizeHandbookHtml } from "../handbook/sanitize.ts"
 import { classifyTeachingPeriod } from "../planner/teaching-period.ts"
 import type {
   PlannerAreaOfStudy,
@@ -35,16 +37,13 @@ import type {
   PlannerState,
   PlannerUnit,
   RequisiteBlock,
-  RequisiteRule,
 } from "../planner/types.ts"
 import type { TreeDirection, TreeEdge, TreeGraphRaw } from "../tree/types.ts"
 
 /**
  * All queries take a `year` parameter so a student can plan against a
  * different handbook year (e.g. 2022 if they started their degree
- * then). Defaults to HANDBOOK_YEAR for backward compat. Per-row year
- * tracking (each plan year using its own handbook) is not implemented
- * — start year drives everything, matching MonPlan's pragmatic model.
+ * then). Callers pick the year per plan year; see codesToHydrate.
  */
 
 async function _listAvailableYears(): Promise<string[]> {
@@ -56,13 +55,13 @@ export const listAvailableYears = cacheHandbook(_listAvailableYears)
 
 async function _listCoursesForPicker(
   search: string | null,
-  limit = 500,
-  year: string = HANDBOOK_YEAR
+  limit: number,
+  year: string
 ): Promise<PlannerCourse[]> {
   const db = getDb()
   const conds = [eq(courses.year, year), sql`${courses.creditPoints} > 0`]
   if (search && search.trim()) {
-    const q = `%${search.trim()}%`
+    const q = containsPattern(search.trim())
     conds.push(or(ilike(courses.title, q), ilike(courses.code, q))!)
   }
   const rows = await db
@@ -73,7 +72,6 @@ async function _listCoursesForPicker(
       creditPoints: courses.creditPoints,
       aqfLevel: courses.aqfLevel,
       type: courses.type,
-      overview: courses.overview,
       hasStructure: sql<boolean>`(
         coalesce(jsonb_array_length(${courses.requirementGroups}), 0) > 0
         or coalesce(jsonb_array_length(${courses.subCourseRefs}), 0) > 0
@@ -108,7 +106,6 @@ async function _listCoursesForPicker(
     creditPoints: r.creditPoints ?? 0,
     aqfLevel: r.aqfLevel,
     type: r.type,
-    overview: r.overview,
     hasStructure: r.hasStructure,
     structureYear: r.hasStructure ? null : r.structureYear,
   }))
@@ -122,7 +119,7 @@ export const listCoursesForPicker = cacheHandbook(_listCoursesForPicker)
  */
 async function _fetchCourseWithAoS(
   code: string,
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<PlannerCourseWithAoS | null> {
   const db = getDb()
   const [course] = await db
@@ -133,7 +130,6 @@ async function _fetchCourseWithAoS(
       creditPoints: courses.creditPoints,
       aqfLevel: courses.aqfLevel,
       type: courses.type,
-      overview: courses.overview,
       // Pre-baked curriculum extractions. Ingest is the only place
       // extraction runs — the webapp reads these columns, period. They
       // are NULL exactly when `curriculum_structure` is NULL (research
@@ -144,13 +140,7 @@ async function _fetchCourseWithAoS(
       embeddedSpecialisations: courses.embeddedSpecialisations,
       subCourseRefs: courses.subCourseRefs,
       componentLabels: courses.componentLabels,
-      // Read via to_jsonb so the query degrades to NULL (not an SQL
-      // error) on a database that hasn't applied migration 0010 yet —
-      // this code can deploy before or after the column exists. Switch
-      // to `courses.excludedAos` once 0010 is applied everywhere.
-      excludedAos: sql<
-        ExcludedAos[] | null
-      >`to_jsonb(${courses}) -> 'excluded_aos'`,
+      excludedAos: courses.excludedAos,
     })
     .from(courses)
     .where(and(eq(courses.year, year), eq(courses.code, code)))
@@ -228,13 +218,9 @@ async function _fetchCourseWithAoS(
         aosYear: courseAreasOfStudy.aosYear,
         kind: courseAreasOfStudy.kind,
         relationshipLabel: courseAreasOfStudy.relationshipLabel,
-        // Read via to_jsonb so the query degrades to NULL rather than
-        // erroring on a database that hasn't applied migration 0011
-        // yet — this deploys before or after the column exists.
-        scope: sql<string | null>`to_jsonb(${courseAreasOfStudy}) ->> 'scope'`,
+        scope: courseAreasOfStudy.scope,
         title: areasOfStudy.title,
         creditPoints: areasOfStudy.creditPoints,
-        curriculumStructure: areasOfStudy.curriculumStructure,
       })
       .from(courseAreasOfStudy)
       .leftJoin(
@@ -368,27 +354,18 @@ async function _fetchCourseWithAoS(
   const aosKey = (l: { aosYear: string; aosCode: string }) =>
     `${l.aosYear}|${l.aosCode}`
 
-  // Build per-AoS requirement groups from each AoS's curriculum.
-  const aosGroups = new Map<string, RequirementGroup[]>()
-  for (const l of offeredLinks) {
-    if (aosGroups.has(aosKey(l))) continue
-    aosGroups.set(
-      aosKey(l),
-      forThisShape(
-        extractRequirementGroups(l.curriculumStructure, l.creditPoints ?? 0)
-      )
-    )
-  }
-
   const aosCodesByYear = new Map<string, Set<string>>()
   for (const l of offeredLinks) {
     const set = aosCodesByYear.get(l.aosYear) ?? new Set<string>()
     set.add(l.aosCode)
     aosCodesByYear.set(l.aosYear, set)
   }
-  const unitRows =
+  // Per-AoS requirement groups, unfiltered (shape depends on the owning
+  // course), then kept for this course's degree shape.
+  const [rawAosGroups, unitRows] = await Promise.all([
+    aosRequirementGroups(aosCodesByYear),
     aosCodesByYear.size > 0
-      ? await db
+      ? db
           .select({
             aosYear: areaOfStudyUnits.aosYear,
             aosCode: areaOfStudyUnits.aosCode,
@@ -407,7 +384,11 @@ async function _fetchCourseWithAoS(
             )
           )
           .orderBy(areaOfStudyUnits.grouping, areaOfStudyUnits.unitCode)
-      : []
+      : Promise.resolve([]),
+  ])
+  const aosGroups = new Map<string, RequirementGroup[]>()
+  for (const [key, groups] of rawAosGroups)
+    aosGroups.set(key, forThisShape(groups))
 
   const unitsByAos = new Map<string, { code: string; grouping: string }[]>()
   for (const u of unitRows) {
@@ -663,7 +644,6 @@ async function _fetchCourseWithAoS(
     creditPoints: course.creditPoints ?? 0,
     aqfLevel: course.aqfLevel,
     type: course.type,
-    overview: course.overview,
     areasOfStudy: orderedAos,
     courseUnits,
     courseRequirements,
@@ -677,6 +657,79 @@ async function _fetchCourseWithAoS(
   }
 }
 export const fetchCourseWithAoS = cacheHandbook(_fetchCourseWithAoS)
+
+/**
+ * Requirement groups extracted from each AoS's curriculum tree, keyed
+ * `${year}|${code}`. Areas of study have no baked groups column, and
+ * their trees average 23 KB, so each AoS is read and extracted once per
+ * process per MEMO_TTL_MS and shared by every course that offers it
+ * (S2000 alone links 76). Only this module writes the entries, and the
+ * groups it returns are not mutated.
+ */
+const aosGroupsCache = new Map<
+  string,
+  { at: number; groups: Promise<RequirementGroup[]> }
+>()
+
+async function aosRequirementGroups(
+  codesByYear: ReadonlyMap<string, ReadonlySet<string>>
+): Promise<Map<string, RequirementGroup[]>> {
+  const now = Date.now()
+  const out = new Map<string, Promise<RequirementGroup[]>>()
+  const missing = new Map<string, string[]>()
+  for (const [y, codes] of codesByYear) {
+    for (const c of codes) {
+      const hit = aosGroupsCache.get(`${y}|${c}`)
+      if (hit && now - hit.at < MEMO_TTL_MS) out.set(`${y}|${c}`, hit.groups)
+      else missing.set(y, [...(missing.get(y) ?? []), c])
+    }
+  }
+  if (missing.size > 0) {
+    const rows = getDb()
+      .select({
+        year: areasOfStudy.year,
+        code: areasOfStudy.code,
+        creditPoints: areasOfStudy.creditPoints,
+        curriculumStructure: areasOfStudy.curriculumStructure,
+      })
+      .from(areasOfStudy)
+      .where(
+        or(
+          ...[...missing].map(([y, codes]) =>
+            and(eq(areasOfStudy.year, y), inArray(areasOfStudy.code, codes))
+          )
+        )
+      )
+      .then(
+        (rs) =>
+          new Map(
+            rs.map((r) => [
+              `${r.year}|${r.code}`,
+              extractRequirementGroups(
+                r.curriculumStructure,
+                r.creditPoints ?? 0
+              ),
+            ])
+          )
+      )
+    for (const [y, codes] of missing) {
+      for (const c of codes) {
+        const key = `${y}|${c}`
+        const groups = rows.then((m) => m.get(key) ?? [])
+        out.set(key, groups)
+        aosGroupsCache.set(key, { at: now, groups })
+      }
+    }
+    // A failed read must not stay cached for the next hour.
+    rows.catch(() => {
+      for (const [y, codes] of missing)
+        for (const c of codes) aosGroupsCache.delete(`${y}|${c}`)
+    })
+  }
+  const keys = [...out.keys()]
+  const groups = await Promise.all(out.values())
+  return new Map(keys.map((k, i) => [k, groups[i]]))
+}
 
 /**
  * Convert curriculum-tree embedded specialisations into virtual
@@ -784,7 +837,7 @@ function kindOrder(k: PlannerAreaOfStudy["kind"]): number {
  */
 async function _fetchUnitsByCode(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<PlannerUnit[]> {
   if (codes.length === 0) return []
   const db = getDb()
@@ -807,13 +860,13 @@ async function _fetchUnitsByCode(
     title: r.title,
     creditPoints: r.creditPoints ?? 0,
     level: r.level,
-    synopsis: r.synopsis,
+    synopsis: r.synopsis && sanitizeHandbookHtml(r.synopsis),
     school: r.school,
   }))
 }
 export async function fetchUnitsByCode(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<PlannerUnit[]> {
   return _fetchUnitsByCodeCached([...codes].sort(), year)
 }
@@ -821,14 +874,14 @@ const _fetchUnitsByCodeCached = cacheHandbook(_fetchUnitsByCode)
 
 async function _searchUnits(
   query: string,
-  limit = 25,
-  year: string = HANDBOOK_YEAR
+  limit: number,
+  year: string
 ): Promise<PlannerUnit[]> {
   const trimmed = query.trim()
   if (!trimmed) return []
 
   const db = getDb()
-  const q = `%${trimmed}%`
+  const q = containsPattern(trimmed)
   const rows = await db
     .select({
       year: units.year,
@@ -852,15 +905,18 @@ async function _searchUnits(
     title: r.title,
     creditPoints: r.creditPoints ?? 0,
     level: r.level,
-    synopsis: r.synopsis,
+    synopsis: r.synopsis && sanitizeHandbookHtml(r.synopsis),
     school: r.school,
   }))
 }
 export const searchUnits = cacheHandbook(_searchUnits)
 
+/** Candidates per smart search; the client reranks them. */
+const SMART_SEARCH_LIMIT = 150
+
 /**
  * "Smart search" candidate generation: run the same text match as
- * `searchUnits` but pull a wider pool (default 150) and bundle in
+ * `searchUnits` but pull a wider pool (150) and bundle in
  * each candidate's offerings + requisites so the client can rerank
  * with personalization signals (slot fit, prereq readiness, AoS
  * membership, …) without a second roundtrip. The `rank` map records
@@ -869,15 +925,14 @@ export const searchUnits = cacheHandbook(_searchUnits)
  */
 export async function searchUnitsRich(
   query: string,
-  year: string = HANDBOOK_YEAR,
-  limit = 150
+  year: string
 ): Promise<{
   units: Map<string, PlannerUnit>
   offerings: Map<string, PlannerOffering[]>
   requisites: Map<string, RequisiteBlock[]>
   rank: Map<string, number>
 }> {
-  const list = await searchUnits(query, limit, year)
+  const list = await searchUnits(query, SMART_SEARCH_LIMIT, year)
   const codes = list.map((u) => u.code)
   const rank = new Map<string, number>()
   list.forEach((u, i) => rank.set(u.code, i))
@@ -933,7 +988,7 @@ async function _fetchOfferingsRows(
 const _fetchOfferingsRowsCached = cacheHandbook(_fetchOfferingsRows)
 export async function fetchOfferingsForCodes(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<Map<string, PlannerOffering[]>> {
   const out = new Map<string, PlannerOffering[]>()
   if (codes.length === 0) return out
@@ -966,14 +1021,14 @@ async function _fetchRequisitesRows(
     unitCode: r.unitCode,
     block: {
       requisiteType: r.requisiteType,
-      rule: (r.rule as RequisiteRule | null) ?? null,
+      rule: slimRequisiteRule(r.rule),
     },
   }))
 }
 const _fetchRequisitesRowsCached = cacheHandbook(_fetchRequisitesRows)
 export async function fetchRequisitesForCodes(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<Map<string, RequisiteBlock[]>> {
   const out = new Map<string, RequisiteBlock[]>()
   if (codes.length === 0) return out
@@ -998,7 +1053,7 @@ async function _fetchEnrolmentRulesRows(
 > {
   if (codes.length === 0) return []
   const db = getDb()
-  return db
+  const rows = await db
     .select({
       unitCode: enrolmentRules.unitCode,
       ruleType: enrolmentRules.ruleType,
@@ -1011,11 +1066,15 @@ async function _fetchEnrolmentRulesRows(
         inArray(enrolmentRules.unitCode, [...codes])
       )
     )
+  return rows.map((r) => ({
+    ...r,
+    description: r.description && sanitizeHandbookHtml(r.description),
+  }))
 }
 const _fetchEnrolmentRulesRowsCached = cacheHandbook(_fetchEnrolmentRulesRows)
 export async function fetchEnrolmentRulesForCodes(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<
   Map<string, { ruleType: string | null; description: string | null }[]>
 > {
@@ -1077,20 +1136,25 @@ async function _fetchEquivalentsRows(
   // shape: ACX5903/ACM5903 "Accounting for business",
   // ATI5067/APG5067 "Sustainable cultural development" — faculty
   // cross-listings under two codes.
+  //
+  // Each branch filters to the input codes itself: Postgres does not
+  // push the join into a UNION, so filtering afterwards scanned and
+  // deduped every prohibition edge of the year on each call.
   const rows = await db.execute(sql`
     WITH input(code) AS (VALUES ${valuesClause}),
     edges AS (
       SELECT a.unit_code AS x, a.requires_unit_code AS y
       FROM requisite_refs a
       WHERE a.year = ${year} AND a.requisite_type = 'prohibition'
+        AND a.unit_code IN (SELECT code FROM input)
       UNION
       SELECT a.requires_unit_code AS x, a.unit_code AS y
       FROM requisite_refs a
       WHERE a.year = ${year} AND a.requisite_type = 'prohibition'
+        AND a.requires_unit_code IN (SELECT code FROM input)
     )
     SELECT e.x AS code, e.y AS equivalent
     FROM edges e
-    JOIN input i ON i.code = e.x
     JOIN units uc ON uc.year = ${year} AND uc.code = e.x
     JOIN units ue ON ue.year = ${year} AND ue.code = e.y
     WHERE ${sql.raw(normalizedTitleExpr("uc"))} = ${sql.raw(normalizedTitleExpr("ue"))}
@@ -1108,7 +1172,7 @@ const _fetchEquivalentsRowsCached = cacheHandbook(_fetchEquivalentsRows)
  */
 export async function fetchEquivalentsForCodes(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>()
   if (codes.length === 0) return out
@@ -1159,7 +1223,7 @@ const _fetchUnitYearLinksRowsCached = cacheHandbook(_fetchUnitYearLinksRows)
  */
 export async function fetchUnitYearLinks(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<Map<string, string>> {
   if (codes.length === 0) return new Map()
   const rows = await _fetchUnitYearLinksRowsCached(
@@ -1213,7 +1277,7 @@ async function hydrateFromYear(
  */
 export async function hydratePlannerUnits(
   codes: readonly string[],
-  year: string = HANDBOOK_YEAR
+  year: string
 ): Promise<{
   units: Map<string, PlannerUnit>
   offerings: Map<string, PlannerOffering[]>
@@ -1390,6 +1454,37 @@ export async function listUserPlans(userId: string): Promise<PlanSummary[]> {
     .from(userPlan)
     .where(eq(userPlan.userId, userId))
     .orderBy(desc(userPlan.updatedAt))
+}
+
+export async function countUserPlans(userId: string): Promise<number> {
+  const db = getDb()
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(userPlan)
+    .where(eq(userPlan.userId, userId))
+  return row?.n ?? 0
+}
+
+/**
+ * The plan the home page opens: `requestedId` when the user owns it,
+ * otherwise their most recently updated plan. Only this plan's state
+ * is read; the plan list needs no state.
+ */
+export async function getActiveUserPlan(
+  userId: string,
+  requestedId: string | null
+): Promise<{ id: string; state: PlannerState } | null> {
+  const db = getDb()
+  const [row] = await db
+    .select({ id: userPlan.id, state: userPlan.state })
+    .from(userPlan)
+    .where(eq(userPlan.userId, userId))
+    .orderBy(
+      ...(requestedId ? [sql`${userPlan.id} = ${requestedId} desc`] : []),
+      desc(userPlan.updatedAt)
+    )
+    .limit(1)
+  return row ?? null
 }
 
 export async function getUserPlanById(
@@ -1751,8 +1846,13 @@ async function _expandCourseClosure(
 ): Promise<TreeGraphRaw> {
   const db = getDb()
 
-  // 1. Pull every academic_item_code in Part A of the course's curriculum.
-  const partARows = await db.execute(sql`
+  // 1. Every academic_item_code in Part A of the course's curriculum,
+  // and 2. the AoS's unit codes (if a major is chosen). The AoS's units
+  // come from its own year: the plan year when that row exists,
+  // otherwise the earlier year a course edge of the plan year links it
+  // to (2027 S2000 offers the 2026 APPLMTH05).
+  const [partARows, aosRows] = await Promise.all([
+    db.execute(sql`
     SELECT DISTINCT jsonb_path_query(c, '$.**.academic_item_code') #>> '{}' AS code
     FROM (
       SELECT jsonb_array_elements(curriculum_structure->'container') AS c
@@ -1760,18 +1860,9 @@ async function _expandCourseClosure(
       WHERE year = ${year} AND code = ${courseCode}
     ) parts
     WHERE c->>'title' ILIKE 'Part A%'
-  `)
-  const partACodes = (partARows as unknown as Array<{ code: string | null }>)
-    .map((r) => r.code)
-    .filter((c): c is string => !!c && /^[A-Z]{3}\d{4}$/.test(c))
-
-  // 2. AoS unit codes (if a major is chosen). The AoS's units come from
-  // its own year: the plan year when that row exists, otherwise the
-  // earlier year a course edge of the plan year links it to (2027 S2000
-  // offers the 2026 APPLMTH05).
-  let aosCodes: string[] = []
-  if (aosCode) {
-    const rows = await db.execute(sql`
+  `),
+    aosCode
+      ? db.execute(sql`
       WITH aos_year AS (
         SELECT COALESCE(
           (SELECT year FROM areas_of_study
@@ -1784,8 +1875,14 @@ async function _expandCourseClosure(
       FROM area_of_study_units u, aos_year y
       WHERE u.aos_year = y.year AND u.aos_code = ${aosCode}
     `)
-    aosCodes = (rows as unknown as Array<{ code: string }>).map((r) => r.code)
-  }
+      : Promise.resolve([]),
+  ])
+  const partACodes = (partARows as unknown as Array<{ code: string | null }>)
+    .map((r) => r.code)
+    .filter((c): c is string => !!c && /^[A-Z]{3}\d{4}$/.test(c))
+  const aosCodes = (aosRows as unknown as Array<{ code: string }>).map(
+    (r) => r.code
+  )
 
   const seeds = [...new Set([...partACodes, ...aosCodes])]
   if (seeds.length === 0) return { seeds: [], nodes: [], edges: [] }

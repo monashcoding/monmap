@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { createBlankPlanAction } from "@/app/actions"
 import { getCurrentUser } from "@/lib/auth-server"
+import { MAX_PLANS_PER_USER } from "@/lib/db/input"
 import {
   fetchCoursesMeta,
   fetchUnitCreditPointsBatch,
@@ -25,11 +26,13 @@ import type { PlannerState } from "@/lib/planner/types"
 import { NewPlanButton, NewPlanCard } from "./new-plan-button"
 import { PlanCard } from "./plan-card"
 
+// Tolerates a malformed stored state, so one bad row cannot break the
+// page.
 function allUnitCodes(state: PlannerState): string[] {
   const seen = new Set<string>()
-  for (const year of state.years) {
-    for (const slot of year.slots) {
-      for (const code of slot.unitCodes) seen.add(code)
+  for (const year of state.years ?? []) {
+    for (const slot of year?.slots ?? []) {
+      for (const code of slot?.unitCodes ?? []) seen.add(code)
     }
   }
   return [...seen]
@@ -41,8 +44,12 @@ export interface PlanPageData {
   totalCreditPoints: number
 }
 
-export default async function PlansPage() {
-  const user = await getCurrentUser()
+export default async function PlansPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
+  const [user, params] = await Promise.all([getCurrentUser(), searchParams])
   if (!user) {
     return (
       <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
@@ -68,7 +75,8 @@ export default async function PlansPage() {
     listAvailableYears(),
   ])
 
-  // Batch-fetch course metadata for all distinct (courseCode, courseYear) pairs.
+  // Course metadata for all distinct (courseCode, courseYear) pairs and
+  // unit credit points per handbook year, fetched in parallel.
   const coursePairs = [
     ...new Map(
       plans
@@ -79,11 +87,6 @@ export default async function PlansPage() {
         ])
     ).values(),
   ]
-  const courseMetas = await fetchCoursesMeta(coursePairs)
-  const courseMap = new Map(courseMetas.map((c) => [`${c.code}:${c.year}`, c]))
-
-  // Batch-fetch unit credit points for each plan's handbook year.
-  // Group unit codes by year to avoid redundant queries.
   const codesByYear = new Map<string, Set<string>>()
   for (const plan of plans) {
     const yr = plan.state.courseYear
@@ -92,12 +95,17 @@ export default async function PlansPage() {
       codesByYear.get(yr)!.add(code)
     }
   }
-  const cpMaps = new Map<string, Record<string, number>>()
-  await Promise.all(
-    [...codesByYear.entries()].map(async ([yr, codes]) => {
-      cpMaps.set(yr, await fetchUnitCreditPointsBatch([...codes], yr))
-    })
-  )
+  const [courseMetas, cpEntries] = await Promise.all([
+    fetchCoursesMeta(coursePairs),
+    Promise.all(
+      [...codesByYear].map(
+        async ([yr, codes]) =>
+          [yr, await fetchUnitCreditPointsBatch([...codes], yr)] as const
+      )
+    ),
+  ])
+  const courseMap = new Map(courseMetas.map((c) => [`${c.code}:${c.year}`, c]))
+  const cpMaps = new Map(cpEntries)
 
   const pageData: PlanPageData[] = plans.map((plan) => {
     const cpMap = cpMaps.get(plan.state.courseYear) ?? {}
@@ -117,6 +125,13 @@ export default async function PlansPage() {
   return (
     <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
       <AppHeader />
+
+      {params.error === "limit" ? (
+        <p role="alert" className="text-sm text-destructive">
+          You have reached the limit of {MAX_PLANS_PER_USER} plans. Delete a
+          plan to make a new one.
+        </p>
+      ) : null}
 
       {plans.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-panel border bg-card py-20 text-center shadow-card">

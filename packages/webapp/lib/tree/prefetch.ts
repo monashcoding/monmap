@@ -17,7 +17,8 @@ import {
 } from "./payload.ts"
 import type { TreeDirection, TreeGraphRaw } from "./types.ts"
 
-const EMPTY: TreeGraphPayload = {
+/** The payload for a graph with no nodes. */
+export const EMPTY_TREE_PAYLOAD: TreeGraphPayload = {
   graph: { seeds: [], nodes: [], edges: [] },
   units: {},
   offerings: {},
@@ -29,7 +30,7 @@ async function hydrateGraph(
   graph: TreeGraphRaw,
   year: string
 ): Promise<TreeGraphPayload> {
-  if (graph.nodes.length === 0) return EMPTY
+  if (graph.nodes.length === 0) return EMPTY_TREE_PAYLOAD
   const [{ units, offerings, requisites }, enrolment] = await Promise.all([
     hydratePlannerUnits(graph.nodes, year),
     fetchEnrolmentRulesForCodes(graph.nodes, year),
@@ -49,7 +50,7 @@ export async function prefetchGraphForSeeds(
   year: string,
   direction: TreeDirection
 ): Promise<TreeGraphPayload> {
-  if (seeds.length === 0) return EMPTY
+  if (seeds.length === 0) return EMPTY_TREE_PAYLOAD
   const graph = await expandRequisiteGraph(
     [...seeds].sort(),
     year,
@@ -64,7 +65,7 @@ export async function prefetchTreeData(
 ): Promise<TreeGraphPayload> {
   const graph = await (async () => {
     if (controls.mode === "course") {
-      if (!controls.courseCode) return EMPTY.graph
+      if (!controls.courseCode) return EMPTY_TREE_PAYLOAD.graph
       return expandCourseClosure(
         controls.courseCode,
         controls.aosCode,
@@ -72,7 +73,7 @@ export async function prefetchTreeData(
         FIXED_TREE_DEPTH
       )
     }
-    if (!controls.unitCode) return EMPTY.graph
+    if (!controls.unitCode) return EMPTY_TREE_PAYLOAD.graph
     return expandRequisiteGraph(
       [controls.unitCode],
       controls.year,

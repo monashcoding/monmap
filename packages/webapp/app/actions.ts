@@ -3,15 +3,28 @@
 import { getCurrentUser } from "@/lib/auth-server"
 import { getPostHogClient } from "@/lib/posthog-server"
 import {
+  cleanCodes,
+  cleanCodesByYear,
+  cleanGradeCode,
+  cleanMark,
+  cleanPlanName,
+  cleanQuery,
+  cleanTreeControls,
+  cleanYear,
+  isCode,
+  isPlannerState,
+  MAX_GRADES_PER_USER,
+  MAX_PLANS_PER_USER,
+} from "@/lib/db/input"
+import {
   bulkUpsertUserGrades,
+  countUserPlans,
   createUserPlan,
   deleteUserGrade,
   deleteUserPlan,
   duplicateUserPlan,
-  expandCourseClosure,
   expandRequisiteGraph,
   fetchCourseWithAoS,
-  fetchEnrolmentRulesForCodes,
   getUserPlanById,
   hydratePlannerUnits,
   hydratePlannerUnitsMultiYear,
@@ -29,31 +42,94 @@ import {
   upsertUserGrade,
 } from "@/lib/db/queries"
 export type { PlanSummary, UserGradeWithTitle } from "@/lib/db/queries"
-import type {
-  PlannerCourse,
-  PlannerCourseWithAoS,
-  PlannerOffering,
-  PlannerState,
-  PlannerUnit,
-  RequisiteBlock,
+import {
+  plannerUnitCodes,
+  type PlannerCourse,
+  type PlannerCourseWithAoS,
+  type PlannerOffering,
+  type PlannerState,
+  type PlannerUnit,
+  type RequisiteBlock,
 } from "@/lib/planner/types"
 import { defaultState } from "@/lib/planner/state"
+import type { TreeControlsValue, TreeGraphPayload } from "@/lib/tree/payload"
+import { EMPTY_TREE_PAYLOAD, prefetchTreeData } from "@/lib/tree/prefetch"
 import type { TreeEdge } from "@/lib/tree/types"
-import { HANDBOOK_YEAR } from "@/lib/db/client"
 import { redirect } from "next/navigation"
+
+/*
+ * Every export here is a public POST endpoint that anyone can call with
+ * any arguments, so each one checks its input (lib/db/input.ts) before
+ * it queries. Bad input gets an empty result, not an error, so a stale
+ * client still renders.
+ */
+
+/** `year` when it is a handbook year in the database. */
+async function knownYear(year: unknown): Promise<string | null> {
+  return cleanYear(year, await listAvailableYears())
+}
+
+interface Hydrated {
+  units: Record<string, PlannerUnit>
+  offerings: Record<string, PlannerOffering[]>
+  requisites: Record<string, RequisiteBlock[]>
+}
+
+const NOTHING_HYDRATED: Hydrated = { units: {}, offerings: {}, requisites: {} }
+
+/** Plain objects, so Next.js can serialise the maps to the client. */
+function plain(h: Awaited<ReturnType<typeof hydratePlannerUnits>>): Hydrated {
+  return {
+    units: Object.fromEntries(h.units),
+    offerings: Object.fromEntries(h.offerings),
+    requisites: Object.fromEntries(h.requisites),
+  }
+}
 
 export async function loadCourseAction(
   code: string,
   year: string
 ): Promise<PlannerCourseWithAoS | null> {
-  return fetchCourseWithAoS(code, year)
+  const y = await knownYear(year)
+  if (!y || !isCode(code)) return null
+  return fetchCourseWithAoS(code, y)
+}
+
+/**
+ * Everything the planner needs after a year or plan switch, in one
+ * round trip: the course list (when `withCourses`), the course, and
+ * unit data for every unit the course can place. The course list and
+ * the course load in parallel.
+ */
+export async function loadPlannerYearAction(
+  year: string,
+  courseCode: string | null,
+  opts?: { withCourses?: boolean }
+): Promise<
+  {
+    courses: PlannerCourse[] | null
+    course: PlannerCourseWithAoS | null
+  } & Hydrated
+> {
+  const y = await knownYear(year)
+  if (!y) return { courses: null, course: null, ...NOTHING_HYDRATED }
+  const [courses, course] = await Promise.all([
+    opts?.withCourses ? listCoursesForPicker(null, 500, y) : null,
+    isCode(courseCode) ? fetchCourseWithAoS(courseCode, y) : null,
+  ])
+  if (!course) return { courses, course: null, ...NOTHING_HYDRATED }
+  const hydrated = await hydratePlannerUnits(plannerUnitCodes(course), y)
+  return { courses, course, ...plain(hydrated) }
 }
 
 export async function searchUnitsAction(
   query: string,
   year: string
 ): Promise<PlannerUnit[]> {
-  return searchUnits(query, 25, year)
+  const y = await knownYear(year)
+  const q = cleanQuery(query)
+  if (!y || !q) return []
+  return searchUnits(q, 25, y)
 }
 
 /**
@@ -66,36 +142,22 @@ export async function searchUnitsAction(
  */
 export async function searchUnitsRichAction(
   query: string,
-  year: string,
-  limit = 150
-): Promise<{
-  units: Record<string, PlannerUnit>
-  offerings: Record<string, PlannerOffering[]>
-  requisites: Record<string, RequisiteBlock[]>
-  rank: Record<string, number>
-}> {
-  const { units, offerings, requisites, rank } = await searchUnitsRich(
-    query,
-    year,
-    limit
-  )
-  return {
-    units: Object.fromEntries(units),
-    offerings: Object.fromEntries(offerings),
-    requisites: Object.fromEntries(requisites),
-    rank: Object.fromEntries(rank),
-  }
+  year: string
+): Promise<Hydrated & { rank: Record<string, number> }> {
+  const y = await knownYear(year)
+  const q = cleanQuery(query)
+  if (!y || !q) return { ...NOTHING_HYDRATED, rank: {} }
+  const { rank, ...hydrated } = await searchUnitsRich(q, y)
+  return { ...plain(hydrated), rank: Object.fromEntries(rank) }
 }
 
 export async function listCoursesAction(
   search: string | null,
   year: string
 ): Promise<PlannerCourse[]> {
-  return listCoursesForPicker(search, 500, year)
-}
-
-export async function listAvailableYearsAction(): Promise<string[]> {
-  return listAvailableYears()
+  const y = await knownYear(year)
+  if (!y) return []
+  return listCoursesForPicker(cleanQuery(search) || null, 500, y)
 }
 
 /**
@@ -104,110 +166,32 @@ export async function listAvailableYearsAction(): Promise<string[]> {
  */
 export async function hydrateUnitsMultiYearAction(
   codesByYear: Record<string, string[]>
-): Promise<{
-  units: Record<string, PlannerUnit>
-  offerings: Record<string, PlannerOffering[]>
-  requisites: Record<string, RequisiteBlock[]>
-}> {
-  const { units, offerings, requisites } = await hydratePlannerUnitsMultiYear(
-    new Map(Object.entries(codesByYear))
-  )
-  return {
-    units: Object.fromEntries(units),
-    offerings: Object.fromEntries(offerings),
-    requisites: Object.fromEntries(requisites),
-  }
+): Promise<Hydrated> {
+  const byYear = cleanCodesByYear(codesByYear, await listAvailableYears())
+  if (byYear.size === 0) return NOTHING_HYDRATED
+  return plain(await hydratePlannerUnitsMultiYear(byYear))
 }
 
-/**
- * Convert the maps to plain objects so Next.js can serialize them
- * across the server/client boundary.
- */
 export async function hydrateUnitsAction(
   codes: string[],
   year: string
-): Promise<{
-  units: Record<string, PlannerUnit>
-  offerings: Record<string, PlannerOffering[]>
-  requisites: Record<string, RequisiteBlock[]>
-}> {
-  const { units, offerings, requisites } = await hydratePlannerUnits(
-    codes,
-    year
-  )
-  return {
-    units: Object.fromEntries(units),
-    offerings: Object.fromEntries(offerings),
-    requisites: Object.fromEntries(requisites),
-  }
+): Promise<Hydrated> {
+  const y = await knownYear(year)
+  const list = cleanCodes(codes)
+  if (!y || list.length === 0) return NOTHING_HYDRATED
+  return plain(await hydratePlannerUnits(list, y))
 }
 
-/* ------------------------------------------------------------------ *
- * Tree page
- *
- * One server action expands the graph for the current controls value
- * and hydrates every unit + its offerings + structured rules +
- * enrolment-rule prose. The page state is small enough that doing
- * this in one round-trip is much cheaper than per-mutation patches.
- * ------------------------------------------------------------------ */
-
-import {
-  FIXED_TREE_DEPTH,
-  type TreeControlsValue,
-  type TreeGraphPayload,
-} from "@/lib/tree/payload"
-export type { TreeControlsValue, TreeGraphPayload } from "@/lib/tree/payload"
-
+/**
+ * The requisite graph for the current controls, with every unit's
+ * data, offerings, structured rules and enrolment-rule prose. The
+ * handbook pages render the first paint with the same function.
+ */
 export async function fetchTreeDataAction(
   controls: TreeControlsValue
 ): Promise<TreeGraphPayload> {
-  const empty: TreeGraphPayload = {
-    graph: { seeds: [], nodes: [], edges: [] },
-    units: {},
-    offerings: {},
-    requisites: {},
-    enrolmentRules: {},
-  }
-
-  const graph = await (async () => {
-    if (controls.mode === "course") {
-      if (!controls.courseCode) return empty.graph
-      return expandCourseClosure(
-        controls.courseCode,
-        controls.aosCode,
-        controls.year,
-        FIXED_TREE_DEPTH
-      )
-    }
-    if (!controls.unitCode) return empty.graph
-    return expandRequisiteGraph(
-      [controls.unitCode],
-      controls.year,
-      controls.direction,
-      FIXED_TREE_DEPTH
-    )
-  })()
-
-  if (graph.nodes.length === 0) return empty
-
-  // Hydrate metadata for every node so the renderer doesn't have to
-  // round-trip for badges / synopsis / etc.
-  const { units, offerings, requisites } = await hydratePlannerUnits(
-    graph.nodes,
-    controls.year
-  )
-  const enrolment = await fetchEnrolmentRulesForCodes(
-    graph.nodes,
-    controls.year
-  )
-
-  return {
-    graph,
-    units: Object.fromEntries(units),
-    offerings: Object.fromEntries(offerings),
-    requisites: Object.fromEntries(requisites),
-    enrolmentRules: Object.fromEntries(enrolment),
-  }
+  const clean = cleanTreeControls(controls, await listAvailableYears())
+  return clean ? prefetchTreeData(clean) : EMPTY_TREE_PAYLOAD
 }
 
 /**
@@ -220,11 +204,12 @@ export async function fetchPlanGraphAction(
   codes: string[],
   year: string
 ): Promise<{ edges: TreeEdge[]; units: Record<string, PlannerUnit> }> {
-  const unique = [...new Set(codes)].sort().slice(0, 400)
-  if (unique.length === 0) return { edges: [], units: {} }
+  const y = await knownYear(year)
+  const unique = cleanCodes(codes, 400)
+  if (!y || unique.length === 0) return { edges: [], units: {} }
   const [graph, hydrated] = await Promise.all([
-    expandRequisiteGraph(unique, year, "both", 0),
-    hydratePlannerUnits(unique, year),
+    expandRequisiteGraph(unique, y, "both", 0),
+    hydratePlannerUnits(unique, y),
   ])
   return {
     edges: graph.edges,
@@ -238,12 +223,17 @@ export async function fetchPlanGraphAction(
  * Only signed-in users can persist. The client falls back to
  * localStorage for anonymous visitors — see PlannerProvider for the
  * policy. Every mutation is gated by ownership: a planId from one user
- * cannot read or write another user's plan even if guessed.
+ * cannot read or write another user's plan even if guessed. States are
+ * checked by isPlannerState; an account holds at most
+ * MAX_PLANS_PER_USER plans.
  * ------------------------------------------------------------------ */
 
 export type SaveResult =
   | { ok: true }
   | { ok: false; reason: "unauthenticated" | "invalid" | "not_found" }
+
+const isPlanId = (v: unknown): v is string =>
+  typeof v === "string" && v.length > 0 && v.length <= 64
 
 export async function listMyPlansAction(): Promise<PlanSummary[]> {
   const u = await getCurrentUser()
@@ -255,7 +245,7 @@ export async function getMyPlanAction(
   planId: string
 ): Promise<{ id: string; name: string; state: PlannerState } | null> {
   const u = await getCurrentUser()
-  if (!u) return null
+  if (!u || !isPlanId(planId)) return null
   return getUserPlanById(planId, u.id)
 }
 
@@ -265,7 +255,8 @@ export async function saveMyPlanAction(
 ): Promise<SaveResult> {
   const u = await getCurrentUser()
   if (!u) return { ok: false, reason: "unauthenticated" }
-  if (!isPlannerStateLike(state)) return { ok: false, reason: "invalid" }
+  if (!isPlanId(planId) || !isPlannerState(state))
+    return { ok: false, reason: "invalid" }
   const ok = await updateUserPlanState(planId, u.id, state)
   return ok ? { ok: true } : { ok: false, reason: "not_found" }
 }
@@ -275,13 +266,18 @@ export async function createMyPlanAction(
   state: PlannerState
 ): Promise<
   | { ok: true; plan: { id: string; name: string } }
-  | { ok: false; reason: "unauthenticated" | "invalid" }
+  | { ok: false; reason: "unauthenticated" | "invalid" | "limit" }
 > {
   const u = await getCurrentUser()
   if (!u) return { ok: false, reason: "unauthenticated" }
-  if (!isPlannerStateLike(state)) return { ok: false, reason: "invalid" }
-  const trimmed = name.trim().slice(0, 80) || "My plan"
-  const plan = await createUserPlan(u.id, trimmed, state)
+  if (!isPlannerState(state)) return { ok: false, reason: "invalid" }
+  if ((await countUserPlans(u.id)) >= MAX_PLANS_PER_USER)
+    return { ok: false, reason: "limit" }
+  const plan = await createUserPlan(
+    u.id,
+    cleanPlanName(name) ?? "My plan",
+    state
+  )
   return { ok: true, plan }
 }
 
@@ -293,20 +289,22 @@ export async function createMyPlanAction(
  *   - FormData with `year` (and optional `name`) → caller-chosen year.
  *     Used once the user already has plans, so subsequent plans don't
  *     silently inherit the latest handbook year.
+ * At the plan limit it goes back to /plans, which explains why.
  */
 export async function createBlankPlanAction(
   formData?: FormData
 ): Promise<never> {
   const u = await getCurrentUser()
   if (!u) redirect("/sign-in")
+  if ((await countUserPlans(u.id)) >= MAX_PLANS_PER_USER)
+    redirect("/plans?error=limit")
   const availableYears = await listAvailableYears()
-  const requestedYear = formData?.get("year")?.toString()
   const year =
-    requestedYear && availableYears.includes(requestedYear)
-      ? requestedYear
-      : (availableYears.at(-1) ?? HANDBOOK_YEAR)
-  const requestedName = formData?.get("name")?.toString().trim()
-  const name = requestedName ? requestedName.slice(0, 80) : "Default plan"
+    cleanYear(formData?.get("year")?.toString(), availableYears) ??
+    availableYears.at(-1)
+  if (!year) throw new Error("No handbook years are loaded")
+  const name =
+    cleanPlanName(formData?.get("name")?.toString()) ?? "Default plan"
   const state = defaultState(year, null, 3)
   const plan = await createUserPlan(u.id, name, state)
   const posthog = getPostHogClient()
@@ -325,8 +323,8 @@ export async function renameMyPlanAction(
 ): Promise<SaveResult> {
   const u = await getCurrentUser()
   if (!u) return { ok: false, reason: "unauthenticated" }
-  const trimmed = name.trim().slice(0, 80)
-  if (!trimmed) return { ok: false, reason: "invalid" }
+  const trimmed = cleanPlanName(name)
+  if (!isPlanId(planId) || !trimmed) return { ok: false, reason: "invalid" }
   const ok = await renameUserPlan(planId, u.id, trimmed)
   return ok ? { ok: true } : { ok: false, reason: "not_found" }
 }
@@ -334,6 +332,7 @@ export async function renameMyPlanAction(
 export async function deleteMyPlanAction(planId: string): Promise<SaveResult> {
   const u = await getCurrentUser()
   if (!u) return { ok: false, reason: "unauthenticated" }
+  if (!isPlanId(planId)) return { ok: false, reason: "invalid" }
   const ok = await deleteUserPlan(planId, u.id)
   return ok ? { ok: true } : { ok: false, reason: "not_found" }
 }
@@ -342,21 +341,22 @@ export async function duplicateMyPlanAction(
   planId: string
 ): Promise<
   | { ok: true; plan: { id: string; name: string } }
-  | { ok: false; reason: "unauthenticated" | "not_found" }
+  | { ok: false; reason: "unauthenticated" | "not_found" | "limit" }
 > {
   const u = await getCurrentUser()
   if (!u) return { ok: false, reason: "unauthenticated" }
+  if (!isPlanId(planId)) return { ok: false, reason: "not_found" }
+  if ((await countUserPlans(u.id)) >= MAX_PLANS_PER_USER)
+    return { ok: false, reason: "limit" }
   const plan = await duplicateUserPlan(planId, u.id)
   return plan ? { ok: true, plan } : { ok: false, reason: "not_found" }
 }
 
-/**
- * Cheap structural check — we don't want a malicious client jamming
- * arbitrary JSON into a plan row. Anything that survives this is
- * trusted; the validator/reducer on read tolerates stray fields.
- */
 /* ------------------------------------------------------------------ *
  * Per-user grades (account-global)
+ *
+ * An account holds at most MAX_GRADES_PER_USER grades. Changing an
+ * existing grade always works.
  * ------------------------------------------------------------------ */
 
 export async function listMyGradesAction(): Promise<Record<string, number>> {
@@ -379,54 +379,49 @@ export async function setMyGradeAction(
 ): Promise<SaveResult> {
   const u = await getCurrentUser()
   if (!u) return { ok: false, reason: "unauthenticated" }
-  if (!isUnitCode(unitCode)) return { ok: false, reason: "invalid" }
+  const code = cleanGradeCode(unitCode)
+  if (!code) return { ok: false, reason: "invalid" }
   if (mark === null) {
-    await deleteUserGrade(u.id, unitCode)
-  } else {
-    if (!Number.isFinite(mark) || mark < 0 || mark > 100) {
-      return { ok: false, reason: "invalid" }
-    }
-    await upsertUserGrade(u.id, unitCode, Math.round(mark))
+    await deleteUserGrade(u.id, code)
+    return { ok: true }
   }
+  const clean = cleanMark(mark)
+  if (clean === null) return { ok: false, reason: "invalid" }
+  const existing = await listUserGrades(u.id)
+  if (
+    existing[code] === undefined &&
+    Object.keys(existing).length >= MAX_GRADES_PER_USER
+  )
+    return { ok: false, reason: "invalid" }
+  await upsertUserGrade(u.id, code, clean)
   return { ok: true }
 }
 
 /**
  * Used during the localStorage → server migration on first sign-in.
  * Anything already on the server wins (no clobber); only codes the user
- * doesn't have a server-side grade for get inserted.
+ * doesn't have a server-side grade for get inserted, up to the limit.
  */
 export async function migrateMyGradesAction(
   grades: Record<string, number>
 ): Promise<{ ok: boolean }> {
   const u = await getCurrentUser()
   if (!u) return { ok: false }
+  if (!grades || typeof grades !== "object") return { ok: false }
   const existing = await listUserGrades(u.id)
+  let room = MAX_GRADES_PER_USER - Object.keys(existing).length
   const toInsert: Record<string, number> = {}
-  for (const [code, mark] of Object.entries(grades)) {
-    if (!isUnitCode(code)) continue
-    if (!Number.isFinite(mark) || mark < 0 || mark > 100) continue
-    if (existing[code] !== undefined) continue
-    toInsert[code] = Math.round(mark)
+  for (const [rawCode, rawMark] of Object.entries(grades)) {
+    if (room <= 0) break
+    const code = cleanGradeCode(rawCode)
+    const mark = cleanMark(rawMark)
+    if (!code || mark === null) continue
+    if (existing[code] !== undefined || toInsert[code] !== undefined) continue
+    toInsert[code] = mark
+    room--
   }
   if (Object.keys(toInsert).length > 0) {
     await bulkUpsertUserGrades(u.id, toInsert)
   }
   return { ok: true }
-}
-
-function isUnitCode(s: unknown): s is string {
-  return typeof s === "string" && s.length > 0 && s.length <= 16
-}
-
-function isPlannerStateLike(v: unknown): v is PlannerState {
-  if (!v || typeof v !== "object") return false
-  const s = v as Record<string, unknown>
-  return (
-    typeof s.courseYear === "string" &&
-    (s.courseCode === null || typeof s.courseCode === "string") &&
-    s.selectedAos !== null &&
-    typeof s.selectedAos === "object" &&
-    Array.isArray(s.years)
-  )
 }

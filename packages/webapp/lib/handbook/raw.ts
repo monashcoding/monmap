@@ -9,6 +9,8 @@
  * docs/handbook-internals.md). `text()` reads all of those.
  */
 
+import { sanitizeHandbookHtml } from "./sanitize.ts"
+
 type Obj = Record<string, unknown>
 
 function isObj(v: unknown): v is Obj {
@@ -27,14 +29,15 @@ export function text(v: unknown): string | null {
   return null
 }
 
-/** HTML prose, or null when it holds no visible text. */
+/** Sanitized HTML prose, or null when it holds no visible text. */
 export function html(v: unknown): string | null {
   if (typeof v !== "string") return null
-  const visible = v
+  const clean = sanitizeHandbookHtml(v.trim())
+  const visible = clean
     .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;| /g, " ")
+    .replace(/&nbsp;|\u00a0/g, " ")
     .trim()
-  return visible ? v.trim() : null
+  return visible ? clean : null
 }
 
 function num(v: unknown): number | null {

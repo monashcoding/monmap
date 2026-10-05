@@ -12,6 +12,7 @@
  * to point at `@/lib/planner/types`.
  */
 import type { PeriodKind, PlannerSlot } from "@monmap/db"
+import type { RequirementGroup } from "@monmap/db/curriculum"
 export type {
   PeriodKind,
   PlannerCreditEntry,
@@ -57,11 +58,17 @@ export interface PlannerOffering {
   periodKind: PeriodKind
 }
 
-/** A requisite rule tree — authoritative AND/OR semantics. */
+/**
+ * A requisite rule tree — authoritative AND/OR semantics. Rules from the
+ * database are slimmed to these fields (lib/db/requisite-rule.ts); the
+ * raw CourseLoop JSON carries many more, which nothing reads.
+ */
 export type RequisiteRule = RequisiteContainer[]
 
 export interface RequisiteContainer {
+  /** CourseLoop placeholder ("Container 1"); dropped by the slimming. */
   title?: string
+  /** Only `value` is read; `label` is dropped by the slimming. */
   parent_connector?: { value?: string; label?: string } | null
   containers?: RequisiteContainer[]
   relationships?: RequisiteLeaf[]
@@ -70,8 +77,6 @@ export interface RequisiteContainer {
 export interface RequisiteLeaf {
   academic_item_code: string
   academic_item_name?: string
-  academic_item_credit_points?: string | number
-  academic_item_url?: string
 }
 
 export interface RequisiteBlock {
@@ -86,28 +91,12 @@ export interface RequisiteBlock {
 }
 
 /**
- * One row in a curriculum requirement tree: a grouping (e.g. "Core
- * units", "Level 3 elective units"), the full list of unit options
- * the handbook lists under it, and how many of those students must
- * complete. `required === options.length` for "all required" groups;
- * `required < options.length` for "pick X of Y" choice groups.
- *
- * Mirrors `RequirementGroup` in `@monmap/db` (the extractor's output
- * shape); kept structurally identical so rows flow through untouched.
+ * One row in a curriculum requirement tree: a grouping, its unit
+ * options and how many must be completed. Defined once, by the
+ * extractor in `@monmap/db`; the type-only re-export is erased, so it
+ * adds nothing to client bundles.
  */
-export interface RequirementGroup {
-  grouping: string
-  required: number
-  options: string[]
-  /**
-   * Explicit auto-load verdict from the extractor. Absent on rows
-   * baked before the field existed — consumers fall back to
-   * `required === options.length`.
-   */
-  autoLoad?: boolean
-  /** Campus/offering scope ("Malaysia", "Clayton", …), if detected. */
-  scope?: string
-}
+export type { DegreeShape, RequirementGroup } from "@monmap/db/curriculum"
 
 /** An area of study on a course, as the picker surfaces it. */
 export interface PlannerAreaOfStudy {
@@ -175,7 +164,6 @@ export interface PlannerCourse {
   creditPoints: number
   aqfLevel: string | null
   type: string | null
-  overview: string | null
   /**
    * False when the handbook publishes no structure for the course in
    * this year: no requirement groups, areas of study or component
@@ -240,6 +228,28 @@ export interface PlannerCourseWithAoS extends PlannerCourse {
    * Absent on payloads from before this shipped — treat as empty.
    */
   conflicts?: Record<string, string[]>
+}
+
+/**
+ * Every unit code a course can put on the planner: its areas of study,
+ * its own template and, for double degrees, each component's template.
+ * The server prewarm and every client course load hydrate this list.
+ */
+export function plannerUnitCodes(
+  course: Pick<
+    PlannerCourseWithAoS,
+    "areasOfStudy" | "courseUnits" | "componentCourses"
+  >
+): string[] {
+  return [
+    ...new Set([
+      ...course.areasOfStudy.flatMap((a) => a.units.map((u) => u.code)),
+      ...course.courseUnits.map((u) => u.code),
+      ...course.componentCourses.flatMap((cc) =>
+        cc.courseUnits.map((u) => u.code)
+      ),
+    ]),
+  ]
 }
 
 export const DEFAULT_SLOT_CAPACITY = 4
