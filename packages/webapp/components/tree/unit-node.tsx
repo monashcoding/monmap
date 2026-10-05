@@ -22,7 +22,7 @@ export type UnitNodeData = TreeNode & {
  * student moving between Planner and Tree sees the same chips. Same
  * faculty rail, same code-then-title layout, same height envelope.
  * Differences:
- *   - Compact (76px tall vs 88px) so 30-node trees fit on screen.
+ *   - Compact (70px tall vs 88px) so 30-node trees fit on screen.
  *   - Its star rating along the bottom.
  *   - A small variant chip if equivalence-collapse stacked siblings
  *     (e.g. FIT1045 + FIT1053).
@@ -39,7 +39,7 @@ function UnitNodeInner({ data, selected }: NodeProps) {
     <div
       data-status={d.planStatus ?? "none"}
       className={cn(
-        "group/tree-node relative flex h-[76px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
+        "group/tree-node relative flex h-[70px] w-[196px] min-w-0 cursor-pointer items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,opacity,box-shadow,border-color] duration-150",
         "hover:-translate-y-px hover:shadow-md",
         d.isFocused || selected
           ? "border-emphasis ring-2 ring-emphasis/40"
@@ -131,9 +131,13 @@ function UnitNodeInner({ data, selected }: NodeProps) {
 function NodeRating({ code }: { code: string }) {
   const rating = useRating("unit", code)
   return (
-    <div className="mt-auto h-3">
+    <div className="mt-auto flex h-3.5 shrink-0 items-center">
       {rating ? (
-        <RatingInline summary={rating} size="xs" className="text-[10px]" />
+        <RatingInline
+          summary={rating}
+          size="xs"
+          className="text-[10px] leading-none"
+        />
       ) : null}
     </div>
   )
