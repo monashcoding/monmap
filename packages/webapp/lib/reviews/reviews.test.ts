@@ -16,7 +16,10 @@ test("initials come from the first and last word of the name", () => {
 test("initials fall back to the email, then to ?", () => {
   assert.equal(reviewInitials(null, "jordan.lee99@student.example"), "JL")
   // A mirror row whose name is still the email.
-  assert.equal(reviewInitials("sam_lee@gmail.com", "sam_lee@gmail.com"), "SL")
+  assert.equal(
+    reviewInitials("sam_lee@example.com", "sam_lee@example.com"),
+    "SL"
+  )
   assert.equal(reviewInitials("", "1234@x.com"), "?")
   assert.equal(reviewInitials(undefined, undefined), "?")
 })
