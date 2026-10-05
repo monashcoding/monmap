@@ -92,6 +92,13 @@
       "when": 1791185663036,
       "tag": "0012_add_unit_year_links",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791188353979,
+      "tag": "0013_drop_better_auth_tables",
+      "breakpoints": true
     }
   ]
 }

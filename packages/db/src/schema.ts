@@ -395,8 +395,8 @@ export const unitYearLinks = pgTable(
  *
  * Identity is owned by the central MAC auth service; MonMap no longer
  * mints sessions or performs OAuth, so the Better Auth `session`,
- * `account`, and `verification` tables were dropped (see the migration
- * that removes them).
+ * `account`, and `verification` tables were dropped (migration 0013;
+ * 0009 meant to, but its journal timestamp sorted it out of the run).
  *
  * `user` is kept only as a local mirror so the FKs from `user_plan` /
  * `user_grade` remain intact. Its `id` equals the token's `macUserId`
