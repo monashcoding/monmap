@@ -137,7 +137,8 @@ export function PlanCard({ data }: { data: PlanPageData }) {
             <div>
               {editingName ? (
                 <input
-                  className="w-full rounded-control bg-muted/50 px-1 text-base leading-tight font-bold ring-1 ring-primary outline-none focus:ring-2"
+                  aria-label="Plan name"
+                  className="-mx-2 -my-1 w-[calc(100%+1rem)] rounded-control bg-card px-2 py-1 text-base leading-tight font-bold ring-1 ring-ring outline-none"
                   value={nameDraft}
                   autoFocus
                   onChange={(e) => setNameDraft(e.target.value)}
@@ -148,12 +149,17 @@ export function PlanCard({ data }: { data: PlanPageData }) {
                   }}
                 />
               ) : (
-                <h2
-                  className="cursor-text text-base leading-tight font-bold hover:text-primary"
-                  title="Click to rename"
-                  onClick={startNameEdit}
-                >
-                  {plan.name}
+                // Same rename affordance as the planner's plan title: a
+                // grey wash on hover, no colour change.
+                <h2 className="text-base leading-tight font-bold">
+                  <button
+                    type="button"
+                    title={`Rename "${plan.name}"`}
+                    onClick={startNameEdit}
+                    className="-mx-2 -my-1 rounded-control px-2 py-1 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {plan.name}
+                  </button>
                 </h2>
               )}
               {course ? (
