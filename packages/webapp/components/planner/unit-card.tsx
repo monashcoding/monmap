@@ -168,7 +168,7 @@ export function UnitCard({
       data-dragging={isBeingDragged ? "true" : undefined}
       data-swap-target={isSwapTarget ? "true" : undefined}
       className={cn(
-        "group/card relative flex min-w-0 animate-in items-stretch overflow-hidden rounded-control border bg-background shadow-card transition-[transform,box-shadow,border-color,opacity] duration-200 fade-in-0 slide-in-from-top-1",
+        "group/card relative flex min-w-0 animate-in items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,box-shadow,border-color,opacity] duration-200 fade-in-0 slide-in-from-top-1",
         "hover:-translate-y-px",
         isDragOverlay
           ? "cursor-grabbing"

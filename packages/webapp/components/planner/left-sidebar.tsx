@@ -3,9 +3,12 @@
 import {
   BadgeCheckIcon,
   CalculatorIcon,
+  CircleAlertIcon,
   DownloadIcon,
+  EllipsisIcon,
   GraduationCapIcon,
-  PlusCircleIcon,
+  PencilIcon,
+  PlusIcon,
   PrinterIcon,
   Redo2Icon,
   RotateCcwIcon,
@@ -17,6 +20,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { PlannerState } from "@/lib/planner/types"
 
 import { CreditDialog } from "./credit-dialog"
@@ -24,9 +34,10 @@ import { usePlanner } from "./planner-context"
 import { useWam } from "./wam-context"
 
 /**
- * Vertical action rail, left side. Matches the MonPlan floating
- * sidebar idiom — four discoverable verbs as icon buttons with
- * text labels. State-only operations (no server round-trip).
+ * Plan header above the grid: the plan's name (click to rename) and
+ * its validation status on the left; undo/redo, the WAM and grade
+ * toggles, Add year and a More menu on the right. State-only
+ * operations (no server round-trip).
  */
 export function LeftSidebar() {
   const {
@@ -123,178 +134,205 @@ export function LeftSidebar() {
     window.print()
   }, [])
 
+  const planTitle =
+    currentUser && activePlan ? activePlan.name : "Your course map"
+
   return (
-    <div className="flex flex-col gap-1 self-start sm:flex-row sm:flex-wrap sm:items-start sm:gap-2 print:hidden">
-      <aside className="flex flex-col gap-1 self-start rounded-panel border bg-card p-1.5 shadow-card sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 sm:p-2">
-        {currentUser && activePlan ? (
-          <>
-            {editingName ? (
-              <input
-                autoFocus
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                onBlur={commitNameEdit}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitNameEdit()
-                  if (e.key === "Escape") cancelNameEdit()
-                }}
-                className="w-full max-w-full rounded-control px-3 py-2 text-xs font-semibold ring-1 ring-primary outline-none focus:ring-2 sm:w-auto sm:max-w-[220px]"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setEditingName(true)}
-                title={`Rename "${activePlan.name}"`}
-                className="w-full max-w-full cursor-text truncate rounded-control px-3 py-2 text-left text-xs font-semibold hover:bg-muted/60 sm:w-auto sm:max-w-[220px]"
-              >
-                {activePlan.name}
-              </button>
-            )}
-            <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
-          </>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-0.5 sm:gap-1">
-          <ActionButton
-            icon={<BadgeCheckIcon />}
-            label="Validate"
-            tone={errorCount === 0 ? "good" : "bad"}
-            onClick={() => {
-              if (errorCount === 0) {
-                toast.success("Plan validates cleanly", {
-                  description:
-                    "Every unit meets its prereqs and is offered in its slot.",
-                })
-                return
-              }
-              flashErrors()
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 print:hidden">
+      <div className="flex min-w-0 items-center gap-3">
+        {currentUser && activePlan && editingName ? (
+          <input
+            autoFocus
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onBlur={commitNameEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitNameEdit()
+              if (e.key === "Escape") cancelNameEdit()
             }}
+            aria-label="Plan name"
+            className="w-full max-w-[320px] min-w-0 rounded-control bg-card px-2 py-1 text-lg font-semibold ring-1 ring-ring outline-none"
           />
+        ) : currentUser && activePlan ? (
+          <button
+            type="button"
+            onClick={() => setEditingName(true)}
+            title={`Rename "${activePlan.name}"`}
+            className="group/name flex min-w-0 items-center gap-1.5 rounded-control px-2 py-1 text-left text-lg font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="truncate">{planTitle}</span>
+            <PencilIcon className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/name:opacity-100 group-focus-visible/name:opacity-100" />
+          </button>
+        ) : (
+          <h2 className="truncate px-2 py-1 text-lg font-semibold">
+            {planTitle}
+          </h2>
+        )}
 
-          <ActionButton
-            icon={<PlusCircleIcon />}
-            label="Add year"
-            onClick={() => dispatch({ type: "add_year" })}
-          />
-
-          <ActionButton
-            icon={<GraduationCapIcon />}
-            label="Credit"
-            tone={creditCount > 0 ? "active" : undefined}
-            onClick={() => setCreditOpen(true)}
-          />
-
-          <ActionButton
-            icon={<UploadIcon />}
-            label="Export"
-            onClick={onExport}
-          />
-
-          <ActionButton
-            icon={<DownloadIcon />}
-            label="Import"
-            onClick={() => fileInputRef.current?.click()}
-          />
-
-          <ActionButton
-            icon={<PrinterIcon />}
-            label="Print"
-            onClick={onPrint}
-          />
-
-          <ActionButton
-            icon={<RotateCcwIcon />}
-            label="Reset"
-            onClick={onReset}
-          />
-
-          <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
-
-          <ActionButton
-            icon={<CalculatorIcon />}
-            label="WAM"
-            tone={wamMode ? "active" : undefined}
-            onClick={toggleWamMode}
-          />
-          <ActionButton
-            icon={<TagIcon />}
-            label="Show Grades"
-            tone={showGrade ? "active" : undefined}
-            onClick={toggleShowGrade}
-          />
-
-          <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
-
-          <ActionButton
-            icon={<Undo2Icon />}
-            label="Undo"
-            onClick={undo}
-            disabled={!canUndo}
-          />
-          <ActionButton
-            icon={<Redo2Icon />}
-            label="Redo"
-            onClick={redo}
-            disabled={!canRedo}
-          />
-        </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/json"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) void onImport(f)
-            e.target.value = ""
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (errorCount === 0) {
+              toast.success("Plan validates cleanly", {
+                description:
+                  "Every unit meets its prereqs and is offered in its slot.",
+              })
+              return
+            }
+            flashErrors()
           }}
-        />
-      </aside>
+          title={
+            errorCount === 0
+              ? "Every unit meets its prereqs and is offered in its slot"
+              : "Highlight the units with problems"
+          }
+          className="shrink-0"
+        >
+          {errorCount === 0 ? (
+            <BadgeCheckIcon className="text-success" />
+          ) : (
+            <CircleAlertIcon className="text-destructive" />
+          )}
+          {errorCount === 0
+            ? "Valid"
+            : `${errorCount} issue${errorCount === 1 ? "" : "s"}`}
+        </Button>
+      </div>
 
+      <div className="flex flex-wrap items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={undo}
+          disabled={!canUndo}
+          aria-label="Undo"
+          title="Undo"
+        >
+          <Undo2Icon />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={redo}
+          disabled={!canRedo}
+          aria-label="Redo"
+          title="Redo"
+        >
+          <Redo2Icon />
+        </Button>
+
+        <div aria-hidden className="mx-1 h-5 w-px bg-border" />
+
+        <ToggleButton
+          icon={<CalculatorIcon />}
+          label="WAM"
+          pressed={wamMode}
+          onClick={toggleWamMode}
+        />
+        <ToggleButton
+          icon={<TagIcon />}
+          label="Grades"
+          pressed={showGrade}
+          onClick={toggleShowGrade}
+        />
+
+        <div aria-hidden className="mx-1 h-5 w-px bg-border" />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => dispatch({ type: "add_year" })}
+        >
+          <PlusIcon />
+          Add year
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="More plan actions"
+                title="More"
+              />
+            }
+          >
+            <EllipsisIcon />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => setCreditOpen(true)}>
+              <GraduationCapIcon />
+              Credit
+              {creditCount > 0 ? (
+                <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+                  {creditCount}
+                </span>
+              ) : null}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onExport}>
+              <UploadIcon />
+              Export
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+              <DownloadIcon />
+              Import
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onPrint}>
+              <PrinterIcon />
+              Print
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={onReset}>
+              <RotateCcwIcon />
+              Reset plan
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) void onImport(f)
+          e.target.value = ""
+        }}
+      />
       <CreditDialog open={creditOpen} onOpenChangeAction={setCreditOpen} />
     </div>
   )
 }
 
-function ActionButton({
+function ToggleButton({
   icon,
   label,
-  tone,
+  pressed,
   onClick,
-  disabled,
 }: {
   icon: React.ReactNode
   label: string
-  tone?: "good" | "bad" | "active"
+  pressed: boolean
   onClick: () => void
-  disabled?: boolean
 }) {
   return (
     <Button
       variant="ghost"
+      size="sm"
+      aria-pressed={pressed}
       onClick={onClick}
-      disabled={disabled}
-      className="flex h-auto flex-col items-center gap-1 rounded-control px-3 py-2 text-xs"
+      className={
+        pressed
+          ? "bg-emphasis-soft text-emphasis hover:bg-emphasis-soft hover:text-emphasis"
+          : "text-muted-foreground"
+      }
     >
-      <span
-        className={
-          tone === "good"
-            ? "text-success"
-            : tone === "bad"
-              ? "text-destructive"
-              : tone === "active"
-                ? "text-primary"
-                : "text-foreground"
-        }
-      >
-        {icon}
-      </span>
-      <span
-        className={`text-[10px] leading-none font-medium${tone === "active" ? "text-primary" : ""}`}
-      >
-        {label}
-      </span>
+      {icon}
+      {label}
     </Button>
   )
 }

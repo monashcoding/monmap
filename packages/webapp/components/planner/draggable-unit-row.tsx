@@ -64,7 +64,7 @@ export function DraggableUnitRow({ code }: { code: string }) {
       {...dragListeners}
       {...dragAttributes}
       className={cn(
-        "group/row flex items-stretch overflow-hidden rounded-control border bg-background shadow-card transition-[transform,box-shadow,opacity] duration-200",
+        "group/row flex items-stretch overflow-hidden rounded-control border bg-card shadow-card transition-[transform,box-shadow,opacity] duration-200",
         "cursor-grab hover:-translate-y-px active:cursor-grabbing data-[dragging=true]:opacity-30",
         // Dimmed as a hint that it's already somewhere on the plan —
         // still draggable, since a retake is a legitimate second copy.
