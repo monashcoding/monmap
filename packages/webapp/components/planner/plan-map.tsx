@@ -15,7 +15,7 @@ export interface PlanMapProps {
   knownUnits?: ReadonlyMap<string, PlannerUnit>
   /** Marks: a unit with one shows as completed. */
   grades?: ReadonlyMap<string, number>
-  /** "thumbnail" is a static, zoomed-out picture with no interaction. */
+  /** "thumbnail" is zoomed out, with only pinch-zoom and drag-to-pan. */
   variant?: "full" | "thumbnail"
   className?: string
 }

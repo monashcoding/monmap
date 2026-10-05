@@ -38,8 +38,9 @@ export interface TreeGraphProps {
   /**
    * The plan map's options. `fitAll` zooms out as far as needed to show
    * every node on load; `minimap` hides the corner overview when false;
-   * `interactive` false makes a static thumbnail with no pan, zoom,
-   * clicks or controls.
+   * `interactive` false makes a thumbnail: no clicks or controls, and
+   * only drag-to-pan and pinch-to-zoom, so scrolling over it still
+   * scrolls the page.
    */
   fitAll?: boolean
   minimap?: boolean
@@ -203,10 +204,12 @@ function TreeGraphInner({
         proOptions={{ hideAttribution: true }}
         onNodeClick={interactive ? handleNodeClick : undefined}
         onPaneClick={interactive ? () => onFocus(null) : undefined}
-        panOnDrag={interactive}
+        panOnDrag
         zoomOnScroll={interactive}
-        zoomOnPinch={interactive}
+        zoomOnPinch
         zoomOnDoubleClick={interactive}
+        // False lets a two-finger scroll reach the page; ReactFlow still
+        // takes a trackpad pinch (a ctrl+wheel event) as zoom.
         preventScrolling={interactive}
         fitView
         fitViewOptions={

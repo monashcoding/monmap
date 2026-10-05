@@ -337,9 +337,9 @@ export function PlanCard({ data }: { data: PlanPageData }) {
 }
 
 /**
- * A zoomed-out, static prerequisite map of the plan, filling the
- * card's third column on wide screens. It mounts only at that width,
- * so narrower screens don't fetch the graph at all.
+ * A zoomed-out prerequisite map of the plan (pinch to zoom, drag to
+ * pan), filling the card's third column on wide screens. It mounts
+ * only at that width, so narrower screens don't fetch the graph.
  */
 function PlanMapThumbnail({ state }: { state: PlannerState }) {
   const wide = useSyncExternalStore(
