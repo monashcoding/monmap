@@ -26,68 +26,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   isFreshPlan,
-  loadOf,
   startLabel,
   startPeriodOf,
   yearsNeeded,
 } from "@/lib/planner/timeline"
-import { cn } from "@/lib/utils"
 
 import { CoursePicker } from "./course-picker"
 import { usePlanner } from "./planner-context"
 
 /**
- * The plan's basics: when the student starts (intake and year) and how
- * much they take per semester. One set of controls, used by the
- * first-run setup card and by the "Starts … · Edit" line under the
- * plan title, so both behave the same way.
+ * When the student starts: intake (Semester 1 or 2) and starting year.
+ * One set of controls, used by the first-run setup card and by the
+ * "Starts …" control beside the plan title. Changing the year on a plan
+ * with units asks first, because each year has its own handbook.
  */
-
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string
-  value: T
-  options: { value: T; label: string; hint: string }[]
-  onChange: (v: T) => void
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className="inline-flex rounded-control border border-input bg-field p-0.5"
-    >
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            "flex flex-col items-start rounded-[calc(var(--radius-control)-2px)] px-3 py-1.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            value === o.value
-              ? "bg-card font-semibold text-foreground shadow-card"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {o.label}
-          <span className="text-[11px] font-normal text-muted-foreground">
-            {o.hint}
-          </span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-/** Intake, starting year and load. Year changes on a plan with units ask first. */
-function BasicsFields({ showLoad = true }: { showLoad?: boolean }) {
+function StartFields() {
   const { state, dispatch, availableYears, switchYear } = usePlanner()
   const [pendingYear, setPendingYear] = useState<string | null>(null)
   const hasUnits = state.years.some((y) =>
@@ -96,14 +52,12 @@ function BasicsFields({ showLoad = true }: { showLoad?: boolean }) {
 
   function chooseYear(y: string) {
     if (y === state.courseYear) return
-    // Switching the handbook year clears placed units, so only ask when
-    // there is something to lose.
     if (hasUnits) setPendingYear(y)
     else void switchYear(y)
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-wrap items-center gap-2">
       <AlertDialog
         open={pendingYear !== null}
         onOpenChange={(open) => {
@@ -132,119 +86,81 @@ function BasicsFields({ showLoad = true }: { showLoad?: boolean }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmented
-          label="Intake"
-          value={startPeriodOf(state)}
-          options={[
-            { value: "S1", label: "Semester 1", hint: "Starts in February" },
-            { value: "S2", label: "Semester 2", hint: "Starts in July" },
-          ]}
-          onChange={(period) => dispatch({ type: "set_start_period", period })}
-        />
-        <Select
-          value={state.courseYear}
-          onValueChange={(v) => {
-            if (typeof v === "string") chooseYear(v)
-          }}
-        >
-          <SelectTrigger aria-label="Starting year" className="h-[46px] w-28">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {[...availableYears].reverse().map((y) => (
-              <SelectItem key={y} value={y}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {showLoad ? (
-        <Segmented
-          label="Study load"
-          value={loadOf(state) <= 2 ? "part" : "full"}
-          options={[
-            { value: "full", label: "Full-time", hint: "4 units a semester" },
-            { value: "part", label: "Part-time", hint: "2 units a semester" },
-          ]}
-          onChange={(v) =>
-            dispatch({ type: "set_load", load: v === "part" ? 2 : 4 })
-          }
-        />
-      ) : null}
+      <Tabs
+        value={startPeriodOf(state)}
+        onValueChange={(v) =>
+          dispatch({
+            type: "set_start_period",
+            period: v === "S2" ? "S2" : "S1",
+          })
+        }
+      >
+        <TabsList aria-label="Intake">
+          <TabsTrigger value="S1">Semester 1</TabsTrigger>
+          <TabsTrigger value="S2">Semester 2</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      <Select
+        value={state.courseYear}
+        onValueChange={(v) => {
+          if (typeof v === "string") chooseYear(v)
+        }}
+      >
+        <SelectTrigger aria-label="Starting year" className="w-24">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {[...availableYears].reverse().map((y) => (
+            <SelectItem key={y} value={y}>
+              {y}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
-  )
-}
-
-function Step({
-  n,
-  title,
-  children,
-}: {
-  n: number
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-3 gap-y-2">
-      <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-        {n}
-      </span>
-      <h3 className="self-center text-sm font-semibold">{title}</h3>
-      <div className="col-start-2">{children}</div>
-    </section>
   )
 }
 
 /**
  * First-run setup, shown in place of the empty grid until the student
- * creates their map or skips. Order matters: the starting year decides
- * which handbook (and so which courses) the picker lists.
+ * creates their map or skips. The starting year comes first because it
+ * decides which handbook, and so which courses, the picker lists.
  */
 export function PlanSetup() {
-  const { state, dispatch, course } = usePlanner()
+  const { dispatch, course } = usePlanner()
 
   function create() {
     if (course) {
       dispatch({
         type: "set_year_count",
-        count: yearsNeeded(course.creditPoints, loadOf(state)),
+        count: yearsNeeded(course.creditPoints),
       })
     }
     dispatch({ type: "complete_setup" })
   }
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-8 sm:px-8 print:hidden">
+    <div className="flex flex-col gap-5 px-4 py-6 sm:px-6 print:hidden">
       <div>
-        <h2 className="text-lg font-semibold">Let&apos;s map your course</h2>
+        <h2 className="text-base font-semibold">Let&apos;s map your course</h2>
         <p className="text-sm text-muted-foreground">
-          Three quick questions, then drag units into your semesters. You can
-          change any of this later.
+          Two quick questions, then drag units into your semesters. You can
+          change either later.
         </p>
       </div>
-      <Step n={1} title="When do you start?">
-        <BasicsFields showLoad={false} />
-      </Step>
-      <Step n={2} title="What are you studying?">
-        <CoursePicker className="max-w-md border-0 p-0 shadow-none" />
-      </Step>
-      <Step n={3} title="How many units a semester?">
-        <Segmented
-          label="Study load"
-          value={loadOf(state) <= 2 ? "part" : "full"}
-          options={[
-            { value: "full", label: "Full-time", hint: "4 units a semester" },
-            { value: "part", label: "Part-time", hint: "2 units a semester" },
-          ]}
-          onChange={(v) =>
-            dispatch({ type: "set_load", load: v === "part" ? 2 : 4 })
-          }
-        />
-      </Step>
-      <div className="flex flex-wrap items-center gap-3 pl-10">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium text-muted-foreground">
+          When do you start?
+        </span>
+        <StartFields />
+      </div>
+      <div className="flex max-w-md flex-col gap-1.5">
+        <span className="text-xs font-medium text-muted-foreground">
+          What are you studying?
+        </span>
+        <CoursePicker className="border-0 p-0 shadow-none [&>label]:hidden" />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
         <Button onClick={create} disabled={!course}>
           Create my map
         </Button>
@@ -254,42 +170,30 @@ export function PlanSetup() {
         >
           Skip for now
         </Button>
-        {!course ? (
-          <span className="text-xs text-muted-foreground">
-            Pick a course to continue.
-          </span>
-        ) : null}
       </div>
     </div>
   )
 }
 
-/** "Starts Semester 1, 2027 · Full-time · Edit" under the plan title. */
-export function PlanBasicsLine() {
+/** "Starts Semester 1, 2027" beside the plan title; opens StartFields. */
+export function PlanStartControl() {
   const { state } = usePlanner()
   if (isFreshPlan(state)) return null
-  const load = loadOf(state)
-  const loadText =
-    load >= 4
-      ? "Full-time"
-      : load <= 2
-        ? "Part-time"
-        : `${load} units a semester`
   return (
     <Popover>
       <PopoverTrigger
         render={
           <button
             type="button"
-            className="group/basics inline-flex items-center gap-1.5 rounded-control px-2 py-0.5 text-xs text-muted-foreground outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring print:hidden"
+            className="group/start inline-flex shrink-0 items-center gap-1.5 rounded-control px-2 py-1 text-xs text-muted-foreground outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring print:hidden"
           />
         }
       >
-        Starts {startLabel(state)} · {loadText}
-        <PencilIcon className="size-3 opacity-60 group-hover/basics:opacity-100" />
+        Starts {startLabel(state)}
+        <PencilIcon className="size-3 opacity-60 group-hover/start:opacity-100" />
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto">
-        <BasicsFields />
+      <PopoverContent align="start" className="w-auto p-3">
+        <StartFields />
       </PopoverContent>
     </Popover>
   )

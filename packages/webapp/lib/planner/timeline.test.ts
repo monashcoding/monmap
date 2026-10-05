@@ -205,30 +205,10 @@ test("next semesters continue from the end of the plan", () => {
 
 import { isFreshPlan, yearsNeeded } from "./timeline.ts"
 
-test("years needed follow the load", () => {
-  assert.equal(yearsNeeded(144, 4), 3)
-  assert.equal(yearsNeeded(144, 2), 6)
-  assert.equal(yearsNeeded(192, 4), 4)
-  assert.equal(yearsNeeded(null, 4), 3)
-})
-
-test("set_load resizes semesters but not below placed units", () => {
-  let st = defaultState("2027", null, 1)
-  for (const c of ["A1000", "B1000", "C1000"])
-    st = plannerReducer(st, {
-      type: "add_unit",
-      yearIndex: 0,
-      slotIndex: 0,
-      code: c,
-    })
-  st = plannerReducer(st, { type: "set_load", load: 2 })
-  assert.equal(st.load, 2)
-  assert.equal(st.years[0]!.slots[0]!.capacity, 3)
-  assert.equal(st.years[0]!.slots[1]!.capacity, 2)
-  st = plannerReducer(st, { type: "add_year" })
-  assert.equal(st.years[1]!.slots[0]!.capacity, 2)
-  st = plannerReducer(st, { type: "set_load", load: 4 })
-  assert.equal(st.load, undefined)
+test("years needed assume a full load", () => {
+  assert.equal(yearsNeeded(144), 3)
+  assert.equal(yearsNeeded(192), 4)
+  assert.equal(yearsNeeded(null), 3)
 })
 
 test("shrinking the year count keeps years that are in use", () => {

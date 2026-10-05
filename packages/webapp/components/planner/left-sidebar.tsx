@@ -28,14 +28,14 @@ import {
 import type { PlannerState } from "@/lib/planner/types"
 
 import { CreditDialog } from "./credit-dialog"
-import { PlanBasicsLine } from "./plan-basics"
+import { PlanStartControl } from "./plan-basics"
 import { usePlanner } from "./planner-context"
 import { useWam } from "./wam-context"
 
 /**
  * Plan header above the grid: the plan's name (click to rename) and
- * its start line ("Starts Semester 1, 2027 · Full-time") and
- * validation status on the left; undo/redo, the Results toggle and a
+ * its start ("Starts Semester 1, 2027") and validation status on the
+ * left; undo/redo, the Results toggle and a
  * More menu on the right. State-only
  * operations (no server round-trip).
  */
@@ -140,37 +140,35 @@ export function LeftSidebar() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 print:hidden">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex min-w-0 flex-col items-start">
-          {currentUser && activePlan && editingName ? (
-            <input
-              autoFocus
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              onBlur={commitNameEdit}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitNameEdit()
-                if (e.key === "Escape") cancelNameEdit()
-              }}
-              aria-label="Plan name"
-              className="w-full max-w-[320px] min-w-0 rounded-control bg-card px-2 py-1 text-lg font-semibold ring-1 ring-ring outline-none"
-            />
-          ) : currentUser && activePlan ? (
-            <button
-              type="button"
-              onClick={() => setEditingName(true)}
-              title={`Rename "${activePlan.name}"`}
-              className="group/name flex min-w-0 items-center gap-1.5 rounded-control px-2 py-1 text-left text-lg font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="truncate">{planTitle}</span>
-              <PencilIcon className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/name:opacity-100 group-focus-visible/name:opacity-100" />
-            </button>
-          ) : (
-            <h2 className="truncate px-2 py-1 text-lg font-semibold">
-              {planTitle}
-            </h2>
-          )}
-          <PlanBasicsLine />
-        </div>
+        {currentUser && activePlan && editingName ? (
+          <input
+            autoFocus
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onBlur={commitNameEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitNameEdit()
+              if (e.key === "Escape") cancelNameEdit()
+            }}
+            aria-label="Plan name"
+            className="w-full max-w-[320px] min-w-0 rounded-control bg-card px-2 py-1 text-lg font-semibold ring-1 ring-ring outline-none"
+          />
+        ) : currentUser && activePlan ? (
+          <button
+            type="button"
+            onClick={() => setEditingName(true)}
+            title={`Rename "${activePlan.name}"`}
+            className="group/name flex min-w-0 items-center gap-1.5 rounded-control px-2 py-1 text-left text-lg font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="truncate">{planTitle}</span>
+            <PencilIcon className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/name:opacity-100 group-focus-visible/name:opacity-100" />
+          </button>
+        ) : (
+          <h2 className="truncate px-2 py-1 text-lg font-semibold">
+            {planTitle}
+          </h2>
+        )}
+        <PlanStartControl />
 
         <Button
           variant="outline"

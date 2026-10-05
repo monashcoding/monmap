@@ -9,7 +9,6 @@ import {
   type PlannerYear,
 } from "./types.ts"
 import {
-  loadOf,
   primaryOrder,
   sortSlots,
   startPeriodOf,
@@ -42,8 +41,7 @@ export function defaultState(
 export function defaultYear(
   nth: number,
   start: StartPeriod = "S1",
-  only?: "first",
-  capacity: number = DEFAULT_SLOT_CAPACITY
+  only?: "first"
 ): PlannerYear {
   const kinds = primaryOrder(start).slice(0, only === "first" ? 1 : 2)
   return {
@@ -51,18 +49,18 @@ export function defaultYear(
     slots: kinds.map((kind) => ({
       kind,
       unitCodes: [],
-      capacity,
+      capacity: DEFAULT_SLOT_CAPACITY,
     })),
   }
 }
 
-/** A new year shaped by the plan's intake and load. */
+/** A new year shaped by the plan's intake. */
 function yearFor(
   state: PlannerState,
   nth: number,
   only?: "first"
 ): PlannerYear {
-  return defaultYear(nth, startPeriodOf(state), only, loadOf(state))
+  return defaultYear(nth, startPeriodOf(state), only)
 }
 
 export type PlannerAction =
@@ -135,7 +133,6 @@ export type PlannerAction =
     }
   | { type: "add_year"; only?: "first" }
   | { type: "set_start_period"; period: StartPeriod }
-  | { type: "set_load"; load: number }
   | { type: "complete_setup" }
   | {
       type: "set_slot_status"
@@ -453,29 +450,6 @@ export function plannerReducer(
         years: state.years.map((y) => ({
           ...y,
           slots: sortSlots(y.slots, action.period),
-        })),
-      }
-    }
-
-    case "set_load": {
-      const load = Math.min(
-        MAX_SLOT_CAPACITY,
-        Math.max(1, Math.round(action.load))
-      )
-      if (loadOf(state) === load && (state.load === undefined) === (load === 4))
-        return state
-      // Semesters take the new load, but never fewer slots than units
-      // already placed; summer, winter and leave/exchange are left alone.
-      return {
-        ...state,
-        load: load === DEFAULT_SLOT_CAPACITY ? undefined : load,
-        years: state.years.map((y) => ({
-          ...y,
-          slots: y.slots.map((s) =>
-            (s.kind === "S1" || s.kind === "S2") && !s.status
-              ? { ...s, capacity: Math.max(load, s.unitCodes.length) }
-              : s
-          ),
         })),
       }
     }

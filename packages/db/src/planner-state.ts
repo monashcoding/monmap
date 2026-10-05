@@ -64,12 +64,6 @@ export interface PlannerState {
    */
   startPeriod?: "S1" | "S2"
   /**
-   * Units per semester the student plans to take: 4 is full-time, 2 is
-   * part-time. New semesters get this capacity and the default number
-   * of years follows it. Absent means 4.
-   */
-  load?: number
-  /**
    * True once the student has finished or skipped the first-run setup
    * (start, course, load), so an empty plan doesn't ask again.
    */

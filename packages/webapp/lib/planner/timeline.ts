@@ -19,22 +19,14 @@ export function startPeriodOf(
   return state.startPeriod === "S2" ? "S2" : "S1"
 }
 
-/** Units per semester for new semesters (4 full-time, 2 part-time). */
-export function loadOf(state: Pick<PlannerState, "load">): number {
-  return state.load && state.load > 0 ? state.load : 4
-}
-
 /**
- * Years a course needs at a load: 144 credit points at 4 units (24
- * points) a semester is 3 years; at 2 units it is 6. Falls back to 3
- * when the course has no credit-point total.
+ * Years a course needs at a full load (4 units, 24 credit points, a
+ * semester): 144 credit points is 3 years. Falls back to 3 when the
+ * course has no credit-point total.
  */
-export function yearsNeeded(
-  creditPoints: number | null | undefined,
-  load: number
-): number {
+export function yearsNeeded(creditPoints: number | null | undefined): number {
   if (!creditPoints || creditPoints <= 0) return 3
-  return Math.max(1, Math.ceil(creditPoints / (load * 6 * 2)))
+  return Math.max(1, Math.ceil(creditPoints / 48))
 }
 
 /**

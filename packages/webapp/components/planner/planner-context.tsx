@@ -50,7 +50,7 @@ import type {
   RequisiteBlock,
   SlotUnitValidation,
 } from "@/lib/planner/types"
-import { loadOf, yearsNeeded } from "@/lib/planner/timeline"
+import { yearsNeeded } from "@/lib/planner/timeline"
 import { validatePlan } from "@/lib/planner/validation"
 
 import { useFullYearSelfHeal } from "./hooks/use-full-year-self-heal"
@@ -641,7 +641,7 @@ export function PlannerProvider({
           if (c) {
             dispatch({
               type: "set_year_count",
-              count: yearsNeeded(c.creditPoints, loadOf(state)),
+              count: yearsNeeded(c.creditPoints),
             })
             const codes = [
               ...new Set([
@@ -677,7 +677,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state]
+    [state.courseYear]
   )
 
   const switchYear = useCallback(
