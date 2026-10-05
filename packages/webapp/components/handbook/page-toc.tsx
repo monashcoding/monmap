@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -16,27 +16,48 @@ export interface TocItem {
  */
 export function PageToc({ items }: { items: TocItem[] }) {
   const [active, setActive] = useState(items[0]?.id ?? null)
+  // After a click, the clicked section stays highlighted while the page
+  // jumps, even when the jump ends at the bottom on a later section.
+  const pinnedUntil = useRef(0)
 
   useEffect(() => {
-    const sections = items
-      .map((i) => document.getElementById(i.id))
-      .filter((el): el is HTMLElement => el != null)
-    const visible = new Set<string>()
-    // A section counts as read once its top passes the band just below
-    // the sticky header; the first such section in page order wins.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) visible.add(e.target.id)
-          else visible.delete(e.target.id)
-        }
-        const first = items.find((i) => visible.has(i.id))
-        if (first) setActive(first.id)
-      },
-      { rootMargin: "-80px 0px -55% 0px" }
-    )
-    sections.forEach((s) => observer.observe(s))
-    return () => observer.disconnect()
+    let frame = 0
+    const update = () => {
+      frame = 0
+      if (Date.now() < pinnedUntil.current) return
+      const sections = items
+        .map((i) => document.getElementById(i.id))
+        .filter((el): el is HTMLElement => el != null)
+      if (sections.length === 0) return
+      // At the very bottom the last sections can't reach the top of the
+      // window, so the last one counts as read.
+      const atBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 4
+      if (atBottom) {
+        setActive(sections[sections.length - 1].id)
+        return
+      }
+      // Otherwise: the last section whose top has passed the line just
+      // below the sticky header.
+      let current = sections[0].id
+      for (const el of sections) {
+        if (el.getBoundingClientRect().top <= 120) current = el.id
+        else break
+      }
+      setActive(current)
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", onScroll)
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
   }, [items])
 
   if (items.length < 2) return null
@@ -51,7 +72,10 @@ export function PageToc({ items }: { items: TocItem[] }) {
             <a
               href={`#${i.id}`}
               aria-current={active === i.id ? "location" : undefined}
-              onClick={() => setActive(i.id)}
+              onClick={() => {
+                pinnedUntil.current = Date.now() + 800
+                setActive(i.id)
+              }}
               className={cn(
                 "-ml-px block border-l-2 py-1.5 pl-3 text-sm",
                 active === i.id
