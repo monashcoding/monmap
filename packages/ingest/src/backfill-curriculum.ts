@@ -11,7 +11,7 @@
  * `--force` mode is what you run after changing an extractor heuristic
  * — it overwrites the precomputed columns and re-walks every course's
  * curriculum to refresh `course_areas_of_study` (kind classification,
- * relationship_label). Useful for older years where the raw JSON
+ * relationship_label) and `unit_year_links`. Useful for older years where the raw JSON
  * isn't available for a full re-ingest.
  *
  * Checked-in curriculum overrides are re-applied after extraction, so
@@ -29,9 +29,15 @@ import {
   extractExcludedAos,
   extractRequirementGroups,
   extractSubCourseRefs,
+  units,
+  unitYearLinks,
 } from "@monmap/db";
 import { DATABASE_URL } from "@monmap/db/env";
-import { extractCourseAosRefs, resolveSubCourseYears } from "./parse.ts";
+import {
+  extractCourseAosRefs,
+  extractUnitYearLinks,
+  resolveSubCourseYears,
+} from "./parse.ts";
 import { loadCurriculumOverrides } from "./overrides.ts";
 
 const force = process.argv.includes("--force");
@@ -126,7 +132,9 @@ if (force && !dryRun) {
   // Refresh course_areas_of_study by re-walking every course's
   // curriculum_structure with the current extractor. We need the
   // per-year AoS code set to pass to extractCourseAosRefs.
-  console.log("Refreshing course_areas_of_study from curriculum_structure...");
+  console.log(
+    "Refreshing course_areas_of_study and unit_year_links from curriculum_structure...",
+  );
   const aosCodesByYear = new Map<string, Set<string>>();
   const aosRows = await db
     .select({ year: areasOfStudy.year, code: areasOfStudy.code })
@@ -136,6 +144,12 @@ if (force && !dryRun) {
     set.add(r.code.toUpperCase());
     aosCodesByYear.set(r.year, set);
   }
+
+  // Every (year, code) unit row, for unit_year_links: a unit counts
+  // only when the year lacks it and the linked year has it.
+  const unitRows = await db
+    .select({ year: units.year, code: units.code })
+    .from(units);
 
   const years = [...aosCodesByYear.keys()]
     .filter((y) => !onlyYear || y === onlyYear)
@@ -158,6 +172,27 @@ if (force && !dryRun) {
         earlierAosKeys,
       ),
     );
+    // Same rule as ingest: the year's course and AoS trees, against the
+    // year's own units and every earlier year's.
+    const yearAosStructures = await db
+      .select({ curriculumStructure: areasOfStudy.curriculumStructure })
+      .from(areasOfStudy)
+      .where(eq(areasOfStudy.year, year));
+    const linkRows = extractUnitYearLinks(
+      year,
+      [
+        ...yearRows.map((r) => r.curriculumStructure),
+        ...yearAosStructures.map((r) => r.curriculumStructure),
+      ],
+      new Set(
+        unitRows.filter((r) => r.year === year).map((r) => r.code.toUpperCase()),
+      ),
+      new Set(
+        unitRows
+          .filter((r) => r.year < year)
+          .map((r) => `${r.year}|${r.code.toUpperCase()}`),
+      ),
+    );
     await db.transaction(async (tx) => {
       await tx
         .delete(courseAreasOfStudy)
@@ -170,8 +205,13 @@ if (force && !dryRun) {
             .values(newRows.slice(i, i + 200));
         }
       }
+      await tx.delete(unitYearLinks).where(eq(unitYearLinks.year, year));
+      if (linkRows.length > 0)
+        await tx.insert(unitYearLinks).values(linkRows);
     });
-    console.log(`  ${year}: ${newRows.length} course→AoS rows`);
+    console.log(
+      `  ${year}: ${newRows.length} course→AoS rows, ${linkRows.length} earlier-year units`,
+    );
   }
   // Suppress drizzle unused-import warning for inArray.
   void inArray;

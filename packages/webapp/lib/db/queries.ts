@@ -8,6 +8,7 @@ import {
   requisites,
   unitOfferings,
   units,
+  unitYearLinks,
   userGrade,
   userPlan,
 } from "@monmap/db"
@@ -424,37 +425,58 @@ async function _fetchCourseWithAoS(
   const conflicts = new Map<string, Set<string>>()
   if (allCandidateCodes.size > 0) {
     const codesArr = [...allCandidateCodes]
-    const [validRows, offeredRows, prohibitionRows] = await Promise.all([
+    const offeredAndProhibitions = (cs: string[], y: string) =>
+      Promise.all([
+        db
+          .selectDistinct({ code: unitOfferings.unitCode })
+          .from(unitOfferings)
+          .where(
+            and(
+              eq(unitOfferings.year, y),
+              eq(unitOfferings.offered, true),
+              inArray(unitOfferings.unitCode, cs)
+            )
+          ),
+        db
+          .select({
+            unitCode: requisiteRefs.unitCode,
+            requiresUnitCode: requisiteRefs.requiresUnitCode,
+          })
+          .from(requisiteRefs)
+          .where(
+            and(
+              eq(requisiteRefs.year, y),
+              eq(requisiteRefs.requisiteType, "prohibition"),
+              inArray(requisiteRefs.unitCode, cs)
+            )
+          ),
+      ])
+    const [validRows, [offeredRows, prohibitionRows]] = await Promise.all([
       db
         .select({ code: units.code })
         .from(units)
         .where(and(eq(units.year, year), inArray(units.code, codesArr))),
-      db
-        .selectDistinct({ code: unitOfferings.unitCode })
-        .from(unitOfferings)
-        .where(
-          and(
-            eq(unitOfferings.year, year),
-            eq(unitOfferings.offered, true),
-            inArray(unitOfferings.unitCode, codesArr)
-          )
-        ),
-      db
-        .select({
-          unitCode: requisiteRefs.unitCode,
-          requiresUnitCode: requisiteRefs.requiresUnitCode,
-        })
-        .from(requisiteRefs)
-        .where(
-          and(
-            eq(requisiteRefs.year, year),
-            eq(requisiteRefs.requisiteType, "prohibition"),
-            inArray(requisiteRefs.unitCode, codesArr)
-          )
-        ),
+      offeredAndProhibitions(codesArr, year),
     ])
     valid = new Set(validRows.map((r) => r.code))
     offered = new Set(offeredRows.map((r) => r.code))
+    // Options the plan year has no page for but its trees link to an
+    // earlier year's page (2027 E3001 lists the 2026 ENG1005) are
+    // valid, and offered when the linked year offers them.
+    const links = await fetchUnitYearLinks(
+      codesArr.filter((c) => !valid.has(c)),
+      year
+    )
+    const fallbacks = await Promise.all(
+      [...codesByLinkedYear(links)].map(([y, cs]) =>
+        offeredAndProhibitions(cs, y)
+      )
+    )
+    for (const c of links.keys()) valid.add(c)
+    for (const [fallbackOffered, fallbackProhibitions] of fallbacks) {
+      for (const r of fallbackOffered) offered.add(r.code)
+      prohibitionRows.push(...fallbackProhibitions)
+    }
     const link = (a: string, b: string) => {
       const set = conflicts.get(a) ?? new Set<string>()
       set.add(b)
@@ -1076,14 +1098,64 @@ export async function fetchEquivalentsForCodes(
   return out
 }
 
+async function _fetchUnitYearLinksRows(
+  codes: readonly string[],
+  year: string
+): Promise<Array<{ code: string; linkedYear: string }>> {
+  if (codes.length === 0) return []
+  const db = getDb()
+  try {
+    const rows = await db
+      .select({
+        code: unitYearLinks.unitCode,
+        linkedYear: unitYearLinks.linkedYear,
+      })
+      .from(unitYearLinks)
+      .where(
+        and(
+          eq(unitYearLinks.year, year),
+          inArray(unitYearLinks.unitCode, [...codes])
+        )
+      )
+    return rows
+  } catch (err) {
+    // 42P01 = undefined_table. This code can deploy before migration
+    // 0012 creates the table; until then no unit falls back.
+    const e = err as { code?: string; cause?: { code?: string } }
+    if (e.code === "42P01" || e.cause?.code === "42P01") return []
+    throw err
+  }
+}
+const _fetchUnitYearLinksRowsCached = cacheHandbook(_fetchUnitYearLinksRows)
+
 /**
- * Hydrate every piece of per-unit data the planner needs for a given
- * set of codes. Single round-trip from the UI's perspective (parallel
- * DB queries internally).
+ * For codes with no unit row in `year`, the earlier year that year's
+ * curriculum trees link them to (2027 E3001 → `/2026/units/ENG1005`).
+ * Codes without such a link are absent: a unit that only exists in an
+ * earlier year may be retired, so it never falls back on its own.
  */
-export async function hydratePlannerUnits(
+export async function fetchUnitYearLinks(
   codes: readonly string[],
   year: string = HANDBOOK_YEAR
+): Promise<Map<string, string>> {
+  if (codes.length === 0) return new Map()
+  const rows = await _fetchUnitYearLinksRowsCached(
+    [...new Set(codes)].sort(),
+    year
+  )
+  return new Map(rows.map((r) => [r.code, r.linkedYear]))
+}
+
+/** Group a code → year map into year → codes. */
+function codesByLinkedYear(links: ReadonlyMap<string, string>) {
+  const out = new Map<string, string[]>()
+  for (const [code, y] of links) out.set(y, [...(out.get(y) ?? []), code])
+  return out
+}
+
+async function hydrateFromYear(
+  codes: readonly string[],
+  year: string
 ): Promise<{
   units: Map<string, PlannerUnit>
   offerings: Map<string, PlannerOffering[]>
@@ -1102,6 +1174,44 @@ export async function hydratePlannerUnits(
     ])
   )
   return { units: unitsByCode, offerings, requisites: reqs }
+}
+
+/**
+ * Hydrate every piece of per-unit data the planner needs for a given
+ * set of codes. Single round-trip from the UI's perspective (parallel
+ * DB queries internally).
+ *
+ * A code with no row in `year` falls back to an earlier year only when
+ * `unit_year_links` says that year's curriculum trees link it there.
+ * The unit then carries its real `year` plus `fallbackFor: year`, and
+ * its offerings and requisites come from the linked year. Validation
+ * already treats `unit.year !== slot year` as a forecast, so a period
+ * mismatch on such a unit is a warning, not an error.
+ */
+export async function hydratePlannerUnits(
+  codes: readonly string[],
+  year: string = HANDBOOK_YEAR
+): Promise<{
+  units: Map<string, PlannerUnit>
+  offerings: Map<string, PlannerOffering[]>
+  requisites: Map<string, RequisiteBlock[]>
+}> {
+  const own = await hydrateFromYear(codes, year)
+  const missing = codes.filter((c) => !own.units.has(c))
+  if (missing.length === 0) return own
+  const links = await fetchUnitYearLinks(missing, year)
+  if (links.size === 0) return own
+
+  const fallbacks = await Promise.all(
+    [...codesByLinkedYear(links)].map(([y, cs]) => hydrateFromYear(cs, y))
+  )
+  for (const res of fallbacks) {
+    for (const [k, v] of res.units)
+      own.units.set(k, { ...v, fallbackFor: year })
+    for (const [k, v] of res.offerings) own.offerings.set(k, v)
+    for (const [k, v] of res.requisites) own.requisites.set(k, v)
+  }
+  return own
 }
 
 /**

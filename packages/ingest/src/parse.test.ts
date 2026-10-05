@@ -7,6 +7,7 @@ import {
   extractCourseAosRefs,
   extractAosUnitRefs,
   extractEnrolmentRuleRefs,
+  extractUnitYearLinks,
   linkedItem,
   resolveSubCourseYears,
 } from "./parse.ts"
@@ -309,6 +310,100 @@ test("resolveSubCourseYears: keeps the year only when the same-year row is missi
   // Refs without a year pass through unchanged.
   assert.equal(out[3], refs[3])
   assert.equal(resolveSubCourseYears("2027", null, known), null)
+})
+
+/* ------------------------------------------------------------------ *
+ * extractUnitYearLinks — units a year links to an earlier year's page
+ * ------------------------------------------------------------------ */
+
+const unitLink = (code: string, url: string) => ({
+  ...subjectLeaf(code),
+  academic_item_url: url,
+})
+
+test("unit year links: an earlier-year link resolves when only the linked year has the unit", () => {
+  // 2027 E3001 links ENG1005 to its 2026 page; 2027 ECSE-USPEC does the
+  // same for ENG2005. Neither has a 2027 row.
+  const course = {
+    container: [
+      {
+        title: "Part A. Engineering foundation studies",
+        relationship: [
+          unitLink("ENG1005", "/2026/units/ENG1005"),
+          unitLink("ENG1011", "/2027/units/ENG1011"),
+        ],
+      },
+    ],
+  }
+  const aos = {
+    container: [
+      { title: "Core units", relationship: [unitLink("ENG2005", " /2026/units/ENG2005 ")] },
+    ],
+  }
+  const rows = extractUnitYearLinks(
+    "2027",
+    [course, aos],
+    new Set(["ENG1011"]),
+    new Set(["2026|ENG1005", "2026|ENG2005", "2026|ENG1011"]),
+  )
+  assert.deepEqual(rows, [
+    { year: "2027", unitCode: "ENG1005", linkedYear: "2026" },
+    { year: "2027", unitCode: "ENG2005", linkedYear: "2026" },
+  ])
+})
+
+test("unit year links: a unit the year has a row for never falls back", () => {
+  const tree = { relationship: [unitLink("FIT1045", "/2026/units/FIT1045")] }
+  const rows = extractUnitYearLinks(
+    "2027",
+    [tree],
+    new Set(["FIT1045"]),
+    new Set(["2026|FIT1045"]),
+  )
+  assert.deepEqual(rows, [])
+})
+
+test("unit year links: a link with no row in the linked year is dropped", () => {
+  // 2027 A6014 links /2024/units/APG5064, which 2024 never published.
+  const tree = { relationship: [unitLink("APG5064", "/2024/units/APG5064")] }
+  assert.deepEqual(
+    extractUnitYearLinks("2027", [tree], new Set(), new Set(["2023|APG5064"])),
+    [],
+  )
+})
+
+test("unit year links: a unit only present in an earlier year is not enough without a link", () => {
+  // A retired unit: listed by code, linked to its own year's page.
+  const tree = { relationship: [unitLink("FIT9999", "/2027/units/FIT9999"), subjectLeaf("FIT8888")] }
+  assert.deepEqual(
+    extractUnitYearLinks(
+      "2027",
+      [tree],
+      new Set(),
+      new Set(["2026|FIT9999", "2026|FIT8888"]),
+    ),
+    [],
+  )
+})
+
+test("unit year links: later-year and non-unit links are ignored, and the latest earlier year wins", () => {
+  const tree = {
+    container: [
+      { relationship: [unitLink("MEC5891", "/2025/units/MEC5891")] },
+      { relationship: [unitLink("MEC5891", "/2026/units/MEC5891")] },
+      { relationship: [unitLink("ENG1005", "/2028/units/ENG1005")] },
+      { relationship: [{ academic_item_code: "APPLMTH05", academic_item_url: "/2026/aos/APPLMTH05" }] },
+    ],
+  }
+  const rows = extractUnitYearLinks(
+    "2027",
+    [tree, null, undefined],
+    new Set(),
+    new Set(["2025|MEC5891", "2026|MEC5891", "2028|ENG1005", "2026|APPLMTH05"]),
+  )
+  assert.deepEqual(rows, [
+    { year: "2027", unitCode: "MEC5891", linkedYear: "2026" },
+  ])
 })
 
 /* ------------------------------------------------------------------ *

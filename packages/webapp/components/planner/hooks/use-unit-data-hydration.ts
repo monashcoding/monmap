@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useTransition } from "react"
+import { useEffect, useRef, useTransition } from "react"
 import { toast } from "sonner"
 
 import { hydrateUnitsMultiYearAction } from "@/app/actions"
-import { handbookYearFor } from "@/lib/planner/local-storage"
+import { codesToHydrate, emptyKey } from "@/lib/planner/hydration"
 import type {
   PlannerOffering,
   PlannerState,
@@ -32,7 +32,12 @@ interface Params {
  * codes that are missing OR cached from the wrong handbook year (stale).
  * Each code is processed at its first study-year occurrence; this is
  * what lets year-N units pull from year-N handbook offerings instead of
- * year-0's.
+ * year-0's. See `codesToHydrate` for the rule.
+ *
+ * Two cases would otherwise refetch on every render: a unit the server
+ * returns from an earlier year (`fallbackFor`, counted as fresh) and a
+ * code with no row at all. The second is remembered per (year, code)
+ * in `emptyRef` and not requested again.
  *
  * Returns `isSyncing` so callers can render a non-blocking progress hint
  * while the background refetch is in flight.
@@ -49,39 +54,21 @@ export function useUnitDataHydration({
 }: Params): { isSyncing: boolean } {
   const [isSyncing, startTransition] = useTransition()
 
+  const emptyRef = useRef(new Set<string>())
+
   useEffect(() => {
-    const codesByYear = new Map<string, string[]>()
-    const seen = new Set<string>()
-
-    // Credited units are hydrated too, from the plan's own handbook
-    // year: they never sit in a slot, but their `equivalents` decide
-    // whether credit for FIT1053 satisfies a prerequisite naming
-    // FIT1045.
-    const want = (code: string, hYear: string) => {
-      if (seen.has(code)) return
-      seen.add(code)
-      const cached = unitsMap.get(code)
-      if (
-        cached?.year === hYear &&
-        offeringsMap.has(code) &&
-        requisitesMap.has(code)
-      )
-        return
-      const list = codesByYear.get(hYear) ?? []
-      list.push(code)
-      codesByYear.set(hYear, list)
-    }
-
-    const creditYear = handbookYearFor(0, state.courseYear, availableYears)
-    for (const entry of state.credit ?? [])
-      if (entry.code) want(entry.code, creditYear)
-
-    for (let yi = 0; yi < state.years.length; yi++) {
-      const hYear = handbookYearFor(yi, state.courseYear, availableYears)
-      for (const slot of state.years[yi]?.slots ?? []) {
-        for (const code of slot.unitCodes) want(code, hYear)
-      }
-    }
+    const codesByYear = codesToHydrate({
+      state: {
+        years: state.years,
+        credit: state.credit,
+        courseYear: state.courseYear,
+      },
+      availableYears,
+      units: unitsMap,
+      offerings: offeringsMap,
+      requisites: requisitesMap,
+      empty: emptyRef.current,
+    })
 
     if (codesByYear.size === 0) return
     const allNeeded = [...codesByYear.values()].flat()
@@ -91,6 +78,9 @@ export function useUnitDataHydration({
         const res = await hydrateUnitsMultiYearAction(
           Object.fromEntries(codesByYear)
         )
+        for (const [year, codes] of codesByYear)
+          for (const code of codes)
+            if (!res.units[code]) emptyRef.current.add(emptyKey(year, code))
         setUnits((m) => {
           const next = new Map(m)
           for (const [k, v] of Object.entries(res.units)) next.set(k, v)

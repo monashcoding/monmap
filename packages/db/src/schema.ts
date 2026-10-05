@@ -366,6 +366,30 @@ export const areaOfStudyUnits = pgTable(
   ],
 );
 
+/**
+ * Units a handbook year has no page for but its own curriculum trees
+ * link to an earlier year's page. 2027 E3001 lists
+ * `/2026/units/ENG1005` and nine 2027 engineering specialisations list
+ * `/2026/units/ENG2005`, and neither unit has a 2027 row. One row means
+ * "in handbook `year`, `unitCode` has no page; load it from
+ * `linkedYear`".
+ *
+ * Only an explicit link qualifies. A unit that merely exists in an
+ * earlier year is not here: the data cannot tell "not yet published"
+ * apart from "retired" (204 units are in 2026 but not 2027). Ingest
+ * writes a row only when the (year, code) row is missing and the
+ * (linkedYear, code) row exists.
+ */
+export const unitYearLinks = pgTable(
+  "unit_year_links",
+  {
+    year: text().notNull(),
+    unitCode: text().notNull(),
+    linkedYear: text().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.year, t.unitCode] })],
+);
+
 /* ------------------------------------------------------------------ *
  * User mirror (central MAC identity)
  *

@@ -11,6 +11,7 @@ import {
   requisites,
   unitOfferings,
   units,
+  unitYearLinks,
   type Database,
 } from "@monmap/db";
 import type {
@@ -22,6 +23,7 @@ import { applyCurriculumOverrides } from "@monmap/db";
 import {
   extractAosUnitRefs,
   extractCourseAosRefs,
+  extractUnitYearLinks,
   parseAos,
   parseCourse,
   parseUnit,
@@ -47,6 +49,7 @@ interface Summary {
   readonly enrolmentRules: number;
   readonly courseAreasOfStudy: number;
   readonly areaOfStudyUnits: number;
+  readonly unitYearLinks: number;
   readonly badFiles: ReadonlyArray<{ file: string; reason: string }>;
 }
 
@@ -153,7 +156,7 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
   // ingested for earlier years, keyed `YEAR|CODE`.
   const key = (r: { year: string; code: string }) =>
     `${r.year}|${r.code.toUpperCase()}`;
-  const [earlierAos, earlierCourses] = await Promise.all([
+  const [earlierAos, earlierCourses, earlierUnits] = await Promise.all([
     db
       .select({ year: areasOfStudy.year, code: areasOfStudy.code })
       .from(areasOfStudy)
@@ -162,6 +165,10 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
       .select({ year: courses.year, code: courses.code })
       .from(courses)
       .where(lt(courses.year, year)),
+    db
+      .select({ year: units.year, code: units.code })
+      .from(units)
+      .where(lt(units.year, year)),
   ]);
   const earlierAosKeys = new Set(earlierAos.map(key));
   const knownCourseKeys = new Set([
@@ -189,16 +196,34 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
   }
   const crossYearAos = courseAosRows.filter((r) => r.aosYear !== year).length;
 
+  // Units this year's trees link to an earlier year's page because the
+  // year has no page for them (2027 E3001 → `/2026/units/ENG1005`).
+  const unitYearLinkRows = extractUnitYearLinks(
+    year,
+    [
+      ...courseRows.map((c) => c.curriculumStructure),
+      ...aosRows.map((a) => a.curriculumStructure),
+    ],
+    unitCodeSet,
+    new Set(earlierUnits.map(key)),
+  );
+  // Those units belong in their AoS's unit list like any other unit.
+  const aosUnitCodeSet = new Set([
+    ...unitCodeSet,
+    ...unitYearLinkRows.map((r) => r.unitCode),
+  ]);
+
   const aosUnitRows: ReturnType<typeof extractAosUnitRefs> = [];
   for (const a of aosRows) {
     aosUnitRows.push(
-      ...extractAosUnitRefs(year, a.code, a.curriculumStructure, unitCodeSet),
+      ...extractAosUnitRefs(year, a.code, a.curriculumStructure, aosUnitCodeSet),
     );
   }
   console.log(
     `  cross-refs: ${courseAosRows.length} course→aos ` +
       `(${crossYearAos} to earlier-year AoS), ${aosUnitRows.length} aos→unit, ` +
-      `${crossYearComponents} earlier-year component courses`,
+      `${crossYearComponents} earlier-year component courses, ` +
+      `${unitYearLinkRows.length} earlier-year units`,
   );
 
   /*
@@ -214,6 +239,7 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
     await tx.delete(enrolmentRules).where(eq(enrolmentRules.year, year));
     await tx.delete(courseAreasOfStudy).where(eq(courseAreasOfStudy.courseYear, year));
     await tx.delete(areaOfStudyUnits).where(eq(areaOfStudyUnits.aosYear, year));
+    await tx.delete(unitYearLinks).where(eq(unitYearLinks.year, year));
     await tx.delete(units).where(eq(units.year, year));
     await tx.delete(courses).where(eq(courses.year, year));
     await tx.delete(areasOfStudy).where(eq(areasOfStudy.year, year));
@@ -227,6 +253,7 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
     for (const batch of chunk(enrolmentRuleRows, CHUNK)) await tx.insert(enrolmentRules).values(batch);
     for (const batch of chunk(courseAosRows, CHUNK)) await tx.insert(courseAreasOfStudy).values(batch);
     for (const batch of chunk(aosUnitRows, CHUNK)) await tx.insert(areaOfStudyUnits).values(batch);
+    for (const batch of chunk(unitYearLinkRows, CHUNK)) await tx.insert(unitYearLinks).values(batch);
   });
 
   return {
@@ -239,6 +266,7 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
     enrolmentRules: enrolmentRuleRows.length,
     courseAreasOfStudy: courseAosRows.length,
     areaOfStudyUnits: aosUnitRows.length,
+    unitYearLinks: unitYearLinkRows.length,
     badFiles,
   };
 }

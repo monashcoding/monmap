@@ -606,6 +606,52 @@ export function linkedItem(
 }
 
 /**
+ * Units a handbook year links to an earlier year's page because it has
+ * no page of its own. 2027 E3001 lists `/2026/units/ENG1005` and 2027
+ * ECSE-USPEC lists `/2026/units/ENG2005`; neither has a 2027 row, so
+ * the planner must load them from 2026.
+ *
+ * Walks every course and AoS tree of `year` (`structures`) for leaves
+ * whose `academic_item_url` names `/X/units/CODE` with X earlier than
+ * `year`. A link counts only when CODE is missing from `unitCodes` (the
+ * year's own units) and `earlierUnits` (`YEAR|CODE` keys) has the
+ * linked row. A unit merely present in an earlier year never qualifies:
+ * nothing tells "not yet published" apart from "retired". When trees
+ * link one code to several years, the latest wins. Years whose trees
+ * hold no such links return no rows.
+ */
+export function extractUnitYearLinks(
+  year: string,
+  structures: Iterable<unknown>,
+  unitCodes: ReadonlySet<string>,
+  earlierUnits: ReadonlySet<string>,
+): Array<{ year: string; unitCode: string; linkedYear: string }> {
+  const linkedYear = new Map<string, string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const x of node) walk(x);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    const n = node as Record<string, unknown>;
+    const linked = linkedItem(n["academic_item_url"], "units");
+    if (
+      linked &&
+      linked.year < year &&
+      !unitCodes.has(linked.code) &&
+      earlierUnits.has(`${linked.year}|${linked.code}`) &&
+      linked.year > (linkedYear.get(linked.code) ?? "")
+    )
+      linkedYear.set(linked.code, linked.year);
+    for (const v of Object.values(n)) walk(v);
+  };
+  for (const s of structures) walk(s);
+  return [...linkedYear]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([unitCode, y]) => ({ year, unitCode, linkedYear: y }));
+}
+
+/**
  * Give a double degree's component refs the year of the course page
  * they link to when that is not the course's own year. 2027 F2019
  * links `/2026/courses/F2010` because the 2027 Bachelor of Design is

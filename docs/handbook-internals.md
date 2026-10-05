@@ -247,10 +247,25 @@ doubles link `/2026/courses/F2010`. Ingest resolves these links only
 when the same-year row is missing and the linked (year, code) row
 exists. The course→AoS edge then stores the AoS's own `aos_year`, and
 the component's `sub_course_refs[].year` is set. Readers must load AoS
-units by the edge's `aos_year`, never by the plan year. Units are not
-resolved this way (2027 E3001 links `/2026/units/ENG1005`): no field
-tells "not yet published" apart from "retired", so a missing unit
-stays missing.
+units by the edge's `aos_year`, never by the plan year.
+
+Units get a narrower version of the same rule. 2027 E3001 links
+`/2026/units/ENG1005` and nine 2027 engineering specialisations link
+`/2026/units/ENG2005`; neither has a 2027 row, and 101 2027 units cite
+them as requisites. No field tells "not yet published" apart from
+"retired" (204 units are in 2026 but not 2027), so a unit never falls
+back just because an earlier year has it. Ingest writes a
+`unit_year_links` row (year, unit_code, linked_year) only when a
+course or AoS tree of that year links the unit to an earlier year's
+page, the year has no row for it, and the linked row exists. 2027 gets
+24 such rows, all linked to 2026. `hydratePlannerUnits` and
+`fetchCourseWithAoS` read the table: the unit loads from `linked_year`
+with its real `year` plus `fallbackFor`, and its offerings and
+requisites are the linked year's. Validation already downgrades a
+period mismatch to a warning when `unit.year` is not the slot's year.
+The same rule matches 23 rows in 2022, 10 in 2023 and 1 in 2026
+(D2002's retired EDF units, for example), which appear when those
+years are next re-ingested or force-backfilled.
 
 ## Tree structures inside JSONB
 

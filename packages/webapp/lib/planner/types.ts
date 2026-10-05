@@ -38,6 +38,14 @@ export interface PlannerUnit {
    * hydration path; absent elsewhere.
    */
   equivalents?: string[]
+  /**
+   * Set when this unit was requested for a handbook year that has no
+   * page for it and that year's curriculum trees link it to an earlier
+   * year's page (2027 E3001 → `/2026/units/ENG1005`). Holds the
+   * requested year; `year` is the year the data actually came from, so
+   * offerings and requisites are that year's. See `unit_year_links`.
+   */
+  fallbackFor?: string
 }
 
 /** A single offering row as the planner needs it. */

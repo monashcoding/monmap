@@ -898,3 +898,30 @@ test("validatePlan: credit prohibits a placed unit from the reverse direction", 
   assert.equal(v.errors[0]?.kind, "prohibition_conflict")
   assert.deepEqual(v.errors[0]?.relatedCodes, ["ATS2146"])
 })
+
+test("validatePlan: an earlier-year fallback unit's period mismatch is a warning", () => {
+  // 2027 has no ENG1005 page; E3001 2027 links the 2026 one, so the
+  // server returns the 2026 unit marked `fallbackFor: "2027"`. Its 2026
+  // offerings are a forecast for 2027, not a fact.
+  const state: PlannerState = {
+    courseYear: "2027",
+    courseCode: "E3001",
+    selectedAos: {},
+    years: [
+      { label: "Year 1", slots: [{ kind: "S2", unitCodes: ["ENG1005"] }] },
+    ],
+  }
+  const out = validatePlan(
+    state,
+    new Map([
+      ["ENG1005", unit("ENG1005", { year: "2026", fallbackFor: "2027" })],
+    ]),
+    new Map([["ENG1005", [offering("ENG1005", "S1")]]]),
+    new Map()
+  )
+  const v = out.get(keyFor(0, 0, "ENG1005"))
+  assert.ok(v)
+  assert.equal(v.errors.length, 0)
+  assert.equal(v.warnings[0]?.kind, "not_offered_in_period")
+  assert.match(v.warnings[0].message, /2026 handbook/)
+})
