@@ -38,15 +38,27 @@ function parseLocs(xml: string): string[] {
   return out;
 }
 
+/**
+ * CloudFront serves sitemap files from cache for days (we have seen
+ * `age` over 4 days on sitemap.xml), and different edges hold different
+ * copies. A stale index silently drops the newest incremental sitemap,
+ * which is exactly where newly published pages appear: in October 2026
+ * it hid C2001, C3001 and 29 other 2027 pages. A unique query string
+ * forces a cache miss, so we always read the current sitemaps.
+ */
+function bustCache(url: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}nocache=${Date.now()}`;
+}
+
 /** Enumerate every AI-page URL across the sitemap index, deduped by URL. */
 export async function enumerateAll(): Promise<SitemapEntry[]> {
-  const indexRes = await httpGet(`${BASE}/sitemap.xml`);
+  const indexRes = await httpGet(bustCache(`${BASE}/sitemap.xml`));
   if (indexRes.status !== 200)
     throw new HandbookError(`sitemap.xml ${indexRes.status}`, `${BASE}/sitemap.xml`);
 
   const seen = new Map<string, SitemapEntry>();
   for (const childUrl of parseLocs(indexRes.body)) {
-    const res = await httpGet(childUrl);
+    const res = await httpGet(bustCache(childUrl));
     if (res.status !== 200)
       throw new HandbookError(`sitemap ${res.status}`, childUrl);
     for (const loc of parseLocs(res.body)) {
