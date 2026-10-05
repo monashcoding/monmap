@@ -84,7 +84,7 @@ export function TreeView(props: TreeViewProps) {
   const isMobile = useIsMobile()
   const [controlsOpen, setControlsOpen] = useState(false)
 
-  // Initial controls come from the server — /tree resolves its
+  // Initial controls come from the server — /search resolves its
   // searchParams (?unit=, ?course=, ?aos=, ?direction=, ?year=)
   // server-side and prefetches the matching graph.
   const [controls, setControls] = useState<TreeControlsValue>(
@@ -111,7 +111,7 @@ export function TreeView(props: TreeViewProps) {
     >
   >(props.initial.enrolmentRules)
 
-  // Auto-focus the seed unit on load. Landing on /tree?unit=FIT2004 should
+  // Auto-focus the seed unit on load. Landing on /search?unit=FIT2004 should
   // open the side panel with FIT2004 already selected — that's the
   // entity the user came to look at. Course mode has no single "seed"
   // (multiple seeds from Part A + AoS), so leave focus null there.
@@ -159,7 +159,7 @@ export function TreeView(props: TreeViewProps) {
 
   // Keep the browser URL in sync with the picker state so any moment
   // of a session is shareable / bookmarkable. Everything lives at
-  // /tree with query params, so this is always a same-route shallow
+  // /search with query params, so this is always a same-route shallow
   // update — a plain `replaceState` (never a server round-trip; the
   // refetch effect below owns the data). `replaceState` (not push)
   // keeps the back button from accumulating an entry per pick.
@@ -483,12 +483,12 @@ function EmptyState({
 }
 
 /**
- * Map the current picker state to its shareable /tree URL. Used by the
+ * Map the current picker state to its shareable /search URL. Used by the
  * URL-sync effect — pure function so it's trivial to reason about.
  *
  * Defaults are omitted to keep the URL clean for the common case:
  * direction "both" in unit mode / "upstream" in course mode (matching
- * the server's seeding defaults in app/tree/page.tsx), and the year
+ * the server's seeding defaults in app/search/page.tsx), and the year
  * when it's the latest handbook year.
  */
 function canonicalUrlFor(
@@ -497,11 +497,11 @@ function canonicalUrlFor(
 ): string | null {
   const sp = new URLSearchParams()
   if (controls.mode === "unit") {
-    if (!controls.unitCode) return "/tree"
+    if (!controls.unitCode) return "/search"
     sp.set("unit", controls.unitCode)
     if (controls.direction !== "both") sp.set("direction", controls.direction)
   } else if (controls.mode === "course") {
-    if (!controls.courseCode) return "/tree"
+    if (!controls.courseCode) return "/search"
     sp.set("course", controls.courseCode)
     if (controls.aosCode) sp.set("aos", controls.aosCode)
     if (controls.direction !== "upstream")
@@ -510,7 +510,7 @@ function canonicalUrlFor(
     return null
   }
   if (latestYear && controls.year !== latestYear) sp.set("year", controls.year)
-  return `/tree?${sp.toString()}`
+  return `/search?${sp.toString()}`
 }
 
 function derivePeriodBadge(offerings: PlannerOffering[]): string | null {

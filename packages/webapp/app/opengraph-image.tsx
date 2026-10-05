@@ -20,7 +20,7 @@ export default async function OpengraphImage() {
         "Plan your Monash degree visually — drag units into semesters, check prereqs, track your WAM.",
       chips: [
         { label: "Course planner", filled: true },
-        { label: "Unit tree" },
+        { label: "Unit search" },
         { label: "WAM tracker" },
       ],
     }),

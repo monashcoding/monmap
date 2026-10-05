@@ -7,7 +7,7 @@
  *   2. The text is sourced from Monash's public handbook; the
  *      authoritative entry lives at handbook.monash.edu.
  *
- * Rendered at the bottom of the /tree workbench so anyone reading the
+ * Rendered at the bottom of the /search workbench so anyone reading the
  * entity facts panel sees the disclaimer alongside the
  * synopsis/overview.
  */

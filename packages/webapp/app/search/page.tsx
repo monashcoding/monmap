@@ -21,24 +21,24 @@ const TREE_DESCRIPTION =
   "Explore the Monash prerequisite graph: visualise every unit your course unlocks, trace prereq chains upstream and downstream, and see which units a course's specialisation requires."
 
 export const metadata: Metadata = {
-  title: "Unit tree - prereq graph explorer",
+  title: "Search Units & Courses",
   description: TREE_DESCRIPTION,
-  alternates: { canonical: "/tree" },
+  alternates: { canonical: "/search" },
   openGraph: {
-    title: "Unit tree - Monash prereq graph explorer",
+    title: "Search Monash Units & Courses",
     description: TREE_DESCRIPTION,
     type: "website",
-    url: "/tree",
+    url: "/search",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Unit tree - Monash prereq graph explorer",
+    title: "Search Monash Units & Courses",
     description: TREE_DESCRIPTION,
   },
 }
 
 /**
- * Server shell for `/tree`. Resolves an initial controls value from
+ * Server shell for `/search`. Resolves an initial controls value from
  * the URL (?course=, ?aos=, ?unit=, ?direction=, ?year=) and pre-runs
  * the first graph fetch so the page is rendered with content on first
  * paint. The client orchestrator (TreeView) takes over from there.

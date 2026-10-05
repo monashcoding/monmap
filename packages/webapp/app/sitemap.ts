@@ -7,7 +7,7 @@ import { absoluteUrl } from "@/lib/seo"
  * when the site went back to being a SPA — enumerating ~40k entity
  * URLs here kept Googlebot hammering lazy-ISR pages and blew the
  * Vercel free tier. Only the real pages are listed now; old entity
- * URLs 308-redirect to /tree (see next.config.mjs) so crawlers drop
+ * URLs 308-redirect to /search (see next.config.mjs) so crawlers drop
  * them from the index on their own.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -18,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: absoluteUrl("/tree"),
+      url: absoluteUrl("/search"),
       changeFrequency: "weekly",
       priority: 0.8,
     },

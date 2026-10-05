@@ -19,9 +19,9 @@ export const PRIMARY_NAV_ITEMS: readonly PrimaryNavItem[] = [
     match: (p: string) => p.startsWith("/plans"),
   },
   {
-    href: "/tree",
-    label: "Unit Tree",
-    match: (p: string) => p.startsWith("/tree"),
+    href: "/search",
+    label: "Search Units & Courses",
+    match: (p: string) => p.startsWith("/search"),
   },
 ] as const
 

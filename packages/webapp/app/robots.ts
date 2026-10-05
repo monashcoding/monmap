@@ -13,7 +13,7 @@ export default function robots(): MetadataRoute.Robots {
   }
   // /units/[code] and /courses/[code] used to be per-entity SEO pages
   // but were retired with the move back to a SPA — they now redirect
-  // into the /tree workbench (see next.config.mjs). Crawling is
+  // into the /search workbench (see next.config.mjs). Crawling is
   // allowed by default; we only mention what to block.
   return {
     rules: [

@@ -29,19 +29,25 @@ const nextConfig = {
 
   // The per-entity SEO pages (/units/[code], /courses/[code]) were
   // retired — their lazy-ISR rendering blew through Vercel's free-tier
-  // ISR/edge quotas. The workbench at /tree is the single SPA now;
+  // ISR/edge quotas. The workbench at /search is the single SPA now;
   // these redirects keep previously shared/indexed entity URLs working.
+  // /search was called /tree until 2026-10, so /tree redirects too.
   // Extra query params (?direction=, ?aos=) pass through untouched.
   async redirects() {
     return [
       {
         source: "/units/:code",
-        destination: "/tree?unit=:code",
+        destination: "/search?unit=:code",
         permanent: true,
       },
       {
         source: "/courses/:code",
-        destination: "/tree?course=:code",
+        destination: "/search?course=:code",
+        permanent: true,
+      },
+      {
+        source: "/tree",
+        destination: "/search",
         permanent: true,
       },
     ]

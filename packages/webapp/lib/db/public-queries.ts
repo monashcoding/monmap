@@ -1,6 +1,6 @@
 /**
  * Queries for the public entity overviews (the facts panel below the
- * /tree workbench, via `fetchEntityDetailsAction`). Kept separate from
+ * /search workbench, via `fetchEntityDetailsAction`). Kept separate from
  * the planner's queries.ts so this surface stays narrow and doesn't
  * accidentally pull planner-specific columns.
  */

@@ -265,7 +265,7 @@ export function UnitDetailView({
             isDefault={selectedYear === defaultYear}
           />
           <a
-            href={`/tree?unit=${code}&year=${selectedYear}`}
+            href={`/search?unit=${code}&year=${selectedYear}`}
             className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
             <Share2Icon className="size-3" />
