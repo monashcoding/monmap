@@ -138,7 +138,7 @@ export function LeftSidebar() {
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 print:hidden">
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex min-w-0 items-baseline gap-1.5">
         {currentUser && activePlan && editingName ? (
           <input
             autoFocus
