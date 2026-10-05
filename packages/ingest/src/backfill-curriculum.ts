@@ -36,6 +36,7 @@ import { DATABASE_URL } from "@monmap/db/env";
 import {
   extractCourseAosRefs,
   extractUnitYearLinks,
+  foldPlaceholderUnits,
   resolveSubCourseYears,
 } from "./parse.ts";
 import { loadCurriculumOverrides } from "./overrides.ts";
@@ -92,10 +93,24 @@ const knownCourseKeys = new Set(
   ).map((r) => `${r.year}|${r.code.toUpperCase()}`),
 );
 
+// Unit codes per year, so placeholder unit containers fold into leaves
+// exactly as they do at ingest (`foldPlaceholderUnits`).
+const unitCodesByYear = new Map<string, Set<string>>();
+for (const r of await db
+  .select({ year: units.year, code: units.code })
+  .from(units)) {
+  const set = unitCodesByYear.get(r.year) ?? new Set<string>();
+  set.add(r.code.toUpperCase());
+  unitCodesByYear.set(r.year, set);
+}
+
 let done = 0;
 let overridden = 0;
 for (const row of rows) {
-  const structure = row.curriculumStructure;
+  const structure = foldPlaceholderUnits(
+    row.curriculumStructure,
+    unitCodesByYear.get(row.year) ?? new Set<string>(),
+  ).structure;
   const extracted = extractRequirementGroups(structure, row.creditPoints ?? 0);
   const { groups, applied } = applyCurriculumOverrides(
     row.code,

@@ -263,9 +263,11 @@ page, the year has no row for it, and the linked row exists. 2027 gets
 with its real `year` plus `fallbackFor`, and its offerings and
 requisites are the linked year's. Validation already downgrades a
 period mismatch to a warning when `unit.year` is not the slot's year.
-The same rule matches 23 rows in 2022, 10 in 2023 and 1 in 2026
-(D2002's retired EDF units, for example), which appear when those
-years are next re-ingested or force-backfilled.
+The same rule matches 23 rows in 2022 and 10 in 2023, all linked to
+2021 (retired EDF, MTH and UDI units, for example). 2026 has none
+since the October 2026 refresh: its one earlier link,
+SFTWRENG02 → `/2025/units/FIT4190`, resolves now that FIT4190 has a
+2026 page.
 
 ## Tree structures inside JSONB
 
@@ -371,6 +373,33 @@ of these; if you write another tree consumer, don't rediscover them:
   from the following list; and 6 credit points…") and is the best
   ground truth for validating extraction — used by the golden fixture
   tests and `pnpm eval:curriculum`.
+
+- **Units "under development" are empty containers, not unit
+  links.** A handbook that is still being written lists a unit as a
+  container titled "FIT1066 Responsible use of data in the age of AI",
+  with the description "This unit is under development", credit
+  points, and no `academic_item_code` below it. 2027 has 87 of these
+  in course trees (22 courses) and 18 in AoS trees; 45 of the 87 name
+  a unit that has a 2027 page. C2005 (Bachelor of AI) lost 15 units
+  this way. Ingest folds them into unit leaves of their parent
+  (`foldPlaceholderUnits` in `packages/ingest/src/parse.ts`) only when
+  the unit has a page that year and the parent's credit points prove
+  it: the leaves plus the placeholders add up exactly to the parent,
+  or the leaves already exceed it (a pick-some list). Not every
+  placeholder is a unit: S2000's "MTH1020 … is recommended" notes have
+  no credit points. And not every parent's credit points are right:
+  2027 M3008 "Core studies" states 48 cp for 192 cp of listed units,
+  so it is left alone (and corrected by an override instead). AoS
+  requirement groups are still extracted at request time from the
+  stored tree, so AoS placeholders (CHEMSUST01, CHENERGY01, CHHEALTH01
+  in 2027) are not folded yet.
+- **A blank course `credit_points` is still in the tree.** The root
+  container's `credit_points` equals the page value on 3,077 of the
+  3,080 courses that have both. When the root says 0 (two-component
+  double degrees such as 2027 C2009), the top-level containers other
+  than "Rules" add up to it. Ingest uses both fallbacks
+  (`courseCreditPoints`), because the course picker hides any course
+  whose credit points are not above 0.
 
 Hand corrections the math can't derive live in
 `packages/ingest/curriculum-overrides.json` (applied by ingest,

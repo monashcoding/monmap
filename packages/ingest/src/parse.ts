@@ -440,8 +440,203 @@ export interface CourseRows {
   };
 }
 
-export function parseCourse(year: string, raw: CourseContent): CourseRows {
+/**
+ * A course's total credit points. Most pages carry `credit_points`;
+ * when it is blank, the curriculum tree still states the total.
+ *
+ * 1. The tree root's `credit_points`. Across 2020–2027 it equals the
+ *    page's `credit_points` on 3,077 of the 3,080 courses that have
+ *    both.
+ * 2. When the root says 0, the sum of the top-level containers, minus
+ *    any "Rules" container (a prose container that can repeat the
+ *    total, as B0601's does). This matches `credit_points` on all 6
+ *    courses that have it and a 0 root, which are double degrees made
+ *    of two components (C2009: 96 + 96).
+ *
+ * The fallback matters because the course picker hides courses whose
+ * credit points are not above 0. In 2027 that hid 9 courses with a
+ * full tree, among them three Bachelor of AI double degrees.
+ */
+export function courseCreditPoints(raw: CourseContent): number | null {
+  const direct = toInt(raw.credit_points);
+  if (direct !== null) return direct;
+  const structure = raw.curriculumStructure;
+  if (!structure) return null;
+  const root = numericCp(structure.credit_points);
+  if (root > 0) return root;
+  const top = (structure.container ?? []).reduce<number>((sum, c) => {
+    if (!c || typeof c !== "object") return sum;
+    const node = c as Record<string, unknown>;
+    const title = typeof node["title"] === "string" ? node["title"] : "";
+    if (/^\s*rules\b/i.test(title)) return sum;
+    return sum + numericCp(node["credit_points"]);
+  }, 0);
+  return top > 0 ? top : null;
+}
+
+function numericCp(v: unknown): number {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v !== "string" || v.trim() === "") return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const PLACEHOLDER_UNIT_TITLE = /^\s*([A-Za-z]{3}\d{4})\b/;
+
+/**
+ * A handbook that is still being written lists some units as empty
+ * containers instead of unit links: the container title is "FIT1066
+ * Responsible use of data in the age of AI", the description says
+ * "This unit is under development", and there is no
+ * `academic_item_code` anywhere below it. The extractor only reads
+ * unit links, so 2027 C2005 (Bachelor of AI) lost 15 of its units this
+ * way, and its Part A read "3 of 3" when the handbook asks for 4.
+ *
+ * This returns a copy of `structure` in which those containers become
+ * unit leaves of their parent container. A parent is folded only when
+ * every one of these must hold, so the change is provably what the
+ * handbook means:
+ *
+ *   - Each placeholder has a positive credit-point value, no child
+ *     containers and no unit links, and its code is not already a leaf
+ *     of the parent. (S2000's "MTH1020 … is recommended" notes have no
+ *     credit points and stay as they are.)
+ *   - Each placeholder code is a unit of this handbook year
+ *     (`unitCodes`). A unit with no page yet stays out, as before.
+ *   - The parent has no other credit-bearing child containers.
+ *   - The credit points agree. Either the parent's existing leaves plus
+ *     the placeholders add up exactly to the parent's credit points
+ *     (C2005 Part A: 3 × 6 + 6 = 24), or the existing leaves already
+ *     exceed them, so the parent is a pick-some list and the
+ *     placeholders only add options (C2005 "Electives", 12 cp from
+ *     four units). A parent whose leaves already fill it exactly is
+ *     left alone: 2027 M3008 "Core studies" states 48 cp for eight unit
+ *     links plus 18 placeholders, and nothing tells which is wrong.
+ *
+ * Only the extraction input changes. `curriculum_structure` keeps the
+ * handbook tree verbatim. `folded` lists the codes that became leaves.
+ */
+export function foldPlaceholderUnits<T>(
+  structure: T,
+  unitCodes: ReadonlySet<string>,
+): { structure: T; folded: string[] } {
+  const folded: string[] = [];
+  const visit = (node: unknown): unknown => {
+    if (Array.isArray(node)) {
+      let changed = false;
+      const out = node.map((x) => {
+        const y = visit(x);
+        if (y !== x) changed = true;
+        return y;
+      });
+      return changed ? out : node;
+    }
+    if (!node || typeof node !== "object") return node;
+    const n = node as Record<string, unknown>;
+    let out: Record<string, unknown> = n;
+    for (const [k, v] of Object.entries(n)) {
+      const y = visit(v);
+      if (y !== v) {
+        if (out === n) out = { ...n };
+        out[k] = y;
+      }
+    }
+    const fold = foldContainer(out, unitCodes);
+    if (fold) {
+      folded.push(...fold.codes);
+      return fold.node;
+    }
+    return out;
+  };
+  const result = visit(structure) as T;
+  return { structure: result, folded };
+}
+
+function foldContainer(
+  n: Record<string, unknown>,
+  unitCodes: ReadonlySet<string>,
+): { node: Record<string, unknown>; codes: string[] } | null {
+  const subs = Array.isArray(n["container"]) ? (n["container"] as unknown[]) : [];
+  if (subs.length === 0) return null;
+  const rels = Array.isArray(n["relationship"]) ? (n["relationship"] as unknown[]) : [];
+  const leafCodes = new Set<string>();
+  let leafCp = 0;
+  for (const r of rels) {
+    if (!r || typeof r !== "object") continue;
+    const leaf = r as Record<string, unknown>;
+    const type = (leaf["academic_item_type"] as { value?: unknown } | undefined)?.value;
+    if (typeof leaf["academic_item_code"] !== "string" || type !== "subject") continue;
+    leafCodes.add(leaf["academic_item_code"].trim().toUpperCase());
+    leafCp += numericCp(leaf["academic_item_credit_points"]);
+  }
+
+  const placeholders: Array<{ sub: Record<string, unknown>; code: string; cp: number }> = [];
+  const others: unknown[] = [];
+  for (const s of subs) {
+    const sub = s && typeof s === "object" ? (s as Record<string, unknown>) : null;
+    const title = sub && typeof sub["title"] === "string" ? sub["title"] : "";
+    const m = PLACEHOLDER_UNIT_TITLE.exec(title);
+    const empty = (k: string) => {
+      const v = sub?.[k];
+      return v === undefined || v === null || (Array.isArray(v) && v.length === 0);
+    };
+    const cp = numericCp(sub?.["credit_points"]);
+    if (sub && m && empty("container") && empty("relationship") && cp > 0) {
+      const code = m[1]!.toUpperCase();
+      if (!leafCodes.has(code)) {
+        placeholders.push({ sub, code, cp });
+        continue;
+      }
+    }
+    others.push(s);
+  }
+  if (placeholders.length === 0) return null;
+  if (!placeholders.every((p) => unitCodes.has(p.code))) return null;
+  if (new Set(placeholders.map((p) => p.code)).size !== placeholders.length) return null;
+  const otherCp = others.reduce<number>(
+    (sum, s) =>
+      sum + (s && typeof s === "object" ? numericCp((s as Record<string, unknown>)["credit_points"]) : 0),
+    0,
+  );
+  if (otherCp > 0) return null;
+  const parentCp = numericCp(n["credit_points"]);
+  if (parentCp <= 0) return null;
+  const placeholderCp = placeholders.reduce((sum, p) => sum + p.cp, 0);
+  const exact = leafCp + placeholderCp === parentCp;
+  const optionsOnly = leafCp > parentCp;
+  if (!exact && !optionsOnly) return null;
+
+  const leaves = placeholders.map(({ sub, code, cp }) => ({
+    academic_item_code: code,
+    academic_item_type: { label: "Unit", value: "subject" },
+    academic_item_name: String(sub["title"]).trim().slice(code.length).trim(),
+    academic_item_credit_points: String(cp),
+    academic_item_url: "",
+    order: sub["order"] ?? "",
+    parent_connector: sub["parent_connector"] ?? { label: "AND", value: "AND" },
+    placeholder: true,
+  }));
+  return {
+    node: { ...n, relationship: [...rels, ...leaves], container: others },
+    codes: placeholders.map((p) => p.code),
+  };
+}
+
+export function parseCourse(
+  year: string,
+  raw: CourseContent,
+  /**
+   * Unit codes of `year`. When given, placeholder unit containers are
+   * folded into unit leaves before extraction (`foldPlaceholderUnits`).
+   */
+  unitCodes?: ReadonlySet<string>,
+): CourseRows {
   const structure = raw.curriculumStructure ?? null;
+  const creditPoints = courseCreditPoints(raw);
+  const extractionTree =
+    structure && unitCodes
+      ? foldPlaceholderUnits(structure, unitCodes).structure
+      : structure;
   // Precompute curriculum-tree extractions once at ingest so the planner
   // never has to re-walk the tree at request time. See
   // packages/db/src/curriculum.ts for the walker implementations.
@@ -453,7 +648,7 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
       title: raw.title,
       abbreviatedName: (raw.abbreviated_name as string | undefined) || null,
       aqfLevel: labelOrValue(raw.aqf_level),
-      creditPoints: toInt(raw.credit_points),
+      creditPoints,
       type: labelOrValue(raw.type),
       status: labelOrValue(raw.status),
       school: clValue(raw.school),
@@ -465,10 +660,10 @@ export function parseCourse(year: string, raw: CourseContent): CourseRows {
       partTime: toBool(raw["part_time"]),
       curriculumStructure: structure,
       requirementGroups: hasStructure
-        ? extractRequirementGroups(structure, toInt(raw.credit_points) ?? 0)
+        ? extractRequirementGroups(extractionTree, creditPoints ?? 0)
         : null,
       embeddedSpecialisations: hasStructure
-        ? extractEmbeddedSpecialisations(structure)
+        ? extractEmbeddedSpecialisations(extractionTree)
         : null,
       subCourseRefs: hasStructure ? extractSubCourseRefs(structure, year) : null,
       componentLabels: hasStructure ? extractComponentLabels(structure) : null,

@@ -24,6 +24,7 @@ import {
   extractAosUnitRefs,
   extractCourseAosRefs,
   extractUnitYearLinks,
+  foldPlaceholderUnits,
   parseAos,
   parseCourse,
   parseUnit,
@@ -98,18 +99,25 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
   );
 
   /* -------- courses ----------------------------------------------- */
+  const unitCodeSet = new Set(unitRows.map((u) => u.code.toUpperCase()));
   const courseFiles = await readdir(join(base, "courses")).catch(() => []);
   const courseRows: ReturnType<typeof parseCourse>["course"][] = [];
+  let placeholderUnits = 0;
   for (const f of courseFiles) {
     if (!f.endsWith(".json")) continue;
     try {
       const raw = await readJson<CourseContent>(join(base, "courses", f));
-      courseRows.push(parseCourse(year, raw).course);
+      courseRows.push(parseCourse(year, raw, unitCodeSet).course);
+      if (raw.curriculumStructure)
+        placeholderUnits += foldPlaceholderUnits(raw.curriculumStructure, unitCodeSet).folded.length;
     } catch (e) {
       badFiles.push({ file: `courses/${f}`, reason: String(e) });
     }
   }
-  console.log(`  courses: parsed ${courseRows.length}`);
+  console.log(
+    `  courses: parsed ${courseRows.length} ` +
+      `(${placeholderUnits} placeholder units folded into leaves)`,
+  );
 
   // Hand corrections the extractor can't derive. Applied here — inside
   // the same pipeline that delete-and-reinserts the year — so a
@@ -147,7 +155,6 @@ export async function ingest(opts: IngestOptions): Promise<Summary> {
   console.log(`  aos: parsed ${aosRows.length}`);
 
   /* -------- cross-entity tree walks ------------------------------- */
-  const unitCodeSet = new Set(unitRows.map((u) => u.code.toUpperCase()));
   const aosCodeSet = new Set(aosRows.map((a) => a.code.toUpperCase()));
 
   // A handbook that is still being published links some AoS and

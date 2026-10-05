@@ -13,9 +13,11 @@ import {
   courses,
   createDb,
   extractRequirementGroups,
+  units,
 } from "@monmap/db";
 import { DATABASE_URL } from "@monmap/db/env";
 import { loadCurriculumOverrides } from "./overrides.ts";
+import { foldPlaceholderUnits } from "./parse.ts";
 
 const dryRun = process.argv.includes("--dry-run");
 
@@ -44,10 +46,28 @@ const rows = await db
     ),
   );
 
+// Unit codes of each year these rows belong to, so placeholder unit
+// containers fold into leaves exactly as they do at ingest.
+const unitCodesByYear = new Map<string, Set<string>>();
+const rowYears = [...new Set(rows.map((r) => r.year))];
+if (rowYears.length > 0) {
+  for (const r of await db
+    .select({ year: units.year, code: units.code })
+    .from(units)
+    .where(inArray(units.year, rowYears))) {
+    const set = unitCodesByYear.get(r.year) ?? new Set<string>();
+    set.add(r.code.toUpperCase());
+    unitCodesByYear.set(r.year, set);
+  }
+}
+
 let updated = 0;
 for (const row of rows) {
   const base = extractRequirementGroups(
-    row.curriculumStructure,
+    foldPlaceholderUnits(
+      row.curriculumStructure,
+      unitCodesByYear.get(row.year) ?? new Set<string>(),
+    ).structure,
     row.creditPoints ?? 0,
   );
   const { groups, applied } = applyCurriculumOverrides(

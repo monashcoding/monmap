@@ -1,9 +1,13 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { extractSubCourseRefs } from "@monmap/db"
+import { extractRequirementGroups, extractSubCourseRefs } from "@monmap/db"
+import type { CourseContent } from "@monmap/scraper/types"
 import {
   collectCodeRefs,
+  courseCreditPoints,
+  foldPlaceholderUnits,
+  parseCourse,
   extractCourseAosRefs,
   extractAosUnitRefs,
   extractEnrolmentRuleRefs,
@@ -679,4 +683,194 @@ test("minors, electives and specialisations are untouched by the change", () => 
 
 test("leading and trailing whitespace is trimmed before matching", () => {
   assert.equal(aosRef("  Part A. Major studies  ").kind, "major")
+})
+
+/* ------------------------------------------------------------------ *
+ * Course credit points from the curriculum tree
+ * ------------------------------------------------------------------ */
+
+const course = (fields: Record<string, unknown>) =>
+  ({ code: "X0000", title: "Test course", ...fields }) as unknown as CourseContent
+
+test("course credit points: the page value wins when present", () => {
+  const raw = course({ credit_points: "144", curriculumStructure: { credit_points: "96", container: [] } })
+  assert.equal(courseCreditPoints(raw), 144)
+})
+
+test("course credit points: a blank page value falls back to the tree root (2027 B2057)", () => {
+  const raw = course({ credit_points: "", curriculumStructure: { credit_points: "144", container: [] } })
+  assert.equal(courseCreditPoints(raw), 144)
+})
+
+test("course credit points: a 0 root sums the top-level containers, skipping Rules (2027 C2009)", () => {
+  const raw = course({
+    credit_points: "",
+    curriculumStructure: {
+      credit_points: "0",
+      container: [
+        { title: "Rules", credit_points: "192" },
+        { title: "Artificial Intelligence component ", credit_points: "96" },
+        { title: "Bachelor of Arts component", credit_points: "96" },
+      ],
+    },
+  })
+  assert.equal(courseCreditPoints(raw), 192)
+})
+
+test("course credit points: no page value and no tree stays null", () => {
+  assert.equal(courseCreditPoints(course({ credit_points: "" })), null)
+  assert.equal(
+    courseCreditPoints(course({ credit_points: "", curriculumStructure: { credit_points: "0", container: [] } })),
+    null,
+  )
+})
+
+test("parseCourse stores the fallback credit points", () => {
+  const raw = course({ credit_points: "", curriculumStructure: { credit_points: "48", container: [] } })
+  assert.equal(parseCourse("2027", raw).course.creditPoints, 48)
+})
+
+/* ------------------------------------------------------------------ *
+ * Placeholder unit containers (2027 C2005 and friends)
+ * ------------------------------------------------------------------ */
+
+const leaf6 = (code: string, order = "100") => ({
+  ...subjectLeaf(code),
+  academic_item_credit_points: "6",
+  order,
+})
+const placeholder = (title: string, cp = "6", order = "300") => ({
+  title,
+  credit_points: cp,
+  description: "This unit is under development",
+  container: [],
+  relationship: [],
+  order,
+  parent_connector: { label: "AND", value: "AND" },
+})
+const units = (...codes: string[]) => new Set(codes)
+
+test("placeholders: a container that the placeholders complete exactly is folded (C2005 Part A)", () => {
+  const partA = {
+    title: "Part A. Foundation studies",
+    credit_points: "24",
+    relationship: [leaf6("FIT1045"), leaf6("FIT1047"), leaf6("FIT1059")],
+    container: [placeholder("FIT1066 Responsible use of data in the age of AI")],
+  }
+  const root = { container: [partA] }
+  const { structure, folded } = foldPlaceholderUnits(
+    root,
+    units("FIT1045", "FIT1047", "FIT1059", "FIT1066"),
+  )
+  assert.deepEqual(folded, ["FIT1066"])
+  const groups = extractRequirementGroups(structure, 144)
+  assert.deepEqual(groups[0]!.options, ["FIT1045", "FIT1047", "FIT1059", "FIT1066"])
+  assert.equal(groups[0]!.required, 4)
+  // The input tree is never mutated.
+  assert.equal(partA.relationship.length, 3)
+  assert.equal(partA.container.length, 1)
+})
+
+test("placeholders: a pick-some list gains options but keeps its required count (C2005 Electives)", () => {
+  const root = {
+    container: [
+      {
+        title: "Electives",
+        credit_points: "12",
+        relationship: [leaf6("FIT3191"), leaf6("FIT3192"), leaf6("FIT3203")],
+        container: [placeholder("FIT3233 Optimisation and reinforcement learning")],
+      },
+    ],
+  }
+  const { structure, folded } = foldPlaceholderUnits(root, units("FIT3191", "FIT3192", "FIT3203", "FIT3233"))
+  assert.deepEqual(folded, ["FIT3233"])
+  const [g] = extractRequirementGroups(structure, 144)
+  assert.equal(g!.options.length, 4)
+  assert.equal(g!.required, 2)
+})
+
+test("placeholders: a container its leaves already fill is left alone (2027 M3008 Core studies)", () => {
+  const root = {
+    container: [
+      {
+        title: "Core studies",
+        credit_points: "12",
+        relationship: [leaf6("SPH1000"), leaf6("SPH1001")],
+        container: [placeholder("SPH2001 Motor speech disorders")],
+      },
+    ],
+  }
+  const out = foldPlaceholderUnits(root, units("SPH1000", "SPH1001", "SPH2001"))
+  assert.deepEqual(out.folded, [])
+  assert.equal(out.structure, root)
+})
+
+test("placeholders: a code with no unit row in the year blocks the fold", () => {
+  const root = {
+    container: [
+      {
+        title: "Core studies",
+        credit_points: "12",
+        relationship: [leaf6("BMS1111")],
+        container: [placeholder("BMS2111 Not published yet")],
+      },
+    ],
+  }
+  assert.deepEqual(foldPlaceholderUnits(root, units("BMS1111")).folded, [])
+})
+
+test("placeholders: notes without credit points and codes already listed are not units (2026 S2000)", () => {
+  const root = {
+    container: [
+      {
+        title: "Mathematics and statistics unit",
+        credit_points: "6",
+        relationship: [leaf6("MTH1020"), leaf6("STA1010")],
+        container: [
+          placeholder("MTH1020 Analysis of change is recommended", ""),
+          placeholder("SCI1022 Introduction to scientific coding is recommended", ""),
+        ],
+      },
+    ],
+  }
+  assert.deepEqual(foldPlaceholderUnits(root, units("MTH1020", "STA1010", "SCI1022")).folded, [])
+})
+
+test("placeholders: a credit-bearing sibling container blocks the fold", () => {
+  const root = {
+    container: [
+      {
+        title: "Part C",
+        credit_points: "24",
+        relationship: [leaf6("FIT2119")],
+        container: [
+          placeholder("FIT2120 Project practices"),
+          { title: "Other stream", credit_points: "12", container: [], relationship: [leaf6("FIT9999")] },
+        ],
+      },
+    ],
+  }
+  assert.deepEqual(foldPlaceholderUnits(root, units("FIT2119", "FIT2120", "FIT9999")).folded, [])
+})
+
+test("placeholders: parseCourse folds only when it is given the year's unit codes", () => {
+  const raw = course({
+    credit_points: "24",
+    curriculumStructure: {
+      container: [
+        {
+          title: "Core studies",
+          credit_points: "24",
+          relationship: [],
+          container: ["EDF5320", "EDF5321", "EDF5322", "EDF5323"].map((c) => placeholder(`${c} Unit`)),
+        },
+      ],
+    },
+  })
+  assert.deepEqual(parseCourse("2027", raw).course.requirementGroups, [])
+  const groups = parseCourse("2027", raw, units("EDF5320", "EDF5321", "EDF5322", "EDF5323")).course.requirementGroups!
+  assert.deepEqual(groups[0]!.options, ["EDF5320", "EDF5321", "EDF5322", "EDF5323"])
+  assert.equal(groups[0]!.autoLoad, true)
+  // The stored tree stays verbatim.
+  assert.equal(parseCourse("2027", raw, units("EDF5320")).course.curriculumStructure, raw.curriculumStructure)
 })

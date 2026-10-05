@@ -9,5 +9,78 @@
         "autoLoad": true
       }
     ]
+  },
+  {
+    "course": "C2005",
+    "years": [
+      "2027"
+    ],
+    "reason": "Part C. Practice studies says: 'You must complete FIT2119 and either the AI in practice project units (18 credit points) or the Industry-based Learning placement units (18 credit points).' FIT2119 appears only in that prose, so the extractor cannot see it. The two 18cp streams are alternatives, but the budget math treats each as mandatory (two subs fall below the three-sub choice test), which auto-loaded both. IBL placement is also by selection only (Part C prose). https://handbook.monash.edu/2027/courses/C2005",
+    "ops": [
+      {
+        "op": "addGroup",
+        "group": {
+          "grouping": "Part C. Practice studies",
+          "required": 1,
+          "options": [
+            "FIT2119"
+          ],
+          "autoLoad": true
+        }
+      },
+      {
+        "op": "setAutoLoad",
+        "groupingLike": "industry-based learning placement units",
+        "autoLoad": false
+      },
+      {
+        "op": "setAutoLoad",
+        "groupingLike": "ai in practice project units",
+        "autoLoad": false
+      }
+    ]
+  },
+  {
+    "course": "M3008",
+    "years": [
+      "2027"
+    ],
+    "reason": "Core studies says 'You must complete the following units' and links eight units (IPE1011, SPH1000-SPH1006); 18 later-year units are listed as 'under development' placeholders. The container states 48 credit points although its listed units total 192 (the 2026 container states 192), so the budget math read the eight links as a 1-of-8 pool. All eight are required, as in 2026. https://handbook.monash.edu/2027/courses/M3008",
+    "ops": [
+      {
+        "op": "setRequired",
+        "groupingLike": "core studies",
+        "required": 8
+      },
+      {
+        "op": "setAutoLoad",
+        "groupingLike": "core studies",
+        "autoLoad": true
+      }
+    ]
+  },
+  {
+    "course": "C3001",
+    "years": [
+      "2027"
+    ],
+    "reason": "Part D. Research studies says: 'You must complete the following unit and either the Computing research project or Computing in practice: Advanced project.' The unit is FIT5125. The two 12cp projects are alternatives, but the budget math treats each as mandatory (two subs fall below the three-sub choice test) and auto-loaded both, while FIT5125 itself was not auto-loaded. https://handbook.monash.edu/2027/courses/C3001",
+    "ops": [
+      {
+        "op": "setAutoLoad",
+        "groupingLike": "part d. research studies",
+        "autoLoad": true
+      },
+      {
+        "op": "setAutoLoad",
+        "groupingLike": "computing research project",
+        "autoLoad": false
+      },
+      {
+        "op": "setAutoLoad",
+        "groupingLike": "computing in practice: advanced project",
+        "autoLoad": false
+      }
+    ]
   }
 ]
