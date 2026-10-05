@@ -7,7 +7,7 @@ import { LogOutIcon, MenuIcon, NotebookPenIcon } from "lucide-react"
 import { useState, useSyncExternalStore } from "react"
 
 import { AnonymousBadge } from "@/components/anonymous-badge"
-import { MacAppsMenu } from "@/components/mac-apps-menu"
+import { HeaderLinks } from "@/components/header-links"
 import { MyGradesDialog } from "@/components/my-grades-dialog"
 import { PRIMARY_NAV_ITEMS, PrimaryNav } from "@/components/primary-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -35,16 +35,17 @@ import { cn } from "@/lib/utils"
 
 /**
  * Site-wide top bar: a slim, sticky, full-width strip with the
- * MAC / MonMap breadcrumb, page tabs, the page's context slot, the MAC
- * apps menu, the theme toggle and the avatar.
+ * MAC / MonMap breadcrumb, page tabs, the page's context slot, the
+ * Feedback and Contribute links, the theme toggle and the avatar.
  *
  * Pages render it as the first child of their <main>. The bar pulls
  * itself out of <main>'s padding with negative margins, and its
  * backdrop (the ::before layer) spans the whole viewport so the strip
  * reads edge to edge even though <main> is capped at 1500px.
  *
- * Mobile (<md): hamburger, breadcrumb, context slot, avatar. The MAC
- * apps menu and theme toggle stay; the tabs move into the sheet.
+ * Mobile (<md): hamburger, breadcrumb, context slot, avatar. Feedback,
+ * Contribute and the theme toggle shrink to icons; the tabs move into
+ * the sheet.
  */
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   return (
@@ -101,7 +102,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         {children ? (
           <div className="flex min-w-0 items-center gap-2">{children}</div>
         ) : null}
-        <MacAppsMenu />
+        <HeaderLinks />
         <ThemeToggle />
         <UserMenu />
       </div>
