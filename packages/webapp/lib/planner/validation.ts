@@ -1,5 +1,6 @@
 import { creditedCodes } from "./credit.ts"
 import { perSlotCreditPoints } from "./full-year.ts"
+import { plannedUnitCodes } from "./progress.ts"
 import {
   evaluateProhibition,
   evaluateRequisiteTree,
@@ -237,11 +238,7 @@ export function validatePlan(
   // is missing. Credited codes are literal enrolments for prohibition
   // purposes too — holding credit for a unit conflicts with its twin
   // exactly as taking it would.
-  const credited = creditedCodes(state)
-
-  const allPlanned = new Set<string>(credited)
-  for (const yr of state.years)
-    for (const s of yr.slots) for (const c of s.unitCodes) allPlanned.add(c)
+  const allPlanned = plannedUnitCodes(state)
 
   // Reverse prohibition index: code -> units on the plan whose own
   // rules prohibit it. Built once over the plan rather than per slot,
@@ -262,10 +259,9 @@ export function validatePlan(
     }
   }
 
-  // Seeded with credit, so year 1 sees it as already completed —
-  // expanded through equivalents like any other completion, so credit
-  // for FIT1053 satisfies a prerequisite naming FIT1045.
-  const completed = withEquivalents(credited, unitsByCode)
+  // Grown slot by slot below rather than calling completedBefore per
+  // slot, which would walk the plan again for every slot.
+  const completed = completedAtStart(state, unitsByCode)
 
   // Used to derive the expected handbook year per study-year so the
   // validator can compare against the actually-loaded `unit.year`.
@@ -344,6 +340,42 @@ export function validatePlan(
     }
   }
 
+  return out
+}
+
+/**
+ * What counts as done before Year 1: advanced standing, expanded
+ * through equivalents like any other completion, so credit for FIT1053
+ * satisfies a prerequisite naming FIT1045.
+ */
+export function completedAtStart(
+  state: PlannerState,
+  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+): Set<string> {
+  return withEquivalents(creditedCodes(state), unitsByCode)
+}
+
+/**
+ * Codes completed strictly before slot (yearIndex, slotIndex): credit,
+ * then every earlier slot in plan order, each expanded through
+ * equivalents. The same chronology validatePlan uses, for views that
+ * need it for one slot (the search ranking, the detail popover).
+ */
+export function completedBefore(
+  state: PlannerState,
+  yearIndex: number,
+  slotIndex: number,
+  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+): Set<string> {
+  const out = completedAtStart(state, unitsByCode)
+  for (let y = 0; y <= yearIndex; y++) {
+    const slots = state.years[y]?.slots ?? []
+    for (let s = 0; s < slots.length; s++) {
+      if (y === yearIndex && s >= slotIndex) break
+      for (const c of withEquivalents(slots[s].unitCodes, unitsByCode))
+        out.add(c)
+    }
+  }
   return out
 }
 

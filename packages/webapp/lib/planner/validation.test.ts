@@ -7,38 +7,18 @@ import {
   validatePlan,
   validateUnitInSlot,
 } from "./validation.ts"
-import type {
-  PlannerOffering,
-  PlannerState,
-  PlannerUnit,
-  RequisiteBlock,
-} from "./types.ts"
-
-function unit(code: string, overrides: Partial<PlannerUnit> = {}): PlannerUnit {
-  return {
-    year: "2026",
-    code,
-    title: `${code} title`,
-    creditPoints: 6,
-    level: "Level 1",
-    synopsis: null,
-    school: null,
-    ...overrides,
-  }
-}
-
-function offering(
-  code: string,
-  periodKind: PlannerOffering["periodKind"]
-): PlannerOffering {
-  return {
-    unitCode: code,
-    teachingPeriod: "First semester",
-    location: "Clayton",
-    attendanceModeCode: "ON-CAMPUS",
-    periodKind,
-  }
-}
+import {
+  coreq,
+  offering,
+  offeringMap,
+  planState,
+  prereq,
+  prereqAny,
+  prohibition,
+  unit,
+  unitMap,
+} from "./test-fixtures.ts"
+import type { PlannerOffering, PlannerUnit, RequisiteBlock } from "./types.ts"
 
 test("isOfferedInPeriod: matches on periodKind", () => {
   const offerings = [offering("FIT1045", "S1"), offering("FIT1045", "S2")]
@@ -135,20 +115,7 @@ test("validateUnitInSlot: term-only schedule is always a warning, never an error
 })
 
 test("validateUnitInSlot: prereq unmet → error lists missing codes", () => {
-  const requisites: RequisiteBlock[] = [
-    {
-      requisiteType: "prerequisite",
-      rule: [
-        {
-          parent_connector: { value: "OR" },
-          relationships: [
-            { academic_item_code: "FIT1008" },
-            { academic_item_code: "FIT1054" },
-          ],
-        },
-      ],
-    },
-  ]
+  const requisites: RequisiteBlock[] = [prereqAny("FIT1008", "FIT1054")]
   const v = validateUnitInSlot({
     unit: unit("FIT2004"),
     slotKind: "S1",
@@ -167,17 +134,7 @@ test("validateUnitInSlot: prereq unmet → error lists missing codes", () => {
 })
 
 test("validateUnitInSlot: coreq satisfied by concurrent unit", () => {
-  const requisites: RequisiteBlock[] = [
-    {
-      requisiteType: "corequisite",
-      rule: [
-        {
-          parent_connector: { value: "AND" },
-          relationships: [{ academic_item_code: "FIT1045" }],
-        },
-      ],
-    },
-  ]
+  const requisites: RequisiteBlock[] = [coreq("FIT1045")]
   const v = validateUnitInSlot({
     unit: unit("FIT9999"),
     slotKind: "S1",
@@ -194,17 +151,7 @@ test("validateUnitInSlot: coreq satisfied by concurrent unit", () => {
 })
 
 test("validateUnitInSlot: prohibition fires when paired unit is anywhere in plan", () => {
-  const requisites: RequisiteBlock[] = [
-    {
-      requisiteType: "prohibition",
-      rule: [
-        {
-          parent_connector: { value: "OR" },
-          relationships: [{ academic_item_code: "FIT1045" }],
-        },
-      ],
-    },
-  ]
+  const requisites: RequisiteBlock[] = [prohibition("FIT1045")]
   const v = validateUnitInSlot({
     unit: unit("FIT1053"),
     slotKind: "S1",
@@ -241,20 +188,7 @@ test("validateUnitInSlot: over-credit-load is a warning, not an error", () => {
 })
 
 test("validatePlan: units in earlier slots unlock later slots", () => {
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT1045"] },
-          { kind: "S2", unitCodes: ["FIT2004"] },
-        ],
-      },
-    ],
-  }
+  const state = planState([{ S1: ["FIT1045"], S2: ["FIT2004"] }])
 
   const unitsByCode = new Map<string, PlannerUnit>([
     ["FIT1045", unit("FIT1045")],
@@ -265,20 +199,7 @@ test("validatePlan: units in earlier slots unlock later slots", () => {
     ["FIT2004", [offering("FIT2004", "S1"), offering("FIT2004", "S2")]],
   ])
   const requisitesByCode = new Map<string, RequisiteBlock[]>([
-    [
-      "FIT2004",
-      [
-        {
-          requisiteType: "prerequisite",
-          rule: [
-            {
-              parent_connector: { value: "OR" },
-              relationships: [{ academic_item_code: "FIT1045" }],
-            },
-          ],
-        },
-      ],
-    ],
+    ["FIT2004", [prereqAny("FIT1045")]],
   ])
 
   const out = validatePlan(
@@ -298,42 +219,22 @@ test("validatePlan: full-year twin doesn't double-charge slotCreditLoad", () => 
   // 24 = max, no warning. Before the fix the FY contributed its full
   // 12 CP to each half so the load read as 30 and warned in both S1
   // and S2 of every year a FY unit sat in.
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["A", "B", "C", "FY"] },
-          { kind: "S2", unitCodes: ["D", "E", "F", "FY"] },
-        ],
-      },
-    ],
-  }
-  const u = (c: string, cp = 6) => unit(c, { creditPoints: cp })
-  const units = new Map<string, PlannerUnit>([
-    ["A", u("A")],
-    ["B", u("B")],
-    ["C", u("C")],
-    ["D", u("D")],
-    ["E", u("E")],
-    ["F", u("F")],
-    ["FY", u("FY", 12)],
+  const state = planState([
+    { S1: ["A", "B", "C", "FY"], S2: ["D", "E", "F", "FY"] },
   ])
-  const flat = (code: string, period: PlannerOffering["periodKind"]) => [
-    offering(code, period),
-  ]
-  const offerings = new Map<string, PlannerOffering[]>([
-    ["A", flat("A", "S1")],
-    ["B", flat("B", "S1")],
-    ["C", flat("C", "S1")],
-    ["D", flat("D", "S2")],
-    ["E", flat("E", "S2")],
-    ["F", flat("F", "S2")],
-    ["FY", flat("FY", "FULL_YEAR")],
+  const units = new Map([
+    ...unitMap(["A", "B", "C", "D", "E", "F"]),
+    ...unitMap(["FY"], { creditPoints: 12 }),
   ])
+  const offerings = offeringMap({
+    A: ["S1"],
+    B: ["S1"],
+    C: ["S1"],
+    D: ["S2"],
+    E: ["S2"],
+    F: ["S2"],
+    FY: ["FULL_YEAR"],
+  })
   const out = validatePlan(state, units, offerings, new Map())
   const fy0 = out.get(keyFor(0, 0, "FY"))
   const fy1 = out.get(keyFor(0, 1, "FY"))
@@ -349,17 +250,7 @@ test("validatePlan: full-year twin doesn't double-charge slotCreditLoad", () => 
 })
 
 test("validatePlan: prereq fails when dependent unit is in same slot (not before)", () => {
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [{ kind: "S1", unitCodes: ["FIT1045", "FIT2004"] }],
-      },
-    ],
-  }
+  const state = planState([{ S1: ["FIT1045", "FIT2004"] }])
   const out = validatePlan(
     state,
     new Map([
@@ -370,22 +261,7 @@ test("validatePlan: prereq fails when dependent unit is in same slot (not before
       ["FIT1045", [offering("FIT1045", "S1")]],
       ["FIT2004", [offering("FIT2004", "S1")]],
     ]),
-    new Map([
-      [
-        "FIT2004",
-        [
-          {
-            requisiteType: "prerequisite",
-            rule: [
-              {
-                parent_connector: { value: "OR" },
-                relationships: [{ academic_item_code: "FIT1045" }],
-              },
-            ],
-          },
-        ],
-      ],
-    ])
+    new Map([["FIT2004", [prereqAny("FIT1045")]]])
   )
   const fit2004 = out.get(keyFor(0, 0, "FIT2004"))
   assert.ok(fit2004)
@@ -400,17 +276,15 @@ test("validatePlan: not-offered severity tracks loaded-vs-slot year per study ye
   // when 2027 isn't published). FIT1045 doesn't offer in S1 in any of
   // them. Y1–Y3 should be red (data matches the slot year); only Y4
   // should be amber (slot year 2027 ≠ loaded year 2026).
-  const state: PlannerState = {
-    courseYear: "2024",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
-      { label: "Year 2", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
-      { label: "Year 3", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
-      { label: "Year 4", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
+  const state = planState(
+    [
+      { S1: ["FIT1045"] },
+      { S1: ["FIT1045"] },
+      { S1: ["FIT1045"] },
+      { S1: ["FIT1045"] },
     ],
-  }
+    { courseYear: "2024" }
+  )
 
   // Per-slot unit data mimics what use-unit-data-hydration produces:
   // each study-year's slot gets a unit whose `year` is the handbook
@@ -421,10 +295,7 @@ test("validatePlan: not-offered severity tracks loaded-vs-slot year per study ye
   // year, since validatePlan keys offerings/units by code globally.
 
   // Y4 case: unit loaded from 2026 fallback, slot represents 2027.
-  const y4State: PlannerState = {
-    ...state,
-    years: [state.years[3]],
-  }
+  const y4State = { ...state, years: [state.years[3]] }
   const out4 = validatePlan(
     { ...y4State, courseYear: "2027" }, // year 0 = calendar 2027
     new Map([["FIT1045", unit("FIT1045", { year: "2026" })]]),
@@ -441,15 +312,9 @@ test("validatePlan: not-offered severity tracks loaded-vs-slot year per study ye
 
   // Y2 case: unit loaded from 2025, slot represents 2025 (courseYear
   // 2024 + study year 1). Data matches → red error.
-  const y2State: PlannerState = {
+  const y2State = planState([{ S1: [] }, { S1: ["FIT1045"] }], {
     courseYear: "2024",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: [] }] },
-      { label: "Year 2", slots: [{ kind: "S1", unitCodes: ["FIT1045"] }] },
-    ],
-  }
+  })
   const out2 = validatePlan(
     y2State,
     new Map([["FIT1045", unit("FIT1045", { year: "2025" })]]),
@@ -468,20 +333,7 @@ test("validatePlan: not-offered severity tracks loaded-vs-slot year per study ye
 })
 
 test("validatePlan: an equivalent twin satisfies a prereq naming the other (issue #7: FIT1053 → FIT2175 needs FIT1045)", () => {
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT1053"] },
-          { kind: "S2", unitCodes: ["FIT2175"] },
-        ],
-      },
-    ],
-  }
+  const state = planState([{ S1: ["FIT1053"], S2: ["FIT2175"] }])
   const unitsByCode = new Map<string, PlannerUnit>([
     // FIT1053 "Introduction to programming (Advanced)" is the equivalent
     // twin of FIT1045 — completing it should satisfy a FIT1045 prereq.
@@ -493,20 +345,7 @@ test("validatePlan: an equivalent twin satisfies a prereq naming the other (issu
     ["FIT2175", [offering("FIT2175", "S2")]],
   ])
   const requisitesByCode = new Map<string, RequisiteBlock[]>([
-    [
-      "FIT2175",
-      [
-        {
-          requisiteType: "prerequisite",
-          rule: [
-            {
-              parent_connector: { value: "AND" },
-              relationships: [{ academic_item_code: "FIT1045" }],
-            },
-          ],
-        },
-      ],
-    ],
+    ["FIT2175", [prereq("FIT1045")]],
   ])
   const out = validatePlan(
     state,
@@ -527,20 +366,7 @@ test("validatePlan: a completed unit WITHOUT an equivalence link does not satisf
   // the expansion is gated on the equivalence link, not on any completed
   // unit, so genuinely different mutually-prohibited units (capstones,
   // alternatives) never cross-satisfy.
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT1053"] },
-          { kind: "S2", unitCodes: ["FIT2175"] },
-        ],
-      },
-    ],
-  }
+  const state = planState([{ S1: ["FIT1053"], S2: ["FIT2175"] }])
   const out = validatePlan(
     state,
     new Map([
@@ -551,22 +377,7 @@ test("validatePlan: a completed unit WITHOUT an equivalence link does not satisf
       ["FIT1053", [offering("FIT1053", "S1")]],
       ["FIT2175", [offering("FIT2175", "S2")]],
     ]),
-    new Map([
-      [
-        "FIT2175",
-        [
-          {
-            requisiteType: "prerequisite",
-            rule: [
-              {
-                parent_connector: { value: "AND" },
-                relationships: [{ academic_item_code: "FIT1045" }],
-              },
-            ],
-          },
-        ],
-      ],
-    ])
+    new Map([["FIT2175", [prereq("FIT1045")]]])
   )
   const fit2175 = out.get(keyFor(0, 1, "FIT2175"))
   assert.ok(fit2175)
@@ -574,14 +385,7 @@ test("validatePlan: a completed unit WITHOUT an equivalence link does not satisf
 })
 
 test("validatePlan: unknown unit yields an unknown_unit error", () => {
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["ZZZ9999"] }] },
-    ],
-  }
+  const state = planState([{ S1: ["ZZZ9999"] }])
   const out = validatePlan(state, new Map(), new Map(), new Map())
   const v = out.get(keyFor(0, 0, "ZZZ9999"))
   assert.ok(v)
@@ -593,35 +397,14 @@ test("validatePlan: unknown unit yields an unknown_unit error", () => {
  * ------------------------------------------------------------------ */
 
 const prereqOn = (code: string, requires: string) =>
-  new Map<string, RequisiteBlock[]>([
-    [
-      code,
-      [
-        {
-          requisiteType: "prerequisite",
-          rule: [
-            {
-              parent_connector: { value: "OR" },
-              relationships: [{ academic_item_code: requires }],
-            },
-          ],
-        },
-      ],
-    ],
-  ])
+  new Map([[code, [prereqAny(requires)]]])
 
 test("credit: a credited prerequisite satisfies a unit in year 1", () => {
   // The exact complaint: "I got credit for intro to programming from
   // VCE Algorithmics and i cannot make the prereq for fit1008 go away".
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
+  const state = planState([{ S1: ["FIT1008"] }], {
     credit: [{ code: "FIT1045", creditPoints: 6, label: "VCE Algorithmics" }],
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1008"] }] },
-    ],
-  }
+  })
   const units = new Map([["FIT1008", unit("FIT1008")]])
   const offerings = new Map([["FIT1008", [offering("FIT1008", "S1")]]])
 
@@ -638,14 +421,7 @@ test("credit: a credited prerequisite satisfies a unit in year 1", () => {
 
 test("credit: without the credit the same plan still errors", () => {
   // Guards the test above against passing for the wrong reason.
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1008"] }] },
-    ],
-  }
+  const state = planState([{ S1: ["FIT1008"] }])
   const units = new Map([["FIT1008", unit("FIT1008")]])
   const offerings = new Map([["FIT1008", [offering("FIT1008", "S1")]]])
 
@@ -664,15 +440,9 @@ test("credit: without the credit the same plan still errors", () => {
 test("credit: an equivalent twin held as credit satisfies the prerequisite", () => {
   // Credit for the advanced twin FIT1053 must satisfy a prereq naming
   // FIT1045, exactly as taking it would.
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
+  const state = planState([{ S1: ["FIT1008"] }], {
     credit: [{ code: "FIT1053", creditPoints: 6 }],
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1008"] }] },
-    ],
-  }
+  })
   const units = new Map([
     ["FIT1008", unit("FIT1008")],
     ["FIT1053", unit("FIT1053", { equivalents: ["FIT1045"] })],
@@ -691,32 +461,13 @@ test("credit: an equivalent twin held as credit satisfies the prerequisite", () 
 test("credit: a credited unit still trips a prohibition", () => {
   // Credit is a literal enrolment for prohibition purposes — holding
   // credit for a unit conflicts with its twin just as taking it would.
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
+  const state = planState([{ S1: ["FIT1053"] }], {
     credit: [{ code: "FIT1045", creditPoints: 6 }],
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["FIT1053"] }] },
-    ],
-  }
+  })
   const units = new Map([["FIT1053", unit("FIT1053")]])
   const offerings = new Map([["FIT1053", [offering("FIT1053", "S1")]]])
   const requisites = new Map<string, RequisiteBlock[]>([
-    [
-      "FIT1053",
-      [
-        {
-          requisiteType: "prohibition",
-          rule: [
-            {
-              parent_connector: { value: "OR" },
-              relationships: [{ academic_item_code: "FIT1045" }],
-            },
-          ],
-        },
-      ],
-    ],
+    ["FIT1053", [prohibition("FIT1045")]],
   ])
 
   const out = validatePlan(state, units, offerings, requisites)
@@ -735,17 +486,9 @@ test("validatePlan: a one-directional prohibition flags BOTH units", () => {
   // nothing back — 1,557 of the corpus's 3,041 prohibition edges are
   // one-directional like this. Reported as: "when i put ats 3146 and
   // ats 2146 only 2146 showed a prohibition but 3146 didnt".
-  const state: PlannerState = {
-    courseYear: "2026",
+  const state = planState([{ S1: ["ATS2146", "ATS3146"] }], {
     courseCode: "A2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [{ kind: "S1", unitCodes: ["ATS2146", "ATS3146"] }],
-      },
-    ],
-  }
+  })
   const units = new Map([
     ["ATS2146", unit("ATS2146")],
     ["ATS3146", unit("ATS3146")],
@@ -755,20 +498,7 @@ test("validatePlan: a one-directional prohibition flags BOTH units", () => {
     ["ATS3146", [offering("ATS3146", "S1")]],
   ])
   const requisites = new Map<string, RequisiteBlock[]>([
-    [
-      "ATS2146",
-      [
-        {
-          requisiteType: "prohibition",
-          rule: [
-            {
-              parent_connector: { value: "OR" },
-              relationships: [{ academic_item_code: "ATS3146" }],
-            },
-          ],
-        },
-      ],
-    ],
+    ["ATS2146", [prohibition("ATS3146")]],
     // ATS3146 has no requisites at all — the asymmetry.
   ])
 
@@ -784,17 +514,7 @@ test("validatePlan: a one-directional prohibition flags BOTH units", () => {
 test("validatePlan: a mutual prohibition reports once per unit, not twice", () => {
   // Both directions recorded. Each card should still show a single
   // merged error naming the other unit.
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [{ kind: "S1", unitCodes: ["FIT1045", "FIT1053"] }],
-      },
-    ],
-  }
+  const state = planState([{ S1: ["FIT1045", "FIT1053"] }])
   const units = new Map([
     ["FIT1045", unit("FIT1045")],
     ["FIT1053", unit("FIT1053")],
@@ -803,20 +523,9 @@ test("validatePlan: a mutual prohibition reports once per unit, not twice", () =
     ["FIT1045", [offering("FIT1045", "S1")]],
     ["FIT1053", [offering("FIT1053", "S1")]],
   ])
-  const prohibits = (other: string): RequisiteBlock[] => [
-    {
-      requisiteType: "prohibition",
-      rule: [
-        {
-          parent_connector: { value: "OR" },
-          relationships: [{ academic_item_code: other }],
-        },
-      ],
-    },
-  ]
-  const requisites = new Map<string, RequisiteBlock[]>([
-    ["FIT1045", prohibits("FIT1053")],
-    ["FIT1053", prohibits("FIT1045")],
+  const requisites = new Map([
+    ["FIT1045", [prohibition("FIT1053")]],
+    ["FIT1053", [prohibition("FIT1045")]],
   ])
 
   const out = validatePlan(state, units, offerings, requisites)
@@ -826,31 +535,11 @@ test("validatePlan: a mutual prohibition reports once per unit, not twice", () =
 })
 
 test("validatePlan: a prohibited unit that isn't on the plan is ignored", () => {
-  const state: PlannerState = {
-    courseYear: "2026",
-    courseCode: "A2000",
-    selectedAos: {},
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["ATS2146"] }] },
-    ],
-  }
+  const state = planState([{ S1: ["ATS2146"] }], { courseCode: "A2000" })
   const units = new Map([["ATS2146", unit("ATS2146")]])
   const offerings = new Map([["ATS2146", [offering("ATS2146", "S1")]]])
   const requisites = new Map<string, RequisiteBlock[]>([
-    [
-      "ATS2146",
-      [
-        {
-          requisiteType: "prohibition",
-          rule: [
-            {
-              parent_connector: { value: "OR" },
-              relationships: [{ academic_item_code: "ATS3146" }],
-            },
-          ],
-        },
-      ],
-    ],
+    ["ATS2146", [prohibition("ATS3146")]],
   ])
   const out = validatePlan(state, units, offerings, requisites)
   assert.deepEqual(out.get(keyFor(0, 0, "ATS2146"))!.errors, [])
@@ -862,35 +551,17 @@ test("validatePlan: credit prohibits a placed unit from the reverse direction", 
   // prohibits ATS3146 and is not named back by it. ATS2146 never
   // occupies a slot, so it has no card of its own — the conflict can
   // only surface on ATS3146, and only via the reverse index.
-  const state: PlannerState = {
-    courseYear: "2026",
+  const state = planState([{ S1: ["ATS3146"] }], {
     courseCode: "A2000",
-    selectedAos: {},
     credit: [{ code: "ATS2146", creditPoints: 6, label: "transfer" }],
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["ATS3146"] }] },
-    ],
-  }
+  })
   const units = new Map([
     ["ATS2146", unit("ATS2146")],
     ["ATS3146", unit("ATS3146")],
   ])
   const offerings = new Map([["ATS3146", [offering("ATS3146", "S1")]]])
   const requisites = new Map<string, RequisiteBlock[]>([
-    [
-      "ATS2146",
-      [
-        {
-          requisiteType: "prohibition",
-          rule: [
-            {
-              parent_connector: { value: "OR" },
-              relationships: [{ academic_item_code: "ATS3146" }],
-            },
-          ],
-        },
-      ],
-    ],
+    ["ATS2146", [prohibition("ATS3146")]],
   ])
 
   const out = validatePlan(state, units, offerings, requisites)
@@ -903,14 +574,10 @@ test("validatePlan: an earlier-year fallback unit's period mismatch is a warning
   // 2027 has no ENG1005 page; E3001 2027 links the 2026 one, so the
   // server returns the 2026 unit marked `fallbackFor: "2027"`. Its 2026
   // offerings are a forecast for 2027, not a fact.
-  const state: PlannerState = {
+  const state = planState([{ S2: ["ENG1005"] }], {
     courseYear: "2027",
     courseCode: "E3001",
-    selectedAos: {},
-    years: [
-      { label: "Year 1", slots: [{ kind: "S2", unitCodes: ["ENG1005"] }] },
-    ],
-  }
+  })
   const out = validatePlan(
     state,
     new Map([

@@ -7,7 +7,17 @@ import {
   HISTORY_LIMIT,
   initialHistory,
   plannerReducer,
+  type PlannerAction,
 } from "./state.ts"
+import { planState } from "./test-fixtures.ts"
+import type { PlannerState } from "./types.ts"
+
+/** Each slot's units, year by year. */
+const grid = (s: PlannerState) =>
+  s.years.map((y) => y.slots.map((sl) => sl.unitCodes))
+
+const apply = (s: PlannerState, ...actions: PlannerAction[]) =>
+  actions.reduce(plannerReducer, s)
 
 test("defaultState: 3 years × 2 primary slots", () => {
   const s = defaultState("2026", "C2000")
@@ -464,4 +474,492 @@ test("set_campus leaves years and credit untouched", () => {
   const s = plannerReducer(base, { type: "set_campus", campus: "Clayton" })
   assert.deepEqual(s.years[0]!.slots[0]!.unitCodes, ["ENG1001"])
   assert.deepEqual(s.credit, [{ code: "FIT1045", creditPoints: 6 }])
+})
+
+/* ------------------------------------------------------------------ *
+ * Full-year units
+ * ------------------------------------------------------------------ */
+
+/** Year 1 with FY units A and B at the front of both semesters. */
+const twoFullYear = () =>
+  planState([
+    { S1: ["A", "B", "X"], S2: ["A", "B", "Y"] },
+    { S1: [], S2: [] },
+  ])
+
+test("add_full_year_unit inserts after the existing FY prefix", () => {
+  const s = apply(twoFullYear(), {
+    type: "add_full_year_unit",
+    yearIndex: 0,
+    code: "C",
+    fullYearCodes: ["A", "B"],
+  })
+  assert.deepEqual(grid(s)[0], [
+    ["A", "B", "C", "X"],
+    ["A", "B", "C", "Y"],
+  ])
+})
+
+test("remove_full_year_unit strips both halves; a missing code is a no-op", () => {
+  const before = twoFullYear()
+  const s = apply(before, { type: "remove_full_year_unit", code: "A" })
+  assert.deepEqual(grid(s)[0], [
+    ["B", "X"],
+    ["B", "Y"],
+  ])
+  assert.equal(
+    plannerReducer(before, { type: "remove_full_year_unit", code: "Z" }),
+    before
+  )
+})
+
+test("remove_full_year_unit with a yearIndex keeps a retake in another year", () => {
+  const s = apply(
+    twoFullYear(),
+    {
+      type: "add_full_year_unit",
+      yearIndex: 1,
+      code: "A",
+      fullYearCodes: ["A", "B"],
+    },
+    { type: "remove_full_year_unit", code: "A", yearIndex: 0 }
+  )
+  assert.deepEqual(grid(s), [
+    [
+      ["B", "X"],
+      ["B", "Y"],
+    ],
+    [["A"], ["A"]],
+  ])
+})
+
+test("move_full_year_unit moves both halves to the target year's prefix", () => {
+  let s = planState([
+    { S1: ["A", "X"], S2: ["A", "Y"] },
+    { S1: ["B", "P"], S2: ["B", "Q"] },
+  ])
+  s = apply(s, {
+    type: "move_full_year_unit",
+    fromYearIndex: 0,
+    toYearIndex: 1,
+    code: "A",
+    fullYearCodes: ["A", "B"],
+  })
+  assert.deepEqual(grid(s), [
+    [["X"], ["Y"]],
+    [
+      ["B", "A", "P"],
+      ["B", "A", "Q"],
+    ],
+  ])
+})
+
+test("move_full_year_unit in one year reorders in one step", () => {
+  // B dropped on A takes A's place, in both halves.
+  const s = apply(twoFullYear(), {
+    type: "move_full_year_unit",
+    fromYearIndex: 0,
+    toYearIndex: 0,
+    code: "B",
+    targetCode: "A",
+    fullYearCodes: ["A", "B"],
+  })
+  assert.deepEqual(grid(s)[0], [
+    ["B", "A", "X"],
+    ["B", "A", "Y"],
+  ])
+
+  // One undo restores the original order.
+  let h = initialHistory(twoFullYear())
+  h = historyReducer(h, {
+    type: "move_full_year_unit",
+    fromYearIndex: 0,
+    toYearIndex: 0,
+    code: "B",
+    targetCode: "A",
+    fullYearCodes: ["A", "B"],
+  })
+  h = historyReducer(h, { type: "undo" })
+  assert.deepEqual(grid(h.present), grid(twoFullYear()))
+})
+
+test("a same-year FY reorder leaves a retake in another year alone", () => {
+  let s = apply(twoFullYear(), {
+    type: "add_full_year_unit",
+    yearIndex: 1,
+    code: "A",
+    fullYearCodes: ["A", "B"],
+  })
+  s = apply(s, {
+    type: "move_full_year_unit",
+    fromYearIndex: 0,
+    toYearIndex: 0,
+    code: "A",
+    fullYearCodes: ["A", "B"],
+  })
+  // Without a target, A goes to the end of the FY prefix.
+  assert.deepEqual(grid(s), [
+    [
+      ["B", "A", "X"],
+      ["B", "A", "Y"],
+    ],
+    [["A"], ["A"]],
+  ])
+})
+
+test("a same-year FY reorder onto a non-FY unit stays in the FY prefix", () => {
+  const s = apply(twoFullYear(), {
+    type: "move_full_year_unit",
+    fromYearIndex: 0,
+    toYearIndex: 0,
+    code: "A",
+    targetCode: "X",
+    fullYearCodes: ["A", "B"],
+  })
+  assert.deepEqual(grid(s)[0], [
+    ["B", "A", "X"],
+    ["B", "A", "Y"],
+  ])
+})
+
+test("move_full_year_unit refuses a target year with a leave semester", () => {
+  const before = apply(twoFullYear(), {
+    type: "set_slot_status",
+    yearIndex: 1,
+    slotIndex: 1,
+    status: "leave",
+  })
+  const s = plannerReducer(before, {
+    type: "move_full_year_unit",
+    fromYearIndex: 0,
+    toYearIndex: 1,
+    code: "A",
+    fullYearCodes: ["A", "B"],
+  })
+  assert.equal(s, before)
+})
+
+test("heal_full_year_unit twins a half-placed unit in one undo-free step", () => {
+  // FY1 was added to S1 before its offerings said it was full-year.
+  const start = planState([
+    { S1: ["X"], S2: ["Y"] },
+    { S1: ["FY1"], S2: [] },
+  ])
+  let h = initialHistory(start)
+  h = historyReducer(h, {
+    type: "add_unit",
+    yearIndex: 0,
+    slotIndex: 0,
+    code: "FY2",
+  })
+  h = historyReducer(h, {
+    type: "heal_full_year_unit",
+    yearIndex: 0,
+    code: "FY2",
+    fullYearCodes: ["FY1"],
+  })
+  assert.deepEqual(grid(h.present)[0], [
+    ["FY2", "X"],
+    ["FY2", "Y"],
+  ])
+  assert.equal(h.past.length, 1, "the repair takes no undo slot")
+
+  // One undo goes back to before the add, not to a half-placed state.
+  const undone = historyReducer(h, { type: "undo" })
+  assert.deepEqual(grid(undone.present), grid(start))
+
+  // Healing a unit that is already twinned changes nothing.
+  assert.equal(
+    historyReducer(h, {
+      type: "heal_full_year_unit",
+      yearIndex: 0,
+      code: "FY2",
+      fullYearCodes: ["FY1"],
+    }),
+    h
+  )
+})
+
+test("heal_full_year_unit leaves a retake, a removed unit and a leave half alone", () => {
+  let s = planState([
+    { S1: ["FY"], S2: ["FY"] },
+    { S1: ["FY"], S2: [] },
+  ])
+  s = apply(s, {
+    type: "heal_full_year_unit",
+    yearIndex: 1,
+    code: "FY",
+    fullYearCodes: [],
+  })
+  assert.deepEqual(grid(s), [
+    [["FY"], ["FY"]],
+    [["FY"], ["FY"]],
+  ])
+
+  // A unit the student has since removed is not brought back.
+  const removed = planState([{ S1: ["X"], S2: ["Y"] }])
+  assert.equal(
+    plannerReducer(removed, {
+      type: "heal_full_year_unit",
+      yearIndex: 0,
+      code: "FY",
+      fullYearCodes: [],
+    }),
+    removed
+  )
+
+  const onLeave = planState([
+    { S1: ["FY"], S2: { unitCodes: [], status: "leave" } },
+  ])
+  assert.equal(
+    plannerReducer(onLeave, {
+      type: "heal_full_year_unit",
+      yearIndex: 0,
+      code: "FY",
+      fullYearCodes: [],
+    }),
+    onLeave
+  )
+})
+
+test("swap_units swaps across slots and within one slot", () => {
+  let s = planState([{ S1: ["A", "B"], S2: ["C"] }])
+  s = apply(s, {
+    type: "swap_units",
+    a: { yearIndex: 0, slotIndex: 0, code: "A" },
+    b: { yearIndex: 0, slotIndex: 1, code: "C" },
+  })
+  assert.deepEqual(grid(s)[0], [["C", "B"], ["A"]])
+  s = apply(s, {
+    type: "swap_units",
+    a: { yearIndex: 0, slotIndex: 0, code: "C" },
+    b: { yearIndex: 0, slotIndex: 0, code: "B" },
+  })
+  assert.deepEqual(grid(s)[0], [["B", "C"], ["A"]])
+})
+
+test("swap_units is a no-op for a missing code or a locked slot", () => {
+  const s = planState([{ S1: ["A"], S2: { unitCodes: ["C"], locked: true } }])
+  assert.equal(
+    plannerReducer(s, {
+      type: "swap_units",
+      a: { yearIndex: 0, slotIndex: 0, code: "A" },
+      b: { yearIndex: 0, slotIndex: 1, code: "Z" },
+    }),
+    s
+  )
+  assert.equal(
+    plannerReducer(s, {
+      type: "swap_units",
+      a: { yearIndex: 0, slotIndex: 0, code: "A" },
+      b: { yearIndex: 0, slotIndex: 1, code: "C" },
+    }),
+    s
+  )
+})
+
+/* ------------------------------------------------------------------ *
+ * Slots that take no units
+ * ------------------------------------------------------------------ */
+
+test("add_unit into a leave, exchange or locked semester is a no-op", () => {
+  const s = planState([
+    {
+      S1: { unitCodes: [], status: "leave" },
+      S2: { unitCodes: [], status: "exchange", creditPoints: 24 },
+      SUMMER_A: { unitCodes: [], locked: true },
+    },
+  ])
+  for (const slotIndex of [0, 1, 2])
+    assert.equal(
+      plannerReducer(s, {
+        type: "add_unit",
+        yearIndex: 0,
+        slotIndex,
+        code: "A",
+      }),
+      s
+    )
+})
+
+test("add_unit into an ordinary semester still works", () => {
+  const s = apply(planState([{ S1: [], S2: [] }]), {
+    type: "add_unit",
+    yearIndex: 0,
+    slotIndex: 1,
+    code: "A",
+  })
+  assert.deepEqual(grid(s)[0], [[], ["A"]])
+})
+
+test("add_full_year_unit refuses a year whose S2 is on exchange", () => {
+  const s = planState([
+    { S1: [], S2: { unitCodes: [], status: "exchange", creditPoints: 24 } },
+  ])
+  assert.equal(
+    plannerReducer(s, {
+      type: "add_full_year_unit",
+      yearIndex: 0,
+      code: "FY",
+      fullYearCodes: [],
+    }),
+    s
+  )
+})
+
+test("move_unit won't move into a leave slot or out of a locked one", () => {
+  const s = planState([
+    { S1: ["A"], S2: { unitCodes: [], status: "leave" } },
+    { S1: { unitCodes: ["B"], locked: true }, S2: [] },
+  ])
+  const move = (
+    from: [number, number],
+    to: [number, number],
+    code: string
+  ): PlannerAction => ({
+    type: "move_unit",
+    fromYearIndex: from[0],
+    fromSlotIndex: from[1],
+    toYearIndex: to[0],
+    toSlotIndex: to[1],
+    code,
+  })
+  assert.equal(plannerReducer(s, move([0, 0], [0, 1], "A")), s)
+  assert.equal(plannerReducer(s, move([1, 0], [1, 1], "B")), s)
+  assert.deepEqual(grid(apply(s, move([0, 0], [1, 1], "A")))[1], [["B"], ["A"]])
+})
+
+/* ------------------------------------------------------------------ *
+ * Bulk and whole-plan actions
+ * ------------------------------------------------------------------ */
+
+test("bulk_load merges, replaces and grows the plan for later years", () => {
+  const s = planState([{ S1: ["A"], S2: [] }])
+  const placements = [
+    { code: "B", yearIndex: 0, slotIndex: 0 },
+    { code: "A", yearIndex: 0, slotIndex: 0 },
+    { code: "C", yearIndex: 2, slotIndex: 1 },
+  ]
+  const merged = apply(s, { type: "bulk_load", placements, mode: "merge" })
+  assert.deepEqual(grid(merged), [
+    [["A", "B"], []],
+    [[], []],
+    [[], ["C"]],
+  ])
+  const replaced = apply(s, { type: "bulk_load", placements, mode: "replace" })
+  assert.deepEqual(grid(replaced)[0], [["B", "A"], []])
+})
+
+test("bulk_load skips slots that take no units", () => {
+  const s = planState([{ S1: { unitCodes: [], status: "leave" }, S2: [] }])
+  const after = apply(s, {
+    type: "bulk_load",
+    placements: [{ code: "A", yearIndex: 0, slotIndex: 0 }],
+    mode: "merge",
+  })
+  assert.equal(after, s)
+})
+
+test("set_year changes the handbook year and clears units and AoS", () => {
+  let s = planState([{ S1: ["A"], S2: ["B"] }])
+  s = apply(s, { type: "set_aos", role: "major", code: "SFTWRDEV08" })
+  const next = plannerReducer(s, { type: "set_year", year: "2027" })
+  assert.equal(next.courseYear, "2027")
+  assert.deepEqual(next.selectedAos, {})
+  assert.deepEqual(grid(next), [[[], []]])
+  assert.equal(plannerReducer(next, { type: "set_year", year: "2027" }), next)
+})
+
+test("set_slot_capacity clamps to the placed units and to the maximum", () => {
+  const s = planState([{ S1: ["A", "B", "C"], S2: [] }])
+  const cap = (capacity: number) =>
+    plannerReducer(s, {
+      type: "set_slot_capacity",
+      yearIndex: 0,
+      slotIndex: 0,
+      capacity,
+    }).years[0].slots[0].capacity
+  assert.equal(cap(1), 3)
+  assert.equal(cap(99), 8)
+  assert.equal(cap(6), 6)
+  // The default capacity, 4, is already in effect: no change.
+  assert.equal(
+    plannerReducer(s, {
+      type: "set_slot_capacity",
+      yearIndex: 0,
+      slotIndex: 0,
+      capacity: 4,
+    }),
+    s
+  )
+})
+
+test("clear_slot and clear_year empty units; clearing an empty slot is a no-op", () => {
+  const s = planState([
+    { S1: ["A"], S2: ["B"] },
+    { S1: ["C"], S2: [] },
+  ])
+  const slot = apply(s, { type: "clear_slot", yearIndex: 0, slotIndex: 0 })
+  assert.deepEqual(grid(slot), [
+    [[], ["B"]],
+    [["C"], []],
+  ])
+  assert.equal(
+    plannerReducer(slot, { type: "clear_slot", yearIndex: 0, slotIndex: 0 }),
+    slot
+  )
+  const year = apply(s, { type: "clear_year", yearIndex: 0 })
+  assert.deepEqual(grid(year), [
+    [[], []],
+    [["C"], []],
+  ])
+})
+
+test("toggle_slot_lock flips the lock", () => {
+  const s = planState([{ S1: [], S2: [] }])
+  const lock = { type: "toggle_slot_lock", yearIndex: 0, slotIndex: 0 } as const
+  const locked = apply(s, lock)
+  assert.equal(locked.years[0].slots[0].locked, true)
+  assert.equal(apply(locked, lock).years[0].slots[0].locked, false)
+})
+
+test("reset empties the plan, keeping course, intake and year count", () => {
+  const s = planState(
+    [
+      { S2: ["A"], S1: ["B"] },
+      { S2: [], S1: [] },
+    ],
+    { startPeriod: "S2", courseCode: "C2001" }
+  )
+  const next = apply(s, { type: "reset" })
+  assert.equal(next.courseCode, "C2001")
+  assert.deepEqual(
+    next.years.map((y) => y.slots.map((sl) => sl.kind)),
+    [
+      ["S2", "S1"],
+      ["S2", "S1"],
+    ]
+  )
+  assert.deepEqual(grid(next), [
+    [[], []],
+    [[], []],
+  ])
+  assert.equal(apply(s, { type: "reset", yearCount: 4 }).years.length, 4)
+})
+
+test("batch applies several actions as one undo step", () => {
+  let h = initialHistory(defaultState("2026", "C2000", 1))
+  h = historyReducer(h, {
+    type: "batch",
+    actions: [
+      { type: "add_optional_slot", yearIndex: 0, kind: "SUMMER_A" },
+      { type: "add_year" },
+    ],
+  })
+  assert.equal(h.present.years.length, 2)
+  assert.equal(h.present.years[0].slots.length, 3)
+  assert.equal(h.past.length, 1)
+  h = historyReducer(h, { type: "undo" })
+  assert.equal(h.present.years.length, 1)
+  assert.equal(h.present.years[0].slots.length, 2)
 })

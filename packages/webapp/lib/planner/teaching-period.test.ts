@@ -53,14 +53,16 @@ test("Unrecognised periods collapse to OTHER", () => {
     "",
     null,
     undefined,
-    "Second semester to First semester", // boundary-spanning — not a clean S1 or S2
   ]) {
     const got = classifyTeachingPeriod(p)
-    if (p === "Second semester to First semester") {
-      // this starts with "second semester" so it matches S2 — document the convention
-      assert.equal(got, "S2", `${p} classified as ${got}`)
-    } else {
-      assert.equal(got, "OTHER", `${p} classified as ${got}`)
-    }
+    assert.equal(got, "OTHER", `${p} classified as ${got}`)
   }
+})
+
+test("A period spanning S2 into S1 classifies by its start, as S2", () => {
+  // Not a clean S1 or S2, but the prefix match takes "Second semester".
+  assert.equal(
+    classifyTeachingPeriod("Second semester to First semester"),
+    "S2"
+  )
 })

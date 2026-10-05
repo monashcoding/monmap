@@ -1,4 +1,4 @@
-import { handbookYearFor } from "./local-storage.ts"
+import { handbookYearFor } from "./timeline.ts"
 import type {
   PlannerOffering,
   PlannerState,

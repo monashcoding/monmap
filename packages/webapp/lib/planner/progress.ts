@@ -8,6 +8,7 @@ import type {
   PlannerOffering,
   PlannerState,
   PlannerUnit,
+  RequirementGroup,
 } from "./types.ts"
 
 export interface ProgressSummary {
@@ -28,8 +29,8 @@ export interface ProgressSummary {
 
 export function summarizePlan(
   state: PlannerState,
-  course: PlannerCourseWithAoS | null,
-  unitsByCode: ReadonlyMap<string, PlannerUnit>,
+  course: Pick<PlannerCourseWithAoS, "creditPoints"> | null,
+  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "creditPoints">>,
   offeringsByCode?: ReadonlyMap<string, PlannerOffering[]>
 ): ProgressSummary {
   let total = 0
@@ -127,6 +128,48 @@ export function summarizePlan(
   }
 }
 
+export interface GroupProgress {
+  group: RequirementGroup
+  /**
+   * Options the student must still complete for the group, capped at
+   * what is reachable (see effectiveRequired). Below `group.required`
+   * only when a unit on the plan prohibits an option.
+   */
+  required: number
+  /** Options on the plan (placed or credited). */
+  placed: number
+  satisfied: boolean
+}
+
+/** One requirement group's progress, with the reachability cap. */
+export function groupProgress(
+  group: RequirementGroup,
+  plannedCodes: ReadonlySet<string>,
+  conflicts?: Readonly<Record<string, string[]>>
+): GroupProgress {
+  const required = effectiveRequired(group, plannedCodes, conflicts)
+  let placed = 0
+  for (const code of group.options) if (plannedCodes.has(code)) placed++
+  return { group, required, placed, satisfied: placed >= required }
+}
+
+/**
+ * Progress over a list of groups: each group's result plus the totals
+ * a requirements card shows, where a group counts at most `required`.
+ */
+export function summarizeGroups(
+  groups: readonly RequirementGroup[],
+  plannedCodes: ReadonlySet<string>,
+  conflicts?: Readonly<Record<string, string[]>>
+): { groups: GroupProgress[]; totalRequired: number; satisfiedCount: number } {
+  const out = groups.map((g) => groupProgress(g, plannedCodes, conflicts))
+  return {
+    groups: out,
+    totalRequired: out.reduce((n, g) => n + g.required, 0),
+    satisfiedCount: out.reduce((n, g) => n + Math.min(g.placed, g.required), 0),
+  }
+}
+
 export interface AoSProgress {
   aos: PlannerAreaOfStudy
   /** Codes the student has placed that count toward this AoS (capped per group). */
@@ -181,25 +224,25 @@ export function summarizeAoSProgress(
     // Target is capped at what's still reachable: an option prohibited
     // by something already on the plan can never be taken, and asking
     // for it makes the AoS permanently incomplete.
-    const required = effectiveRequired(group, plannedCodes, conflicts)
+    const { required, placed } = groupProgress(group, plannedCodes, conflicts)
     const reachable = new Set(reachableOptions(group, plannedCodes, conflicts))
     totalRequired += required
-    let placedInGroup = 0
+    satisfied += Math.min(placed, required)
+    let placedSoFar = 0
     for (const code of group.options) {
       if (plannedCodes.has(code)) {
         completedCodes.add(code)
-        placedInGroup++
+        placedSoFar++
         if (!cpSeen.has(code)) {
           cpSeen.add(code)
           plannedCp += unitsByCode.get(code)?.creditPoints ?? 0
         }
-      } else if (placedInGroup < required && reachable.has(code)) {
+      } else if (placedSoFar < required && reachable.has(code)) {
         // Surface the first `required` unplaced options as "remaining"
         // — never one the student can no longer take.
         remaining.push({ code, grouping: group.grouping })
       }
     }
-    satisfied += Math.min(placedInGroup, required)
   }
 
   remaining.sort((a, b) =>
@@ -218,7 +261,6 @@ export function summarizeAoSProgress(
   }
 }
 
-/** All codes placed anywhere in the plan. */
 /**
  * Everything the student has, for requirement-satisfaction purposes:
  * units placed in slots *plus* units they hold advanced standing for.
@@ -227,6 +269,15 @@ export function summarizeAoSProgress(
  */
 export function plannedUnitCodes(state: PlannerState): Set<string> {
   const s = creditedCodes(state)
+  for (const c of placedUnitCodes(state)) s.add(c)
+  return s
+}
+
+/** Codes placed in slots, without credit. */
+export function placedUnitCodes(
+  state: Pick<PlannerState, "years">
+): Set<string> {
+  const s = new Set<string>()
   for (const y of state.years)
     for (const sl of y.slots) for (const c of sl.unitCodes) s.add(c)
   return s

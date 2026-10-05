@@ -49,12 +49,14 @@ export const PERIOD_KIND_SHORT: Record<PeriodKind, string> = {
 }
 
 /**
- * The primary slots a planner year renders by default. S1/S2 cover
- * the bulk of load for a BIT/BCS/etc. student; summer/winter are
- * accessible on demand via the "add summer" affordance.
+ * Period kinds a student can add to a study year from its menu. A new
+ * year starts with its two semesters; summer and winter are added on
+ * demand. OTHER is reachable only as a freeform "Untitled" slot, and
+ * FULL_YEAR never as a slot: a full-year unit sits in S1 and S2.
  */
-export const PRIMARY_SLOT_KINDS: PeriodKind[] = ["S1", "S2"]
-export const OPTIONAL_SLOT_KINDS: PeriodKind[] = [
+export const ADDABLE_SLOT_KINDS: readonly PeriodKind[] = [
+  "S1",
+  "S2",
   "SUMMER_A",
   "SUMMER_B",
   "WINTER",

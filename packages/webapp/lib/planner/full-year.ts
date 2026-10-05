@@ -1,4 +1,4 @@
-import type { PeriodKind, PlannerOffering, PlannerState } from "./types.ts"
+import type { PeriodKind, PlannerOffering } from "./types.ts"
 
 /**
  * A unit is "full year" when its meaningful offerings are exclusively
@@ -23,20 +23,28 @@ export function isFullYearUnit(
 }
 
 /**
- * Find which year (if any) a FY unit is currently placed in. Searches
- * both S1 and S2 since the invariant guarantees both contain it.
+ * "Year-long" = the unit, while planned, occupies the student's whole
+ * year, so auto-fill books it into both S1 and S2. Two flavours:
+ *   - genuine full-year offerings (FY teaching period, no S1/S2).
+ *   - IBL placements and the like: credit-bearing (≥ 12 CP) but every
+ *     offering classifies as `OTHER` (Term N, Trimester N, …). These
+ *     run full-time across several months and rule out S1/S2 study
+ *     just as a tagged-FY unit does.
+ *
+ * Only the first flavour is a full-year *twin* (isFullYearUnit) with
+ * half its CP in each semester; an IBL unit counts in full in both.
  */
-export function findFullYearLocation(
-  state: PlannerState,
-  code: string
-): { yearIndex: number } | null {
-  for (let yi = 0; yi < state.years.length; yi++) {
-    for (const s of state.years[yi]?.slots ?? []) {
-      if (s.kind !== "S1" && s.kind !== "S2") continue
-      if (s.unitCodes.includes(code)) return { yearIndex: yi }
-    }
-  }
-  return null
+export function isYearLongUnit(
+  offers: readonly PlannerOffering[],
+  creditPoints: number
+): boolean {
+  if (offers.length === 0) return false
+  const hasFY = offers.some((o) => o.periodKind === "FULL_YEAR")
+  const hasS1 = offers.some((o) => o.periodKind === "S1")
+  const hasS2 = offers.some((o) => o.periodKind === "S2")
+  if (hasFY && !hasS1 && !hasS2) return true
+  const allOther = offers.every((o) => o.periodKind === "OTHER")
+  return allOther && creditPoints >= 12
 }
 
 /**

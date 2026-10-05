@@ -1,4 +1,6 @@
-import { evaluateRequisiteTree } from "./requisites.ts"
+import { courseRequirementGroups } from "./core-units.ts"
+import { groupProgress, plannedUnitCodes } from "./progress.ts"
+import { evaluateRequisiteTree, referencedCodes } from "./requisites.ts"
 import type {
   PeriodKind,
   PlannerCourseWithAoS,
@@ -6,9 +8,8 @@ import type {
   PlannerState,
   PlannerUnit,
   RequisiteBlock,
-  RequisiteRule,
 } from "./types.ts"
-import { isOfferedInPeriod } from "./validation.ts"
+import { completedBefore, isOfferedInPeriod } from "./validation.ts"
 
 /**
  * Per-plan precomputed signals — derived once when the plan changes,
@@ -17,7 +18,7 @@ import { isOfferedInPeriod } from "./validation.ts"
  * requisite trees on every keystroke.
  */
 export interface PersonalSignals {
-  /** Codes placed anywhere in the plan. */
+  /** Codes placed anywhere in the plan or held as credit. */
   placed: ReadonlySet<string>
   /**
    * Soft "this unit belongs to your course" score. Course core = 1.0,
@@ -27,8 +28,9 @@ export interface PersonalSignals {
   aosWeight: ReadonlyMap<string, number>
   /**
    * Codes that, if added, would chip away at an unmet RequirementGroup
-   * — i.e. groups where placed < required. A unit can satisfy more than
-   * one group but we only need set membership for scoring.
+   * — i.e. groups where placed < required, with the reachability cap.
+   * A unit can satisfy more than one group but we only need set
+   * membership for scoring.
    */
   fillsGap: ReadonlySet<string>
   /**
@@ -50,7 +52,7 @@ export interface SlotContext {
   yearIndex: number
   slotIndex: number
   slotKind: PeriodKind | undefined
-  /** Codes completed strictly before this slot. */
+  /** Codes completed strictly before this slot, credit included. */
   completedBefore: ReadonlySet<string>
   /** Codes already in this slot. */
   concurrentWith: ReadonlySet<string>
@@ -111,22 +113,12 @@ function aosKindWeight(kind: string): number {
   }
 }
 
-function collectLeafCodes(rule: RequisiteRule | null | undefined): string[] {
-  // Re-use the existing tree walker by evaluating against an empty
-  // completed set — every referenced leaf is reported back regardless
-  // of satisfaction.
-  if (!rule) return []
-  return evaluateRequisiteTree(rule, new Set<string>()).referencedCodes
-}
-
 export function buildPersonalSignals(
   state: PlannerState,
   course: PlannerCourseWithAoS | null,
   requisitesByCode: ReadonlyMap<string, RequisiteBlock[]>
 ): PersonalSignals {
-  const placed = new Set<string>()
-  for (const y of state.years)
-    for (const s of y.slots) for (const c of s.unitCodes) placed.add(c)
+  const placed = plannedUnitCodes(state)
 
   const aosWeight = new Map<string, number>()
   if (course) {
@@ -148,18 +140,9 @@ export function buildPersonalSignals(
 
   const fillsGap = new Set<string>()
   if (course) {
-    const groupLists = [
-      course.courseRequirements,
-      ...course.componentCourses.map((c) => c.courseRequirements),
-      ...course.areasOfStudy.map((a) => a.requirements),
-    ]
-    for (const groups of groupLists) {
-      for (const g of groups) {
-        let placedInGroup = 0
-        for (const code of g.options) if (placed.has(code)) placedInGroup++
-        if (placedInGroup >= g.required) continue
-        for (const code of g.options) if (!placed.has(code)) fillsGap.add(code)
-      }
+    for (const g of courseRequirementGroups(course)) {
+      if (groupProgress(g, placed, course.conflicts).satisfied) continue
+      for (const code of g.options) if (!placed.has(code)) fillsGap.add(code)
     }
   }
 
@@ -168,7 +151,7 @@ export function buildPersonalSignals(
   for (const code of placed) {
     const blocks = requisitesByCode.get(code) ?? []
     for (const block of blocks) {
-      const leaves = collectLeafCodes(block.rule)
+      const leaves = referencedCodes(block.rule)
       if (block.requisiteType === "prohibition") {
         for (const c of leaves) prohibitedByPlaced.add(c)
       } else if (
@@ -183,21 +166,18 @@ export function buildPersonalSignals(
   return { placed, aosWeight, fillsGap, prohibitedByPlaced, prereqOfPlaced }
 }
 
+/**
+ * `units` supplies equivalents, so FIT1053 earlier in the plan meets a
+ * prerequisite naming FIT1045. Without it only literal codes count.
+ */
 export function slotContextFor(
   state: PlannerState,
   yearIndex: number,
-  slotIndex: number
+  slotIndex: number,
+  units: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">> = new Map()
 ): SlotContext {
   const slot = state.years[yearIndex]?.slots[slotIndex]
-  const completed = new Set<string>()
-  for (let y = 0; y <= yearIndex; y++) {
-    const year = state.years[y]
-    if (!year) continue
-    for (let s = 0; s < year.slots.length; s++) {
-      if (y === yearIndex && s >= slotIndex) break
-      for (const c of year.slots[s].unitCodes) completed.add(c)
-    }
-  }
+  const completed = completedBefore(state, yearIndex, slotIndex, units)
   const concurrent = slot ? new Set(slot.unitCodes) : new Set<string>()
   const courseYearNum = Number(state.courseYear)
   const expectedHandbookYear = Number.isFinite(courseYearNum)

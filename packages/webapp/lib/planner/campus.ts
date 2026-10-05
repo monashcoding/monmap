@@ -1,3 +1,4 @@
+import { courseRequirementGroups } from "./core-units.ts"
 import type { PlannerAreaOfStudy, PlannerCourseWithAoS } from "./types.ts"
 
 /**
@@ -53,12 +54,8 @@ export function availableCampuses(course: PlannerCourseWithAoS): string[] {
   const out = new Set<string>()
   for (const a of course.areasOfStudy)
     for (const t of campusTokens(a.scope)) out.add(t)
-  const groups = [
-    ...course.courseRequirements,
-    ...course.componentCourses.flatMap((c) => c.courseRequirements),
-    ...course.areasOfStudy.flatMap((a) => a.requirements),
-  ]
-  for (const g of groups) for (const t of campusTokens(g.scope)) out.add(t)
+  for (const g of courseRequirementGroups(course))
+    for (const t of campusTokens(g.scope)) out.add(t)
   return [...out].sort((a, b) => a.localeCompare(b))
 }
 

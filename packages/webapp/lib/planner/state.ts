@@ -1,3 +1,5 @@
+import { slotTakesUnits } from "./capacity.ts"
+import { countFullYearPrefix } from "./full-year.ts"
 import {
   DEFAULT_SLOT_CAPACITY,
   MAX_SLOT_CAPACITY,
@@ -109,16 +111,37 @@ export type PlannerAction =
       code: string
       fullYearCodes: ReadonlyArray<string>
     }
-  /** Remove a FY unit from wherever it lives — strips both S1 and S2. */
-  | { type: "remove_full_year_unit"; code: string }
   /**
-   * Move a FY unit between years. Removes from `fromYearIndex` (both
-   * halves) and inserts into `toYearIndex` at the next FY position.
+   * Remove a FY unit — strips both S1 and S2. With `yearIndex`, only
+   * that year, so a retake in another year survives; without it, every
+   * year.
+   */
+  | { type: "remove_full_year_unit"; code: string; yearIndex?: number }
+  /**
+   * Move a FY unit between years: strips both halves in
+   * `fromYearIndex` and inserts into `toYearIndex` at the next FY
+   * position. When the years are the same it is a reorder: the unit
+   * takes `targetCode`'s position in both halves, as in a sortable
+   * list, or goes to the end of the FY prefix without a target.
    */
   | {
       type: "move_full_year_unit"
       fromYearIndex: number
       toYearIndex: number
+      code: string
+      fullYearCodes: ReadonlyArray<string>
+      targetCode?: string
+    }
+  /**
+   * Repair a FY unit that sits in only one half of a year (its
+   * offerings loaded after it was placed): strip it from that year's
+   * S1 and S2 and put it at the FY prefix of both. historyReducer
+   * applies this to the present state without an undo step, since it
+   * is a data repair rather than a student's edit.
+   */
+  | {
+      type: "heal_full_year_unit"
+      yearIndex: number
       code: string
       fullYearCodes: ReadonlyArray<string>
     }
@@ -167,6 +190,8 @@ export type PlannerAction =
   | { type: "toggle_slot_lock"; yearIndex: number; slotIndex: number }
   | { type: "reset"; yearCount?: number }
   | { type: "hydrate"; state: PlannerState }
+  /** Several actions as one edit, so one undo reverts them all. */
+  | { type: "batch"; actions: ReadonlyArray<PlannerAction> }
 
 export function plannerReducer(
   state: PlannerState,
@@ -189,10 +214,7 @@ export function plannerReducer(
         ...state,
         courseYear: action.year,
         selectedAos: {},
-        years: state.years.map((y) => ({
-          ...y,
-          slots: y.slots.map((s) => ({ ...s, unitCodes: [] })),
-        })),
+        years: state.years.map(withoutUnits),
       }
 
     case "set_aos": {
@@ -239,35 +261,30 @@ export function plannerReducer(
     }
 
     case "add_unit":
-      return withSlot(state, action.yearIndex, action.slotIndex, (slot) => {
-        if (slot.unitCodes.includes(action.code)) return slot
-        return { ...slot, unitCodes: [...slot.unitCodes, action.code] }
-      })
+      return withSlot(state, action.yearIndex, action.slotIndex, (slot) =>
+        addCode(slot, action.code)
+      )
 
     case "remove_unit":
-      return withSlot(state, action.yearIndex, action.slotIndex, (slot) => ({
-        ...slot,
-        unitCodes: slot.unitCodes.filter((c) => c !== action.code),
-      }))
+      return withSlot(state, action.yearIndex, action.slotIndex, (slot) =>
+        removeCode(slot, action.code)
+      )
 
     case "move_unit": {
+      // A locked slot keeps its units, and a locked or leave/exchange
+      // slot takes none.
+      const from =
+        state.years[action.fromYearIndex]?.slots[action.fromSlotIndex]
+      const to = state.years[action.toYearIndex]?.slots[action.toSlotIndex]
+      if (!from || !to || from.locked || !slotTakesUnits(to)) return state
       const removed = withSlot(
         state,
         action.fromYearIndex,
         action.fromSlotIndex,
-        (slot) => ({
-          ...slot,
-          unitCodes: slot.unitCodes.filter((c) => c !== action.code),
-        })
+        (slot) => removeCode(slot, action.code)
       )
-      return withSlot(
-        removed,
-        action.toYearIndex,
-        action.toSlotIndex,
-        (slot) => {
-          if (slot.unitCodes.includes(action.code)) return slot
-          return { ...slot, unitCodes: [...slot.unitCodes, action.code] }
-        }
+      return withSlot(removed, action.toYearIndex, action.toSlotIndex, (slot) =>
+        addCode(slot, action.code)
       )
     }
 
@@ -276,7 +293,7 @@ export function plannerReducer(
       if (a.code === b.code) return state
       const aSlot = state.years[a.yearIndex]?.slots[a.slotIndex]
       const bSlot = state.years[b.yearIndex]?.slots[b.slotIndex]
-      if (!aSlot || !bSlot) return state
+      if (!aSlot || !bSlot || aSlot.locked || bSlot.locked) return state
       const aIdx = aSlot.unitCodes.indexOf(a.code)
       const bIdx = bSlot.unitCodes.indexOf(b.code)
       if (aIdx < 0 || bIdx < 0) return state
@@ -305,92 +322,72 @@ export function plannerReducer(
     case "add_full_year_unit": {
       const year = state.years[action.yearIndex]
       if (!year) return state
-      const fySet = new Set(action.fullYearCodes)
       // Already in THIS year? Bail — caller should use move instead. A
       // full-year unit occupies S1+S2 of one year, so a second copy in
       // the same year is always a mistake; a copy in a *later* year is
       // a retake after a fail, which is legitimate.
       if (year.slots.some((s) => s.unitCodes.includes(action.code)))
         return state
-      const nextYears = state.years.map((y, yi) => {
-        if (yi !== action.yearIndex) return y
-        return {
-          ...y,
-          slots: y.slots.map((s) => {
-            if (s.kind !== "S1" && s.kind !== "S2") return s
-            const fyN = countPrefix(s.unitCodes, fySet)
-            const next = [...s.unitCodes]
-            next.splice(fyN, 0, action.code)
-            return { ...s, unitCodes: next }
-          }),
-        }
-      })
-      return { ...state, years: nextYears }
+      if (!semestersTakeUnits(year)) return state
+      return mapYear(state, action.yearIndex, (y) =>
+        insertFullYear(y, action.code, new Set(action.fullYearCodes))
+      )
     }
 
     case "remove_full_year_unit": {
-      return {
-        ...state,
-        years: state.years.map((y) => ({
-          ...y,
-          slots: y.slots.map((s) => {
-            if (s.kind !== "S1" && s.kind !== "S2") return s
-            if (!s.unitCodes.includes(action.code)) return s
-            return {
-              ...s,
-              unitCodes: s.unitCodes.filter((c) => c !== action.code),
-            }
-          }),
-        })),
-      }
+      let next = state
+      state.years.forEach((y, yi) => {
+        if (action.yearIndex !== undefined && yi !== action.yearIndex) return
+        next = mapYear(next, yi, (yr) => stripFromSemesters(yr, action.code))
+      })
+      return next
     }
 
     case "move_full_year_unit": {
-      if (action.fromYearIndex === action.toYearIndex) return state
+      const from = state.years[action.fromYearIndex]
+      const to = state.years[action.toYearIndex]
+      if (!from || !to) return state
+      if (from.slots.some((s) => s.locked && s.unitCodes.includes(action.code)))
+        return state
+      if (action.fromYearIndex === action.toYearIndex)
+        return mapYear(state, action.fromYearIndex, (y) =>
+          reorderFullYear(
+            y,
+            action.code,
+            action.targetCode,
+            new Set(action.fullYearCodes)
+          )
+        )
+      if (!semestersTakeUnits(to)) return state
+      const stripped = mapYear(state, action.fromYearIndex, (y) =>
+        stripFromSemesters(y, action.code)
+      )
+      return mapYear(stripped, action.toYearIndex, (y) =>
+        insertFullYear(y, action.code, new Set(action.fullYearCodes))
+      )
+    }
+
+    case "heal_full_year_unit": {
+      const year = state.years[action.yearIndex]
+      if (!year) return state
+      const halves = year.slots.filter((s) => isSemester(s.kind))
+      // Repair only a unit in exactly one half: none means the student
+      // removed it, both means it is already twinned. A leave/exchange
+      // half holds no units, so the unit stays where it is.
+      if (halves.length !== 2) return state
+      const holding = halves.filter((s) => s.unitCodes.includes(action.code))
+      if (holding.length !== 1) return state
+      if (halves.some((s) => s.status)) return state
       const fySet = new Set(action.fullYearCodes)
-      // Strip from source
-      const stripped = state.years.map((y, yi) => {
-        if (yi !== action.fromYearIndex) return y
-        return {
-          ...y,
-          slots: y.slots.map((s) => {
-            if (s.kind !== "S1" && s.kind !== "S2") return s
-            if (!s.unitCodes.includes(action.code)) return s
-            return {
-              ...s,
-              unitCodes: s.unitCodes.filter((c) => c !== action.code),
-            }
-          }),
-        }
-      })
-      // Insert into target
-      const inserted = stripped.map((y, yi) => {
-        if (yi !== action.toYearIndex) return y
-        return {
-          ...y,
-          slots: y.slots.map((s) => {
-            if (s.kind !== "S1" && s.kind !== "S2") return s
-            if (s.unitCodes.includes(action.code)) return s
-            const fyN = countPrefix(s.unitCodes, fySet)
-            const next = [...s.unitCodes]
-            next.splice(fyN, 0, action.code)
-            return { ...s, unitCodes: next }
-          }),
-        }
-      })
-      return { ...state, years: inserted }
+      return mapYear(state, action.yearIndex, (y) =>
+        insertFullYear(stripFromSemesters(y, action.code), action.code, fySet)
+      )
     }
 
     case "bulk_load": {
       let next: PlannerState =
         action.mode === "replace"
-          ? {
-              ...state,
-              years: state.years.map((y) => ({
-                ...y,
-                slots: y.slots.map((s) => ({ ...s, unitCodes: [] })),
-              })),
-            }
+          ? { ...state, years: state.years.map(withoutUnits) }
           : state
       const maxYi = action.placements.reduce(
         (m, p) => Math.max(m, p.yearIndex),
@@ -402,33 +399,11 @@ export function plannerReducer(
           years: [...next.years, yearFor(next, next.years.length + 1)],
         }
       }
-      const grouped = new Map<string, string[]>()
-      for (const p of action.placements) {
-        const k = `${p.yearIndex}:${p.slotIndex}`
-        const list = grouped.get(k)
-        if (list) list.push(p.code)
-        else grouped.set(k, [p.code])
-      }
-      return {
-        ...next,
-        years: next.years.map((y, yi) => ({
-          ...y,
-          slots: y.slots.map((s, si) => {
-            const adds = grouped.get(`${yi}:${si}`)
-            if (!adds || adds.length === 0) return s
-            const seen = new Set(s.unitCodes)
-            const merged = [...s.unitCodes]
-            for (const c of adds) {
-              if (!seen.has(c)) {
-                merged.push(c)
-                seen.add(c)
-              }
-            }
-            if (merged.length === s.unitCodes.length) return s
-            return { ...s, unitCodes: merged }
-          }),
-        })),
-      }
+      for (const p of action.placements)
+        next = withSlot(next, p.yearIndex, p.slotIndex, (slot) =>
+          addCode(slot, p.code)
+        )
+      return next
     }
 
     case "add_year":
@@ -487,10 +462,7 @@ export function plannerReducer(
                     return next
                   }
                   if (!cleared || cleared.size === 0) return s
-                  const isTwin =
-                    (target.kind === "S1" && s.kind === "S2") ||
-                    (target.kind === "S2" && s.kind === "S1")
-                  if (!isTwin) return s
+                  if (s.kind !== twinKind(target.kind)) return s
                   return {
                     ...s,
                     unitCodes: s.unitCodes.filter((c) => !cleared.has(c)),
@@ -528,8 +500,8 @@ export function plannerReducer(
         )
         return { ...state, years: [...state.years, ...added] }
       }
-      // Never drop a year that has units, a leave/exchange semester or
-      // a renamed label: shrink only as far as the last year in use.
+      // Never drop a year that has units or a leave/exchange semester:
+      // shrink only as far as the last year in use.
       let lastUsed = -1
       state.years.forEach((y, i) => {
         if (y.slots.some((s) => s.unitCodes.length > 0 || s.status))
@@ -576,35 +548,25 @@ export function plannerReducer(
       // had its other half in that year. A FY twin is, by construction,
       // a code that appears in both S1 and S2 of the same year — strip
       // any such codes from the surviving half before deleting the slot.
-      const twinKind: "S1" | "S2" | null =
-        target.kind === "S1" ? "S2" : target.kind === "S2" ? "S1" : null
-      const orphanedFy = twinKind
-        ? new Set(
-            target.unitCodes.filter((c) =>
-              year.slots.some(
-                (s) => s.kind === twinKind && s.unitCodes.includes(c)
-              )
-            )
-          )
-        : null
-      return {
-        ...state,
-        years: state.years.map((y, i) => {
-          if (i !== action.yearIndex) return y
-          const slots = y.slots
-            .filter((_, si) => si !== action.slotIndex)
-            .map((s) => {
-              if (!orphanedFy || orphanedFy.size === 0) return s
-              if (s.kind !== twinKind) return s
-              if (!s.unitCodes.some((c) => orphanedFy.has(c))) return s
-              return {
-                ...s,
-                unitCodes: s.unitCodes.filter((c) => !orphanedFy.has(c)),
-              }
-            })
-          return { ...y, slots }
-        }),
-      }
+      const twin = twinKind(target.kind)
+      const orphanedFy = new Set(
+        target.unitCodes.filter((c) =>
+          year.slots.some((s) => s.kind === twin && s.unitCodes.includes(c))
+        )
+      )
+      return mapYear(state, action.yearIndex, (y) => ({
+        ...y,
+        slots: y.slots
+          .filter((_, si) => si !== action.slotIndex)
+          .map((s) => {
+            if (s.kind !== twin) return s
+            if (!s.unitCodes.some((c) => orphanedFy.has(c))) return s
+            return {
+              ...s,
+              unitCodes: s.unitCodes.filter((c) => !orphanedFy.has(c)),
+            }
+          }),
+      }))
     }
 
     case "set_slot_capacity":
@@ -626,18 +588,8 @@ export function plannerReducer(
         return { ...slot, unitCodes: [] }
       })
 
-    case "clear_year": {
-      const year = state.years[action.yearIndex]
-      if (!year) return state
-      return {
-        ...state,
-        years: state.years.map((y, i) =>
-          i !== action.yearIndex
-            ? y
-            : { ...y, slots: y.slots.map((s) => ({ ...s, unitCodes: [] })) }
-        ),
-      }
-    }
+    case "clear_year":
+      return mapYear(state, action.yearIndex, withoutUnits)
 
     case "rename_slot":
       return withSlot(state, action.yearIndex, action.slotIndex, (slot) => {
@@ -664,6 +616,9 @@ export function plannerReducer(
 
     case "hydrate":
       return normalizeTimeline(action.state)
+
+    case "batch":
+      return action.actions.reduce(plannerReducer, state)
   }
 }
 
@@ -690,7 +645,7 @@ export function initialHistory(present: PlannerState): HistoryState {
  * Reducer wrapper that records past/future snapshots around the pure
  * planner reducer so the UI can offer undo/redo.
  *
- * Two non-obvious rules:
+ * Three non-obvious rules:
  *   - `hydrate` clears history. Hydration is how plan-switching and
  *     server-load land state; preserving history across it would let
  *     "undo" surface state from a *different* plan (cross-plan leak)
@@ -698,6 +653,11 @@ export function initialHistory(present: PlannerState): HistoryState {
  *   - Actions that the inner reducer treats as no-ops (returns the
  *     same reference) don't take a history slot. Otherwise idempotent
  *     dispatches would silently consume undo depth.
+ *   - `heal_full_year_unit` changes the present without a history
+ *     slot. It runs from an effect after data loads; as an undo step,
+ *     undoing it would bring back the half-placed unit, the effect
+ *     would heal it again and clear redo, and undo could never get
+ *     past the add.
  */
 export function historyReducer(
   history: HistoryState,
@@ -725,6 +685,11 @@ export function historyReducer(
     case "hydrate": {
       return initialHistory(normalizeTimeline(action.state))
     }
+    case "heal_full_year_unit": {
+      const present = plannerReducer(history.present, action)
+      if (present === history.present) return history
+      return { ...history, present }
+    }
     default: {
       const next = plannerReducer(history.present, action)
       if (next === history.present) return history
@@ -737,16 +702,119 @@ export function historyReducer(
   }
 }
 
-function countPrefix(
-  unitCodes: readonly string[],
+function isSemester(kind: PeriodKind): kind is "S1" | "S2" {
+  return kind === "S1" || kind === "S2"
+}
+
+/** The other half of a full-year pair: S1 ↔ S2, else null. */
+function twinKind(kind: PeriodKind): "S1" | "S2" | null {
+  return kind === "S1" ? "S2" : kind === "S2" ? "S1" : null
+}
+
+function addCode(slot: PlannerSlot, code: string): PlannerSlot {
+  if (!slotTakesUnits(slot) || slot.unitCodes.includes(code)) return slot
+  return { ...slot, unitCodes: [...slot.unitCodes, code] }
+}
+
+function removeCode(slot: PlannerSlot, code: string): PlannerSlot {
+  if (!slot.unitCodes.includes(code)) return slot
+  return { ...slot, unitCodes: slot.unitCodes.filter((c) => c !== code) }
+}
+
+function withoutUnits(year: PlannerYear): PlannerYear {
+  return { ...year, slots: year.slots.map((s) => ({ ...s, unitCodes: [] })) }
+}
+
+/** True when both of the year's semesters exist and can take units. */
+function semestersTakeUnits(year: PlannerYear): boolean {
+  const halves = year.slots.filter((s) => isSemester(s.kind))
+  return halves.length === 2 && halves.every(slotTakesUnits)
+}
+
+/**
+ * Apply `fn` to one year's S1 and S2. Returns the same year when no
+ * slot changes, so no-op edits keep their identity.
+ */
+function mapSemesters(
+  year: PlannerYear,
+  fn: (slot: PlannerSlot) => PlannerSlot
+): PlannerYear {
+  let changed = false
+  const slots = year.slots.map((s) => {
+    if (!isSemester(s.kind)) return s
+    const next = fn(s)
+    if (next !== s) changed = true
+    return next
+  })
+  return changed ? { ...year, slots } : year
+}
+
+function stripFromSemesters(year: PlannerYear, code: string): PlannerYear {
+  return mapSemesters(year, (s) => removeCode(s, code))
+}
+
+/** Put a FY unit at the end of the FY prefix of both semesters. */
+function insertFullYear(
+  year: PlannerYear,
+  code: string,
   fullYearCodes: ReadonlySet<string>
-): number {
-  let n = 0
-  for (const c of unitCodes) {
-    if (fullYearCodes.has(c)) n++
-    else break
+): PlannerYear {
+  return mapSemesters(year, (s) => {
+    if (s.unitCodes.includes(code)) return s
+    const next = [...s.unitCodes]
+    next.splice(countFullYearPrefix(s.unitCodes, fullYearCodes), 0, code)
+    return { ...s, unitCodes: next }
+  })
+}
+
+/**
+ * Same-year FY reorder. In each semester the unit moves to
+ * `targetCode`'s index; without a FY target there, it is stripped and
+ * reinserted at the end of the FY prefix, so it never leaves the
+ * prefix. Other years are untouched, so a retake elsewhere survives.
+ */
+function reorderFullYear(
+  year: PlannerYear,
+  code: string,
+  targetCode: string | undefined,
+  fullYearCodes: ReadonlySet<string>
+): PlannerYear {
+  return mapSemesters(year, (s) => {
+    const from = s.unitCodes.indexOf(code)
+    if (from < 0) return s
+    const to =
+      targetCode && fullYearCodes.has(targetCode)
+        ? s.unitCodes.indexOf(targetCode)
+        : -1
+    const next = s.unitCodes.filter((c) => c !== code)
+    next.splice(
+      to >= 0 ? to : countFullYearPrefix(next, fullYearCodes),
+      0,
+      code
+    )
+    return next.every((c, i) => c === s.unitCodes[i])
+      ? s
+      : { ...s, unitCodes: next }
+  })
+}
+
+/**
+ * Apply `fn` to one year. Returns the same state when the year is
+ * missing or `fn` returns it unchanged.
+ */
+function mapYear(
+  state: PlannerState,
+  yearIndex: number,
+  fn: (year: PlannerYear) => PlannerYear
+): PlannerState {
+  const year = state.years[yearIndex]
+  if (!year) return state
+  const next = fn(year)
+  if (next === year) return state
+  return {
+    ...state,
+    years: state.years.map((y, yi) => (yi === yearIndex ? next : y)),
   }
-  return n
 }
 
 function withSlot(
@@ -765,17 +833,10 @@ function withSlot(
   // the history wrapper uses === on the result to decide whether the
   // action took a stack slot.
   if (nextSlot === slot) return state
-  return {
-    ...state,
-    years: state.years.map((y, yi) =>
-      yi !== yearIndex
-        ? y
-        : {
-            ...y,
-            slots: y.slots.map((s, si) => (si !== slotIndex ? s : nextSlot)),
-          }
-    ),
-  }
+  return mapYear(state, yearIndex, (y) => ({
+    ...y,
+    slots: y.slots.map((s, si) => (si !== slotIndex ? s : nextSlot)),
+  }))
 }
 
 /**

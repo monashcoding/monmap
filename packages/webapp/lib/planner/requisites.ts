@@ -118,7 +118,8 @@ function collectReferencedCodes(
   }
 }
 
-function normalizeConnector(v: string | null | undefined): "AND" | "OR" {
+/** How a container's children combine. Absent or unknown reads as AND. */
+export function normalizeConnector(v: string | null | undefined): "AND" | "OR" {
   if (!v) return "AND"
   return v.toUpperCase() === "OR" ? "OR" : "AND"
 }

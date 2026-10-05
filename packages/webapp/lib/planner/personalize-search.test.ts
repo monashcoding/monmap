@@ -8,6 +8,13 @@ import {
   slotContextFor,
   topFeatures,
 } from "./personalize-search.ts"
+import {
+  offering as fixtureOffering,
+  planState,
+  prereq,
+  requisite,
+  unit as fixtureUnit,
+} from "./test-fixtures.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
@@ -17,50 +24,17 @@ import type {
   RequisiteBlock,
 } from "./types.ts"
 
-function unit(code: string, level: string | null = null): PlannerUnit {
-  return {
-    year: "2026",
-    code,
-    title: code,
-    creditPoints: 6,
-    level,
-    synopsis: null,
-    school: null,
-  }
-}
+const unit = (code: string, level: string | null = null) =>
+  fixtureUnit(code, { level })
 
-function offering(periodKind: PlannerOffering["periodKind"]): PlannerOffering {
-  return {
-    unitCode: "X",
-    teachingPeriod: "Whatever",
-    location: "Clayton",
-    attendanceModeCode: "ON-CAMPUS",
-    periodKind,
-  }
-}
+const offering = (periodKind: PlannerOffering["periodKind"]) =>
+  fixtureOffering("X", periodKind)
 
 function state(): PlannerState {
-  return {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT1008"] },
-          { kind: "S2", unitCodes: [] },
-        ],
-      },
-      {
-        label: "Year 2",
-        slots: [
-          { kind: "S1", unitCodes: [] },
-          { kind: "S2", unitCodes: [] },
-        ],
-      },
-    ],
-  }
+  return planState([
+    { S1: ["FIT1008"], S2: [] },
+    { S1: [], S2: [] },
+  ])
 }
 
 function emptyAos(
@@ -87,7 +61,6 @@ function course(): PlannerCourseWithAoS {
     creditPoints: 144,
     aqfLevel: "7",
     type: "Bachelor",
-    overview: null,
     courseUnits: [{ code: "FIT1008", grouping: "Core" }],
     courseRequirements: [
       { grouping: "Core", required: 1, options: ["FIT1008"] },
@@ -120,29 +93,13 @@ function course(): PlannerCourseWithAoS {
   }
 }
 
-function reqBlock(
-  type: RequisiteBlock["requisiteType"],
-  codes: string[]
-): RequisiteBlock {
-  return {
-    requisiteType: type,
-    rule: [
-      {
-        title: "",
-        parent_connector: { value: "AND" },
-        relationships: codes.map((c) => ({ academic_item_code: c })),
-      },
-    ],
-  }
-}
-
 test("buildPersonalSignals collects placed/AoS/fillsGap/prohibited/neighbours", () => {
   const requisites = new Map<string, RequisiteBlock[]>([
     [
       "FIT1008",
       [
-        reqBlock("prohibition", ["FIT1054"]),
-        reqBlock("prerequisite", ["MAT1830"]),
+        requisite("prohibition", ["FIT1054"]),
+        requisite("prerequisite", ["MAT1830"]),
       ],
     ],
   ])
@@ -167,25 +124,10 @@ test("buildPersonalSignals collects placed/AoS/fillsGap/prohibited/neighbours", 
 })
 
 test("slotContextFor includes earlier slots in completedBefore but not concurrent", () => {
-  const s: PlannerState = {
-    ...state(),
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT1008", "MAT1830"] },
-          { kind: "S2", unitCodes: ["FIT1045"] },
-        ],
-      },
-      {
-        label: "Year 2",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT2099"] },
-          { kind: "S2", unitCodes: [] },
-        ],
-      },
-    ],
-  }
+  const s = planState([
+    { S1: ["FIT1008", "MAT1830"], S2: ["FIT1045"] },
+    { S1: ["FIT2099"], S2: [] },
+  ])
   const ctx = slotContextFor(s, 1, 0) // Year 2 S1
   assert.deepEqual([...ctx.completedBefore].sort(), [
     "FIT1008",
@@ -202,8 +144,8 @@ test("personalScore: prereq-ready vs not-ready", () => {
   const slot = slotContextFor(state(), 1, 0) // Year 2 S1, completedBefore = FIT1008
   const unitWithMet = unit("FIT2014", "Level 2")
   const unitWithUnmet = unit("FIT2015", "Level 2")
-  const requisitesMet = [reqBlock("prerequisite", ["FIT1008"])]
-  const requisitesUnmet = [reqBlock("prerequisite", ["FIT9999"])]
+  const requisitesMet = [requisite("prerequisite", ["FIT1008"])]
+  const requisitesUnmet = [requisite("prerequisite", ["FIT9999"])]
 
   const met = personalScore({
     unit: unitWithMet,
@@ -249,7 +191,7 @@ test("personalScore: slot period match dominates over no match", () => {
 
 test("personalScore: placed and prohibited are hard-killed", () => {
   const requisites = new Map<string, RequisiteBlock[]>([
-    ["FIT1008", [reqBlock("prohibition", ["FIT1054"])]],
+    ["FIT1008", [requisite("prohibition", ["FIT1054"])]],
   ])
   const signals = buildPersonalSignals(state(), course(), requisites)
   const slot = slotContextFor(state(), 0, 1) // Year 1 S2
@@ -319,4 +261,51 @@ test("topFeatures: surfaces the dominant positive contributions", () => {
   assert.ok(features.includes("periodFit"))
   assert.ok(features.includes("aos") || features.includes("fillsGap"))
   assert.ok(features.length <= 3)
+})
+
+test("slotContextFor counts credit and equivalents as completed", () => {
+  const s = planState([{ S1: ["FIT1053"], S2: [] }], {
+    credit: [{ code: "MAT1830", creditPoints: 6 }],
+  })
+  const units = new Map([
+    ["FIT1053", fixtureUnit("FIT1053", { equivalents: ["FIT1045"] })],
+  ])
+  const ctx = slotContextFor(s, 0, 1, units)
+  assert.deepEqual([...ctx.completedBefore].sort(), [
+    "FIT1045",
+    "FIT1053",
+    "MAT1830",
+  ])
+})
+
+test("personalScore: a credited prerequisite makes a unit prereq-ready", () => {
+  const s = planState([{ S1: [], S2: [] }], {
+    credit: [{ code: "FIT1045", creditPoints: 6 }],
+  })
+  const signals = buildPersonalSignals(s, course(), new Map())
+  const score = personalScore({
+    unit: unit("FIT1008", "Level 1"),
+    offerings: [offering("S1")],
+    requisites: [prereq("FIT1045")],
+    signals,
+    slot: slotContextFor(s, 0, 0),
+  })
+  assert.equal(score.prereqReady, 1)
+  // Credit counts as held: a credited unit isn't suggested again.
+  assert.ok(signals.placed.has("FIT1045"))
+})
+
+test("buildPersonalSignals: a group capped by a prohibition stops filling gaps", () => {
+  // The group asks for all three, but A (placed) prohibits B, so it
+  // can reach only two, and A and C are both placed.
+  const c: PlannerCourseWithAoS = {
+    ...course(),
+    courseRequirements: [
+      { grouping: "G", required: 3, options: ["A", "B", "C"] },
+    ],
+    conflicts: { B: ["A"], A: ["B"] },
+  }
+  const s = planState([{ S1: ["A", "C"], S2: [] }])
+  const signals = buildPersonalSignals(s, c, new Map())
+  assert.ok(!signals.fillsGap.has("B"))
 })

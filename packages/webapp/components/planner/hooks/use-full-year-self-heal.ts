@@ -32,6 +32,9 @@ export function useFullYearSelfHeal({
       const s1 = year.slots.find((s) => s.kind === "S1")
       const s2 = year.slots.find((s) => s.kind === "S2")
       if (!s1 || !s2) continue
+      // heal leaves a year with a leave or exchange half alone, so skip
+      // it here too, or the early return below would stall on it.
+      if (s1.status || s2.status) continue
       const seen = new Set<string>()
       for (const code of [...s1.unitCodes, ...s2.unitCodes]) {
         if (seen.has(code)) continue
@@ -40,14 +43,12 @@ export function useFullYearSelfHeal({
         const inS1 = s1.unitCodes.includes(code)
         const inS2 = s2.unitCodes.includes(code)
         if (inS1 && inS2) continue
-        // Half-placed FY unit — strip and re-add as proper twin.
-        dispatch({ type: "remove_full_year_unit", code })
-        // Compute fullYearCodes excluding the unit we just stripped.
+        // Half-placed FY unit: place it in both halves of this year.
         const others: string[] = []
         for (const c of plannedCodes)
           if (c !== code && isFullYearUnit(c, offeringsMap)) others.push(c)
         dispatch({
-          type: "add_full_year_unit",
+          type: "heal_full_year_unit",
           yearIndex: yi,
           code,
           fullYearCodes: others,

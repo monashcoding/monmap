@@ -1,6 +1,6 @@
 import { groupIsMandatory } from "../db/curriculum.ts"
 
-import type { PlannerCourseWithAoS } from "./types.ts"
+import type { PlannerCourseWithAoS, RequirementGroup } from "./types.ts"
 
 /**
  * Is this unit "core" — i.e. does something the student has committed
@@ -26,12 +26,28 @@ export function unitIsCore(
   pickedAosCodes: ReadonlySet<string>
 ): boolean {
   if (!course) return false
-  const groups = [
+  return courseRequirementGroups(course, pickedAosCodes).some(
+    (g) => groupIsMandatory(g) && g.options.includes(code)
+  )
+}
+
+/**
+ * Every requirement group of a course: its own, each component
+ * degree's, and its areas of study's — only the picked ones when
+ * `pickedAosCodes` is given.
+ */
+export function courseRequirementGroups(
+  course: Pick<
+    PlannerCourseWithAoS,
+    "courseRequirements" | "componentCourses" | "areasOfStudy"
+  >,
+  pickedAosCodes?: ReadonlySet<string>
+): RequirementGroup[] {
+  return [
     ...course.courseRequirements,
     ...course.componentCourses.flatMap((c) => c.courseRequirements),
     ...course.areasOfStudy
-      .filter((a) => pickedAosCodes.has(a.code))
+      .filter((a) => !pickedAosCodes || pickedAosCodes.has(a.code))
       .flatMap((a) => a.requirements),
   ]
-  return groups.some((g) => groupIsMandatory(g) && g.options.includes(code))
 }

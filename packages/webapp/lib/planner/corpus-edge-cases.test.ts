@@ -16,49 +16,21 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
-  OPTIONAL_SLOT_KINDS,
-  PRIMARY_SLOT_KINDS,
+  ADDABLE_SLOT_KINDS,
   classifyTeachingPeriod,
 } from "./teaching-period.ts"
 import { summarizePlan } from "./progress.ts"
 import { keyFor, validatePlan } from "./validation.ts"
-import type {
-  PeriodKind,
-  PlannerCourseWithAoS,
-  PlannerOffering,
-  PlannerState,
-  PlannerUnit,
-  RequisiteBlock,
-} from "./types.ts"
+import {
+  offeringMap,
+  planState,
+  prereq,
+  prereqAny,
+  unitMap,
+} from "./test-fixtures.ts"
+import type { PeriodKind, PlannerCourseWithAoS } from "./types.ts"
 
-function vunit(code: string): PlannerUnit {
-  return {
-    year: "2026",
-    code,
-    title: `${code} title`,
-    creditPoints: 6,
-    level: null,
-    synopsis: null,
-    school: null,
-  }
-}
-
-function state(): PlannerState {
-  return {
-    courseYear: "2026",
-    courseCode: "B2057",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: [] },
-          { kind: "S2", unitCodes: [] },
-        ],
-      },
-    ],
-  }
-}
+const state = () => planState([{ S1: [], S2: [] }], { courseCode: "B2057" })
 
 const course = (creditPoints: number): PlannerCourseWithAoS => ({
   year: "2026",
@@ -67,7 +39,6 @@ const course = (creditPoints: number): PlannerCourseWithAoS => ({
   creditPoints,
   aqfLevel: null,
   type: null,
-  overview: null,
   areasOfStudy: [],
   courseUnits: [],
   courseRequirements: [],
@@ -79,15 +50,16 @@ const course = (creditPoints: number): PlannerCourseWithAoS => ({
  *
  * 586 of 2026's units are offered *only* in periods that classify as
  * OTHER (research quarters, trimesters, terms, Monash Indonesia), and
- * 76 of those are named by an area-of-study unit list. There is no
- * slot kind a student can add to hold them.
+ * 76 of those are named by an area-of-study unit list. No named
+ * teaching period holds them: OTHER slots exist only as the freeform
+ * "Untitled" sections a student creates, which carry no period.
  * ------------------------------------------------------------------ */
 
-test("OTHER is not an addable slot kind — unmodelled-period units are unplaceable", () => {
-  const addable: PeriodKind[] = [...PRIMARY_SLOT_KINDS, ...OPTIONAL_SLOT_KINDS]
+test("no named period kind holds OTHER — only an Untitled slot can", () => {
+  const addable: readonly PeriodKind[] = ADDABLE_SLOT_KINDS
   assert.ok(
     !addable.includes("OTHER"),
-    "if OTHER becomes addable this gap is closed — update the audit"
+    "if OTHER becomes a named period this gap is closed — update the audit"
   )
   // The real periods that land there, straight from the 2026 corpus.
   for (const p of [
@@ -104,8 +76,7 @@ test("OTHER is not an addable slot kind — unmodelled-period units are unplacea
 })
 
 test("FULL_YEAR is also not directly addable — it is reached via twins, not a slot", () => {
-  const addable: PeriodKind[] = [...PRIMARY_SLOT_KINDS, ...OPTIONAL_SLOT_KINDS]
-  assert.ok(!addable.includes("FULL_YEAR"))
+  assert.ok(!ADDABLE_SLOT_KINDS.includes("FULL_YEAR"))
   assert.equal(classifyTeachingPeriod("Full year"), "FULL_YEAR")
   assert.equal(classifyTeachingPeriod("Full year extended"), "FULL_YEAR")
 })
@@ -127,7 +98,7 @@ test("a course with real credit points uses them as the target", () => {
 })
 
 test("null course credit points silently fall back to 144", () => {
-  // Documents the fallback at progress.ts:117. If this ever becomes an
+  // Documents summarizePlan's targetCreditPoints fallback. If this ever becomes an
   // explicit "unknown" instead of a guess, this test should change.
   const nullCp = { ...course(0), creditPoints: null as unknown as number }
   assert.equal(
@@ -142,7 +113,7 @@ test("no course at all also yields the 144 default", () => {
 
 test("a zero-credit-point course does NOT fall back — 0 is a real value to ??", () => {
   // ?? only catches null/undefined, so 0 passes through. The ring
-  // guards `> 0` (right-sidebar.tsx:223) rather than dividing by zero.
+  // guards `> 0` (the right sidebar's progress ring) rather than dividing by zero.
   assert.equal(
     summarizePlan(state(), course(0), new Map()).targetCreditPoints,
     0
@@ -161,126 +132,32 @@ test("a zero-credit-point course does NOT fall back — 0 is a real value to ??"
  * ------------------------------------------------------------------ */
 
 test("a prereq naming a unit absent from the year stays unsatisfied, and names it", () => {
-  const s: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      { label: "Year 1", slots: [{ kind: "S1", unitCodes: ["MTE4592"] }] },
-    ],
-  }
-  const unitsByCode = new Map<string, PlannerUnit>([
-    ["MTE4592", vunit("MTE4592")],
-  ])
-  const offeringsByCode = new Map<string, PlannerOffering[]>([
-    [
-      "MTE4592",
-      [
-        {
-          unitCode: "MTE4592",
-          teachingPeriod: "First semester",
-          location: null,
-          attendanceModeCode: null,
-          periodKind: "S1",
-        },
-      ],
-    ],
-  ])
+  const s = planState([{ S1: ["MTE4592"] }])
+  const unitsByCode = unitMap(["MTE4592"])
+  const offeringsByCode = offeringMap({ MTE4592: ["S1"] })
   // ETW2001 is one of the real discontinued codes 2026 still references.
-  const requisitesByCode = new Map<string, RequisiteBlock[]>([
-    [
-      "MTE4592",
-      [
-        {
-          requisiteType: "prerequisite",
-          rule: [
-            {
-              parent_connector: { value: "AND" },
-              relationships: [{ academic_item_code: "ETW2001" }],
-            },
-          ],
-        },
-      ],
-    ],
-  ])
+  const requisitesByCode = new Map([["MTE4592", [prereq("ETW2001")]]])
 
   const out = validatePlan(s, unitsByCode, offeringsByCode, requisitesByCode)
   const card = out.get(keyFor(0, 0, "MTE4592"))
   assert.ok(card)
-  const prereq = card.errors.find((e) => e.kind === "prereq_unmet")
-  assert.ok(prereq, "an absent prereq code must not silently pass")
-  assert.deepEqual(prereq.relatedCodes, ["ETW2001"])
+  const unmet = card.errors.find((e) => e.kind === "prereq_unmet")
+  assert.ok(unmet, "an absent prereq code must not silently pass")
+  assert.deepEqual(unmet.relatedCodes, ["ETW2001"])
   // Documents today's wording: the student is told to take a unit that
   // has no row in their year. If a "discontinued" hint is added, this
   // assertion should change.
-  assert.match(prereq.message, /ETW2001/)
+  assert.match(unmet.message, /ETW2001/)
 })
 
 test("an OR branch keeps the unit satisfiable even when one code is absent", () => {
   // Why only 2 of the 300 units with a dangling prereq code are truly
   // stuck: the rest offer an alternative that does exist.
-  const s: PlannerState = {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: ["FIT1045"] },
-          { kind: "S2", unitCodes: ["FIT2004"] },
-        ],
-      },
-    ],
-  }
-  const unitsByCode = new Map<string, PlannerUnit>([
-    ["FIT1045", vunit("FIT1045")],
-    ["FIT2004", vunit("FIT2004")],
-  ])
-  const offeringsByCode = new Map<string, PlannerOffering[]>([
-    [
-      "FIT1045",
-      [
-        {
-          unitCode: "FIT1045",
-          teachingPeriod: "First semester",
-          location: null,
-          attendanceModeCode: null,
-          periodKind: "S1",
-        },
-      ],
-    ],
-    [
-      "FIT2004",
-      [
-        {
-          unitCode: "FIT2004",
-          teachingPeriod: "Second semester",
-          location: null,
-          attendanceModeCode: null,
-          periodKind: "S2",
-        },
-      ],
-    ],
-  ])
-  const requisitesByCode = new Map<string, RequisiteBlock[]>([
-    [
-      "FIT2004",
-      [
-        {
-          requisiteType: "prerequisite",
-          rule: [
-            {
-              parent_connector: { value: "OR" },
-              relationships: [
-                { academic_item_code: "ACX1100" },
-                { academic_item_code: "FIT1045" },
-              ],
-            },
-          ],
-        },
-      ],
-    ],
+  const s = planState([{ S1: ["FIT1045"], S2: ["FIT2004"] }])
+  const unitsByCode = unitMap(["FIT1045", "FIT2004"])
+  const offeringsByCode = offeringMap({ FIT1045: ["S1"], FIT2004: ["S2"] })
+  const requisitesByCode = new Map([
+    ["FIT2004", [prereqAny("ACX1100", "FIT1045")]],
   ])
 
   const out = validatePlan(s, unitsByCode, offeringsByCode, requisitesByCode)

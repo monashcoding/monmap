@@ -1,6 +1,6 @@
 /**
- * localStorage helpers for the anonymous-user plan. Centralised here so
- * the storage key and shape are only specified once across the codebase.
+ * localStorage helpers for the anonymous-user plan. This module owns
+ * the plan's storage key and shape; nothing else reads or writes it.
  */
 
 import type { PlannerState } from "@/lib/planner/types"
@@ -38,19 +38,4 @@ export function clearLocalPlan(): void {
   } catch {
     /* ignore */
   }
-}
-
-/**
- * Returns the correct handbook year for a given study-year index.
- * If the exact calendar year doesn't exist in the DB, falls back to
- * the latest available year (so Year 4 in 2024 → 2027 missing → 2026).
- */
-export function handbookYearFor(
-  studyYearIndex: number,
-  courseYear: string,
-  availableYears: readonly string[]
-): string {
-  const target = String(Number(courseYear) + studyYearIndex)
-  if (availableYears.includes(target)) return target
-  return [...availableYears].sort().at(-1) ?? courseYear
 }

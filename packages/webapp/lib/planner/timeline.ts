@@ -47,6 +47,23 @@ export function startYearOf(state: Pick<PlannerState, "courseYear">): number {
   return Number(state.courseYear) || new Date().getFullYear()
 }
 
+/**
+ * Handbook year whose data the planner uses for study year
+ * `studyYearIndex`: courseYear + index, or the latest published year
+ * when that one doesn't exist yet (Year 4 of a 2024 plan with no 2027
+ * handbook reads 2026). Hydration, validation and the search and
+ * detail views all use this, so they agree on which data a slot shows.
+ */
+export function handbookYearFor(
+  studyYearIndex: number,
+  courseYear: string,
+  availableYears: readonly string[]
+): string {
+  const target = String(Number(courseYear) + studyYearIndex)
+  if (availableYears.includes(target)) return target
+  return [...availableYears].sort().at(-1) ?? courseYear
+}
+
 const RANK: Record<StartPeriod, Record<PeriodKind, number>> = {
   // FULL_YEAR sits with the first semester it starts in; OTHER
   // ("Untitled" sections) always goes last.
@@ -147,11 +164,6 @@ export function slotBlockCredit(
   slot: Pick<PlannerSlot, "status" | "creditPoints">
 ): number {
   return slot.status === "exchange" ? (slot.creditPoints ?? 24) : 0
-}
-
-/** True when units can be placed in the slot. */
-export function slotTakesUnits(slot: Pick<PlannerSlot, "status">): boolean {
-  return !slot.status
 }
 
 /**

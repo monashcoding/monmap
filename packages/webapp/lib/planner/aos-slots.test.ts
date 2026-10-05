@@ -34,7 +34,6 @@ const courseWith = (areas: PlannerAreaOfStudy[]): PlannerCourseWithAoS => ({
   creditPoints: 192,
   aqfLevel: null,
   type: null,
-  overview: null,
   areasOfStudy: areas,
   courseUnits: [],
   courseRequirements: [],
@@ -198,7 +197,6 @@ function repeatCourse(
     creditPoints: 144,
     aqfLevel: null,
     type: null,
-    overview: null,
     areasOfStudy: codes.map((c) => ({
       code: c,
       title: c,

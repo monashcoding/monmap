@@ -2,53 +2,24 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  groupProgress,
+  placedUnitCodes,
   plannedUnitCodes,
   summarizeAoSProgress,
+  summarizeGroups,
   summarizePlan,
 } from "./progress.ts"
-import type {
-  PlannerAreaOfStudy,
-  PlannerCourseWithAoS,
-  PlannerOffering,
-  PlannerState,
-  PlannerUnit,
-} from "./types.ts"
+import { offeringMap, planState, unit as fixtureUnit } from "./test-fixtures.ts"
+import type { PlannerAreaOfStudy, PlannerCourseWithAoS } from "./types.ts"
 
-function unit(code: string, cp = 6): PlannerUnit {
-  return {
-    year: "2026",
-    code,
-    title: code,
-    creditPoints: cp,
-    level: null,
-    synopsis: null,
-    school: null,
-  }
-}
+const unit = (code: string, creditPoints = 6) =>
+  fixtureUnit(code, { creditPoints })
 
-function emptyState(): PlannerState {
-  return {
-    courseYear: "2026",
-    courseCode: "C2000",
-    selectedAos: {},
-    years: [
-      {
-        label: "Year 1",
-        slots: [
-          { kind: "S1", unitCodes: [] },
-          { kind: "S2", unitCodes: [] },
-        ],
-      },
-      {
-        label: "Year 2",
-        slots: [
-          { kind: "S1", unitCodes: [] },
-          { kind: "S2", unitCodes: [] },
-        ],
-      },
-    ],
-  }
-}
+const emptyState = () =>
+  planState([
+    { S1: [], S2: [] },
+    { S1: [], S2: [] },
+  ])
 
 const bit: PlannerCourseWithAoS = {
   year: "2026",
@@ -57,7 +28,6 @@ const bit: PlannerCourseWithAoS = {
   creditPoints: 144,
   aqfLevel: null,
   type: null,
-  overview: null,
   areasOfStudy: [],
   courseUnits: [],
   courseRequirements: [],
@@ -101,20 +71,7 @@ test("summarizePlan: full-year twin contributes half its CP to each semester", (
   state.years[0].slots[1].unitCodes = ["FIT3144"]
 
   const units = new Map([["FIT3144", unit("FIT3144", 12)]])
-  const offerings = new Map<string, PlannerOffering[]>([
-    [
-      "FIT3144",
-      [
-        {
-          unitCode: "FIT3144",
-          teachingPeriod: "Full year",
-          location: null,
-          attendanceModeCode: null,
-          periodKind: "FULL_YEAR",
-        },
-      ],
-    ],
-  ])
+  const offerings = offeringMap({ FIT3144: ["FULL_YEAR"] })
 
   const s = summarizePlan(state, bit, units, offerings)
   // Degree total counts the unit once, not twice.
@@ -229,4 +186,43 @@ test("plannedUnitCodes: credited units count as held", () => {
     { code: null, creditPoints: 24 },
   ]
   assert.deepEqual([...plannedUnitCodes(state)].sort(), ["FIT1008", "FIT1045"])
+  assert.deepEqual([...placedUnitCodes(state)], ["FIT1045"])
+})
+
+/* ------------------------------------------------------------------ *
+ * Requirement groups and the reachability cap
+ * ------------------------------------------------------------------ */
+
+// L3005's shape: a "6 of these 7" group where BTC1110 prohibits
+// LAW2102, so once BTC1110 is placed only six options are reachable.
+const sevenGroup = {
+  grouping: "Commerce Part A",
+  required: 7,
+  options: ["BTC1110", "LAW2102", "A", "B", "C", "D", "E"],
+}
+const conflicts = { LAW2102: ["BTC1110"], BTC1110: ["LAW2102"] }
+
+test("groupProgress caps the target at the reachable options", () => {
+  const planned = new Set(["BTC1110", "A", "B", "C", "D", "E"])
+  assert.deepEqual(groupProgress(sevenGroup, planned, conflicts), {
+    group: sevenGroup,
+    required: 6,
+    placed: 6,
+    satisfied: true,
+  })
+  // Without the conflict data the old, unreachable target stands.
+  assert.equal(groupProgress(sevenGroup, planned).satisfied, false)
+})
+
+test("summarizeGroups totals each group's capped progress", () => {
+  const other = { grouping: "Core", required: 2, options: ["X", "Y", "Z"] }
+  const planned = new Set(["BTC1110", "A", "X", "Y", "Z"])
+  const sum = summarizeGroups([sevenGroup, other], planned, conflicts)
+  assert.equal(sum.totalRequired, 6 + 2)
+  // 2 of 6 in the first group; the second counts at most its 2.
+  assert.equal(sum.satisfiedCount, 2 + 2)
+  assert.deepEqual(
+    sum.groups.map((g) => g.satisfied),
+    [false, true]
+  )
 })

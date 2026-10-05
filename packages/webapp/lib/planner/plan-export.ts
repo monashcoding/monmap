@@ -1,9 +1,13 @@
+import { slotCreditPoints } from "./capacity.ts"
 import { markToGrade } from "./grades.ts"
+import { summarizePlan } from "./progress.ts"
 import { slotBlockCredit, slotLabel } from "./timeline.ts"
-import type { PlannerState, PlannerUnit } from "./types.ts"
+import type { PlannerOffering, PlannerState, PlannerUnit } from "./types.ts"
 
 export interface CsvContext {
   units: ReadonlyMap<string, Pick<PlannerUnit, "title" | "creditPoints">>
+  /** Lets a full-year unit show half its credit points in each semester. */
+  offerings?: ReadonlyMap<string, PlannerOffering[]>
   grades: ReadonlyMap<string, number>
 }
 
@@ -14,6 +18,10 @@ export interface CsvContext {
  * "FIT1045 Introduction to programming", with "(HD 85)" when it has a
  * mark. A UTF-8 byte-order mark and CRLF line endings make Excel and
  * Numbers open it cleanly.
+ *
+ * A row shows the semester's workload, so a retake counts in its own
+ * row. The total is summarizePlan's, the same number as the progress
+ * ring: each code once, and each credit entry once.
  */
 export function buildCsv(state: PlannerState, ctx: CsvContext): string {
   const columns = Math.max(
@@ -39,18 +47,14 @@ export function buildCsv(state: PlannerState, ctx: CsvContext): string {
       .filter(Boolean)
       .join(" ")
   }
-  const cpOf = (code: string) => ctx.units.get(code)?.creditPoints ?? 6
-
   const rows: string[][] = [
     ["Teaching period", ...unitHeaders, "Credit points"],
   ]
-  let total = 0
   state.years.forEach((year, yi) => {
     for (const slot of year.slots) {
       const label = slotLabel(state, yi, slot)
       if (slot.status) {
         const cp = slotBlockCredit(slot)
-        total += cp
         rows.push(
           row(
             label,
@@ -60,31 +64,26 @@ export function buildCsv(state: PlannerState, ctx: CsvContext): string {
         )
         continue
       }
-      const cp = slot.unitCodes.reduce((n, c) => n + cpOf(c), 0)
-      total += cp
+      const cp = slotCreditPoints(slot, ctx.units, ctx.offerings)
       rows.push(row(label, slot.unitCodes.map(unitCell), String(cp)))
     }
   })
 
-  const credit = state.credit ?? []
-  if (credit.length > 0) {
-    const cp = credit.reduce((n, c) => n + c.creditPoints, 0)
-    total += cp
-    for (const entry of credit) {
-      rows.push(
-        row(
-          "Credit",
-          [
-            [entry.code, entry.label ?? ctx.units.get(entry.code ?? "")?.title]
-              .filter(Boolean)
-              .join(" ") || "Unspecified credit",
-          ],
-          String(entry.creditPoints)
-        )
+  for (const entry of state.credit ?? []) {
+    rows.push(
+      row(
+        "Credit",
+        [
+          [entry.code, entry.label ?? ctx.units.get(entry.code ?? "")?.title]
+            .filter(Boolean)
+            .join(" ") || "Unspecified credit",
+        ],
+        String(entry.creditPoints)
       )
-    }
+    )
   }
-  rows.push(row("Total", [], String(total)))
+  const total = summarizePlan(state, null, ctx.units, ctx.offerings)
+  rows.push(row("Total", [], String(total.totalCreditPoints)))
 
   return (
     "﻿" +

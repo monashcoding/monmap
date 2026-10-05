@@ -149,14 +149,15 @@ export function PlannerDnd({ children }: { children: React.ReactNode }) {
           })
           return
         }
-        // Same-year reorder — implemented as remove + re-add to put the
-        // dragged unit after the target. Simplest correct behaviour.
-        dispatch({ type: "remove_full_year_unit", code: a.code })
+        // Same-year reorder: the dragged unit takes the target's place
+        // in both halves, in one undo step.
         dispatch({
-          type: "add_full_year_unit",
-          yearIndex: a.yearIndex,
+          type: "move_full_year_unit",
+          fromYearIndex: a.yearIndex,
+          toYearIndex: a.yearIndex,
           code: a.code,
-          fullYearCodes: fullYearCodes.filter((c) => c !== a.code),
+          targetCode: overData.code,
+          fullYearCodes,
         })
         return
       }

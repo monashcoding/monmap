@@ -162,7 +162,6 @@ function course(overrides: Partial<PlannerCourseWithAoS> = {}) {
     creditPoints: 192,
     aqfLevel: null,
     type: null,
-    overview: null,
     areasOfStudy: [],
     courseUnits: [],
     courseRequirements: [],

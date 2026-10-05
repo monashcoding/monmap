@@ -2,6 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  handbookYearFor,
   slotCalendarYear,
   slotLabel,
   sortSlots,
@@ -245,4 +246,14 @@ test("study years are named by position", () => {
   assert.equal(studyYearName(0), "First year")
   assert.equal(studyYearName(2), "Third year")
   assert.equal(studyYearName(10), "Year 11")
+})
+
+test("handbookYearFor: courseYear + study year, else the latest year", () => {
+  const years = ["2024", "2026", "2025"]
+  assert.equal(handbookYearFor(0, "2024", years), "2024")
+  assert.equal(handbookYearFor(2, "2024", years), "2026")
+  // 2027 isn't published, so Year 4 reads the latest handbook.
+  assert.equal(handbookYearFor(3, "2024", years), "2026")
+  // No years known at all: fall back to the plan's own year.
+  assert.equal(handbookYearFor(1, "2024", []), "2024")
 })

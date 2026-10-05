@@ -1,3 +1,9 @@
+import { slotTakesUnits, slotUsedWeight, unitSlotWeight } from "./capacity.ts"
+import { isYearLongUnit } from "./full-year.ts"
+import { plannedUnitCodes } from "./progress.ts"
+import { referencedCodes } from "./requisites.ts"
+import { defaultYear } from "./state.ts"
+import { startPeriodOf } from "./timeline.ts"
 import {
   slotCapacity,
   STANDARD_CP,
@@ -5,8 +11,8 @@ import {
   type PlannerOffering,
   type PlannerState,
   type PlannerUnit,
+  type PlannerYear,
   type RequisiteBlock,
-  type RequisiteRule,
 } from "./types.ts"
 
 export interface Placement {
@@ -16,9 +22,12 @@ export interface Placement {
 }
 
 export interface DistributeResult {
+  /** One per slot filled: a year-long unit gives two, for S1 and S2. */
   placements: Placement[]
-  /** Codes skipped because they are already on the plan. */
+  /** Codes skipped because they are already on the plan or credited. */
   skipped: string[]
+  /** Codes with no room left anywhere, even in the overflow years. */
+  unplaced: string[]
 }
 
 const MAX_OVERFLOW_YEARS = 4
@@ -40,9 +49,11 @@ const MAX_OVERFLOW_YEARS = 4
  * every offering as `OTHER`. The naive S1/S2 fallback would jam a
  * full-time year-long placement into one regular semester. We instead
  * treat term-only credit-bearing units as full-year-equivalent and
- * book them across both halves of the year. Their 0-CP companion
- * units (FIT2108 seminar, FIT3201/FIT3202 onboarding) contribute zero
- * weight to slot fill so they don't displace real units.
+ * book them across both halves of the year.
+ *
+ * Slot fill uses the grid's own weights (unitSlotWeight), so auto-fill
+ * never puts more into a slot than the grid then shows as fitting.
+ * Leave, exchange and locked semesters take nothing.
  */
 export function distribute(args: {
   codes: readonly string[]
@@ -54,9 +65,10 @@ export function distribute(args: {
 }): DistributeResult {
   const { codes, units, offerings, state, requisites } = args
 
-  const planned = new Set(
-    state.years.flatMap((y) => y.slots.flatMap((s) => s.unitCodes))
-  )
+  // Credited units count as held: a template listing one must not
+  // place it again. They take no slot space, so fill and placedAt below
+  // read the slots only.
+  const planned = plannedUnitCodes(state)
 
   const skipped: string[] = []
   const queueSet = new Set<string>()
@@ -93,29 +105,23 @@ export function distribute(args: {
     return a.localeCompare(b)
   })
 
-  // Slot fill tracked in *credit-weight* units, not unit count. That
-  // way an 18 CP IBL placement consumes ~3 of a slot's standard 4-unit
-  // capacity and a 0 CP companion consumes 0 — versus the count-based
-  // version that let either silently misreport load.
-  const fill: number[][] = state.years.map((y, yi) =>
-    y.slots.map((s) =>
-      s.unitCodes.reduce(
-        (sum, c) =>
-          sum + perSlotWeight(c, units, offerings, isAcrossYear(yi, c, state)),
-        0
-      )
-    )
+  // Slot fill tracked in the grid's columns, not unit count, so an
+  // 18 CP IBL placement consumes 3 of a slot's standard 4.
+  const fill: number[][] = state.years.map((y) =>
+    y.slots.map((s) => slotUsedWeight(s, units, offerings))
   )
+  // Years past the end of the plan are the ones bulk_load will add, in
+  // the same shape.
+  const yearAt = (yi: number): PlannerYear =>
+    state.years[yi] ?? defaultYear(yi + 1, startPeriodOf(state))
   const ensureYear = (yi: number) => {
-    while (fill.length <= yi) fill.push([0, 0])
+    while (fill.length <= yi) fill.push(yearAt(fill.length).slots.map(() => 0))
   }
   const slotIdx = (yi: number, kind: PeriodKind): number =>
-    state.years[yi]?.slots.findIndex((s) => s.kind === kind) ?? -1
+    yearAt(yi).slots.findIndex((s) => s.kind === kind)
   const capOf = (yi: number, si: number): number => {
-    const s = state.years[yi]?.slots[si]
-    // Leave and exchange semesters take no units.
-    if (s?.status) return 0
-    return s ? slotCapacity(s) : 4
+    const s = yearAt(yi).slots[si]
+    return s && slotTakesUnits(s) ? slotCapacity(s) : 0
   }
 
   // Track every placement (both pre-existing and newly added) so we
@@ -128,7 +134,7 @@ export function distribute(args: {
       for (const code of s.unitCodes) {
         const offers = offerings.get(code) ?? []
         const cp = units.get(code)?.creditPoints ?? STANDARD_CP
-        const yearBlocking = isYearBlocking(offers, cp)
+        const yearBlocking = isYearLongUnit(offers, cp)
         const existing = placedAt.get(code)
         if (existing && existing.yearIndex === yi) {
           if (yearBlocking)
@@ -144,6 +150,7 @@ export function distribute(args: {
   })
 
   const placements: Placement[] = []
+  const unplaced: string[] = []
   const maxYears = state.years.length + MAX_OVERFLOW_YEARS
 
   for (const code of queue) {
@@ -154,15 +161,6 @@ export function distribute(args: {
     const hasOfferings = offers.length > 0
     const offersS1 = offers.some((o) => o.periodKind === "S1")
     const offersS2 = offers.some((o) => o.periodKind === "S2")
-    const offersFY = offers.some((o) => o.periodKind === "FULL_YEAR")
-    const offersOnlyOther =
-      hasOfferings && offers.every((o) => o.periodKind === "OTHER")
-    // True FY: only available as a year-long unit, no S1/S2 alternative.
-    // IBL-like: credit-bearing unit with all offerings classified as
-    // OTHER (Term 2 / Trimester 2 / field-school) — practically a
-    // full-year commitment to the student.
-    const isYearLong =
-      (offersFY && !offersS1 && !offersS2) || (offersOnlyOther && cp >= 12)
 
     // Earliest (year, slot-rank) this code may occupy, derived from
     // ordering edges to already-placed units. slot-rank: 0=S1, 1=S2.
@@ -225,12 +223,14 @@ export function distribute(args: {
       }
     }
 
-    if (isYearLong) {
+    if (isYearLongUnit(offers, cp)) {
       // Year-long needs both halves free *and* must start no earlier
       // than the prereq constraint allows. minRank 1 forces moving to
-      // next year because a year-long unit can't start in S2.
+      // next year because a year-long unit can't start in S2. A true
+      // full-year twin weighs half its CP in each half; an IBL unit
+      // weighs its full CP in both, as the grid counts it.
       const startYear = minRank > 0 ? minYear + 1 : minYear
-      const halfWeight = perSlotWeight(code, units, offerings, true)
+      const halfWeight = unitSlotWeight(code, "S1", units, offerings)
       let placed = false
       for (let yi = startYear; yi < maxYears && !placed; yi++) {
         ensureYear(yi)
@@ -250,6 +250,7 @@ export function distribute(args: {
           placed = true
         }
       }
+      if (!placed) unplaced.push(code)
       continue
     }
 
@@ -258,7 +259,8 @@ export function distribute(args: {
     // will surface "not offered in period" rather than silently dropping.
     const wantsS1 = !hasOfferings || offersS1 || (!offersS1 && !offersS2)
     const wantsS2 = !hasOfferings || offersS2 || (!offersS1 && !offersS2)
-    const weight = perSlotWeight(code, units, offerings, false)
+    // Not a full-year twin, so it weighs the same in either semester.
+    const weight = unitSlotWeight(code, "S1", units, offerings)
 
     let placed = false
     for (let yi = minYear; yi < maxYears && !placed; yi++) {
@@ -298,9 +300,10 @@ export function distribute(args: {
         }
       }
     }
+    if (!placed) unplaced.push(code)
   }
 
-  return { placements, skipped }
+  return { placements, skipped, unplaced }
 }
 
 function levelOf(level: string | null | undefined): number {
@@ -318,70 +321,6 @@ function yearForLevel(
   if (n === 2) return 1
   if (n === 3) return 2
   return Math.min(Math.max(currentYears - 1, 2), n - 1)
-}
-
-/**
- * "Year-blocking" = the unit, while planned, occupies the student's
- * entire calendar year. Two flavours:
- *   - genuine full-year offerings (FY teaching period, no S1/S2).
- *   - IBL placements & equivalents: credit-bearing (≥ 12 CP) but every
- *     offering classifies as `OTHER` (Term N, Trimester N, …). These
- *     run full-time across multiple months and exclude concurrent
- *     S1/S2 study just as effectively as a tagged-FY unit.
- */
-function isYearBlocking(
-  offers: readonly PlannerOffering[],
-  cp: number
-): boolean {
-  if (offers.length === 0) return false
-  const hasFY = offers.some((o) => o.periodKind === "FULL_YEAR")
-  const hasS1 = offers.some((o) => o.periodKind === "S1")
-  const hasS2 = offers.some((o) => o.periodKind === "S2")
-  if (hasFY && !hasS1 && !hasS2) return true
-  const allOther = offers.every((o) => o.periodKind === "OTHER")
-  return allOther && cp >= 12
-}
-
-/**
- * Slot-fill weight contributed by a unit code. Units with credit
- * points contribute `round(cp/6)` weight (a standard 6 CP unit is 1,
- * a 12 CP is 2, an 18 CP is 3). A 0 CP companion (IBL onboarding,
- * IBL seminar) contributes 0 — these are the "in addition to any
- * prescribed coursework" units the handbook synopses explicitly
- * describe.
- *
- * When the unit is booked into both S1 and S2 (year-long flavour),
- * the weight is split across the two halves: an 18 CP IBL placement
- * consumes ~2 of the 4-unit-equivalent slot capacity in each
- * semester, leaving room for the 0 CP companion plus maybe one
- * stretch unit — which matches the realistic IBL year.
- */
-function perSlotWeight(
-  code: string,
-  units: ReadonlyMap<string, PlannerUnit>,
-  _offerings: ReadonlyMap<string, PlannerOffering[]>,
-  splitAcrossYear: boolean
-): number {
-  const cp = units.get(code)?.creditPoints
-  if (cp == null || cp <= 0) return 0
-  const base = Math.round(cp / STANDARD_CP)
-  if (!splitAcrossYear) return Math.max(1, base)
-  // Split across two halves: half the weight per half-year, rounded
-  // up so a 6 CP FY still costs at least 1 in each half.
-  return Math.max(1, Math.ceil(base / 2))
-}
-
-/**
- * Is this already-planned code being held in a year-blocking position?
- * Used when seeding `fill` from the existing plan so the weight we
- * subtract from the slot cap matches what we'd assign on placement.
- */
-function isAcrossYear(yi: number, code: string, state: PlannerState): boolean {
-  const year = state.years[yi]
-  if (!year) return false
-  let count = 0
-  for (const s of year.slots) if (s.unitCodes.includes(code)) count++
-  return count >= 2
 }
 
 type EdgeKind = "prereq" | "coreq"
@@ -427,7 +366,7 @@ function buildOrderingEdges(
       if (block.requisiteType === "prerequisite") kind = "prereq"
       else if (block.requisiteType === "corequisite") kind = "coreq"
       else continue
-      for (const ref of collectRuleCodes(block.rule)) {
+      for (const ref of referencedCodes(block.rule)) {
         if (ref === code || !known.has(ref)) continue
         // Prereq beats coreq when both appear for the same pair.
         if (edges.get(ref) === "prereq") continue
@@ -436,32 +375,6 @@ function buildOrderingEdges(
     }
     if (edges.size > 0) out.set(code, edges)
   }
-  return out
-}
-
-function collectRuleCodes(rule: RequisiteRule): Set<string> {
-  const out = new Set<string>()
-  const walk = (
-    nodes: readonly (
-      | { academic_item_code?: string }
-      | { containers?: unknown; relationships?: unknown }
-    )[]
-  ): void => {
-    for (const node of nodes) {
-      if (
-        "academic_item_code" in node &&
-        typeof node.academic_item_code === "string"
-      ) {
-        out.add(node.academic_item_code)
-        continue
-      }
-      const containers = (node as { containers?: unknown }).containers
-      if (Array.isArray(containers)) walk(containers as never)
-      const relationships = (node as { relationships?: unknown }).relationships
-      if (Array.isArray(relationships)) walk(relationships as never)
-    }
-  }
-  walk(rule)
   return out
 }
 
