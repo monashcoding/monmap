@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDownIcon, ExternalLinkIcon } from "lucide-react"
+import { ChevronDownIcon, ExternalLinkIcon, Share2Icon } from "lucide-react"
 import { useMemo, useState } from "react"
 import posthog from "posthog-js"
 
@@ -91,7 +91,15 @@ export function CoursePicker({ className }: { className?: string }) {
             }
           />
           {course ? (
-            <div className="absolute top-3.5 right-10 z-10 flex items-center">
+            <div className="absolute top-3.5 right-10 z-10 flex items-center gap-3">
+              <a
+                href={`/search?course=${course.code}&year=${course.year}`}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Share2Icon className="size-3" />
+                View Details
+              </a>
               <a
                 href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
                 target="_blank"

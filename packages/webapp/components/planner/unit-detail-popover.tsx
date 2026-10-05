@@ -269,13 +269,13 @@ export function UnitDetailView({
             className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
             <Share2Icon className="size-3" />
-            Tree
+            View Details
           </a>
           <a
             href={`https://handbook.monash.edu/${unit?.fallbackFor === selectedYear ? unit.year : selectedYear}/units/${code}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
           >
             <ExternalLinkIcon className="size-3" />
             Handbook
@@ -448,7 +448,7 @@ function OfferingsGrid({ offerings }: { offerings: PlannerOffering[] }) {
         .filter((k) => grouped.has(k))
         .map((k) => (
           <li key={k} className="flex items-baseline gap-2">
-            <span className="w-14 shrink-0 text-[10px] tracking-wide text-muted-foreground uppercase">
+            <span className="w-22 shrink-0 text-[10px] tracking-wide whitespace-nowrap text-muted-foreground uppercase">
               {PERIOD_KIND_LABEL[k]}
             </span>
             <span className="flex flex-wrap gap-1">

@@ -78,7 +78,7 @@ export function TreeSidePanel({
             href={`https://handbook.monash.edu/${year}/units/${node.code}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="ml-auto inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
           >
             <ExternalLinkIcon className="size-3" />
             Handbook
