@@ -1,15 +1,8 @@
 import type { Metadata } from "next"
 import { GraduationCapIcon } from "lucide-react"
 
-import { AppHeader } from "@/components/app-header"
-
-export const metadata: Metadata = {
-  title: "My course maps",
-  description:
-    "Saved course plans for your Monash degree - synced across devices.",
-  robots: { index: false, follow: false },
-}
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
+import { PageShell } from "@/components/page-shell"
 import { createBlankPlanAction } from "@/app/actions"
 import { getCurrentUser } from "@/lib/auth-server"
 import { MAX_PLANS_PER_USER } from "@/lib/db/input"
@@ -26,6 +19,13 @@ import type { PlannerState } from "@/lib/planner/types"
 
 import { NewPlanButton, NewPlanCard } from "./new-plan-button"
 import { PlanCard } from "./plan-card"
+
+export const metadata: Metadata = {
+  title: "My course maps",
+  description:
+    "Saved course plans for your Monash degree - synced across devices.",
+  robots: { index: false, follow: false },
+}
 
 // Tolerates a malformed stored state, so one bad row cannot break the
 // page.
@@ -72,8 +72,7 @@ export default async function PlansPage({
   const [user, params] = await Promise.all([getCurrentUser(), searchParams])
   if (!user) {
     return (
-      <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
-        <AppHeader />
+      <PageShell>
         <div className="flex flex-col items-center gap-4 rounded-panel border bg-card py-20 text-center shadow-card">
           <GraduationCapIcon className="size-10 text-muted-foreground/40" />
           <div className="flex flex-col gap-1">
@@ -86,7 +85,7 @@ export default async function PlansPage({
           </div>
           <GoogleSignInButton callbackURL="/plans" />
         </div>
-      </main>
+      </PageShell>
     )
   }
 
@@ -139,9 +138,7 @@ export default async function PlansPage({
   })
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
-      <AppHeader />
-
+    <PageShell>
       {params.error === "limit" ? (
         <p role="alert" className="text-sm text-destructive">
           You have reached the limit of {MAX_PLANS_PER_USER} plans. Delete a
@@ -172,6 +169,6 @@ export default async function PlansPage({
       ) : (
         <NewPlanButton availableYears={availableYears} />
       )}
-    </main>
+    </PageShell>
   )
 }

@@ -3,8 +3,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { SearchIcon } from "lucide-react"
 
-import { AppHeader } from "@/components/app-header"
 import { KindBadge } from "@/components/handbook/frame"
+import { PageShell } from "@/components/page-shell"
 import { ReviewAvatar } from "@/components/reviews/review-avatar"
 import { Stars } from "@/components/reviews/stars"
 import { getCurrentUser } from "@/lib/auth-server"
@@ -19,7 +19,7 @@ import { entityHref } from "@/lib/handbook/links"
 import { firstParam } from "@/lib/handbook/search-url"
 import { isReviewAdmin } from "@/lib/reviews/admin"
 import { REVIEW_AXES } from "@/lib/reviews/axes"
-import { reviewDate } from "@/lib/reviews/format"
+import { reviewCount, reviewDate } from "@/lib/reviews/format"
 import { cn } from "@/lib/utils"
 
 import { ModerationActions } from "./moderation-actions"
@@ -97,8 +97,7 @@ export default async function ReviewModerationPage({
   const active = FILTERS.find((f) => f.id === filter)!
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
-      <AppHeader />
+    <PageShell>
       <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-3 sm:gap-5">
         <header className="flex flex-col gap-4 rounded-panel border bg-card p-5 shadow-card sm:p-7">
           <div className="flex flex-col gap-1">
@@ -162,7 +161,7 @@ export default async function ReviewModerationPage({
           className="flex flex-col gap-3"
         >
           <p className="px-1 text-sm text-muted-foreground">
-            {total.toLocaleString("en-AU")} {total === 1 ? "review" : "reviews"}
+            {reviewCount(total)}
             {q ? ` matching "${q}"` : ""}. {active.hint}
           </p>
           {reviews.length === 0 ? (
@@ -204,7 +203,7 @@ export default async function ReviewModerationPage({
           ) : null}
         </section>
       </div>
-    </main>
+    </PageShell>
   )
 }
 
@@ -244,8 +243,7 @@ function AdminReviewCard({ review: r }: { review: AdminReview }) {
         <div className="flex flex-col text-xs text-muted-foreground">
           <span className="font-semibold text-foreground">{r.initials}</span>
           <span>
-            Author #{r.authorTag} · {r.authorReviews}{" "}
-            {r.authorReviews === 1 ? "review" : "reviews"} ·{" "}
+            Author #{r.authorTag} · {reviewCount(r.authorReviews)} ·{" "}
             {reviewDate(r.createdAt)}
             {r.edited ? " · edited" : ""}
           </span>

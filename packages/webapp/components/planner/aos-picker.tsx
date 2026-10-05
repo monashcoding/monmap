@@ -2,7 +2,6 @@
 
 import { XIcon } from "lucide-react"
 import { useMemo } from "react"
-import posthog from "posthog-js"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { capture } from "@/lib/analytics"
 import type { AosSlot } from "@/lib/planner/aos-slots"
 import {
   computeAosSlotsWithRepeats,
@@ -82,7 +82,7 @@ export function AoSPicker() {
           campuses={campuses}
           current={state.campus}
           onChange={(campus) => {
-            posthog.capture("campus_selected", {
+            capture("campus_selected", {
               campus,
               course_code: course.code,
             })
@@ -116,7 +116,7 @@ export function AoSPicker() {
             onChange={(code) => {
               if (code) {
                 const selected = slot.options.find((o) => o.code === code)
-                posthog.capture("area_of_study_selected", {
+                capture("area_of_study_selected", {
                   aos_code: code,
                   aos_title: selected?.title,
                   aos_kind: slot.kind,

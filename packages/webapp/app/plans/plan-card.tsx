@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import posthog from "posthog-js"
 import { toast } from "sonner"
 import {
   BookOpenIcon,
@@ -28,13 +27,15 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import {
   deleteMyPlanAction,
   duplicateMyPlanAction,
-  hydrateUnitsAction,
   listMyGradesAction,
   renameMyPlanAction,
 } from "@/app/actions"
 
 import type { PlanPageData } from "./page"
+import { capture } from "@/lib/analytics"
+import { fetchUnits } from "@/lib/api/client"
 import { MAX_PLANS_PER_USER } from "@/lib/db/input"
+import { monashHandbookUrl } from "@/lib/handbook/links"
 import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
 import { PlanMap } from "@/components/planner/plan-map"
 import { useMediaQuery } from "@/hooks/use-mobile"
@@ -86,11 +87,11 @@ export function PlanCard({ data }: { data: PlanPageData }) {
     targetCp > 0 ? Math.round((totalCreditPoints / targetCp) * 100) : 0
 
   const handbookUrl = course
-    ? `https://handbook.monash.edu/${course.year}/courses/${course.code}`
+    ? monashHandbookUrl("course", course.code, course.year)
     : null
 
   function handleDelete() {
-    posthog.capture("plan_deleted", {
+    capture("plan_deleted", {
       course_code: course?.code,
       total_credit_points: totalCreditPoints,
       completion_pct: pct,
@@ -102,7 +103,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
   }
 
   function handleDuplicate() {
-    posthog.capture("plan_duplicated", {
+    capture("plan_duplicated", {
       course_code: course?.code,
       total_credit_points: totalCreditPoints,
     })
@@ -246,7 +247,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
                 className={buttonVariants({
                   variant: "ghost",
                   size: "sm",
-                  className: "h-8 gap-1.5 text-[11px]",
+                  className: "h-8 gap-1.5 text-[11px] max-sm:h-10",
                 })}
               >
                 <BookOpenIcon className="size-3.5" />
@@ -257,10 +258,10 @@ export function PlanCard({ data }: { data: PlanPageData }) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[11px]"
+              className="h-8 gap-1.5 text-[11px] max-sm:h-10"
               disabled={isPending}
               onClick={() => {
-                posthog.capture("plan_exported", {
+                capture("plan_exported", {
                   format: "csv",
                   course_code: course?.code,
                 })
@@ -278,7 +279,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
                     ]),
                   ]
                   const [hydrated, grades] = await Promise.all([
-                    hydrateUnitsAction(codes, plan.state.courseYear),
+                    fetchUnits(codes, plan.state.courseYear),
                     listMyGradesAction(),
                   ])
                   downloadBlob(
@@ -303,7 +304,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
               className={buttonVariants({
                 variant: "ghost",
                 size: "sm",
-                className: "h-8 gap-1.5 text-[11px]",
+                className: "h-8 gap-1.5 text-[11px] max-sm:h-10",
               })}
             >
               <PrinterIcon className="size-3.5" />
@@ -315,9 +316,10 @@ export function PlanCard({ data }: { data: PlanPageData }) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[11px]"
+              className="h-8 gap-1.5 text-[11px] max-sm:h-10"
               disabled={isPending}
               onClick={handleDuplicate}
+              aria-label="Duplicate plan"
             >
               <CopyIcon className="size-3.5" />
               <span className="hidden sm:inline">Duplicate</span>
@@ -325,16 +327,17 @@ export function PlanCard({ data }: { data: PlanPageData }) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 text-[11px] text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
+              className="h-8 gap-1.5 text-[11px] text-destructive/80 hover:bg-destructive/10 hover:text-destructive max-sm:h-10"
               disabled={isPending}
               onClick={() => setConfirmDelete(true)}
+              aria-label="Delete plan"
             >
               <Trash2Icon className="size-3.5" />
               <span className="hidden sm:inline">Delete</span>
             </Button>
             <Link
               href={`/?plan=${plan.id}`}
-              className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3 py-2 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3 py-2 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90 max-sm:h-10"
             >
               Edit plan
               <ChevronRightIcon className="size-3.5" />

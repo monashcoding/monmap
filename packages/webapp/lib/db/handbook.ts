@@ -40,6 +40,7 @@ import {
   curriculumUnitCodes,
   type CurriculumNode,
 } from "../handbook/curriculum-tree.ts"
+import { aosKind, kindFromCode } from "../handbook/kinds.ts"
 import type { EntityKind } from "../handbook/links.ts"
 import type { SearchTab, StudyLevel } from "../handbook/search-url.ts"
 import * as raw from "../handbook/raw.ts"
@@ -1121,34 +1122,12 @@ async function hydrateHits(
       creditPoints: a?.creditPoints ?? null,
       school: a?.school ?? null,
       studyLevel: a?.study ?? null,
-      detail: kind ? AOS_KIND_LABEL[kind] : null,
+      detail: aosKind(kind)?.label ?? null,
       snippet: plainText(a?.prose ?? null),
       periods: [],
       campuses: [],
     }
   })
-}
-
-/**
- * The 2027 handbook names AoS codes by kind (DASC-MAJ, DASC-MIN,
- * ALSO-USPEC). Used only when no course link says the kind, such as a
- * minor that courses list under "Elective studies".
- */
-export function kindFromCode(code: string): string | null {
-  if (/-E(X)?MAJ$/i.test(code)) return "extended_major"
-  if (/-MAJ$/i.test(code)) return "major"
-  if (/-MIN$/i.test(code)) return "minor"
-  if (/SPEC$/i.test(code)) return "specialisation"
-  return null
-}
-
-export const AOS_KIND_LABEL: Record<string, string> = {
-  major: "Major",
-  extended_major: "Extended major",
-  specialisation: "Specialisation",
-  minor: "Minor",
-  elective: "Elective",
-  other: "Area of study",
 }
 
 export interface SearchFacets {

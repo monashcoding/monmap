@@ -1,10 +1,11 @@
 /**
- * Checks on what a browser sends to the review server actions. Every
- * server action is a public POST endpoint, so these checks are what
- * stands between hostile input and the database. Kept free of
- * server-only imports so `node --test` can load it.
+ * Checks on what a browser sends to the review server actions and the
+ * /api/reviews and /api/ratings routes. Each is a public endpoint, so
+ * these checks are what stands between hostile input and the database.
+ * Kept free of server-only imports so `node --test` can load it.
  */
 
+import { normaliseEntityCode } from "../handbook/links.ts"
 import {
   BODY_MAX,
   BODY_MIN,
@@ -22,9 +23,7 @@ const MAX_OFFSET = 10_000
 
 /** An upper-cased unit, course or AoS code, or null if it can't be one. */
 export function cleanEntityCode(v: unknown): string | null {
-  if (typeof v !== "string") return null
-  const code = v.trim().toUpperCase()
-  return /^[A-Z0-9-]{2,16}$/.test(code) ? code : null
+  return typeof v === "string" ? normaliseEntityCode(v.trim()) : null
 }
 
 /** What the review form sends. */
@@ -38,8 +37,7 @@ export interface ReviewInput {
 }
 
 export type ParsedReview =
-  | { ok: true; value: ReviewInput }
-  | { ok: false; message: string }
+  { ok: true; value: ReviewInput } | { ok: false; message: string }
 
 /**
  * Validate and clean a review: a known kind and code, a whole overall

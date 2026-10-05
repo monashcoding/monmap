@@ -118,7 +118,14 @@ export default function RootLayout({
         <ThemeProvider>
           <PostHogIdentify />
           {children}
-          <Toaster position="bottom-right" richColors closeButton />
+          {/* Below 601px sonner uses mobileOffset; the toasts then clear the
+              48px Progress button. globals.css covers 601-767px. */}
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+            mobileOffset={{ bottom: 80 }}
+          />
         </ThemeProvider>
         <script
           type="application/ld+json"

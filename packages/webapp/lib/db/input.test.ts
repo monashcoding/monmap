@@ -2,8 +2,6 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
-  cleanCodes,
-  cleanCodesByYear,
   cleanGradeCode,
   cleanMark,
   cleanPlanName,
@@ -11,7 +9,6 @@ import {
   cleanTreeControls,
   cleanYear,
   isPlannerState,
-  MAX_HYDRATE_CODES,
   MAX_PLAN_STATE_CHARS,
 } from "./input.ts"
 import { containsPattern, likeEscape } from "./like.ts"
@@ -23,54 +20,6 @@ test("cleanYear accepts only handbook years in the database", () => {
   assert.equal(cleanYear("2019", YEARS), null)
   assert.equal(cleanYear(2026, YEARS), null)
   assert.equal(cleanYear("2026 ", YEARS), null)
-})
-
-test("cleanCodes drops junk, dedupes, sorts and caps", () => {
-  assert.deepEqual(
-    cleanCodes([
-      "FIT2004",
-      "FIT1045",
-      "FIT2004",
-      5,
-      "fit1008",
-      "x",
-      "A".repeat(25),
-    ]),
-    ["FIT1045", "FIT2004"]
-  )
-  assert.deepEqual(cleanCodes("FIT1045"), [])
-  assert.deepEqual(cleanCodes(["C", "B", "A2", "A1"], 2), ["A1", "A2"])
-})
-
-test("a course-sized hydrate (813 codes, E3002) is not truncated", () => {
-  const codes = Array.from({ length: 813 }, (_, i) => `ENG${1000 + i}`)
-  assert.equal(cleanCodes(codes).length, 813)
-  assert.equal(
-    cleanCodes(Array.from({ length: 5000 }, (_, i) => `U${i}X`)).length,
-    MAX_HYDRATE_CODES
-  )
-})
-
-test("cleanCodesByYear keeps known years and caps the total", () => {
-  const out = cleanCodesByYear(
-    { "2026": ["FIT1045", "bad"], "1999": ["FIT1008"], "2027": ["FIT2004"] },
-    YEARS
-  )
-  assert.deepEqual(Object.fromEntries(out), {
-    "2026": ["FIT1045"],
-    "2027": ["FIT2004"],
-  })
-  const capped = cleanCodesByYear(
-    { "2026": ["AA11", "AA12"], "2027": ["AA13", "AA14"] },
-    YEARS,
-    3
-  )
-  assert.deepEqual(Object.fromEntries(capped), {
-    "2026": ["AA11", "AA12"],
-    "2027": ["AA13"],
-  })
-  assert.equal(cleanCodesByYear(null, YEARS).size, 0)
-  assert.equal(cleanCodesByYear(["2026"], YEARS).size, 0)
 })
 
 test("cleanQuery trims and cuts search text", () => {

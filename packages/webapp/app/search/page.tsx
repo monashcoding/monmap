@@ -1,12 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import {
-  CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  XIcon,
-} from "lucide-react"
+import { CheckIcon, ChevronRightIcon, XIcon } from "lucide-react"
 
 import { EntityLink } from "@/components/handbook/entity-link"
 import { HandbookMain, KindBadge } from "@/components/handbook/frame"
@@ -15,6 +10,7 @@ import { MobileCollapsible } from "@/components/handbook/mobile-collapsible"
 import { loadRatings, ratingKey } from "@/components/handbook/ratings"
 import { SearchBox } from "@/components/handbook/search-box"
 import { YearSelect } from "@/components/handbook/year-select"
+import { Pagination } from "@/components/pagination"
 import { RatingInline } from "@/components/reviews/stars"
 import {
   listSearchFacets,
@@ -22,10 +18,9 @@ import {
   searchHandbook,
   type SearchHit,
 } from "@/lib/db/handbook"
-import { listAvailableYears } from "@/lib/db/queries"
+import { latestHandbookYear, listAvailableYears } from "@/lib/db/queries"
 import { entityHref, type EntityKind } from "@/lib/handbook/links"
 import {
-  FILTER_PERIODS,
   parseSearchState,
   searchHref,
   searchParamsOf,
@@ -33,7 +28,10 @@ import {
   type SearchState,
   type SearchTab,
 } from "@/lib/handbook/search-url"
-import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
+import {
+  PERIOD_KIND_LABEL,
+  PERIOD_KIND_ORDER,
+} from "@/lib/planner/teaching-period"
 import type { RatingSummary } from "@/lib/reviews/types"
 import { absoluteUrl } from "@/lib/seo"
 import { cn } from "@/lib/utils"
@@ -110,8 +108,10 @@ export default async function SearchPage({
     }
   }
 
-  const years = await listAvailableYears()
-  const latest = years.at(-1) ?? String(new Date().getFullYear())
+  const [years, latest] = await Promise.all([
+    listAvailableYears(),
+    latestHandbookYear(),
+  ])
   const state = parseSearchState(sp, years)
   const year = state.year ?? latest
 
@@ -312,7 +312,11 @@ export default async function SearchPage({
           )}
 
           {pageCount > 1 ? (
-            <Pagination state={state} pageCount={pageCount} />
+            <Pagination
+              page={state.page}
+              pageCount={pageCount}
+              href={(p) => searchHref(state, { page: p })}
+            />
           ) : null}
         </div>
       </div>
@@ -464,7 +468,7 @@ function Filters({
         <>
           <FilterGroup
             title="Teaching period"
-            options={FILTER_PERIODS.map((p) => ({
+            options={PERIOD_KIND_ORDER.map((p) => ({
               label: PERIOD_KIND_LABEL[p],
               active: state.period === p,
               href: searchHref(state, {
@@ -554,62 +558,5 @@ function FilterGroup({
         ))}
       </ul>
     </fieldset>
-  )
-}
-
-function Pagination({
-  state,
-  pageCount,
-}: {
-  state: SearchState
-  pageCount: number
-}) {
-  const current = state.page
-  const pages = new Set<number>([1, pageCount])
-  for (let p = current - 2; p <= current + 2; p++)
-    if (p > 1 && p < pageCount) pages.add(p)
-  const sorted = [...pages].sort((a, b) => a - b)
-  const href = (p: number) => searchHref(state, { page: p })
-  const btn =
-    "inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-control border bg-card px-3 text-sm hover:border-ring"
-  return (
-    <nav
-      aria-label="Pages"
-      className="flex flex-wrap items-center justify-center gap-1.5 pt-2"
-    >
-      {current > 1 ? (
-        <Link href={href(current - 1)} rel="prev" className={btn}>
-          <ChevronLeftIcon className="size-4" />
-          Previous
-        </Link>
-      ) : null}
-      {sorted.map((p, i) => (
-        <span key={p} className="flex items-center gap-1.5">
-          {i > 0 && p - sorted[i - 1] > 1 ? (
-            <span className="px-1 text-muted-foreground" aria-hidden>
-              ...
-            </span>
-          ) : null}
-          {p === current ? (
-            <span
-              aria-current="page"
-              className={cn(btn, "border-emphasis font-semibold")}
-            >
-              {p}
-            </span>
-          ) : (
-            <Link href={href(p)} className={btn}>
-              {p}
-            </Link>
-          )}
-        </span>
-      ))}
-      {current < pageCount ? (
-        <Link href={href(current + 1)} rel="next" className={btn}>
-          Next
-          <ChevronRightIcon className="size-4" />
-        </Link>
-      ) : null}
-    </nav>
   )
 }

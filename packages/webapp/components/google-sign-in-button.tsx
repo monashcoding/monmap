@@ -1,7 +1,6 @@
 "use client"
 
-import posthog from "posthog-js"
-
+import { capture } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 import { signIn } from "@/lib/auth-client"
 
@@ -34,7 +33,7 @@ export function GoogleSignInButton({
       onClick={(e) => {
         rest.onClick?.(e)
         if (e.defaultPrevented) return
-        posthog.capture("sign_in_initiated", {
+        capture("sign_in_initiated", {
           provider: "google",
           callback_url: callbackURL,
         })

@@ -5,11 +5,7 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import {
-  deleteReviewAction,
-  getMyReviewAction,
-  listReviewsAction,
-} from "@/app/review-actions"
+import { deleteReviewAction, getMyReviewAction } from "@/app/review-actions"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import {
   AlertDialog,
@@ -23,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { useHydrated } from "@/hooks/use-hydrated"
+import { fetchReviews } from "@/lib/api/client"
 import { useSession } from "@/lib/auth-client"
 import type { PublicReview, ReviewSort } from "@/lib/reviews/types"
 import type { ReviewKind } from "@/lib/reviews/axes"
@@ -133,12 +130,12 @@ export function ReviewsClient({
   const changeSort = (next: ReviewSort) => {
     setSort(next)
     startLoading(async () => {
-      setList(await listReviewsAction(kind, code, next, 0))
+      setList(await fetchReviews(kind, code, next, 0))
     })
   }
   const showMore = () =>
     startLoading(async () => {
-      const more = await listReviewsAction(kind, code, sort, list.length)
+      const more = await fetchReviews(kind, code, sort, list.length)
       setList((l) => {
         const seen = new Set(l.map((r) => r.id))
         return [...l, ...more.filter((r) => !seen.has(r.id))]

@@ -1,11 +1,11 @@
 /**
- * Checks for the arguments of the public server actions in
- * app/actions.ts. Server actions are POST endpoints anyone can call
- * with any JSON, and most of their reads are memoised per argument
- * list (memo.ts), so junk input must be dropped before it reaches a
- * query or becomes a cache key. Pure, so it is tested without a
- * database.
+ * Checks for the arguments of the server actions in app/actions.ts and
+ * the GET routes under app/api. Both are endpoints anyone can call with
+ * any input, and most of their reads are memoised per argument list
+ * (memo.ts), so junk input must be dropped before it reaches a query or
+ * becomes a cache key. Pure, so it is tested without a database.
  */
+import { PERIOD_KIND_ORDER } from "../planner/teaching-period.ts"
 import type { PlannerState } from "../planner/types.ts"
 import type { TreeControlsValue } from "../tree/payload.ts"
 import type { TreeDirection } from "../tree/types.ts"
@@ -18,12 +18,6 @@ const CODE = /^[A-Z0-9][A-Z0-9 -]{1,23}$/
 /** AoS codes, plus the virtual `C2001:part-d:slug` ones. */
 const AOS_CODE = /^[A-Za-z0-9:_.-]{2,160}$/
 
-/**
- * The most codes one hydrate call takes. The largest real course load
- * is about 813 unit codes (E3002, every AoS unit), so this leaves room
- * without letting one call read a whole handbook year.
- */
-export const MAX_HYDRATE_CODES = 3000
 /** Characters of search text kept; /search uses the same limit. */
 export const MAX_QUERY_LENGTH = 100
 /** Saved plans per account. */
@@ -40,38 +34,6 @@ export function isCode(v: unknown): v is string {
 /** `v` when it is one of the handbook years in the database. */
 export function cleanYear(v: unknown, years: readonly string[]): string | null {
   return typeof v === "string" && years.includes(v) ? v : null
-}
-
-/**
- * The valid codes in `v`, deduplicated and sorted (a stable memo key),
- * at most `max`. Invalid entries are dropped, not rewritten: the
- * planner matches results back to the codes it sent.
- */
-export function cleanCodes(v: unknown, max = MAX_HYDRATE_CODES): string[] {
-  if (!Array.isArray(v)) return []
-  return [...new Set(v.filter(isCode))].sort().slice(0, max)
-}
-
-/**
- * `{ year: codes }` keeping only known years, with at most `max` codes
- * across all of them.
- */
-export function cleanCodesByYear(
-  v: unknown,
-  years: readonly string[],
-  max = MAX_HYDRATE_CODES
-): Map<string, string[]> {
-  const out = new Map<string, string[]>()
-  if (!v || typeof v !== "object" || Array.isArray(v)) return out
-  let left = max
-  for (const [year, codes] of Object.entries(v)) {
-    if (!cleanYear(year, years) || left <= 0) continue
-    const list = cleanCodes(codes, left)
-    if (list.length === 0) continue
-    out.set(year, list)
-    left -= list.length
-  }
-  return out
 }
 
 /** Search text, trimmed and cut to `MAX_QUERY_LENGTH`. */
@@ -130,15 +92,7 @@ const isObj = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v)
 const optional = (v: unknown, type: "string" | "number" | "boolean") =>
   v === undefined || v === null || typeof v === type
-const PERIOD_KINDS = new Set([
-  "S1",
-  "S2",
-  "SUMMER_A",
-  "SUMMER_B",
-  "WINTER",
-  "FULL_YEAR",
-  "OTHER",
-])
+const PERIOD_KINDS = new Set<string>(PERIOD_KIND_ORDER)
 
 /**
  * Whether `v` has the shape of a PlannerState (packages/db

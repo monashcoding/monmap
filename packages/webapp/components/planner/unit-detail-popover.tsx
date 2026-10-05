@@ -4,7 +4,6 @@ import { CalendarIcon, ChevronDownIcon, InfoIcon } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { hydrateUnitsAction } from "@/app/actions"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
@@ -25,6 +24,7 @@ import {
 import { UnitDetailHeader } from "@/components/unit-detail/unit-detail-header"
 import { UnitSynopsis } from "@/components/unit-detail/unit-synopsis"
 import { useUnitText } from "@/components/unit-detail/use-unit-text"
+import { fetchUnits } from "@/lib/api/client"
 import { entityHref } from "@/lib/handbook/links"
 import { handbookYearFor } from "@/lib/planner/timeline"
 import {
@@ -96,7 +96,7 @@ export function UnitDetailPopover({
         collisionPadding={16}
         initialFocus={false}
         finalFocus={false}
-        className="max-h-[min(70svh,520px)] w-[min(520px,calc(100vw-2rem))] overflow-y-auto overscroll-none p-0 shadow-2xl ring-foreground/15 dark:ring-foreground/20"
+        className="max-h-[min(70svh,520px,var(--available-height))] w-[min(520px,calc(100vw-2rem))] overflow-y-auto overscroll-none p-0 shadow-2xl ring-foreground/15 dark:ring-foreground/20"
       >
         <UnitDetailView
           code={code}
@@ -201,11 +201,11 @@ export function UnitDetailView({
     if (fetchedKeyRef.current === key && otherYearData?.year === selectedYear) {
       return
     }
-    let cancelled = false
+    const controller = new AbortController()
     setLoading(true)
-    hydrateUnitsAction([code], selectedYear)
+    fetchUnits([code], selectedYear, controller.signal)
       .then((res) => {
-        if (cancelled) return
+        if (controller.signal.aborted) return
         fetchedKeyRef.current = key
         setOtherYearData({
           year: selectedYear,
@@ -215,7 +215,7 @@ export function UnitDetailView({
         })
       })
       .catch(() => {
-        if (cancelled) return
+        if (controller.signal.aborted) return
         setOtherYearData({
           year: selectedYear,
           unit: null,
@@ -224,11 +224,9 @@ export function UnitDetailView({
         })
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       })
-    return () => {
-      cancelled = true
-    }
+    return () => controller.abort()
   }, [active, usingCurrentYear, selectedYear, code, otherYearData?.year])
 
   const otherYearMatches =

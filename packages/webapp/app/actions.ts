@@ -3,15 +3,10 @@
 import { getClaims, getCurrentUser } from "@/lib/auth-server"
 import { getPostHogClient } from "@/lib/posthog-server"
 import {
-  cleanCodes,
-  cleanCodesByYear,
   cleanGradeCode,
   cleanMark,
   cleanPlanName,
-  cleanQuery,
-  cleanTreeControls,
   cleanYear,
-  isCode,
   isPlannerState,
   MAX_GRADES_PER_USER,
   MAX_PLANS_PER_USER,
@@ -23,218 +18,29 @@ import {
   deleteUserGrade,
   deleteUserPlan,
   duplicateUserPlan,
-  expandRequisiteGraph,
-  fetchCourseWithAoS,
-  fetchUnitText,
   getUserPlanById,
-  hydratePlannerUnits,
-  hydratePlannerUnitsMultiYear,
   listAvailableYears,
-  listCoursesForPicker,
   listUserGrades,
   listUserGradesWithTitles,
   listUserPlans,
   type PlanSummary,
   type UserGradeWithTitle,
   renameUserPlan,
-  searchUnits,
-  searchUnitsRich,
   updateUserPlanState,
   upsertUserGrade,
 } from "@/lib/db/queries"
 export type { PlanSummary, UserGradeWithTitle } from "@/lib/db/queries"
-import {
-  plannerUnitCodes,
-  type PlannerCourse,
-  type PlannerCourseWithAoS,
-  type PlannerOffering,
-  type PlannerState,
-  type PlannerUnit,
-  type RequisiteBlock,
-  type UnitText,
-} from "@/lib/planner/types"
+import type { PlannerState } from "@/lib/planner/types"
 import { defaultState } from "@/lib/planner/state"
-import type { TreeControlsValue, TreeGraphPayload } from "@/lib/tree/payload"
-import { EMPTY_TREE_PAYLOAD, prefetchTreeData } from "@/lib/tree/prefetch"
-import type { TreeEdge } from "@/lib/tree/types"
 import { redirect } from "next/navigation"
 
 /*
  * Every export here is a public POST endpoint that anyone can call with
  * any arguments, so each one checks its input (lib/db/input.ts) before
- * it queries. Bad input gets an empty result, not an error, so a stale
- * client still renders.
+ * it queries. These are the writes and the per-user reads; the public
+ * handbook reads are GET routes under app/api, which the browser can
+ * cache and run in parallel.
  */
-
-/** `year` when it is a handbook year in the database. */
-async function knownYear(year: unknown): Promise<string | null> {
-  return cleanYear(year, await listAvailableYears())
-}
-
-interface Hydrated {
-  units: Record<string, PlannerUnit>
-  offerings: Record<string, PlannerOffering[]>
-  requisites: Record<string, RequisiteBlock[]>
-}
-
-const NOTHING_HYDRATED: Hydrated = { units: {}, offerings: {}, requisites: {} }
-
-/** Plain objects, so Next.js can serialise the maps to the client. */
-function plain(h: Awaited<ReturnType<typeof hydratePlannerUnits>>): Hydrated {
-  return {
-    units: Object.fromEntries(h.units),
-    offerings: Object.fromEntries(h.offerings),
-    requisites: Object.fromEntries(h.requisites),
-  }
-}
-
-export async function loadCourseAction(
-  code: string,
-  year: string
-): Promise<PlannerCourseWithAoS | null> {
-  const y = await knownYear(year)
-  if (!y || !isCode(code)) return null
-  return fetchCourseWithAoS(code, y)
-}
-
-/**
- * Everything the planner needs after a year or plan switch, in one
- * round trip: the course list (when `withCourses`), the course, and
- * unit data for every unit the course can place. The course list and
- * the course load in parallel.
- */
-export async function loadPlannerYearAction(
-  year: string,
-  courseCode: string | null,
-  opts?: { withCourses?: boolean }
-): Promise<
-  {
-    courses: PlannerCourse[] | null
-    course: PlannerCourseWithAoS | null
-  } & Hydrated
-> {
-  const y = await knownYear(year)
-  if (!y) return { courses: null, course: null, ...NOTHING_HYDRATED }
-  const [courses, course] = await Promise.all([
-    opts?.withCourses ? listCoursesForPicker(null, 500, y) : null,
-    isCode(courseCode) ? fetchCourseWithAoS(courseCode, y) : null,
-  ])
-  if (!course) return { courses, course: null, ...NOTHING_HYDRATED }
-  const hydrated = await hydratePlannerUnits(plannerUnitCodes(course), y)
-  return { courses, course, ...plain(hydrated) }
-}
-
-export async function searchUnitsAction(
-  query: string,
-  year: string
-): Promise<PlannerUnit[]> {
-  const y = await knownYear(year)
-  const q = cleanQuery(query)
-  if (!y || !q) return []
-  return searchUnits(q, 25, y)
-}
-
-/**
- * Smart search: text-match a wider candidate pool and bundle every
- * candidate's offerings + requisites so the client can rerank with
- * personalization signals (slot fit, prereq readiness, AoS membership)
- * without a second roundtrip. `rank` preserves the server-side
- * text-match order keyed by code so the client can use it as a
- * tiebreaker.
- */
-export async function searchUnitsRichAction(
-  query: string,
-  year: string
-): Promise<Hydrated & { rank: Record<string, number> }> {
-  const y = await knownYear(year)
-  const q = cleanQuery(query)
-  if (!y || !q) return { ...NOTHING_HYDRATED, rank: {} }
-  const { rank, ...hydrated } = await searchUnitsRich(q, y)
-  return { ...plain(hydrated), rank: Object.fromEntries(rank) }
-}
-
-export async function listCoursesAction(
-  search: string | null,
-  year: string
-): Promise<PlannerCourse[]> {
-  const y = await knownYear(year)
-  if (!y) return []
-  return listCoursesForPicker(cleanQuery(search) || null, 500, y)
-}
-
-/**
- * Hydrate units across multiple handbook years in one server round-trip.
- * codesByYear maps handbook year → unit codes to fetch from that year.
- */
-export async function hydrateUnitsMultiYearAction(
-  codesByYear: Record<string, string[]>
-): Promise<Hydrated> {
-  const byYear = cleanCodesByYear(codesByYear, await listAvailableYears())
-  if (byYear.size === 0) return NOTHING_HYDRATED
-  return plain(await hydratePlannerUnitsMultiYear(byYear))
-}
-
-export async function hydrateUnitsAction(
-  codes: string[],
-  year: string
-): Promise<Hydrated> {
-  const y = await knownYear(year)
-  const list = cleanCodes(codes)
-  if (!y || list.length === 0) return NOTHING_HYDRATED
-  return plain(await hydratePlannerUnits(list, y))
-}
-
-/** One unit and its equivalents: what one detail panel shows. */
-const MAX_TEXT_CODES = 12
-
-/**
- * The synopsis and enrolment rules of the unit a detail panel opens
- * (and its equivalents). Every other payload leaves this prose out.
- */
-export async function fetchUnitTextAction(
-  codes: string[],
-  year: string
-): Promise<Record<string, UnitText>> {
-  const y = await knownYear(year)
-  const list = cleanCodes(codes, MAX_TEXT_CODES)
-  if (!y || list.length === 0) return {}
-  return fetchUnitText(list, y)
-}
-
-/**
- * The requisite graph for the current controls, with every unit's
- * data, offerings, structured rules and enrolment gates. The
- * handbook pages render the first paint with the same function.
- */
-export async function fetchTreeDataAction(
-  controls: TreeControlsValue
-): Promise<TreeGraphPayload> {
-  const clean = cleanTreeControls(controls, await listAvailableYears())
-  return clean ? prefetchTreeData(clean) : EMPTY_TREE_PAYLOAD
-}
-
-/**
- * The prerequisite links between a fixed set of units, for the
- * planner's read-only map of a plan: no closure walk (depth 0), so
- * only the plan's own units (and any requirement units the caller
- * adds) come back, with their titles.
- */
-export async function fetchPlanGraphAction(
-  codes: string[],
-  year: string
-): Promise<{ edges: TreeEdge[]; units: Record<string, PlannerUnit> }> {
-  const y = await knownYear(year)
-  const unique = cleanCodes(codes, 400)
-  if (!y || unique.length === 0) return { edges: [], units: {} }
-  const [graph, hydrated] = await Promise.all([
-    expandRequisiteGraph(unique, y, "both", 0),
-    hydratePlannerUnits(unique, y),
-  ])
-  return {
-    edges: graph.edges,
-    units: Object.fromEntries(hydrated.units),
-  }
-}
 
 /* ------------------------------------------------------------------ *
  * Per-user plan persistence (multi-plan)

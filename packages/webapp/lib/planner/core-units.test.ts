@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { coreUnitCodes, unitIsCore } from "./core-units.ts"
+import { coreUnitCodes } from "./core-units.ts"
 import type { PlannerCourseWithAoS } from "./types.ts"
 
 const group = (
@@ -51,7 +51,7 @@ test("core: a proven-mandatory course group marks its units", () => {
       group("Engineering fundamentals", ["ENG1014", "ENG1005"]),
     ],
   })
-  assert.equal(unitIsCore("ENG1014", c, new Set()), true)
+  assert.equal(coreUnitCodes(c, new Set()).has("ENG1014"), true)
 })
 
 test("core: a choice group does NOT mark its units (E3001 breadth, 1 of 21)", () => {
@@ -65,7 +65,7 @@ test("core: a choice group does NOT mark its units (E3001 breadth, 1 of 21)", ()
       ),
     ],
   })
-  assert.equal(unitIsCore("CHM1011", c, new Set()), false)
+  assert.equal(coreUnitCodes(c, new Set()).has("CHM1011"), false)
 })
 
 test('core: a "core"-titled pick-one list is not core (ECSYSENG04 Core List B)', () => {
@@ -78,7 +78,7 @@ test('core: a "core"-titled pick-one list is not core (ECSYSENG04 Core List B)',
       ]),
     ],
   })
-  assert.equal(unitIsCore("ECE5882", c, new Set(["ECSYSENG04"])), false)
+  assert.equal(coreUnitCodes(c, new Set(["ECSYSENG04"])).has("ECE5882"), false)
 })
 
 test("core: an AoS counts only once the student picks it", () => {
@@ -87,9 +87,9 @@ test("core: an AoS counts only once the student picks it", () => {
       aos("ROBMCTRN04", [group("Part C", ["MMA2005", "ENG2005"])]),
     ],
   })
-  assert.equal(unitIsCore("MMA2005", c, new Set()), false, "not picked")
+  assert.equal(coreUnitCodes(c, new Set()).has("MMA2005"), false, "not picked")
   assert.equal(
-    unitIsCore("MMA2005", c, new Set(["ROBMCTRN04"])),
+    coreUnitCodes(c, new Set(["ROBMCTRN04"])).has("MMA2005"),
     true,
     "picked"
   )
@@ -109,16 +109,16 @@ test("core: a component's mandatory group marks units in a double degree", () =>
       },
     ] as PlannerCourseWithAoS["componentCourses"],
   })
-  assert.equal(unitIsCore("ENG1013", c, new Set()), true)
+  assert.equal(coreUnitCodes(c, new Set()).has("ENG1013"), true)
 })
 
 test("core: legacy rows with no autoLoad fall back to the credit-point rule", () => {
   const c = course({ courseRequirements: [group("Core units", ["FIT1045"])] })
-  assert.equal(unitIsCore("FIT1045", c, new Set()), true)
+  assert.equal(coreUnitCodes(c, new Set()).has("FIT1045"), true)
   const choice = course({
     courseRequirements: [group("Pick one", ["FIT1049", "FIT1055"], 1)],
   })
-  assert.equal(unitIsCore("FIT1049", choice, new Set()), false)
+  assert.equal(coreUnitCodes(choice, new Set()).has("FIT1049"), false)
 })
 
 test("coreUnitCodes: mandatory options of the course and the picked AoS only", () => {

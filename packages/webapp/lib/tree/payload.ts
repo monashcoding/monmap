@@ -1,8 +1,9 @@
 /**
- * Server ↔ client payload types for the Tree page.
+ * Server ↔ client payload types for the requisite graph on the
+ * handbook pages.
  *
- * Kept in its own module so both the server action and the client
- * orchestrator can import it without dragging in component code.
+ * Kept in its own module so both the /api/tree route and the client
+ * graph can import it without dragging in component code.
  */
 
 import type {

@@ -6,12 +6,7 @@ import {
   countRecentReviews,
   deleteUserReview,
   getUserReview,
-  listPublicReviews,
   type PublicReview,
-  type RatingSummary,
-  ratingSummaries,
-  REVIEW_PAGE_SIZE,
-  type ReviewSort,
   setReviewStatus,
   shadowbanAuthorOf,
   upsertReview,
@@ -22,8 +17,6 @@ import { moderateReview } from "@/lib/reviews/classifier"
 import { reviewInitials } from "@/lib/reviews/initials"
 import {
   cleanEntityCode,
-  cleanListParams,
-  MAX_RATING_CODES,
   parseReviewInput,
   type ReviewInput,
   sameReviewContent,
@@ -32,8 +25,10 @@ import { takeReviewWrite } from "@/lib/reviews/rate-limit"
 import { revalidateReviewPages } from "@/lib/reviews/revalidate"
 
 /**
- * Server actions for reviews. Every response carries only what the
- * public pages show (initials, never a name, email or user id). The
+ * Server actions for reviews: writes, moderation and the reads that
+ * depend on the session. The public lists and ratings are GET routes
+ * (app/api/reviews, app/api/ratings). Every response carries only what
+ * the public pages show (initials, never a name, email or user id). The
  * author's own review comes back without its status, so a flagged or
  * shadowbanned review looks published to them. Input checks live in
  * lib/reviews/input.ts, where they are tested.
@@ -55,33 +50,6 @@ export async function getMyReviewAction(
     signedIn: true,
     review: await getUserReview(claims.macUserId, kind, code),
   }
-}
-
-export async function listReviewsAction(
-  kind: ReviewKind,
-  rawCode: string,
-  sort: ReviewSort,
-  offset: number
-): Promise<PublicReview[]> {
-  const code = cleanEntityCode(rawCode)
-  if (!isReviewKind(kind) || !code) return []
-  return listPublicReviews(kind, code, {
-    ...cleanListParams(sort, offset),
-    limit: REVIEW_PAGE_SIZE,
-  })
-}
-
-/** Overall ratings for up to 300 codes, for lists rendered in the browser. */
-export async function ratingSummariesAction(
-  kind: ReviewKind,
-  codes: string[]
-): Promise<Record<string, RatingSummary>> {
-  if (!isReviewKind(kind) || !Array.isArray(codes)) return {}
-  const clean = codes
-    .slice(0, MAX_RATING_CODES)
-    .map(cleanEntityCode)
-    .filter((c): c is string => c != null)
-  return ratingSummaries(kind, clean)
 }
 
 export type SaveReviewResult =

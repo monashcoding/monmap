@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react"
 import { PlusIcon } from "lucide-react"
-import posthog from "posthog-js"
 
 import {
   Dialog,
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { createBlankPlanAction } from "@/app/actions"
+import { capture } from "@/lib/analytics"
 
 /**
  * "New plan" CTA for the /plans page. Renders a year-picker dialog
@@ -50,7 +50,7 @@ export function NewPlanButton({
     const fd = new FormData()
     if (year) fd.set("year", year)
     fd.set("name", "New plan")
-    posthog.capture("plan_created", { handbook_year: year })
+    capture("plan_created", { handbook_year: year })
     startTransition(async () => {
       await createBlankPlanAction(fd)
     })

@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react"
 
-import { fetchUnitTextAction } from "@/app/actions"
+import { fetchUnitText } from "@/lib/api/client"
 import type { UnitText } from "@/lib/planner/types"
 
 /**
@@ -30,7 +30,7 @@ function notify() {
   for (const l of listeners) l()
 }
 
-// fetchUnitTextAction answers at most this many codes per call.
+// /api/units/text answers at most this many codes per request.
 const MAX_CODES_PER_REQUEST = 12
 
 function request(codes: readonly string[], year: string) {
@@ -47,7 +47,7 @@ function requestBatch(missing: string[], year: string) {
     inFlight.add(key(year, c))
     failed.delete(key(year, c))
   }
-  void fetchUnitTextAction(missing, year)
+  void fetchUnitText(missing, year)
     .then((found) => {
       for (const c of missing) {
         if (cache.size >= MAX_ENTRIES) {

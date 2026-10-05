@@ -3,7 +3,7 @@
 import { useEffect, useRef, useTransition } from "react"
 import { toast } from "sonner"
 
-import { hydrateUnitsMultiYearAction } from "@/app/actions"
+import { fetchUnitsByYear, isAbortError } from "@/lib/api/client"
 import { codesToHydrate, emptyKey } from "@/lib/planner/hydration"
 import type { PlannerState } from "@/lib/planner/types"
 import type { UnitBundle, UnitMaps } from "@/lib/planner/unit-cache"
@@ -27,6 +27,9 @@ interface Params {
  * returns from an earlier year (`fallbackFor`, counted as fresh) and a
  * code with no row at all. The second is remembered per (year, code)
  * in `emptyRef` and not requested again.
+ *
+ * A re-run aborts the request in flight and asks again for the codes
+ * that are still missing.
  */
 export function useUnitDataHydration({
   state,
@@ -54,21 +57,23 @@ export function useUnitDataHydration({
 
     if (codesByYear.size === 0) return
 
+    const controller = new AbortController()
     startTransition(async () => {
       try {
-        const res = await hydrateUnitsMultiYearAction(
-          Object.fromEntries(codesByYear)
-        )
+        const res = await fetchUnitsByYear(codesByYear, controller.signal)
+        if (controller.signal.aborted) return
         for (const [year, codes] of codesByYear)
           for (const code of codes)
             if (!res.units[code]) emptyRef.current.add(emptyKey(year, code))
         mergeUnitData(res, [...codesByYear.values()].flat())
       } catch (err) {
+        if (isAbortError(err)) return
         toast.error("Couldn't load unit details", {
           description: err instanceof Error ? err.message : "Unknown error",
         })
       }
     })
+    return () => controller.abort()
   }, [
     state.years,
     state.credit,

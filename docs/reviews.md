@@ -96,7 +96,8 @@ with no reviews:
   the course card, the map's unit panel and the plan map's unit card.
   These load through
   `components/reviews/use-ratings.ts`, which batches every request on
-  the page into one server action per kind.
+  the page into one GET request to `/api/ratings` per kind. The browser
+  caches the answer for 60 seconds.
 
 ## Caching
 

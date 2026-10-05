@@ -519,6 +519,12 @@ of tags, `href` only on links and only to http, https, mailto or
 relative URLs. Do not strip tags beyond that; some fields rely on them
 for line breaks.
 
+The planner and requisite-graph payloads leave the synopsis and the
+enrolment rules out. The unit detail panels load them when they open
+(`/api/units/text`, `components/unit-detail/use-unit-text.ts`) and
+render them through `rewriteHandbookHtml`, which sanitises the HTML and
+points handbook links at MonMap pages.
+
 ## Corpus shape (2026, pre-reingest of A4/A7/A10 fixes)
 
 A 2026 snapshot. The database now holds handbook years 2020–2027.

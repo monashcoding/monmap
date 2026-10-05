@@ -27,7 +27,8 @@ test("entity codes are trimmed, upper-cased and checked", () => {
   assert.equal(cleanEntityCode(" fit1045 "), "FIT1045")
   assert.equal(cleanEntityCode("c2001"), "C2001")
   assert.equal(cleanEntityCode("SFTWRENG-08"), "SFTWRENG-08")
-  for (const bad of ["", "A", "A".repeat(17), "FIT 1045", "../x", 42, null]) {
+  assert.equal(cleanEntityCode("m6011 m6019"), "M6011 M6019")
+  for (const bad of ["", "A", "A".repeat(17), "FIT  1045", "../x", 42, null]) {
     assert.equal(cleanEntityCode(bad), null, String(bad))
   }
 })

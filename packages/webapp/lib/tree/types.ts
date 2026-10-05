@@ -1,7 +1,8 @@
 /**
- * Domain types for the Unit Tree page.
+ * Domain types for the requisite graph on the handbook pages and the
+ * planner's plan map.
  *
- * The Tree visualizes the prerequisite/corequisite/prohibition graph
+ * The graph shows the prerequisite/corequisite/prohibition graph
  * between units. Edges come from the flat `requisite_refs` table —
  * which loses AND/OR semantics by design. For gate semantics we hand
  * the focused node's structured rule to the planner's existing
@@ -50,7 +51,11 @@ export interface TreeNode {
   isSeed: boolean
   /** Whether the unit has a non-trivial enrolment-rule gate. */
   hasEnrolmentGate: boolean
-  /** Compact period badge: 'S1' | 'S2' | 'S1+S2' | 'Su' | 'FY' | null. */
+  /**
+   * Compact period badge: 'FY', 'S1-S2', 'S1', 'S2', or the
+   * PERIOD_KIND_SHORT of another kind ('SumA', 'Win', ...). Null when
+   * the unit has no offerings.
+   */
   periodBadge: string | null
   /**
    * Plan placement: 'completed' | 'placed' | null. 'untaken' marks a
@@ -74,17 +79,4 @@ export interface FocusedUnitDetail {
   requisites: RequisiteBlock[]
   /** Codes the student already has in their plan (for ✓ marks). */
   completed: ReadonlySet<string>
-}
-
-/**
- * Visual partition for grouping nodes inside the canvas. The course-
- * mode view uses partitions to separate Part A spine vs the chosen
- * major's core/elective. Unit mode uses a single "All" partition.
- */
-export interface TreePartition {
-  id: string
-  /** Human-readable, e.g. "Part A — Specified studies". */
-  label: string
-  /** Codes belonging to this partition. */
-  codes: string[]
 }

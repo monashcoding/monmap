@@ -20,12 +20,12 @@ against the Monash handbook, flags what doesn't fit, shows what your
 course requirements still need, and keeps a running WAM. Every unit,
 course and major also has its own page with student reviews and a
 requisite map. Sign in to save plans across devices, or use it
-anonymously and export to JSON.
+anonymously (the plan stays in your browser) and export it to CSV.
 
 ## Features
 
-- **Quick unit search.** Two-pane layout with slot-fit hints and a
-  recent-units rail so common picks are one click away.
+- **Quick unit search.** Two-pane layout with slot-fit hints and
+  suggestions from your course, so common picks are one click away.
 - **Student reviews.** Rate units, courses and majors on teaching,
   content, assessment, difficulty and workload. Reviews show initials
   only, and a classifier screens out abuse, spam and personal details
@@ -34,8 +34,8 @@ anonymously and export to JSON.
   of study from 2020 to 2027, with a requisite map of what each unit
   needs and unlocks, and one search over all of them
   ([details](docs/handbook-pages.md)).
-- **Plans you own.** Export, re-import, print, or share. Your data
-  travels with you.
+- **Plans you own.** Export to CSV or print. Your data travels with
+  you.
 - **Faithful handbook coverage.** Cross-year prereqs, honours track
   variations, and the trickier offering rules are all modelled
   explicitly.
@@ -148,10 +148,15 @@ pnpm db:studio                   # open drizzle-kit's db browser
 
 pnpm --filter webapp test        # pure-function unit tests (node --test)
 pnpm --filter webapp typecheck
+pnpm lint                        # eslint over the webapp
 
 pnpm ingest                      # load a single year (default 2026) from ./packages/scraper/data
 pnpm ingest:all                  # load every year present in the data dir
 ```
+
+CI (the `verify` job in `.github/workflows/deploy.yml`) runs `pnpm lint`,
+`pnpm typecheck`, `pnpm test` and a critical-advisory `pnpm audit` on
+every push to `main`, and builds the Docker image only when they pass.
 
 > `drizzle-kit push` is deliberately not wired up. Schema changes go
 > through `db:generate` + `db:migrate` so the history stays auditable

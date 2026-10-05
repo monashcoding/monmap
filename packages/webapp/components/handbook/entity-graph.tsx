@@ -3,7 +3,6 @@
 import { LoaderCircleIcon, Maximize2Icon, XIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { fetchTreeDataAction } from "@/app/actions"
 import { TreeGraph } from "@/components/tree/tree-graph"
 import { TreeSidePanel } from "@/components/tree/tree-side-panel"
 import { useTreeModel } from "@/components/tree/use-tree-model"
@@ -25,6 +24,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { fetchTreeData } from "@/lib/api/client"
+import { aosKind } from "@/lib/handbook/kinds"
 import { entityHref } from "@/lib/handbook/links"
 import type { TreeGraphPayload } from "@/lib/tree/payload"
 
@@ -35,14 +36,6 @@ export interface GraphAosOption {
 }
 
 const ALL = "__all__"
-
-const KIND_SHORT: Record<string, string> = {
-  major: "Major",
-  extended_major: "Ext major",
-  specialisation: "Spec",
-  minor: "Minor",
-  elective: "Elective",
-}
 
 /**
  * The requisite map on a unit, course or area of study page: the same
@@ -80,23 +73,29 @@ export function EntityGraph({
   const courseCode = course?.code ?? null
   useEffect(() => {
     if (!courseCode || aosCode == null) return
-    let cancelled = false
-    void fetchTreeDataAction({
-      mode: "course",
-      courseCode,
-      aosCode: aosCode === ALL ? null : aosCode,
-      unitCode: null,
-      direction: "upstream",
-      year,
-    }).then((data) => {
-      if (cancelled) return
-      setPayload(data)
-      setFocused(null)
-      setLoading(false)
-    })
-    return () => {
-      cancelled = true
-    }
+    const controller = new AbortController()
+    fetchTreeData(
+      {
+        mode: "course",
+        courseCode,
+        aosCode: aosCode === ALL ? null : aosCode,
+        unitCode: null,
+        direction: "upstream",
+        year,
+      },
+      controller.signal
+    )
+      .then((data) => {
+        if (controller.signal.aborted) return
+        setPayload(data)
+        setFocused(null)
+        setLoading(false)
+      })
+      .catch(() => {
+        // Keep the current graph; stop the spinner.
+        if (!controller.signal.aborted) setLoading(false)
+      })
+    return () => controller.abort()
   }, [courseCode, aosCode, year])
 
   const { nodes, edges, variantCounts, detail } = useTreeModel(payload, focused)
@@ -152,7 +151,7 @@ export function EntityGraph({
                   <SelectItem key={a.code} value={a.code}>
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="inline-flex shrink-0 rounded-tag bg-muted px-1.5 py-0.5 text-[9px] font-bold tracking-wider whitespace-nowrap text-muted-foreground! uppercase">
-                        {KIND_SHORT[a.kind] ?? "Other"}
+                        {aosKind(a.kind)?.short ?? "Other"}
                       </span>
                       <span className="text-[12px] whitespace-normal">
                         {a.title}

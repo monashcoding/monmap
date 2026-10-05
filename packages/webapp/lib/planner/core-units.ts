@@ -32,15 +32,6 @@ export function coreUnitCodes(
   return out
 }
 
-/** Is this one unit core? See coreUnitCodes. */
-export function unitIsCore(
-  code: string,
-  course: PlannerCourseWithAoS | null,
-  pickedAosCodes: ReadonlySet<string>
-): boolean {
-  return coreUnitCodes(course, pickedAosCodes).has(code)
-}
-
 /**
  * Every requirement group of a course: its own, each component
  * degree's, and its areas of study's — only the picked ones when

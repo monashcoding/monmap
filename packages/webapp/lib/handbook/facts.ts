@@ -8,6 +8,7 @@ import type {
   UnitPageData,
 } from "../db/handbook.ts"
 import { PERIOD_KIND_LABEL } from "../planner/teaching-period.ts"
+import { unitLevel } from "../planner/unit-level.ts"
 import { stripHtml } from "../seo.ts"
 import type {
   AosFacts,
@@ -43,10 +44,6 @@ function semesterHours(u: UnitPageData): number | null {
       /(\d{2,3})\s*hours?\s*(?:per|a|each|in the|across the)\s*(?:teaching\s+)?semester/i
     ) ?? text.match(/total[^.]*?(\d{2,3})\s*hours/i)
   return m ? Number(m[1]) : null
-}
-
-export function levelNumber(level: string | null): string | null {
-  return level?.match(/\d+/)?.[0] ?? null
 }
 
 /** "Bachelor Degree" from "Level 7 - Bachelor Degree / Level 7 - ...". */
@@ -98,13 +95,12 @@ export function unitFacts(
   const periods = [...new Set(u.offerings.map((o) => o.periodKind))]
     .filter((k) => k !== "OTHER")
     .map((k) => PERIOD_KIND_LABEL[k])
-  const lvl = levelNumber(u.level)
   return {
     code: u.code,
     title: u.title,
     year: u.year,
     creditPoints: u.creditPoints,
-    level: lvl ? Number(lvl) : null,
+    level: unitLevel(u.level),
     study: u.undergradPostgrad,
     school: u.school,
     periods,

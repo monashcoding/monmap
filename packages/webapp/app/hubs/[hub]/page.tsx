@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 
 import { HubPage, type HubGroup } from "@/components/handbook/hub-page"
 import { listCurrentAos, listCurrentCourses } from "@/lib/db/handbook"
-import { listAvailableYears } from "@/lib/db/queries"
+import { latestHandbookYear } from "@/lib/db/queries"
 import { qualification } from "@/lib/handbook/facts"
 import { aosKind, type AosKind } from "@/lib/handbook/kinds"
 
@@ -64,10 +64,6 @@ export default async function HubRoute({ params }: Props) {
   notFound()
 }
 
-async function latestYear(): Promise<string> {
-  return (await listAvailableYears()).at(-1) ?? String(new Date().getFullYear())
-}
-
 // Undergraduate first, then honours, then postgraduate.
 const ORDER = [
   "Diploma",
@@ -86,7 +82,7 @@ const ORDER = [
 async function CoursesHub() {
   const [courses, year] = await Promise.all([
     listCurrentCourses(),
-    latestYear(),
+    latestHandbookYear(),
   ])
   const byGroup = new Map<string, typeof courses>()
   for (const c of courses) {
@@ -139,7 +135,10 @@ const AOS_GROUPS: Array<{ kind: AosKind; label?: string }> = [
 ]
 
 async function AosHub() {
-  const [aos, year] = await Promise.all([listCurrentAos(), latestYear()])
+  const [aos, year] = await Promise.all([
+    listCurrentAos(),
+    latestHandbookYear(),
+  ])
   const groups: HubGroup[] = AOS_GROUPS.map(({ kind, label }) => ({
     id: kind.replace("_", "-"),
     label: label ?? aosKind(kind)!.plural,

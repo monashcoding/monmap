@@ -2,15 +2,18 @@
 
 import { useEffect, useSyncExternalStore } from "react"
 
-import { ratingSummariesAction } from "@/app/review-actions"
+import { fetchRatings } from "@/lib/api/client"
+import { chunkCodes } from "@/lib/api/query"
 import { NO_RATINGS, type RatingSummary } from "@/lib/reviews/types"
 import type { ReviewKind } from "@/lib/reviews/axes"
 
 /**
  * Overall ratings for lists drawn in the browser (the planner's unit
  * search, popovers and map panel). Requests from every component on
- * the page within 30 ms go out as one server action per kind, and
- * results are kept for 5 minutes.
+ * the page within 30 ms go out as one GET request per kind (more for
+ * over 300 codes), and results are kept for 5 minutes. Codes are sorted
+ * before they are split, so the same codes give the same URLs and the
+ * browser cache can answer.
  */
 
 const TTL_MS = 5 * 60 * 1000
@@ -48,10 +51,8 @@ function flush() {
   const batches = [...queued]
   queued.clear()
   for (const [kind, set] of batches) {
-    const codes = [...set]
-    for (let i = 0; i < codes.length; i += CHUNK) {
-      const chunk = codes.slice(i, i + CHUNK)
-      void ratingSummariesAction(kind, chunk)
+    for (const chunk of chunkCodes(set, CHUNK)) {
+      void fetchRatings(kind, chunk)
         .then((found) => {
           const at = Date.now()
           for (const code of chunk) {

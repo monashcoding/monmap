@@ -3,7 +3,12 @@ import assert from "node:assert/strict"
 
 // resolve.ts itself imports next/navigation and the database, so the
 // rules it applies live in links.ts and are tested here.
-import { isCurrent, parseEntityUrl, planEntityPage } from "./links.ts"
+import {
+  isCurrent,
+  normaliseEntityCode,
+  parseEntityUrl,
+  planEntityPage,
+} from "./links.ts"
 
 const YEARS = ["2024", "2025", "2026", "2027"]
 
@@ -41,6 +46,16 @@ test("the combined course code with a space goes on", () => {
     action: "ok",
     code: "M6011 M6019",
   })
+})
+
+test("normaliseEntityCode upper-cases and checks the code shape", () => {
+  assert.equal(normaliseEntityCode("fit1045"), "FIT1045")
+  assert.equal(normaliseEntityCode("SFTWRENG-08"), "SFTWRENG-08")
+  assert.equal(normaliseEntityCode("m6011 m6019"), "M6011 M6019")
+  for (const bad of ["", "X", " FIT1045", "FIT  1045", "A B C", "../x"]) {
+    assert.equal(normaliseEntityCode(bad), null, bad)
+  }
+  assert.equal(normaliseEntityCode("A".repeat(17)), null)
 })
 
 test("junk codes and years are a 404", () => {

@@ -11,9 +11,9 @@
 
 import { sanitizeHandbookHtml } from "./sanitize.ts"
 
-type Obj = Record<string, unknown>
+export type Obj = Record<string, unknown>
 
-function isObj(v: unknown): v is Obj {
+export function isObj(v: unknown): v is Obj {
   return typeof v === "object" && v !== null && !Array.isArray(v)
 }
 
@@ -40,7 +40,7 @@ export function html(v: unknown): string | null {
   return visible ? clean : null
 }
 
-function num(v: unknown): number | null {
+export function num(v: unknown): number | null {
   if (v == null || v === "") return null
   const n = Number(v)
   return Number.isFinite(n) ? n : null

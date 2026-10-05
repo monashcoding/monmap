@@ -9,9 +9,9 @@ import {
   useRef,
   useState,
 } from "react"
-import posthog from "posthog-js"
 
 import { migrateMyGradesAction, setMyGradeAction } from "@/app/actions"
+import { capture } from "@/lib/analytics"
 import { computeGpa, computeWam, type GradedUnit } from "@/lib/planner/grades"
 import { STANDARD_CP } from "@/lib/planner/types"
 
@@ -142,7 +142,7 @@ export function WamProvider({
 
   const toggleShowResults = useCallback(() => {
     setShowResults((v) => {
-      posthog.capture("results_mode_toggled", { enabled: !v })
+      capture("results_mode_toggled", { enabled: !v })
       try {
         localStorage.setItem(SHOW_RESULTS_KEY, v ? "0" : "1")
       } catch {

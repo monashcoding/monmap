@@ -24,6 +24,9 @@ MonMap URL by changing the domain.
 - An unknown code is a 404.
 - `/search?unit=`, `?course=` and `?aos=` (the old search screen's links)
   redirect to the matching page. `/tree` redirects to `/search`.
+- `/courses` and `/aos` render from `app/hubs/[hub]/page.tsx`:
+  `next.config.mjs` rewrites both URLs there, so the hubs are cached for
+  a day like the pages they list.
 
 The page components live in `packages/webapp/components/handbook/`.
 Their data comes from `lib/db/handbook.ts`. The raw-JSON readers are
@@ -63,7 +66,8 @@ latest year that has it.
   page: requisites, "Leads to", equivalents, curriculum items, areas of
   study and the courses that offer an area of study.
 - Handbook links inside Monash's HTML prose (enrolment rules, notes)
-  are rewritten to MonMap pages by `rewriteHandbookHtml`.
+  are rewritten to MonMap pages by `rewriteHandbookHtml`, on the pages
+  and in the unit detail panels of the planner and the requisite maps.
 - On a year page, links keep that year. On a latest-year page they go
   to bare URLs.
 - A code with no page in any year renders as plain text.
@@ -74,7 +78,8 @@ The Docker build has no database, so it renders no handbook pages.
 
 - Each page and share image renders on its first request. Next caches
   page HTML for a day and share images for a week (`revalidate`, an
-  empty `generateStaticParams`).
+  empty `generateStaticParams`). A share image for a code that is not
+  in the handbook is a 404, like its page.
 - Saving, deleting or moderating a review drops the cached HTML of
   that entity's pages (`revalidatePath` for the bare URL and each
   year). The day limit bounds how stale the stars on other pages'

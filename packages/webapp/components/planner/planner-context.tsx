@@ -12,19 +12,18 @@ import {
   useTransition,
 } from "react"
 import { toast } from "sonner"
-import posthog from "posthog-js"
 
 import {
   createMyPlanAction,
   deleteMyPlanAction,
   getMyPlanAction,
-  hydrateUnitsAction,
   listMyPlansAction,
-  loadPlannerYearAction,
   renameMyPlanAction,
   saveMyPlanAction,
   type SaveResult,
 } from "@/app/actions"
+import { capture } from "@/lib/analytics"
+import { fetchPlannerYear, fetchUnits } from "@/lib/api/client"
 import { MAX_PLANS_PER_USER } from "@/lib/db/input"
 import type { PlanSummary } from "@/lib/db/queries"
 import { pickedAosEntries, type PickedAosEntry } from "@/lib/planner/aos-slots"
@@ -335,6 +334,26 @@ export function PlannerProvider({
   }, [])
 
   /**
+   * Fetch a year's course data. The requests run in parallel, but each
+   * one resolves only after the ones started before it, so a slow year
+   * switch cannot overwrite the course picked after it. Callers set
+   * state straight after the await, in the order they started.
+   */
+  const yearLoadsRef = useRef<Promise<unknown>>(Promise.resolve())
+  const fetchYearInOrder = useCallback(
+    (year: string, courseCode: string | null, withCourses: boolean) => {
+      const request = fetchPlannerYear(year, courseCode, withCourses)
+      // The caller sees a failure through `ordered`; this keeps an early
+      // one from being reported as unhandled while it waits.
+      request.catch(() => {})
+      const ordered = yearLoadsRef.current.then(() => request)
+      yearLoadsRef.current = ordered.catch(() => {})
+      return ordered
+    },
+    []
+  )
+
+  /**
    * Load the course and its unit data for a handbook year in one round
    * trip, plus the course list when the year changed. A new year
    * replaces the unit data, because another year's offerings and
@@ -343,9 +362,7 @@ export function PlannerProvider({
    */
   const loadYearData = useCallback(
     async (year: string, courseCode: string | null, yearChanged: boolean) => {
-      const res = await loadPlannerYearAction(year, courseCode, {
-        withCourses: yearChanged,
-      })
+      const res = await fetchYearInOrder(year, courseCode, yearChanged)
       if (res.courses) setCourses(res.courses)
       setCourse(res.course)
       setUnitData((m) =>
@@ -353,7 +370,7 @@ export function PlannerProvider({
       )
       return res.course
     },
-    []
+    [fetchYearInOrder]
   )
 
   /**
@@ -645,7 +662,7 @@ export function PlannerProvider({
       }
       startCourseTransition(async () => {
         try {
-          const res = await hydrateUnitsAction(unique, state.courseYear)
+          const res = await fetchUnits(unique, state.courseYear)
           mergeUnitData(res, unique)
           // distribute() needs the merged data now, not after the
           // state update lands. The fetched codes are all written
@@ -682,7 +699,7 @@ export function PlannerProvider({
       const year = state.courseYear
       startCourseTransition(async () => {
         try {
-          const res = await loadPlannerYearAction(year, code)
+          const res = await fetchYearInOrder(year, code, false)
           setCourse(res.course)
           dispatch({ type: "set_course", code })
           // Same year, so the units already cached stay valid: merge.
@@ -700,7 +717,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state.courseYear, mergeUnitData]
+    [state.courseYear, mergeUnitData, fetchYearInOrder]
   )
 
   // A "Plan this course" link landed on a saved plan for another
@@ -729,7 +746,7 @@ export function PlannerProvider({
       if (year === state.courseYear) return
       startCourseTransition(async () => {
         try {
-          posthog.capture("handbook_year_switched", {
+          capture("handbook_year_switched", {
             from_year: state.courseYear,
             to_year: year,
             course_code: state.courseCode,

@@ -1,6 +1,6 @@
 /**
  * Same-origin proxy for PostHog (`api_host: "/ingest"` in
- * components/posthog-identify.tsx), so ad blockers that block PostHog's
+ * lib/analytics.ts), so ad blockers that block PostHog's
  * hosts don't drop analytics.
  *
  * This is a route handler, not a next.config rewrite, because a rewrite

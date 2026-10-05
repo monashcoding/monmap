@@ -3,8 +3,8 @@
 import { SearchIcon, XIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { searchUnitsAction } from "@/app/actions"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { fetchUnitSearch } from "@/lib/api/client"
 import { suggestionPool } from "@/lib/planner/personalize-search"
 import {
   applyFiltersAndSort,
@@ -67,17 +67,16 @@ export function UnitSearchPanel() {
 
   useEffect(() => {
     if (!q) return
-    let cancelled = false
-    searchUnitsAction(q, handbookYear)
+    // A new query or year aborts the request for the old one.
+    const controller = new AbortController()
+    fetchUnitSearch(q, handbookYear, controller.signal)
       .then((list) => {
-        if (!cancelled) setFound({ query: q, units: list })
+        if (!controller.signal.aborted) setFound({ query: q, units: list })
       })
       .catch(() => {
-        if (!cancelled) setFound({ query: q, units: [] })
+        if (!controller.signal.aborted) setFound({ query: q, units: [] })
       })
-    return () => {
-      cancelled = true
-    }
+    return () => controller.abort()
   }, [q, handbookYear])
 
   const hasQuery = q !== ""

@@ -2,11 +2,12 @@
 
 import { ChevronDownIcon, ExternalLinkIcon } from "lucide-react"
 import { useMemo, useState } from "react"
-import posthog from "posthog-js"
 
 import { Button } from "@/components/ui/button"
 import { RatingInline } from "@/components/reviews/stars"
 import { useRating } from "@/components/reviews/use-ratings"
+import { capture } from "@/lib/analytics"
+import { entityHref } from "@/lib/handbook/links"
 import { cn } from "@/lib/utils"
 import {
   Command,
@@ -99,7 +100,7 @@ export function CoursePicker({ className }: { className?: string }) {
           {course ? (
             <div className="absolute top-3.5 right-10 z-10 flex items-center gap-3">
               <a
-                href={`/courses/${course.code}/${course.year}`}
+                href={entityHref("course", course.code, course.year)}
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
               >
@@ -124,7 +125,7 @@ export function CoursePicker({ className }: { className?: string }) {
                       key={c.code}
                       value={`${c.code} ${c.title}`}
                       onSelect={() => {
-                        posthog.capture("course_selected", {
+                        capture("course_selected", {
                           course_code: c.code,
                           course_title: c.title,
                           course_type: c.type,

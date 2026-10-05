@@ -9,7 +9,6 @@ import {
   XIcon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import posthog from "posthog-js"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { capture } from "@/lib/analytics"
 import { canPlaceUnit } from "@/lib/planner/capacity"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { perSlotCreditPoints } from "@/lib/planner/full-year"
@@ -300,7 +300,7 @@ export function UnitCard({
             )
           }
           onRemove={() => {
-            posthog.capture("unit_removed", {
+            capture("unit_removed", {
               unit_code: code,
               unit_title: unit?.title,
               credit_points: unit?.creditPoints,

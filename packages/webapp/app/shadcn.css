@@ -1,34 +1,8 @@
 /*
  * Copied from shadcn@4.3.1 dist/tailwind.css (MIT, https://ui.shadcn.com).
  * The shadcn CLI package is not a dependency: only these variants and
- * keyframes are used, and its install tree is large.
+ * the utility are used, and its install tree is large.
  */
-
-@theme inline {
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(
-        --radix-accordion-content-height,
-        var(--accordion-panel-height, auto)
-      );
-    }
-  }
-
-  @keyframes accordion-up {
-    from {
-      height: var(
-        --radix-accordion-content-height,
-        var(--accordion-panel-height, auto)
-      );
-    }
-    to {
-      height: 0;
-    }
-  }
-}
 
 /* Custom variants */
 @custom-variant data-open {

@@ -12,6 +12,7 @@
  */
 
 import type { EntityKind } from "./links.ts"
+import { isObj, num, type Obj } from "./raw.ts"
 
 export interface CurriculumGroup {
   kind: "group"
@@ -34,18 +35,6 @@ export interface CurriculumItem {
 }
 
 export type CurriculumNode = CurriculumGroup | CurriculumItem
-
-type Obj = Record<string, unknown>
-
-function isObj(v: unknown): v is Obj {
-  return typeof v === "object" && v !== null && !Array.isArray(v)
-}
-
-function num(v: unknown): number | null {
-  if (v == null || v === "") return null
-  const n = Number(v)
-  return Number.isFinite(n) ? n : null
-}
 
 function str(v: unknown): string | null {
   if (typeof v === "string") return v.trim() || null

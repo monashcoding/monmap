@@ -5,7 +5,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-import { AppHeader } from "@/components/app-header"
+import { PageShell } from "@/components/page-shell"
 import { HandbookAttribution } from "@/components/handbook-attribution"
 import { RatingInline } from "@/components/reviews/stars"
 import {
@@ -38,11 +38,10 @@ export function HandbookMain({
   children: React.ReactNode
 }) {
   return (
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
-      <AppHeader />
+    <PageShell>
       {children}
       <HandbookAttribution year={year} />
-    </main>
+    </PageShell>
   )
 }
 

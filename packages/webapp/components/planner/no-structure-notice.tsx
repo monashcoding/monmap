@@ -3,6 +3,7 @@
 import { ExternalLinkIcon } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button"
+import { entityHref, monashHandbookUrl } from "@/lib/handbook/links"
 import type { PlannerCourseWithAoS } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
@@ -44,7 +45,7 @@ export function NoStructureNotice({
       </p>
       <div className="flex flex-wrap gap-2">
         <a
-          href={`https://handbook.monash.edu/${course.year}/courses/${course.code}`}
+          href={monashHandbookUrl("course", course.code, course.year)}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
@@ -54,7 +55,7 @@ export function NoStructureNotice({
         </a>
         {structureYear ? (
           <a
-            href={`/courses/${course.code}/${structureYear}`}
+            href={entityHref("course", course.code, structureYear)}
             className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
           >
             <ExternalLinkIcon />

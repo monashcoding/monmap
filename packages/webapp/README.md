@@ -9,6 +9,10 @@ reviews. It is a Next.js app in the monorepo.
 - Reviews and moderation: [`docs/reviews.md`](../../docs/reviews.md).
 - SEO: [`docs/seo.md`](../../docs/seo.md).
 - Handbook data quirks: [`docs/handbook-internals.md`](../../docs/handbook-internals.md).
+- Analytics: client code sends PostHog events only through
+  `lib/analytics.ts` (an eslint rule enforces it), which loads
+  posthog-js on demand. Events never carry an email, a name, a plan
+  name or a grade.
 
 UI components come from shadcn/ui. Add one with:
 

@@ -15,9 +15,7 @@ import {
   useMemo,
   useState,
 } from "react"
-import posthog from "posthog-js"
 
-import { searchUnitsRichAction } from "@/app/actions"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,6 +26,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { capture } from "@/lib/analytics"
+import { fetchRichUnitSearch } from "@/lib/api/client"
 import {
   buildPersonalSignals,
   rankCandidates,
@@ -225,23 +225,22 @@ function UnitSearchView({
   // locally with `signals` so the right slot / AoS / level wins.
   useEffect(() => {
     if (!q) return
-    let cancelled = false
-    searchUnitsRichAction(q, handbookYear)
+    // A new query or year aborts the request for the old one.
+    const controller = new AbortController()
+    fetchRichUnitSearch(q, handbookYear, controller.signal)
       .then(({ rank, ...bundle }) => {
-        if (!cancelled)
+        if (!controller.signal.aborted)
           onFound({ query: q, bundle, rank: new Map(Object.entries(rank)) })
       })
       .catch(() => {
-        if (!cancelled)
+        if (!controller.signal.aborted)
           onFound({
             query: q,
             bundle: { units: {}, offerings: {}, requisites: {} },
             rank: new Map(),
           })
       })
-    return () => {
-      cancelled = true
-    }
+    return () => controller.abort()
   }, [q, handbookYear, onFound])
   const loading = q !== "" && found?.query !== q
   const resultCount = found ? Object.keys(found.bundle.units).length : 0
@@ -298,7 +297,7 @@ function UnitSearchView({
     (code: string) => {
       const unit = units.get(code)
       const score = scoreByCode.get(code)
-      posthog.capture("unit_added", {
+      capture("unit_added", {
         unit_code: code,
         unit_title: unit?.title,
         credit_points: unit?.creditPoints,

@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronRightIcon, DownloadIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { monashHandbookUrl } from "@/lib/handbook/links"
 import { KIND_LABEL } from "@/lib/planner/aos-slots"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
@@ -204,7 +205,7 @@ function MissingTemplateCard({
             {hasRequirements ? null : (
               <a
                 className="underline underline-offset-2"
-                href={`https://handbook.monash.edu/${year}/courses/${courseCode}`}
+                href={monashHandbookUrl("course", courseCode, year)}
                 target="_blank"
                 rel="noreferrer"
               >

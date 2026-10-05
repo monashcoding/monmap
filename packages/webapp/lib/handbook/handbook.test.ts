@@ -2,7 +2,13 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import { buildCurriculumTree, curriculumUnitCodes } from "./curriculum-tree.ts"
-import { entityHref, handbookLinkToHref, rewriteHandbookHtml } from "./links.ts"
+import {
+  entityHref,
+  handbookLinkToHref,
+  monashHandbookUrl,
+  planCourseHref,
+  rewriteHandbookHtml,
+} from "./links.ts"
 import { parseSearchState, searchHref } from "./search-url.ts"
 
 test("handbook links map to MonMap pages in the page's year", () => {
@@ -24,6 +30,19 @@ test("handbook links map to MonMap pages in the page's year", () => {
     "/units/MTH1030"
   )
   assert.equal(handbookLinkToHref("https://www.monash.edu/it", null), null)
+})
+
+test("planner and Monash links keep the code and year", () => {
+  assert.equal(planCourseHref("C2001", "2026"), "/?course=C2001&year=2026")
+  assert.equal(
+    planCourseHref("M6011 M6019", "2026"),
+    "/?course=M6011%20M6019&year=2026"
+  )
+  assert.equal(
+    monashHandbookUrl("course", "C2001", "2026"),
+    "https://handbook.monash.edu/2026/courses/C2001"
+  )
+  assert.equal(entityHref("course", "C2001", "2025"), "/courses/C2001/2025")
 })
 
 test("rewriteHandbookHtml points unit links inside and other links outside", () => {

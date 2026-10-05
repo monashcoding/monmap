@@ -55,6 +55,14 @@ async function _listAvailableYears(): Promise<string[]> {
 }
 export const listAvailableYears = cacheHandbook(_listAvailableYears)
 
+/**
+ * The newest handbook year. An empty database (a fresh setup) falls
+ * back to the calendar year, so pages still render their empty state.
+ */
+export async function latestHandbookYear(): Promise<string> {
+  return (await listAvailableYears()).at(-1) ?? String(new Date().getFullYear())
+}
+
 async function _listCoursesForPicker(
   search: string | null,
   limit: number,
@@ -1718,7 +1726,7 @@ export async function bulkUpsertUserGrades(
 }
 
 /* ------------------------------------------------------------------ *
- * Tree page — requisite graph expansion
+ * Requisite graph expansion
  *
  * Walks `requisite_refs` outward from a seed set. The data has a few
  * structural quirks we strip at query time rather than leave for every
@@ -1863,7 +1871,7 @@ export const expandRequisiteGraph = cacheHandbook(_expandRequisiteGraph)
 
 /**
  * Build the seed unit set for a course (+ optional AoS), then expand
- * upstream so the Tree page shows the closure of "what you'd take in
+ * upstream so the graph shows the closure of "what you'd take in
  * this major and what it depends on".
  *
  * Seeds = Part A specified-studies codes (from `courses.curriculum_structure`)

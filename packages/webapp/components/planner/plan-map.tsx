@@ -4,12 +4,13 @@ import { ExternalLinkIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 
-import { fetchPlanGraphAction } from "@/app/actions"
 import { RatingInline } from "@/components/reviews/stars"
 import { useRating } from "@/components/reviews/use-ratings"
 import { TreeGraph, TreeGraphFrame } from "@/components/tree/tree-graph"
 import { Button } from "@/components/ui/button"
+import { fetchPlanGraph } from "@/lib/api/client"
 import { entityHref } from "@/lib/handbook/links"
+import { placedUnitCodes } from "@/lib/planner/progress"
 import type { PlannerState, PlannerUnit } from "@/lib/planner/types"
 import type { TreeEdge, TreeNode } from "@/lib/tree/types"
 
@@ -50,12 +51,10 @@ export function PlanMap({
   const interactive = variant === "full"
   const [focused, setFocused] = useState<string | null>(null)
 
-  const planned = useMemo(() => {
-    const out = new Set<string>()
-    for (const y of state.years)
-      for (const s of y.slots) for (const c of s.unitCodes) out.add(c)
-    return out
-  }, [state.years])
+  const planned = useMemo(
+    () => placedUnitCodes({ years: state.years }),
+    [state.years]
+  )
 
   const untaken = useMemo(
     () => [...new Set(requirementCodes)].filter((c) => !planned.has(c)),
@@ -83,14 +82,16 @@ export function PlanMap({
   // short delay batches a burst of edits into one request.
   useEffect(() => {
     if (!enabled || codes.length === 0) return
-    let cancelled = false
+    const controller = new AbortController()
     const timer = setTimeout(() => {
-      void fetchPlanGraphAction(codes, state.courseYear).then((res) => {
-        if (!cancelled) setData(res)
-      })
+      fetchPlanGraph(codes, state.courseYear, controller.signal)
+        .then((res) => {
+          if (!controller.signal.aborted) setData(res)
+        })
+        .catch(() => {})
     }, 300)
     return () => {
-      cancelled = true
+      controller.abort()
       clearTimeout(timer)
     }
     // codesKey stands in for codes.

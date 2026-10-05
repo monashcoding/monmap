@@ -4,14 +4,12 @@
  * Defaults are left out to keep URLs short.
  */
 
+import { PERIOD_KIND_ORDER } from "../planner/teaching-period.ts"
 import type { PeriodKind } from "../planner/types.ts"
 
 export type SearchTab = "all" | "courses" | "aos" | "units"
 export type StudyLevel =
-  | "Undergraduate"
-  | "Honours"
-  | "Postgraduate"
-  | "Research"
+  "Undergraduate" | "Honours" | "Postgraduate" | "Research"
 
 export const SEARCH_TABS: SearchTab[] = ["all", "courses", "aos", "units"]
 export const STUDY_LEVELS: StudyLevel[] = [
@@ -19,15 +17,6 @@ export const STUDY_LEVELS: StudyLevel[] = [
   "Honours",
   "Postgraduate",
   "Research",
-]
-export const FILTER_PERIODS: PeriodKind[] = [
-  "S1",
-  "S2",
-  "SUMMER_A",
-  "SUMMER_B",
-  "WINTER",
-  "FULL_YEAR",
-  "OTHER",
 ]
 
 export interface SearchState {
@@ -75,15 +64,11 @@ export function parseSearchState(
     faculty: text(sp.faculty),
     study: study && STUDY_LEVELS.includes(study) ? study : null,
     level: units && level && /^\d$/.test(level) ? level : null,
-    period: units && period && FILTER_PERIODS.includes(period) ? period : null,
+    period:
+      units && period && PERIOD_KIND_ORDER.includes(period) ? period : null,
     campus: units ? text(sp.campus) : null,
     page: Number.isInteger(page) && page > 1 ? Math.min(page, 500) : 1,
   }
-}
-
-/** True when the state has a unit-only filter set. */
-export function hasUnitFilters(s: SearchState): boolean {
-  return s.level != null || s.period != null || s.campus != null
 }
 
 export function searchParamsOf(s: SearchState): URLSearchParams {

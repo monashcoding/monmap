@@ -407,6 +407,18 @@
 }
 
 /*
+ * The mobile Progress button (fixed, bottom-4, 48px tall) shows below
+ * md. Sonner applies its mobileOffset only below 601px, so between 601px
+ * and md the toasts sit at the desktop offset and cover the button. Lift
+ * them by the same 80px. md and up keep sonner's own offset.
+ */
+@media (min-width: 601px) and (max-width: 767.98px) {
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: 80px !important;
+  }
+}
+
+/*
  * Print: the interactive planner is hidden by `print:hidden` in
  * planner.tsx and <PrintSheet /> takes over, so all that is left here
  * is the page itself — kill the decorative gradient, the on-screen

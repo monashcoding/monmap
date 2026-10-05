@@ -37,6 +37,14 @@ export function entityHref(
   return year ? `${base}/${year}` : base
 }
 
+/**
+ * The planner, opened on this course and year. app/page.tsx reads the
+ * `course` and `year` params back.
+ */
+export function planCourseHref(code: string, year: string): string {
+  return `/?course=${encodeURIComponent(code)}&year=${year}`
+}
+
 export interface ResolvedEntity {
   code: string
   /** The year this page shows. */
@@ -75,11 +83,21 @@ export function isCurrent(latest: string, siteLatest: string): boolean {
 }
 
 /**
+ * `raw` upper-cased, or null when it can't be a unit, course or area of
+ * study code. One combined course is coded "M6011 M6019", so a single
+ * space between two parts is allowed. Handbook URLs, the review actions
+ * and the share cards all check codes with this.
+ */
+export function normaliseEntityCode(raw: string): string | null {
+  const code = raw.toUpperCase()
+  return /^[A-Z0-9-]{2,16}(?: [A-Z0-9-]{2,16})?$/.test(code) ? code : null
+}
+
+/**
  * The code a handbook URL names. Next.js has decoded the segment once
  * already; a second decode turns `%2520` style double-encoding into the
  * code, and a malformed escape is a 404, not an error. A lowercase code
- * redirects to the uppercase one. One combined course is coded
- * "M6011 M6019", so a single space between two parts is allowed.
+ * redirects to the uppercase one.
  */
 export function parseEntityUrl(
   kind: EntityKind,
@@ -92,9 +110,8 @@ export function parseEntityUrl(
   } catch {
     return { action: "notFound" }
   }
-  const code = decoded.toUpperCase()
-  if (!/^[A-Z0-9-]{2,16}(?: [A-Z0-9-]{2,16})?$/.test(code))
-    return { action: "notFound" }
+  const code = normaliseEntityCode(decoded)
+  if (!code) return { action: "notFound" }
   if (decoded !== code)
     return {
       action: "redirect",

@@ -14,7 +14,7 @@ import { useWam } from "./wam-context"
  * shows the plan; editing stays in the grid above.
  */
 export function PlanMapSection() {
-  const { state, course, units } = usePlanner()
+  const { state, course, units, pickedAos } = usePlanner()
   const { grades } = useWam()
   // Off by default: the map is about the student's own units.
   const [showUntaken, setShowUntaken] = useState(false)
@@ -26,7 +26,7 @@ export function PlanMapSection() {
   // can show the ones the plan leaves out.
   const requirementCodes = useMemo(() => {
     if (!course) return []
-    const picked = new Set(Object.values(state.selectedAos).filter(Boolean))
+    const picked = new Set(pickedAos.map((p) => p.aos.code))
     return [
       ...course.courseUnits.map((u) => u.code),
       ...course.componentCourses.flatMap((cc) =>
@@ -36,7 +36,7 @@ export function PlanMapSection() {
         .filter((a) => picked.has(a.code))
         .flatMap((a) => a.units.map((u) => u.code)),
     ]
-  }, [course, state.selectedAos])
+  }, [course, pickedAos])
 
   return (
     <section className="hidden flex-col overflow-hidden rounded-panel border bg-card shadow-card lg:flex print:hidden">

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ChevronRightIcon, MessageSquareTextIcon } from "lucide-react"
 
-import { AppHeader } from "@/components/app-header"
+import { PageShell } from "@/components/page-shell"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { KindBadge } from "@/components/handbook/frame"
 import { ReviewCard } from "@/components/reviews/review-card"
@@ -28,8 +28,7 @@ export default async function MyReviewsPage() {
   return (
     // Same frame as every other page, so the header keeps its width;
     // the reviews sit in a narrower reading column inside it.
-    <main className="mx-auto flex min-h-svh max-w-[1500px] flex-col gap-3 px-3 pt-3 pb-12 sm:gap-5 sm:px-5 sm:pt-5">
-      <AppHeader />
+    <PageShell>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:gap-5">
         <header className="flex flex-wrap items-end justify-between gap-3 rounded-panel border bg-card p-5 shadow-card sm:p-7">
           <div className="flex flex-col gap-1">
@@ -106,6 +105,6 @@ export default async function MyReviewsPage() {
           </ol>
         )}
       </div>
-    </main>
+    </PageShell>
   )
 }

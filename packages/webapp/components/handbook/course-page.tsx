@@ -5,7 +5,7 @@ import { notFound } from "next/navigation"
 import { fetchCoursePage } from "@/lib/db/handbook"
 import { isoDuration, MONASH_PROVIDER, ratingLd } from "@/lib/handbook/json-ld"
 import { AOS_KINDS } from "@/lib/handbook/kinds"
-import { monashHandbookUrl } from "@/lib/handbook/links"
+import { monashHandbookUrl, planCourseHref } from "@/lib/handbook/links"
 import { resolveEntity } from "@/lib/handbook/resolve"
 import type { PlannerAreaOfStudy } from "@/lib/planner/types"
 import { absoluteUrl } from "@/lib/seo"
@@ -59,11 +59,6 @@ import {
   OverviewSection,
   ProseBlocks,
 } from "./sections"
-
-/** The planner, opened on this course and year. */
-export function planCourseHref(code: string, year: string): string {
-  return `/?course=${encodeURIComponent(code)}&year=${year}`
-}
 
 export async function courseMetadata(
   rawCode: string,

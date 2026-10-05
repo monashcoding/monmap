@@ -24,12 +24,7 @@ import {
 import { EntityGraph } from "./entity-graph"
 import { JsonLd } from "./json-ld"
 import { QuickAnswers, SegText } from "./quick-answers"
-import {
-  downstreamReach,
-  isExam,
-  levelNumber,
-  unitFacts,
-} from "@/lib/handbook/facts"
+import { downstreamReach, isExam, unitFacts } from "@/lib/handbook/facts"
 import {
   plain,
   ruleSegs,
@@ -38,6 +33,7 @@ import {
   unitQuestions,
   type UnitFacts,
 } from "@/lib/handbook/summary"
+import { unitLevel } from "@/lib/planner/unit-level"
 import {
   fetchEntityReviews,
   ReviewsSection,
@@ -170,12 +166,12 @@ export async function UnitPage({
     downstreamReach(u.code, graph.graph.edges)
   )
   const yearHref = entityYearHref("unit", u.code, r)
-  const lvl = levelNumber(u.level)
+  const lvl = unitLevel(u.level)
   const { crumbs, ld: crumbsLd } = entityCrumbs(
     [
       { label: "Search", href: "/search" },
       { label: "Units", href: "/search?type=units", ldPath: "/search" },
-      ...(lvl
+      ...(lvl != null
         ? [
             {
               label: `Level ${lvl}`,

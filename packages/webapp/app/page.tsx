@@ -11,6 +11,7 @@ import {
   getActiveUserPlan,
   hydratePlannerUnits,
   hydratePlannerUnitsMultiYear,
+  latestHandbookYear,
   listAvailableYears,
   listCoursesForPicker,
   listUserGrades,
@@ -81,11 +82,9 @@ async function PlannerData({
 }: {
   searchParams: Promise<SearchParams>
 }) {
-  const [params, availableYears, currentUser] = await Promise.all([
-    searchParams,
-    listAvailableYears(),
-    getCurrentUser(),
-  ])
+  const [params, availableYears, fallbackYear, currentUser] = await Promise.all(
+    [searchParams, listAvailableYears(), latestHandbookYear(), getCurrentUser()]
+  )
 
   // Signed-in users: their plan list (no state) and the active plan's
   // state, in parallel. ?plan=<id> lets the plans page link directly to
@@ -102,10 +101,8 @@ async function PlannerData({
   const activePlanId = activePlan?.id ?? null
   const initialPlanState = activePlan?.state ?? null
 
-  // Most recent year wins as default. On an empty database (fresh
-  // setup) the planner renders its empty state against the current
-  // calendar year.
-  const fallbackYear = availableYears.at(-1) ?? String(new Date().getFullYear())
+  // Most recent year wins as default (the calendar year on an empty
+  // database).
   const requestedYear = one(params.year)
   const explicitYear =
     requestedYear && availableYears.includes(requestedYear)
