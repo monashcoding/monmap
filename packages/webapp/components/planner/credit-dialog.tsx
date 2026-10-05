@@ -38,7 +38,7 @@ export function CreditDialog({
   open: boolean
   onOpenChangeAction: (v: boolean) => void
 }) {
-  const { state, dispatch, units } = usePlanner()
+  const { state, dispatch, units, plannedCodes } = usePlanner()
   const entries = state.credit ?? []
 
   const [code, setCode] = useState("")
@@ -51,7 +51,11 @@ export function CreditDialog({
   const pointsValid = Number.isFinite(creditPoints) && creditPoints > 0
   const duplicate =
     trimmedCode !== "" && entries.some((e) => e.code === trimmedCode)
-  const canAdd = codeLooksValid && pointsValid && !duplicate
+  // The reducer drops credit for a unit that is already placed in the
+  // plan (the placement is the more specific statement), so say so here
+  // instead of letting the button appear to do nothing.
+  const alreadyPlanned = trimmedCode !== "" && plannedCodes.has(trimmedCode)
+  const canAdd = codeLooksValid && pointsValid && !duplicate && !alreadyPlanned
 
   function add() {
     if (!canAdd) return
@@ -126,7 +130,7 @@ export function CreditDialog({
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="FIT1045"
-              aria-invalid={!codeLooksValid || duplicate}
+              aria-invalid={!codeLooksValid || duplicate || alreadyPlanned}
               className="h-8 text-xs"
             />
           </div>
@@ -160,6 +164,15 @@ export function CreditDialog({
         {duplicate ? (
           <p className="text-[11px] text-destructive">
             {trimmedCode} is already credited.
+          </p>
+        ) : alreadyPlanned ? (
+          <p className="text-[11px] text-destructive">
+            {trimmedCode} is already in your plan. Remove it from its semester
+            first if you have credit for it instead.
+          </p>
+        ) : !pointsValid ? (
+          <p className="text-[11px] text-destructive">
+            Enter the credit points as a number above 0.
           </p>
         ) : !codeLooksValid ? (
           <p className="text-[11px] text-destructive">

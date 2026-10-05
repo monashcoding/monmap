@@ -247,13 +247,16 @@ export function UnitCard({
               <span className="text-muted-foreground italic">Loading…</span>
             )}
           </div>
-          <div className="mt-auto flex h-4 items-center gap-1.5">
-            <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
-              {unit
-                ? showResults
-                  ? `${displayCp}cp`
-                  : `${displayCp} Credit Points`
-                : ""}
+          {/* In Results mode the mark chip sits over the bottom-right
+              corner, so the credit points truncate before it. */}
+          <div
+            className={cn(
+              "mt-auto flex h-4 min-w-0 items-center gap-1.5",
+              showResults && "pr-14"
+            )}
+          >
+            <span className="truncate text-[10px] font-medium text-muted-foreground tabular-nums">
+              {unit ? `${displayCp} Credit Points` : ""}
             </span>
           </div>
         </button>

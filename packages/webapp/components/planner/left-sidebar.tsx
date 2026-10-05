@@ -186,7 +186,7 @@ export function LeftSidebar() {
               ? "Every unit meets its prereqs and is offered in its slot"
               : "Highlight the units with problems"
           }
-          className="ml-1.5 shrink-0"
+          className="ml-1.5 shrink-0 self-center"
         >
           {errorCount === 0 ? (
             <BadgeCheckIcon className="text-success" />
