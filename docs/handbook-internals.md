@@ -512,11 +512,12 @@ Several text fields contain HTML:
 - `enrolment_rules.description`
 
 Monash ships inline tags (`<p>`, `<br>`, `<a>`) and occasional
-non-breaking spaces. Render with a trusted-HTML path (React:
-`dangerouslySetInnerHTML`, or sanitise via DOMPurify first if the
-content is displayed in a security-sensitive context — handbook
-content is first-party so direct render is defensible). Do not try
-to strip tags; some fields rely on them for line breaks.
+non-breaking spaces. The HTML is scraped from a third party, so it
+always goes through `sanitizeHandbookHtml` (packages/webapp/lib/
+handbook/sanitize.ts) before `dangerouslySetInnerHTML`: an allowlist
+of tags, `href` only on links and only to http, https, mailto or
+relative URLs. Do not strip tags beyond that; some fields rely on them
+for line breaks.
 
 ## Corpus shape (2026, pre-reingest of A4/A7/A10 fixes)
 

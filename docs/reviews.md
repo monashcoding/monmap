@@ -21,7 +21,9 @@ page shows the same reviews in every year.
 - Text of 30 to 2,000 characters and an optional year taken.
 
 Each signed-in user has one review per entity, which they can edit or
-delete. A user can create at most 20 reviews in 24 hours.
+delete. A user can create at most 20 reviews in 24 hours. Every review
+write, a save or a delete, is also limited to one every 5 seconds and
+30 in 24 hours per user (`lib/reviews/rate-limit.ts`, in process).
 
 ## Privacy
 
@@ -34,9 +36,11 @@ delete. A user can create at most 20 reviews in 24 hours.
 - Public reads (`lib/db/reviews.ts`) select a fixed column list without
   `user_id`. No page, action response or cached HTML carries a user id,
   name or email.
-- The admin page shows initials and an anonymous author tag (a hash of
-  the user id) so admins can spot one person posting many reviews,
-  without learning who they are.
+- The admin page shows initials and an anonymous author tag so admins
+  can spot one person posting many reviews, without learning who they
+  are. The tag is the first 6 characters of `md5(secret || ':' ||
+  user_id)`, keyed with `REVIEW_TAG_SECRET`, so knowing a user id does
+  not reveal their tag.
 
 ## Moderation
 
@@ -57,7 +61,24 @@ delete. A user can create at most 20 reviews in 24 hours.
 
 Flagged and shadowbanned reviews are shadow-hidden: their author still
 sees them on the page and on `/my-reviews` as if they were published.
-Editing a shadowbanned review keeps it shadowbanned.
+
+These rules keep a hidden review hidden:
+
+- Editing a shadowbanned review keeps it shadowbanned.
+- If the classifier fails while a flagged review is edited, the review
+  stays flagged. A successful check decides afresh.
+- Saving unchanged content skips the classifier and the cache
+  revalidation.
+- When an author deletes a published review, the row is deleted. When
+  they delete a flagged or shadowbanned review, the row keeps its status
+  and gets `deleted_at`, which hides it from everyone, admins included.
+  Writing that review again brings it back with its old status.
+- "Shadowban author" adds the author to `review_author_ban`, so their
+  later reviews start shadowbanned. Publishing one of their reviews
+  lifts the ban.
+- An edit keeps `moderated_by` and `moderated_at` only while the review
+  stays flagged or shadowbanned. An edit to a published review clears
+  them.
 
 ## Where ratings show
 
@@ -91,3 +112,6 @@ cached HTML is shared.
 - `REVIEW_ADMIN_EMAILS`: comma-separated admin emails.
 - `CLASSIFIER_API_KEY` (optional): a classifier.dev workspace key for
   higher rate limits. `CLASSIFIER_URL` overrides the endpoint.
+- `REVIEW_TAG_SECRET` (optional): the key for the admin author tag.
+  Without it, each server process picks a random key, so tags change
+  on restart.
