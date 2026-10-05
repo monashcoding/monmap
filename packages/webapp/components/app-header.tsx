@@ -39,10 +39,9 @@ import { cn } from "@/lib/utils"
  * MAC / MonMap breadcrumb, page tabs, the page's context slot, the
  * Feedback and Contribute links, the theme toggle and the avatar.
  *
- * Pages render it as the first child of their <main>. The bar pulls
- * itself out of <main>'s padding with negative margins, and its
- * backdrop (the ::before layer) spans the whole viewport so the strip
- * reads edge to edge even though <main> is capped at 1500px.
+ * Pages render it as the first child of their <main>. The bar spans
+ * the whole viewport so the strip reads edge to edge even though
+ * <main> is capped at 1500px.
  *
  * Mobile (<md): hamburger, breadcrumb, context slot, avatar. Feedback,
  * Contribute and the theme toggle shrink to icons; the tabs move into
@@ -52,9 +51,14 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 -mx-3 -mt-3 flex h-14 items-center gap-2 px-3 sm:-mx-5 sm:-mt-5 sm:gap-3 sm:px-5",
-        "before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-card/95 before:shadow-[0_1px_0_var(--border),0_4px_12px_-6px_var(--shadow-tint)] before:backdrop-blur-xl before:backdrop-saturate-150",
-        "print:static print:mx-0 print:mt-0 print:before:hidden"
+        // Full-bleed: the margins pull the bar out to the viewport edges
+        // and the padding puts its content back on <main>'s content edge.
+        // The blur sits on the header itself, not on a pseudo-element
+        // behind it — some browsers don't blur through a negative
+        // z-index layer.
+        "sticky top-0 z-40 mx-[calc(50%_-_50vw)] -mt-3 flex h-14 items-center gap-2 px-[calc(50vw_-_50%)] sm:-mt-5 sm:gap-3",
+        "bg-card/95 shadow-[0_1px_0_var(--border),0_4px_12px_-6px_var(--shadow-tint)] backdrop-blur-xl backdrop-saturate-150",
+        "print:static print:mx-0 print:mt-0 print:bg-transparent print:px-0 print:shadow-none"
       )}
     >
       <MobileNavTrigger />

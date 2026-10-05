@@ -95,7 +95,7 @@ export function CoursePicker({ className }: { className?: string }) {
               <a
                 href={`/search?course=${course.code}&year=${course.year}`}
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center gap-1 text-xs text-info-foreground underline-offset-2 hover:underline"
               >
                 <Share2Icon className="size-3" />
                 View Details
