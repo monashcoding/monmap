@@ -4,7 +4,7 @@ import assert from "node:assert/strict"
 import {
   cacheHandbook,
   deepFreeze,
-  MEMO_MAX_ENTRIES,
+  MEMO_SEGMENT_ENTRIES,
   MEMO_TTL_MS,
 } from "./memo.ts"
 
@@ -79,19 +79,46 @@ test("a rejected call does not evict the entry that replaced it", async (t) => {
   assert.equal(calls, 2)
 })
 
-test("the entry after the cap evicts the oldest key; a hit does not refresh it", async () => {
+test("past the cap, a key read only once is evicted oldest first", async () => {
   const c = counted((n) => n)
   const memo = cacheHandbook(c.fn)
-  for (let i = 0; i < MEMO_MAX_ENTRIES; i++) await memo(`k${i}`)
-  assert.equal(c.calls(), MEMO_MAX_ENTRIES)
-  // A hit on the oldest key does not move it to newest.
-  await memo("k0")
-  assert.equal(c.calls(), MEMO_MAX_ENTRIES)
+  for (let i = 0; i < MEMO_SEGMENT_ENTRIES; i++) await memo(`k${i}`)
+  assert.equal(c.calls(), MEMO_SEGMENT_ENTRIES)
   await memo("new")
   await memo("k1")
-  assert.equal(c.calls(), MEMO_MAX_ENTRIES + 1)
+  assert.equal(c.calls(), MEMO_SEGMENT_ENTRIES + 1)
   await memo("k0")
-  assert.equal(c.calls(), MEMO_MAX_ENTRIES + 2)
+  assert.equal(c.calls(), MEMO_SEGMENT_ENTRIES + 2)
+})
+
+test("a key that was hit survives any number of one-off keys", async () => {
+  const c = counted((n) => n)
+  const memo = cacheHandbook(c.fn)
+  await memo("hot")
+  await memo("hot")
+  for (let i = 0; i < MEMO_SEGMENT_ENTRIES * 3; i++) await memo(`k${i}`)
+  const calls = c.calls()
+  assert.equal(await memo("hot"), 1)
+  assert.equal(c.calls(), calls)
+})
+
+test("past the cap of hit keys, the least recently hit one can be evicted", async () => {
+  const c = counted((n) => n)
+  const memo = cacheHandbook(c.fn)
+  // Fill the hit segment one past its cap; h0 is least recently hit
+  // and drops back among the one-off keys.
+  for (let i = 0; i <= MEMO_SEGMENT_ENTRIES; i++) {
+    await memo(`h${i}`)
+    await memo(`h${i}`)
+  }
+  // A recent hit on h1 keeps it; h0 then goes out with the one-offs.
+  await memo("h1")
+  for (let i = 0; i < MEMO_SEGMENT_ENTRIES; i++) await memo(`k${i}`)
+  const calls = c.calls()
+  await memo("h1")
+  assert.equal(c.calls(), calls)
+  await memo("h0")
+  assert.equal(c.calls(), calls + 1)
 })
 
 test("outside production a cached value is frozen, so mutation throws", async () => {

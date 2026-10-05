@@ -4,6 +4,7 @@
  * Defaults are left out to keep URLs short.
  */
 
+import { MAX_QUERY_LENGTH } from "../db/input.ts"
 import { PERIOD_KIND_ORDER } from "../planner/teaching-period.ts"
 import type { PeriodKind } from "../planner/types.ts"
 
@@ -41,9 +42,9 @@ export function firstParam(v: string | string[] | undefined): string | null {
   return s && s.trim() ? s.trim() : null
 }
 
-/** First value, cut to 100 characters: no real query or name is longer. */
+/** First value, cut to MAX_QUERY_LENGTH: no real query or name is longer. */
 const text = (v: string | string[] | undefined) =>
-  firstParam(v)?.slice(0, 100) ?? null
+  firstParam(v)?.slice(0, MAX_QUERY_LENGTH) ?? null
 
 export function parseSearchState(
   sp: Raw,

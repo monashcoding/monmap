@@ -8,6 +8,7 @@ import { PageShell } from "@/components/page-shell"
 import { ReviewAvatar } from "@/components/reviews/review-avatar"
 import { Stars } from "@/components/reviews/stars"
 import { getCurrentUser } from "@/lib/auth-server"
+import { cleanQuery } from "@/lib/db/input"
 import {
   ADMIN_PAGE_SIZE,
   type AdminFilter,
@@ -76,7 +77,7 @@ export default async function ReviewModerationPage({
   const filter: AdminFilter = FILTERS.some((f) => f.id === rawFilter)
     ? (rawFilter as AdminFilter)
     : "flagged"
-  const q = (firstParam(sp.q) ?? "").slice(0, 100)
+  const q = cleanQuery(firstParam(sp.q))
   const page = Math.max(1, Number.parseInt(firstParam(sp.page) ?? "", 10) || 1)
 
   const [{ reviews, total }, counts] = await Promise.all([

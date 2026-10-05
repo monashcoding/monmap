@@ -1,9 +1,13 @@
 import type { PlanGraphData } from "@/lib/api/client"
-import { splitCodes } from "@/lib/api/query"
-import { HANDBOOK_CACHE, json, knownYear, searchParams } from "@/lib/api/server"
+import { MAX_GRAPH_CODES, splitCodes } from "@/lib/api/query"
+import {
+  EMPTY_CACHE,
+  HANDBOOK_CACHE,
+  json,
+  knownYear,
+  searchParams,
+} from "@/lib/api/server"
 import { expandRequisiteGraph, hydratePlannerUnits } from "@/lib/db/queries"
-
-const MAX_GRAPH_CODES = 400
 
 /**
  * The prerequisite links between a fixed set of units, for the
@@ -21,7 +25,7 @@ export async function GET(req: Request): Promise<Response> {
   const codes = splitCodes(params.get("codes"), MAX_GRAPH_CODES)
   if (!year || codes.length === 0) {
     const empty: PlanGraphData = { edges: [], units: {} }
-    return json(empty, HANDBOOK_CACHE)
+    return json(empty, EMPTY_CACHE)
   }
   const [graph, hydrated] = await Promise.all([
     expandRequisiteGraph(codes, year, "both", 0),

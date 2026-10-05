@@ -17,6 +17,7 @@ import {
   listUserGrades,
   listUserPlans,
 } from "@/lib/db/queries"
+import { firstParam } from "@/lib/handbook/search-url"
 import { codesToHydrate } from "@/lib/planner/hydration"
 import { plannerUnitCodes, type PlannerState } from "@/lib/planner/types"
 
@@ -27,21 +28,19 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 }
 
-// A repeated key (?plan=a&plan=b) arrives as an array.
+// A repeated key (?plan=a&plan=b) arrives as an array; firstParam
+// takes its first value.
 type SearchParams = {
   year?: string | string[]
   plan?: string | string[]
   course?: string | string[]
 }
 
-/** The param when it is a single string, else null. */
-const one = (v: string | string[] | undefined) =>
-  typeof v === "string" ? v : null
-
 /**
  * Page shell. Nothing here waits on data: the heading, the skeleton
  * and the about section stream in the first chunk, and PlannerData
- * fills the boundary once the user, plan and course are loaded.
+ * fills the boundary once the user, plan and course are loaded. The
+ * about section's popular-courses list has its own boundary.
  */
 export default function Page({
   searchParams,
@@ -90,7 +89,7 @@ async function PlannerData({
   // state, in parallel. ?plan=<id> lets the plans page link directly to
   // a specific plan; otherwise the most recently updated one opens.
   // Anon users get an empty list and no active plan.
-  const requestedPlanId = one(params.plan)
+  const requestedPlanId = firstParam(params.plan)
   const [userPlans, activePlan, initialGrades] = currentUser
     ? await Promise.all([
         listUserPlans(currentUser.id),
@@ -103,7 +102,7 @@ async function PlannerData({
 
   // Most recent year wins as default (the calendar year on an empty
   // database).
-  const requestedYear = one(params.year)
+  const requestedYear = firstParam(params.year)
   const explicitYear =
     requestedYear && availableYears.includes(requestedYear)
       ? requestedYear
@@ -124,7 +123,7 @@ async function PlannerData({
   // ?course=… (the "Plan this course" button on course pages) opens
   // that course when there's no saved plan to show. Over a saved plan
   // the planner offers the switch instead (see PlannerProvider).
-  const rawCourse = one(params.course)?.trim().toUpperCase() ?? null
+  const rawCourse = firstParam(params.course)?.toUpperCase() ?? null
   const wantedCourse = initialPlanState
     ? !explicitYear
       ? (initialPlanState.courseCode ?? null)

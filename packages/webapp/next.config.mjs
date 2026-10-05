@@ -88,6 +88,15 @@ const nextConfig = {
         destination: "/search",
         permanent: true,
       },
+      // The hub rewrite targets below are internal: send a direct visit
+      // to the canonical URL so each hub has one crawlable address.
+      // Redirects run once, on the incoming URL and before the
+      // rewrites, so /courses -> /hubs/courses does not loop back.
+      {
+        source: "/hubs/:hub(courses|aos){/}?",
+        destination: "/:hub",
+        permanent: true,
+      },
     ]
   },
   // The /courses and /aos hubs render from app/hubs/[hub], a dynamic

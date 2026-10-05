@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Suspense } from "react"
 import { MapIcon, MessageSquareTextIcon, NetworkIcon } from "lucide-react"
 
 import { EntityRows } from "@/components/handbook/entity-lists"
@@ -26,9 +27,10 @@ const FEATURES = [
  * What MonMap is, under the planner: the page's crawlable content and
  * its links into the course, major and unit pages. The planner itself
  * renders nothing a search engine can read before a course is picked.
+ * Only the popular-courses list waits on the database, so the rest
+ * renders in the page shell.
  */
-export async function HomeAbout() {
-  const popular = await listPopularCourses(12).catch(() => [])
+export function HomeAbout() {
   return (
     <section
       aria-labelledby="about-monmap"
@@ -60,21 +62,11 @@ export async function HomeAbout() {
       </ul>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {popular.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">
-              Courses students plan most
-            </h3>
-            <EntityRows
-              rows={popular.map((c) => ({
-                kind: "course" as const,
-                code: c.code,
-                title: c.title,
-              }))}
-              linkYear={null}
-            />
-          </div>
-        ) : null}
+        {/* The empty fallback holds the first column, so the Browse
+            links do not move when the list streams in. */}
+        <Suspense fallback={<div />}>
+          <PopularCourses />
+        </Suspense>
         <nav aria-label="Browse" className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold">Browse the handbook</h3>
           <ul className="flex flex-col gap-1.5 text-sm">
@@ -97,5 +89,24 @@ export async function HomeAbout() {
         </nav>
       </div>
     </section>
+  )
+}
+
+/** The courses in the most saved plans, or nothing when there are none. */
+async function PopularCourses() {
+  const popular = await listPopularCourses(12).catch(() => [])
+  if (popular.length === 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-sm font-semibold">Courses students plan most</h3>
+      <EntityRows
+        rows={popular.map((c) => ({
+          kind: "course" as const,
+          code: c.code,
+          title: c.title,
+        }))}
+        linkYear={null}
+      />
+    </div>
   )
 }

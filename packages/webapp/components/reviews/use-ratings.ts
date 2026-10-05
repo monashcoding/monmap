@@ -3,7 +3,11 @@
 import { useEffect, useSyncExternalStore } from "react"
 
 import { fetchRatings } from "@/lib/api/client"
-import { chunkCodes } from "@/lib/api/query"
+import {
+  chunkCodes,
+  MAX_RATING_CODES,
+  RATINGS_MAX_AGE_S,
+} from "@/lib/api/query"
 import { NO_RATINGS, type RatingSummary } from "@/lib/reviews/types"
 import type { ReviewKind } from "@/lib/reviews/axes"
 
@@ -11,14 +15,14 @@ import type { ReviewKind } from "@/lib/reviews/axes"
  * Overall ratings for lists drawn in the browser (the planner's unit
  * search, popovers and map panel). Requests from every component on
  * the page within 30 ms go out as one GET request per kind (more for
- * over 300 codes), and results are kept for 5 minutes. Codes are sorted
- * before they are split, so the same codes give the same URLs and the
- * browser cache can answer.
+ * over MAX_RATING_CODES codes, the route's limit), and results are kept
+ * for RATINGS_MAX_AGE_S, as long as the browser's HTTP cache keeps
+ * them. Codes are sorted before they are split, so the same codes give
+ * the same URLs and the browser cache can answer.
  */
 
-const TTL_MS = 5 * 60 * 1000
+const TTL_MS = RATINGS_MAX_AGE_S * 1000
 const BATCH_MS = 30
-const CHUNK = 300
 
 const cache = new Map<string, { at: number; value: RatingSummary }>()
 const inFlight = new Set<string>()
@@ -51,7 +55,7 @@ function flush() {
   const batches = [...queued]
   queued.clear()
   for (const [kind, set] of batches) {
-    for (const chunk of chunkCodes(set, CHUNK)) {
+    for (const chunk of chunkCodes(set, MAX_RATING_CODES)) {
       void fetchRatings(kind, chunk)
         .then((found) => {
           const at = Date.now()

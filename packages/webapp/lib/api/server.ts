@@ -8,19 +8,30 @@
  * same for every visitor, which is what makes the public cache headers
  * safe. Per-user reads stay in the server actions.
  */
+import { RATINGS_MAX_AGE_S } from "@/lib/api/query"
 import { cleanYear } from "@/lib/db/input"
 import { hydratePlannerUnits, listAvailableYears } from "@/lib/db/queries"
 import type { UnitBundle } from "@/lib/planner/unit-cache"
 
-/** Handbook data, which changes only when ingest runs. */
+/**
+ * Handbook data, which changes only when ingest runs. A shared cache
+ * keeps a copy for a day, like the ISR pages, and may serve it stale
+ * for one more day while it refetches.
+ */
 export const HANDBOOK_CACHE =
-  "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800"
+  "public, max-age=300, s-maxage=86400, stale-while-revalidate=86400"
+/**
+ * An empty answer to missing or invalid input, such as a year the
+ * server does not know yet. It is cached briefly, so it does not
+ * outlive the ingest that fills it.
+ */
+export const EMPTY_CACHE = "public, max-age=60"
 /**
  * Ratings and public reviews, which change with every review. No
  * stale-while-revalidate: a review that is deleted or hidden by a
- * moderator must be gone within a minute.
+ * moderator must be gone within RATINGS_MAX_AGE_S.
  */
-export const RATINGS_CACHE = "public, max-age=60"
+export const RATINGS_CACHE = `public, max-age=${RATINGS_MAX_AGE_S}`
 
 export function json(body: unknown, cacheControl: string): Response {
   return Response.json(body, { headers: { "Cache-Control": cacheControl } })

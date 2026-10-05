@@ -16,9 +16,6 @@ import {
 } from "./axes.ts"
 import { REVIEW_SORTS, type ReviewSort } from "./types.ts"
 
-/** The most codes one ratings request may ask for. */
-export const MAX_RATING_CODES = 300
-
 const MAX_OFFSET = 10_000
 
 /** An upper-cased unit, course or AoS code, or null if it can't be one. */

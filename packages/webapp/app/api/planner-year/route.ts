@@ -1,5 +1,6 @@
 import type { PlannerYearData } from "@/lib/api/client"
 import {
+  EMPTY_CACHE,
   HANDBOOK_CACHE,
   json,
   knownYear,
@@ -35,7 +36,7 @@ export async function GET(req: Request): Promise<Response> {
       course: null,
       ...NOTHING_HYDRATED,
     }
-    return json(empty, HANDBOOK_CACHE)
+    return json(empty, EMPTY_CACHE)
   }
   const [courses, course] = await Promise.all([
     params.get("courses") === "1"
@@ -43,12 +44,15 @@ export async function GET(req: Request): Promise<Response> {
       : null,
     isCode(courseCode) ? fetchCourseWithAoS(courseCode, year) : null,
   ])
-  const body: PlannerYearData = course
-    ? {
-        courses,
-        course,
-        ...plain(await hydratePlannerUnits(plannerUnitCodes(course), year)),
-      }
-    : { courses, course: null, ...NOTHING_HYDRATED }
+  if (!course) {
+    const body: PlannerYearData = { courses, course: null, ...NOTHING_HYDRATED }
+    // A course that was asked for and not found is an empty answer.
+    return json(body, courseCode ? EMPTY_CACHE : HANDBOOK_CACHE)
+  }
+  const body: PlannerYearData = {
+    courses,
+    course,
+    ...plain(await hydratePlannerUnits(plannerUnitCodes(course), year)),
+  }
   return json(body, HANDBOOK_CACHE)
 }

@@ -8,9 +8,11 @@ import {
   cleanQuery,
   cleanTreeControls,
   cleanYear,
+  isCode,
   isPlannerState,
   MAX_PLAN_STATE_CHARS,
 } from "./input.ts"
+import { normaliseEntityCode } from "../handbook/links.ts"
 import { containsPattern, likeEscape } from "./like.ts"
 
 const YEARS = ["2025", "2026", "2027"]
@@ -20,6 +22,28 @@ test("cleanYear accepts only handbook years in the database", () => {
   assert.equal(cleanYear("2019", YEARS), null)
   assert.equal(cleanYear(2026, YEARS), null)
   assert.equal(cleanYear("2026 ", YEARS), null)
+})
+
+test("isCode takes exactly the upper-case codes normaliseEntityCode keeps", () => {
+  for (const code of [
+    "FIT1008",
+    "C2001",
+    "SFTWRENG-08",
+    "M6011 M6019",
+    "A1 B2 C3",
+    "A".repeat(20),
+    "-AB",
+    "A",
+    "FIT1008 ",
+  ]) {
+    assert.equal(isCode(code), normaliseEntityCode(code) === code, code)
+  }
+  assert.equal(isCode("FIT1008"), true)
+  assert.equal(isCode("M6011 M6019"), true)
+  assert.equal(isCode("fit1008"), false)
+  assert.equal(isCode("A1 B2 C3"), false)
+  assert.equal(isCode("A".repeat(17)), false)
+  assert.equal(isCode(42), false)
 })
 
 test("cleanQuery trims and cuts search text", () => {

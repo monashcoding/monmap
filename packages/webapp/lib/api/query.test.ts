@@ -6,6 +6,8 @@ import {
   apiUrl,
   chunkCodes,
   joinCodes,
+  MAX_RATING_CODES,
+  MAX_TEXT_CODES,
   MAX_URL_CODES,
   splitCodes,
 } from "./query.ts"
@@ -75,4 +77,17 @@ test("codes survive the trip through a URL, spaces included", () => {
     "M6011 M6019",
   ])
   assert.equal(url.searchParams.get("year"), "2026")
+})
+
+test("a chunk split by a route's limit comes back whole from splitCodes", () => {
+  const codes = Array.from({ length: 701 }, (_, i) => `FIT${1000 + i}`)
+  for (const [max, clean] of [
+    [MAX_URL_CODES, undefined],
+    [MAX_RATING_CODES, cleanEntityCode],
+    [MAX_TEXT_CODES, undefined],
+  ] as const) {
+    for (const chunk of chunkCodes(codes, max)) {
+      assert.deepEqual(splitCodes(joinCodes(chunk), max, clean), chunk)
+    }
+  }
 })

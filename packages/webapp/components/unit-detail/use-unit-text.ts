@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react"
 
 import { fetchUnitText } from "@/lib/api/client"
+import { chunkCodes, MAX_TEXT_CODES } from "@/lib/api/query"
 import type { UnitText } from "@/lib/planner/types"
 
 /**
@@ -30,16 +31,15 @@ function notify() {
   for (const l of listeners) l()
 }
 
-// /api/units/text answers at most this many codes per request.
-const MAX_CODES_PER_REQUEST = 12
-
 function request(codes: readonly string[], year: string) {
   const missing = codes.filter((c) => {
     const k = key(year, c)
     return !cache.has(k) && !inFlight.has(k)
   })
-  for (let i = 0; i < missing.length; i += MAX_CODES_PER_REQUEST)
-    requestBatch(missing.slice(i, i + MAX_CODES_PER_REQUEST), year)
+  // Split by the route's own limit, so it never drops a code that
+  // would then be cached as having no text.
+  for (const chunk of chunkCodes(missing, MAX_TEXT_CODES))
+    requestBatch(chunk, year)
 }
 
 function requestBatch(missing: string[], year: string) {

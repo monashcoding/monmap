@@ -1774,52 +1774,55 @@ async function _expandRequisiteGraph(
       sql`, `
     )
 
-  const nodesRows = await db.execute(sql`
-    WITH RECURSIVE seeds(code) AS (
-      VALUES ${valuesClause(seedArr)}
-    ),
-    noise(code) AS (
-      VALUES ${valuesClause(noise)}
-    ),
-    up(node, depth) AS (
-      SELECT code, 0 FROM seeds WHERE ${sql.raw(goUp ? "TRUE" : "FALSE")}
+  // At depth 0 the walk can only return the seeds, so skip its round
+  // trip (the plan map asks for exactly that).
+  let nodes = seedArr
+  if (maxDepth > 0) {
+    const nodesRows = await db.execute(sql`
+      WITH RECURSIVE seeds(code) AS (
+        VALUES ${valuesClause(seedArr)}
+      ),
+      noise(code) AS (
+        VALUES ${valuesClause(noise)}
+      ),
+      up(node, depth) AS (
+        SELECT code, 0 FROM seeds WHERE ${sql.raw(goUp ? "TRUE" : "FALSE")}
+        UNION
+        SELECT r.requires_unit_code, u.depth + 1
+        FROM up u
+        JOIN requisite_refs r
+          ON r.year = ${year}
+          AND r.requisite_type IN ('prerequisite', 'corequisite')
+          AND r.unit_code = u.node
+          AND r.unit_code <> r.requires_unit_code
+          AND NOT (
+            r.requisite_type = 'corequisite'
+            AND r.requires_unit_code IN (SELECT code FROM noise)
+          )
+        WHERE u.depth < ${maxDepth}
+      ),
+      down(node, depth) AS (
+        SELECT code, 0 FROM seeds WHERE ${sql.raw(goDown ? "TRUE" : "FALSE")}
+        UNION
+        SELECT r.unit_code, d.depth + 1
+        FROM down d
+        JOIN requisite_refs r
+          ON r.year = ${year}
+          AND r.requisite_type IN ('prerequisite', 'corequisite')
+          AND r.requires_unit_code = d.node
+          AND r.unit_code <> r.requires_unit_code
+          AND NOT (
+            r.requisite_type = 'corequisite'
+            AND r.requires_unit_code IN (SELECT code FROM noise)
+          )
+        WHERE d.depth < ${maxDepth}
+      )
+      SELECT node FROM up
       UNION
-      SELECT r.requires_unit_code, u.depth + 1
-      FROM up u
-      JOIN requisite_refs r
-        ON r.year = ${year}
-        AND r.requisite_type IN ('prerequisite', 'corequisite')
-        AND r.unit_code = u.node
-        AND r.unit_code <> r.requires_unit_code
-        AND NOT (
-          r.requisite_type = 'corequisite'
-          AND r.requires_unit_code IN (SELECT code FROM noise)
-        )
-      WHERE u.depth < ${maxDepth}
-    ),
-    down(node, depth) AS (
-      SELECT code, 0 FROM seeds WHERE ${sql.raw(goDown ? "TRUE" : "FALSE")}
-      UNION
-      SELECT r.unit_code, d.depth + 1
-      FROM down d
-      JOIN requisite_refs r
-        ON r.year = ${year}
-        AND r.requisite_type IN ('prerequisite', 'corequisite')
-        AND r.requires_unit_code = d.node
-        AND r.unit_code <> r.requires_unit_code
-        AND NOT (
-          r.requisite_type = 'corequisite'
-          AND r.requires_unit_code IN (SELECT code FROM noise)
-        )
-      WHERE d.depth < ${maxDepth}
-    )
-    SELECT node FROM up
-    UNION
-    SELECT node FROM down
-  `)
-  const nodes = (nodesRows as unknown as Array<{ node: string }>).map(
-    (r) => r.node
-  )
+      SELECT node FROM down
+    `)
+    nodes = (nodesRows as unknown as Array<{ node: string }>).map((r) => r.node)
+  }
 
   if (nodes.length === 0) {
     return { seeds: seedArr, nodes: seedArr, edges: [] }

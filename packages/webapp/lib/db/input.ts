@@ -1,24 +1,26 @@
 /**
  * Checks for the arguments of the server actions in app/actions.ts and
- * the GET routes under app/api. Both are endpoints anyone can call with
- * any input, and most of their reads are memoised per argument list
- * (memo.ts), so junk input must be dropped before it reaches a query or
- * becomes a cache key. Pure, so it is tested without a database.
+ * the planner's GET routes under app/api. Both are endpoints anyone can
+ * call with any input, and most of their reads are memoised per
+ * argument list (memo.ts), so junk input must be dropped before it
+ * reaches a query or becomes a cache key. Pure, so it is tested without
+ * a database.
+ *
+ * Codes have one grammar, normaliseEntityCode in lib/handbook/links.ts.
+ * isCode takes a code only as sent, because the planner matches results
+ * back to the exact codes it asked for. The review routes and actions
+ * upper-case first, through cleanEntityCode in lib/reviews/input.ts.
  */
+import { normaliseEntityCode } from "../handbook/links.ts"
 import { PERIOD_KIND_ORDER } from "../planner/teaching-period.ts"
 import type { PlannerState } from "../planner/types.ts"
 import type { TreeControlsValue } from "../tree/payload.ts"
 import type { TreeDirection } from "../tree/types.ts"
 
-/**
- * Unit and course codes as Monash writes them (FIT1045, C2001). One
- * combined course is coded "M6011 M6019", hence the space.
- */
-const CODE = /^[A-Z0-9][A-Z0-9 -]{1,23}$/
 /** AoS codes, plus the virtual `C2001:part-d:slug` ones. */
 const AOS_CODE = /^[A-Za-z0-9:_.-]{2,160}$/
 
-/** Characters of search text kept; /search uses the same limit. */
+/** Characters of search text kept: the API search, /search and the admin. */
 export const MAX_QUERY_LENGTH = 100
 /** Saved plans per account. */
 export const MAX_PLANS_PER_USER = 50
@@ -27,8 +29,9 @@ export const MAX_GRADES_PER_USER = 500
 /** Serialised size of one plan. Real plans are a few KB. */
 export const MAX_PLAN_STATE_CHARS = 100_000
 
+/** A unit or course code exactly as Monash writes it (FIT1045, C2001). */
 export function isCode(v: unknown): v is string {
-  return typeof v === "string" && CODE.test(v)
+  return typeof v === "string" && normaliseEntityCode(v) === v
 }
 
 /** `v` when it is one of the handbook years in the database. */

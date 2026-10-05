@@ -130,7 +130,7 @@ export function fetchRichUnitSearch(
   return getJson(apiUrl("/api/units/search-rich", { q, year }), signal)
 }
 
-/** The synopsis and enrolment rules of up to 12 units. */
+/** The synopsis and enrolment rules of up to MAX_TEXT_CODES units. */
 export function fetchUnitText(
   codes: readonly string[],
   year: string
@@ -156,7 +156,10 @@ export function fetchTreeData(
   )
 }
 
-/** The prerequisite links between up to 400 units, with their data. */
+/**
+ * The prerequisite links between up to MAX_GRAPH_CODES units, with
+ * their data. The route keeps the first MAX_GRAPH_CODES in sort order.
+ */
 export function fetchPlanGraph(
   codes: readonly string[],
   year: string,
@@ -168,7 +171,7 @@ export function fetchPlanGraph(
   )
 }
 
-/** Overall ratings for up to 300 codes of one kind. */
+/** Overall ratings for up to MAX_RATING_CODES codes of one kind. */
 export function fetchRatings(
   kind: ReviewKind,
   codes: readonly string[]

@@ -1,5 +1,6 @@
 import { splitCodes } from "@/lib/api/query"
 import {
+  EMPTY_CACHE,
   HANDBOOK_CACHE,
   json,
   knownYear,
@@ -21,6 +22,6 @@ export async function GET(req: Request): Promise<Response> {
   const params = searchParams(req)
   const year = await knownYear(params.get("year"))
   const codes = splitCodes(params.get("codes"))
-  if (!year || codes.length === 0) return json(NOTHING_HYDRATED, HANDBOOK_CACHE)
+  if (!year || codes.length === 0) return json(NOTHING_HYDRATED, EMPTY_CACHE)
   return json(plain(await hydratePlannerUnits(codes, year)), HANDBOOK_CACHE)
 }

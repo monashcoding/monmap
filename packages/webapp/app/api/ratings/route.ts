@@ -1,8 +1,8 @@
-import { splitCodes } from "@/lib/api/query"
+import { MAX_RATING_CODES, splitCodes } from "@/lib/api/query"
 import { json, RATINGS_CACHE, searchParams } from "@/lib/api/server"
 import { ratingSummaries } from "@/lib/db/reviews"
 import { isReviewKind } from "@/lib/reviews/axes"
-import { cleanEntityCode, MAX_RATING_CODES } from "@/lib/reviews/input"
+import { cleanEntityCode } from "@/lib/reviews/input"
 
 /**
  * Overall ratings for up to MAX_RATING_CODES codes of one kind, for

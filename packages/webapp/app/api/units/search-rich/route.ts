@@ -1,5 +1,6 @@
 import type { RichSearchResult } from "@/lib/api/client"
 import {
+  EMPTY_CACHE,
   HANDBOOK_CACHE,
   json,
   knownYear,
@@ -28,7 +29,7 @@ export async function GET(req: Request): Promise<Response> {
   const q = cleanQuery(params.get("q"))
   if (!year || !q) {
     const empty: RichSearchResult = { ...NOTHING_HYDRATED, rank: {} }
-    return json(empty, HANDBOOK_CACHE)
+    return json(empty, EMPTY_CACHE)
   }
   const { rank, ...hydrated } = await searchUnitsRich(q, year)
   const body: RichSearchResult = {

@@ -26,7 +26,9 @@ MonMap URL by changing the domain.
   redirect to the matching page. `/tree` redirects to `/search`.
 - `/courses` and `/aos` render from `app/hubs/[hub]/page.tsx`:
   `next.config.mjs` rewrites both URLs there, so the hubs are cached for
-  a day like the pages they list.
+  a day like the pages they list. A direct visit to `/hubs/courses` or
+  `/hubs/aos` redirects to `/courses` or `/aos` (308), so each hub has
+  one URL.
 
 The page components live in `packages/webapp/components/handbook/`.
 Their data comes from `lib/db/handbook.ts`. The raw-JSON readers are
@@ -82,11 +84,18 @@ The Docker build has no database, so it renders no handbook pages.
   in the handbook is a 404, like its page.
 - Saving, deleting or moderating a review drops the cached HTML of
   that entity's pages (`revalidatePath` for the bare URL and each
-  year). The day limit bounds how stale the stars on other pages'
-  lists can get.
+  year) and of its hub (`/hubs/courses` or `/hubs/aos`, the path the
+  ISR entry is stored under). The day limit bounds how stale the stars
+  on other pages' lists can get.
 - The queries behind a page are also memoised in process for an hour
   (`cacheHandbook`).
-- After a re-ingest, redeploy to clear both caches.
+- The handbook GET routes under `/api` let a shared cache keep an
+  answer for a day and serve it stale for one more day
+  (`HANDBOOK_CACHE` in `lib/api/server.ts`). An empty answer to missing
+  or invalid input gets `max-age=60` only (`EMPTY_CACHE`).
+- After a re-ingest, redeploy to clear both caches. A redeploy does not
+  clear a CDN: if a Cloudflare cache rule covers `/api/*`, purge it
+  too, or old API answers can last up to two more days.
 
 To fill the cache after a deploy without a burst of load, run the
 warm-up script from any machine. It reads the sitemap and requests each

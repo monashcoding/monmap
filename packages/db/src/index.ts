@@ -22,8 +22,14 @@ export interface CreateDbOptions {
  *
  * Pool defaults suit a long-lived process that talks to Postgres
  * directly (the self-hosted webapp and the ingest CLI): up to 10
- * connections, prepared statements on, idle sockets kept for 5 minutes
- * and each connection replaced after an hour. Pass `{ pool }` to tune.
+ * connections, idle sockets kept for 5 minutes and each connection
+ * replaced after an hour. Pass `{ pool }` to tune.
+ *
+ * Statements are not prepared. Drizzle runs every query through
+ * postgres.js `unsafe()`, which never prepares whatever the pool says,
+ * so `prepare: true` here would have no effect. Do not force it on:
+ * the variable-length IN and VALUES lists would fill postgres.js's
+ * per-connection statement cache, which it never evicts.
  */
 export function createDb(
   url: string,
@@ -31,7 +37,7 @@ export function createDb(
 ): ReturnType<typeof drizzle<typeof schema>> {
   const sql = postgres(url, {
     max: 10,
-    prepare: true,
+    prepare: false,
     idle_timeout: 300,
     max_lifetime: 60 * 60,
     connect_timeout: 10,

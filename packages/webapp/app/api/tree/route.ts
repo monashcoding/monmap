@@ -1,4 +1,9 @@
-import { HANDBOOK_CACHE, json, searchParams } from "@/lib/api/server"
+import {
+  EMPTY_CACHE,
+  HANDBOOK_CACHE,
+  json,
+  searchParams,
+} from "@/lib/api/server"
 import { cleanTreeControls } from "@/lib/db/input"
 import { listAvailableYears } from "@/lib/db/queries"
 import { EMPTY_TREE_PAYLOAD, prefetchTreeData } from "@/lib/tree/prefetch"
@@ -25,6 +30,6 @@ export async function GET(req: Request): Promise<Response> {
     },
     await listAvailableYears()
   )
-  const body = controls ? await prefetchTreeData(controls) : EMPTY_TREE_PAYLOAD
-  return json(body, HANDBOOK_CACHE)
+  if (!controls) return json(EMPTY_TREE_PAYLOAD, EMPTY_CACHE)
+  return json(await prefetchTreeData(controls), HANDBOOK_CACHE)
 }
