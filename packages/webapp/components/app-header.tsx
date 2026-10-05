@@ -51,7 +51,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
     <header
       className={cn(
         "sticky top-0 z-40 -mx-3 -mt-3 flex h-14 items-center gap-2 px-3 sm:-mx-5 sm:-mt-5 sm:gap-3 sm:px-5",
-        "before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:border-b before:bg-background/85 before:backdrop-blur-md",
+        "before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:border-b before:bg-card/90 before:backdrop-blur-md",
         "print:static print:mx-0 print:mt-0 print:before:hidden"
       )}
     >
