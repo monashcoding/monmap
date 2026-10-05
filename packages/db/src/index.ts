@@ -10,7 +10,7 @@ export * from "./overrides.ts";
 export type Database = ReturnType<typeof createDb>;
 
 export interface CreateDbOptions {
-  /** Override postgres-js pool options. Defaults target Vercel serverless. */
+  /** Override postgres-js pool options. */
   pool?: Options<Record<string, never>>;
 }
 
@@ -20,22 +20,21 @@ export interface CreateDbOptions {
  * We pass `casing: "snake_case"` to match drizzle.config.ts — schema
  * fields are camel-cased in TS, snake-cased in the DB.
  *
- * Pool defaults target Vercel serverless: `max: 1` so a single function
- * instance never opens more than one connection (each instance is one
- * concurrent request), `idle_timeout` reaps the socket before the next
- * cold start, and `prepare: false` is required when going through a
- * transaction-mode pooler (PgBouncer / Neon / Supabase pgbouncer).
- * Long-running consumers (the ingest CLI) can pass `{ pool: { max, ... } }`.
+ * Pool defaults suit a long-lived process that talks to Postgres
+ * directly (the self-hosted webapp and the ingest CLI): up to 10
+ * connections, prepared statements on, idle sockets kept for 5 minutes
+ * and each connection replaced after an hour. Pass `{ pool }` to tune.
  */
 export function createDb(
   url: string,
   options: CreateDbOptions = {},
 ): ReturnType<typeof drizzle<typeof schema>> {
   const sql = postgres(url, {
-    max: 1,
-    idle_timeout: 20,
-    max_lifetime: 60 * 30,
-    prepare: false,
+    max: 10,
+    prepare: true,
+    idle_timeout: 300,
+    max_lifetime: 60 * 60,
+    connect_timeout: 10,
     ...options.pool,
   });
   return drizzle(sql, { schema, casing: "snake_case" });

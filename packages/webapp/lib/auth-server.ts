@@ -4,9 +4,13 @@ import { eq } from "drizzle-orm"
 import { user } from "@monmap/db"
 
 import { getDb } from "./db/client"
-import { type MacClaims, sessionCookieHeader, verifyMacToken } from "./mac-auth"
+import {
+  AUTH_URL,
+  type MacClaims,
+  sessionCookieHeader,
+  verifyMacToken,
+} from "./mac-auth"
 
-const AUTH_URL = process.env.AUTH_URL ?? "https://auth.monashcoding.com"
 
 /** After this long without an answer, the visitor counts as anonymous. */
 const AUTH_TIMEOUT_MS = 3000

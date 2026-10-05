@@ -20,9 +20,9 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { config } from "dotenv"
-
-config({ path: resolve(fileURLToPath(import.meta.url), "../../../../.env"), quiet: true })
+// Loads the root .env (CLAUDE.md §1) before the queries module reads
+// DATABASE_URL.
+import "@monmap/db/env"
 
 const { fetchCourseWithAoS, listCoursesForPicker } =
   await import("../lib/db/queries.ts")

@@ -25,17 +25,15 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { config } from "dotenv"
+import { DATABASE_URL } from "@monmap/db/env"
 import postgres from "postgres"
-
-config({ path: resolve(fileURLToPath(import.meta.url), "../../../../.env"), quiet: true })
 
 const baselinePath = resolve(
   fileURLToPath(import.meta.url),
   "../corpus-baseline.json"
 )
 
-const sql = postgres(process.env.DATABASE_URL!)
+const sql = postgres(DATABASE_URL)
 
 /**
  * Mirrors `classifyTeachingPeriod`'s prefix set. Kept in SQL rather

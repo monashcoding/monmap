@@ -11,7 +11,7 @@
  */
 import { createRemoteJWKSet, jwtVerify } from "jose"
 
-const AUTH_URL = process.env.AUTH_URL ?? "https://auth.monashcoding.com"
+export const AUTH_URL = process.env.AUTH_URL ?? "https://auth.monashcoding.com"
 const ISSUER = AUTH_URL
 const AUDIENCE = process.env.JWT_AUDIENCE ?? "mac-suite"
 
