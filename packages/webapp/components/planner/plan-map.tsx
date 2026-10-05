@@ -165,38 +165,40 @@ function FocusedUnitCard({
   const rating = useRating("unit", code)
   const href = entityHref("unit", code, year)
   return (
-    <div className="absolute top-3 right-3 z-20 flex w-[min(300px,calc(100%-1.5rem))] flex-col gap-1.5 rounded-panel border bg-card p-3.5 shadow-2xl ring-1 ring-border/60">
-      <div className="flex items-center gap-2">
-        <Link
-          href={href}
-          className="text-base font-bold tabular-nums underline-offset-2 hover:underline"
-        >
-          {code}
-        </Link>
+    <div className="absolute top-3 right-3 z-20 flex w-[min(300px,calc(100%-1.5rem))] flex-col rounded-panel border bg-card p-4 shadow-2xl ring-1 ring-border/60">
+      <div className="flex items-start gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <Link
+            href={href}
+            className="self-start text-base leading-tight font-bold tabular-nums underline-offset-2 hover:underline"
+          >
+            {code}
+          </Link>
+          {title ? (
+            <Link
+              href={href}
+              className="text-sm leading-snug font-medium text-foreground/85 underline-offset-2 hover:underline"
+            >
+              {title}
+            </Link>
+          ) : null}
+        </div>
         <Button
           variant="ghost"
           size="icon-xs"
           onClick={onClose}
           aria-label="Close unit card"
-          className="ml-auto"
+          className="-mt-0.5 -mr-1 shrink-0"
         >
           <XIcon className="size-3.5" />
         </Button>
       </div>
-      {title ? (
-        <Link
-          href={href}
-          className="text-sm leading-snug font-medium underline-offset-2 hover:underline"
-        >
-          {title}
-        </Link>
-      ) : null}
-      <div className="h-4">
+      <div className="mt-2.5 flex h-4 items-center">
         {rating ? <RatingInline summary={rating} size="xs" /> : null}
       </div>
       <Link
         href={href}
-        className="mt-1 inline-flex h-8 items-center justify-center gap-1.5 rounded-control bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/80"
+        className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-control bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-primary/80"
       >
         <ExternalLinkIcon className="size-3.5" aria-hidden />
         View Details
