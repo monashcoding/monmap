@@ -3,7 +3,7 @@ name: Build & publish image
 # Build the webapp Docker image OFF the Oracle box (GitHub's runners do the
 # heavy 2-4GB build) and push it to GHCR. Dokploy then just *pulls* the
 # prebuilt image and runs it — so three apps can share one Oracle box
-# without their builds fighting over RAM/CPU. See docs/deploy.md.
+# without their builds fighting over RAM/CPU.
 
 on:
   push:
