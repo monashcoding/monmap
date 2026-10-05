@@ -27,11 +27,13 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import {
   deleteMyPlanAction,
   duplicateMyPlanAction,
+  hydrateUnitsAction,
+  listMyGradesAction,
   renameMyPlanAction,
 } from "@/app/actions"
 
 import type { PlanPageData } from "./page"
-import { buildCsv, downloadBlob, planSlug } from "@/lib/planner/plan-export"
+import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
 import { PlanPreview } from "./plan-preview"
 
 function ProgressBar({ pct }: { pct: number }) {
@@ -80,8 +82,6 @@ export function PlanCard({ data }: { data: PlanPageData }) {
   const handbookUrl = course
     ? `https://handbook.monash.edu/${course.year}/courses/${course.code}`
     : null
-
-  const slug = planSlug(plan.name)
 
   function handleDelete() {
     posthog.capture("plan_deleted", {
@@ -237,16 +237,38 @@ export function PlanCard({ data }: { data: PlanPageData }) {
               variant="ghost"
               size="sm"
               className="h-8 gap-1.5 text-[11px]"
+              disabled={isPending}
               onClick={() => {
                 posthog.capture("plan_exported", {
                   format: "csv",
                   course_code: course?.code,
                 })
-                downloadBlob(
-                  buildCsv(plan.state, plan.name),
-                  `${slug}.csv`,
-                  "text/csv"
-                )
+                // This page only has the plan's codes, so fetch titles,
+                // credit points and marks for the export.
+                startTransition(async () => {
+                  const codes = [
+                    ...new Set([
+                      ...plan.state.years.flatMap((y) =>
+                        y.slots.flatMap((s) => s.unitCodes)
+                      ),
+                      ...(plan.state.credit ?? []).flatMap((c) =>
+                        c.code ? [c.code] : []
+                      ),
+                    ]),
+                  ]
+                  const [hydrated, grades] = await Promise.all([
+                    hydrateUnitsAction(codes, plan.state.courseYear),
+                    listMyGradesAction(),
+                  ])
+                  downloadBlob(
+                    buildCsv(plan.state, {
+                      units: new Map(Object.entries(hydrated.units)),
+                      grades: new Map(Object.entries(grades)),
+                    }),
+                    planFileName(plan.name, "csv"),
+                    "text/csv"
+                  )
+                })
               }}
             >
               <DownloadIcon className="size-3.5" />

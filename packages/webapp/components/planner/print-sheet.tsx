@@ -1,37 +1,65 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 
+import { facultyStyle } from "@/lib/planner/faculty-color"
+import { markToGrade } from "@/lib/planner/grades"
 import { summarizePlan } from "@/lib/planner/progress"
-import { slotLabel, studyYearName, studyYearSpan } from "@/lib/planner/timeline"
-import type {
-  PlannerCourseWithAoS,
-  PlannerOffering,
-  PlannerState,
-  PlannerUnit,
+import {
+  slotBlockCredit,
+  slotLabel,
+  startLabel,
+  studyYearName,
+  studyYearSpan,
+} from "@/lib/planner/timeline"
+import {
+  slotCapacity,
+  type PlannerCourseWithAoS,
+  type PlannerOffering,
+  type PlannerSlot,
+  type PlannerState,
+  type PlannerUnit,
 } from "@/lib/planner/types"
+import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
 import { useWam } from "./wam-context"
 
 /**
- * The printable rendering of a plan.
+ * The printable rendering of a plan: the planner's own layout on
+ * paper. Each study year is a dark strip over one row per semester,
+ * and each unit is a card with its faculty colour, code, title, credit
+ * points and mark, as on screen. Hidden on screen (`hidden
+ * print:block`); `planner.tsx` hides the live app when printing.
  *
- * `window.print()` used to hand the browser the live planner — nav
- * chrome, drag handles, kebab menus, and unit cards whose titles are
- * clipped to a fixed-width column — which prints as an unreadable
- * screenshot of an app. This is a separate document built from the
- * same state: hidden on screen (`hidden print:block`), and the only
- * thing visible on paper.
- *
- * Layout is one table per year so a year never straddles a page break
- * (`break-inside-avoid`), with the teaching period spanning its units'
- * rows rather than repeating on each.
+ * Colours print because the sheet sets `print-color-adjust: exact`.
+ * A study year never splits across pages (`break-inside-avoid`).
  */
 export function PrintSheet() {
   const { state, course, units, offerings, plans, activePlanId, currentUser } =
     usePlanner()
-  const { grades } = useWam()
+  const { grades, wam, gpa } = useWam()
+  const planName =
+    plans.find((p) => p.id === activePlanId)?.name ?? "Course map"
+
+  // The browser prints the document title in its page header and uses
+  // it as the PDF's file name, so name it after the plan while printing.
+  useEffect(() => {
+    let previous = document.title
+    const before = () => {
+      previous = document.title
+      document.title = planName
+    }
+    const after = () => {
+      document.title = previous
+    }
+    window.addEventListener("beforeprint", before)
+    window.addEventListener("afterprint", after)
+    return () => {
+      window.removeEventListener("beforeprint", before)
+      window.removeEventListener("afterprint", after)
+    }
+  }, [planName])
 
   return (
     <PrintSheetView
@@ -40,7 +68,9 @@ export function PrintSheet() {
       units={units}
       offerings={offerings}
       grades={grades}
-      planName={plans.find((p) => p.id === activePlanId)?.name ?? "Course plan"}
+      wam={wam}
+      gpa={gpa}
+      planName={planName}
       userName={currentUser?.name ?? null}
     />
   )
@@ -52,6 +82,8 @@ export interface PrintSheetViewProps {
   units: ReadonlyMap<string, PlannerUnit>
   offerings: ReadonlyMap<string, PlannerOffering[]>
   grades: ReadonlyMap<string, number>
+  wam: number | null
+  gpa: number | null
   planName: string
   userName: string | null
 }
@@ -66,22 +98,14 @@ export function PrintSheetView({
   units,
   offerings,
   grades,
+  wam,
+  gpa,
   planName,
   userName,
 }: PrintSheetViewProps) {
   const summary = useMemo(
     () => summarizePlan(state, course, units, offerings),
     [state, course, units, offerings]
-  )
-
-  // A Mark column is dead weight for the majority who never enter
-  // grades, so it only appears once at least one planned unit has one.
-  const showMarks = useMemo(
-    () =>
-      state.years.some((y) =>
-        y.slots.some((s) => s.unitCodes.some((c) => grades.get(c) != null))
-      ),
-    [state.years, grades]
   )
 
   const selectedAos = useMemo(() => {
@@ -104,167 +128,245 @@ export function PrintSheetView({
     year: "numeric",
   })
 
+  const stats: { label: string; value: string }[] = [
+    {
+      label: "Credit points",
+      value: `${summary.totalCreditPoints} / ${summary.targetCreditPoints || "-"}`,
+    },
+    { label: "Units", value: String(summary.uniqueUnitCount) },
+    { label: "Starts", value: startLabel(state) },
+    wam !== null
+      ? { label: "WAM / GPA", value: `${wam.toFixed(1)} / ${gpa?.toFixed(2)}` }
+      : { label: "Handbook", value: state.courseYear },
+  ]
+
   return (
-    <section className="hidden text-black print:block">
-      <header className="mb-4 border-b border-neutral-400 pb-3">
-        <h1 className="text-lg font-bold">{planName}</h1>
-        {course ? (
-          <p className="mt-0.5 text-[11px]">
-            {course.code} - {course.title}
-          </p>
-        ) : null}
-        <p className="mt-0.5 text-[10px] text-neutral-600">
-          {state.courseYear} handbook
-          {state.campus ? ` - ${state.campus} campus` : ""}
-          {userName ? ` - ${userName}` : ""} - printed {printedOn}
-        </p>
-        {selectedAos.length > 0 ? (
-          <ul className="mt-1.5 text-[10px]">
-            {selectedAos.map((aos) => (
-              <li key={aos.code}>
-                <span className="font-semibold">{aos.relationshipLabel}:</span>{" "}
-                {aos.title} ({aos.code})
-              </li>
-            ))}
-          </ul>
-        ) : null}
+    <section className="hidden text-[#252525] [-webkit-print-color-adjust:exact] [print-color-adjust:exact] print:block">
+      <header className="mb-4 flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          <h1 className="text-xl leading-tight font-bold">{planName}</h1>
+          {course ? (
+            <p className="mt-0.5 text-[11px]">
+              <span className="font-semibold">{course.code}</span>{" "}
+              {course.title}
+            </p>
+          ) : null}
+          {selectedAos.length > 0 ? (
+            <ul className="mt-1.5 flex flex-col gap-0.5 text-[9px] text-neutral-600">
+              {selectedAos.map((aos) => (
+                <li key={aos.code}>
+                  <span className="font-semibold text-[#252525]">
+                    {aos.title}
+                  </span>
+                  {/* Synthetic codes ("C2001:clayton-option:…") are ours,
+                      not Monash's, so only real codes are shown. */}
+                  {aos.code.includes(":") ? null : ` (${aos.code})`} -{" "}
+                  {aos.relationshipLabel}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+        <div className="shrink-0 text-right text-[9px] text-neutral-600">
+          <p className="text-[11px] font-bold text-[#252525]">MonMap</p>
+          {userName ? <p>{userName}</p> : null}
+          <p>Printed {printedOn}</p>
+        </div>
       </header>
 
-      {state.years.map((year, yearIndex) => {
-        const slots = year.slots.filter((s) => s.unitCodes.length > 0)
-        const yearCp = summary.creditPointsByYear[yearIndex] ?? 0
-        return (
-          <table
-            key={yearIndex}
-            className="mb-4 w-full border-collapse break-inside-avoid text-[10px]"
+      <dl className="mb-4 grid grid-cols-4 overflow-hidden rounded-[6px] border border-neutral-300">
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            className={cn("px-3 py-2", i > 0 && "border-l border-neutral-300")}
           >
-            <caption className="mb-1 text-left text-[11px] font-bold">
-              {studyYearName(yearIndex)} - {studyYearSpan(state, yearIndex)}
-              <span className="float-right font-normal text-neutral-600">
-                {yearCp} cp
-              </span>
-            </caption>
-            <thead>
-              <tr className="border-y border-neutral-400 text-left">
-                <Th className="w-[108px]">Period</Th>
-                <Th className="w-[72px]">Code</Th>
-                <Th>Unit</Th>
-                <Th className="w-[36px] text-right">CP</Th>
-                {showMarks ? (
-                  <Th className="w-[44px] text-right">Mark</Th>
-                ) : null}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.length === 0 ? (
-                <tr className="border-b border-neutral-200">
-                  <td
-                    className="py-1 text-neutral-500"
-                    colSpan={showMarks ? 5 : 4}
-                  >
-                    No units planned.
-                  </td>
-                </tr>
-              ) : (
-                slots.map((slot, slotIndex) =>
-                  slot.unitCodes.map((code, i) => {
-                    const unit = units.get(code)
-                    const mark = grades.get(code)
-                    return (
-                      <tr
-                        key={`${slotIndex}:${code}:${i}`}
-                        className="border-b border-neutral-200 align-top"
-                      >
-                        {i === 0 ? (
-                          <td
-                            rowSpan={slot.unitCodes.length}
-                            className="py-1 pr-2 font-semibold whitespace-nowrap"
-                          >
-                            {slotLabel(state, yearIndex, slot)}
-                          </td>
-                        ) : null}
-                        <td className="py-1 pr-2 font-semibold tabular-nums">
-                          {code}
-                        </td>
-                        <td className="py-1 pr-2">{unit?.title ?? "-"}</td>
-                        <td className="py-1 text-right tabular-nums">
-                          {unit?.creditPoints ?? "-"}
-                        </td>
-                        {showMarks ? (
-                          <td className="py-1 text-right tabular-nums">
-                            {mark ?? ""}
-                          </td>
-                        ) : null}
-                      </tr>
-                    )
-                  })
-                )
-              )}
-            </tbody>
-          </table>
-        )
-      })}
+            <dt className="text-[8px] font-semibold tracking-wider text-neutral-500 uppercase">
+              {s.label}
+            </dt>
+            <dd className="text-[12px] font-semibold tabular-nums">
+              {s.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
 
-      {credit.length > 0 ? (
-        <table className="mb-4 w-full border-collapse break-inside-avoid text-[10px]">
-          <caption className="mb-1 text-left text-[11px] font-bold">
-            Credit for prior study
-            <span className="float-right font-normal text-neutral-600">
-              {creditTotal} cp
-            </span>
-          </caption>
-          <thead>
-            <tr className="border-y border-neutral-400 text-left">
-              <Th className="w-[72px]">Code</Th>
-              <Th>Source</Th>
-              <Th className="w-[36px] text-right">CP</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {credit.map((entry, i) => (
-              <tr key={i} className="border-b border-neutral-200">
-                <td className="py-1 pr-2 font-semibold tabular-nums">
-                  {entry.code ?? "Unspecified"}
-                </td>
-                <td className="py-1 pr-2">{entry.label ?? "-"}</td>
-                <td className="py-1 text-right tabular-nums">
-                  {entry.creditPoints}
-                </td>
-              </tr>
+      <div className="flex flex-col gap-3">
+        {state.years.map((year, yearIndex) => (
+          <YearBlock
+            key={yearIndex}
+            title={studyYearName(yearIndex)}
+            span={studyYearSpan(state, yearIndex)}
+            creditPoints={summary.creditPointsByYear[yearIndex] ?? 0}
+          >
+            {year.slots.map((slot, slotIndex) => (
+              <SlotRow
+                key={slotIndex}
+                label={slotLabel(state, yearIndex, slot)}
+                slot={slot}
+                units={units}
+                grades={grades}
+              />
             ))}
-          </tbody>
-        </table>
-      ) : null}
+          </YearBlock>
+        ))}
 
-      <footer className="mt-2 break-inside-avoid border-t border-neutral-400 pt-2 text-[10px]">
-        <p className="font-semibold">
-          {summary.totalCreditPoints} of {summary.targetCreditPoints || "-"}{" "}
-          credit points planned - {summary.uniqueUnitCount} units
-        </p>
+        {credit.length > 0 ? (
+          <YearBlock title="Credit for prior study" creditPoints={creditTotal}>
+            <div className="grid grid-cols-4 gap-1.5 p-1.5">
+              {credit.map((entry, i) => (
+                <UnitTile
+                  key={i}
+                  code={entry.code ?? "Credit"}
+                  title={entry.label ?? units.get(entry.code ?? "")?.title}
+                  creditPoints={entry.creditPoints}
+                />
+              ))}
+            </div>
+          </YearBlock>
+        ) : null}
+      </div>
+
+      <footer className="mt-4 break-inside-avoid text-[8.5px] leading-relaxed text-neutral-500">
         {summary.duplicateUnitCodes.length > 0 ? (
-          <p className="mt-0.5 text-neutral-600">
-            Repeated units (counted once):{" "}
-            {summary.duplicateUnitCodes.join(", ")}
+          <p>
+            Repeated units, counted once:{" "}
+            {summary.duplicateUnitCodes.join(", ")}.
           </p>
         ) : null}
-        <p className="mt-1 text-neutral-600">
-          Generated by MonMap (monmap.monashcoding.com), a course mapper by the
-          Monash Association of Coding. Not an official Monash document - always
-          confirm against the handbook and your course adviser.
+        <p>
+          Made with MonMap (monmap.monashcoding.com) by the Monash Association
+          of Coding. This is not an official Monash document: check your plan
+          against the handbook and with your course adviser.
         </p>
       </footer>
     </section>
   )
 }
 
-function Th({
+function YearBlock({
+  title,
+  span,
+  creditPoints,
   children,
-  className = "",
 }: {
+  title: string
+  span?: string
+  creditPoints: number
   children: React.ReactNode
-  className?: string
 }) {
-  return <th className={`py-1 pr-2 font-semibold ${className}`}>{children}</th>
+  return (
+    <div className="break-inside-avoid overflow-hidden rounded-[8px] border border-neutral-300">
+      <div className="flex items-baseline justify-between bg-[#252525] px-3 py-1.5 text-[9px] font-semibold tracking-wider text-white uppercase">
+        <span>
+          {title}
+          {span ? (
+            <span className="ml-1.5 font-medium text-white/55">({span})</span>
+          ) : null}
+        </span>
+        <span className="font-medium text-white/70 normal-case">
+          {creditPoints} credit points
+        </span>
+      </div>
+      {children}
+    </div>
+  )
 }
 
-/** The row's period name — the user's own slot label wins when set. */
+function SlotRow({
+  label,
+  slot,
+  units,
+  grades,
+}: {
+  label: string
+  slot: PlannerSlot
+  units: ReadonlyMap<string, PlannerUnit>
+  grades: ReadonlyMap<string, number>
+}) {
+  const slotCp =
+    slot.unitCodes.reduce((n, c) => n + (units.get(c)?.creditPoints ?? 6), 0) +
+    slotBlockCredit(slot)
+  // Four columns like the planner; a part-time or summer slot still
+  // lines up with the semesters above and below it.
+  const columns = Math.max(4, slot.unitCodes.length)
+  const empty = Math.max(
+    0,
+    Math.min(slotCapacity(slot), columns) - slot.unitCodes.length
+  )
+
+  return (
+    <div className="grid grid-cols-[104px_minmax(0,1fr)] border-t border-neutral-300">
+      <div className="bg-neutral-50 px-3 py-2">
+        <p className="text-[10px] font-semibold">{label}</p>
+        <p className="text-[8.5px] text-neutral-500">{slotCp} credit points</p>
+      </div>
+      {slot.status ? (
+        <div className="flex items-center px-3 text-[9.5px] text-neutral-600 italic">
+          {slot.status === "exchange"
+            ? `On exchange, ${slotBlockCredit(slot)} credit points`
+            : "On leave"}
+        </div>
+      ) : (
+        <div
+          className="grid gap-1.5 p-1.5"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+        >
+          {slot.unitCodes.map((code, i) => {
+            const unit = units.get(code)
+            const mark = grades.get(code)
+            return (
+              <UnitTile
+                key={`${code}:${i}`}
+                code={code}
+                title={unit?.title}
+                creditPoints={unit?.creditPoints}
+                mark={mark}
+              />
+            )
+          })}
+          {Array.from({ length: empty }, (_, i) => (
+            <div
+              key={`empty:${i}`}
+              className="min-h-[44px] rounded-[5px] border border-dashed border-neutral-300"
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function UnitTile({
+  code,
+  title,
+  creditPoints,
+  mark,
+}: {
+  code: string
+  title: string | undefined
+  creditPoints: number | undefined
+  mark?: number
+}) {
+  const faculty = facultyStyle(code)
+  return (
+    <div className="flex min-h-[44px] overflow-hidden rounded-[5px] border border-neutral-300 bg-white">
+      <div aria-hidden className={cn("w-1.5 shrink-0", faculty.railClass)} />
+      <div className="flex min-w-0 flex-1 flex-col px-1.5 py-1">
+        <p className="text-[9.5px] font-bold tabular-nums">{code}</p>
+        {title ? (
+          <p className="text-[8px] leading-snug text-neutral-700">{title}</p>
+        ) : null}
+        <div className="mt-auto flex items-baseline justify-between gap-1 pt-0.5 text-[7.5px] text-neutral-500">
+          <span>
+            {creditPoints != null ? `${creditPoints} credit points` : ""}
+          </span>
+          {mark != null ? (
+            <span className="rounded-[3px] bg-neutral-100 px-1 font-semibold text-[#252525] tabular-nums">
+              {markToGrade(mark)} {mark}
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}

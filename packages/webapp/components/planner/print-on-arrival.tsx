@@ -9,7 +9,7 @@ import { usePlanner } from "./planner-context"
  * Opens the print dialog when the planner is reached with ?print=1,
  * which is how the plans page's Print button works: the print layout
  * needs the planner's unit data, so it prints here once every planned
- * unit has loaded, or after a few seconds if some never do. The
+ * unit has loaded, or after 15 seconds if some never do. The
  * parameter is dropped first so a reload doesn't print again.
  */
 export function PrintOnArrival() {
@@ -21,7 +21,7 @@ export function PrintOnArrival() {
 
   useEffect(() => {
     if (!wanted) return
-    const t = setTimeout(() => setTimedOut(true), 4000)
+    const t = setTimeout(() => setTimedOut(true), 15000)
     return () => clearTimeout(t)
   }, [wanted])
 

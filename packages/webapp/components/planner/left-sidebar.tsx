@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { buildCsv, downloadBlob, planSlug } from "@/lib/planner/plan-export"
+import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
 
 import { CreditDialog } from "./credit-dialog"
 import { PlanStartControl } from "./plan-basics"
@@ -42,6 +42,7 @@ export function LeftSidebar() {
     state,
     dispatch,
     validations,
+    units,
     flashErrors,
     plans,
     activePlanId,
@@ -77,7 +78,7 @@ export function LeftSidebar() {
     setNameDraft(activePlan?.name ?? "")
     setEditingName(false)
   }, [activePlan?.name])
-  const { showResults, toggleShowResults } = useWam()
+  const { showResults, toggleShowResults, grades } = useWam()
   const [creditOpen, setCreditOpen] = useState(false)
   const creditCount = state.credit?.length ?? 0
 
@@ -94,10 +95,13 @@ export function LeftSidebar() {
   }, [dispatch])
 
   const onExport = useCallback(() => {
-    const name = activePlan?.name ?? "MonMap plan"
-    downloadBlob(buildCsv(state, name), `${planSlug(name)}.csv`, "text/csv")
+    downloadBlob(
+      buildCsv(state, { units, grades }),
+      planFileName(activePlan?.name ?? "MonMap plan", "csv"),
+      "text/csv"
+    )
     toast.success("Plan exported to CSV")
-  }, [state, activePlan?.name])
+  }, [state, units, grades, activePlan?.name])
 
   const onPrint = useCallback(() => {
     window.print()
