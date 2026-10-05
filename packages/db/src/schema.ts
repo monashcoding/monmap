@@ -447,17 +447,18 @@ export const unitYearLinks = pgTable(
  * `user` is kept only as a local mirror so the FKs from `user_plan` /
  * `user_grade` remain intact. Its `id` equals the token's `macUserId`
  * (== the legacy Better Auth id — the 405 existing rows were migrated
- * with ids preserved). `getCurrentUser()` upserts a row on first sight
+ * with ids preserved). `getCurrentUser()` inserts a row on first sight
  * (onConflictDoNothing) keyed by `macUserId`; `name`/`image` are
  * best-effort display fallbacks (the live name/image come from the
  * central session), so nothing here needs to stay in lockstep with the
- * central schema.
+ * central schema. `email` is not unique: the identity is the id, and a
+ * central account re-created under an old email must still get a row.
  * ------------------------------------------------------------------ */
 
 export const user = pgTable("user", {
   id: text().primaryKey(),
   name: text().notNull(),
-  email: text().notNull().unique(),
+  email: text().notNull(),
   emailVerified: boolean().notNull().default(false),
   image: text(),
   createdAt: timestamp().notNull().defaultNow(),
@@ -554,6 +555,14 @@ export const userGrade = pgTable(
  * The `classifier*` columns keep the classifier's verdict for the
  * admin page. `classifierError` is set when the classifier was down
  * and the review was published unchecked.
+ *
+ * `deletedAt` is set when the author deletes a flagged or shadowbanned
+ * review. The row stays, hidden from everyone, so writing the review
+ * again keeps its status instead of starting fresh. Published reviews
+ * are deleted outright.
+ *
+ * `review_author_ban` lists authors an admin shadowbanned outright:
+ * every review they write afterwards starts shadowbanned.
  * ------------------------------------------------------------------ */
 
 export const reviewEntityKindEnum = pgEnum("review_entity_kind", [
@@ -594,6 +603,7 @@ export const review = pgTable(
     /** Email of the admin who last changed `status`. */
     moderatedBy: text(),
     moderatedAt: timestamp(),
+    deletedAt: timestamp(),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp()
       .notNull()
@@ -612,5 +622,19 @@ export const review = pgTable(
       .where(sql`${t.status} = 'published'`),
     index("review_status_created_idx").on(t.status, t.createdAt.desc()),
     check("review_overall_range", sql`${t.overall} BETWEEN 1 AND 5`),
+    // Only hidden reviews are kept after deletion.
+    check(
+      "review_deleted_hidden",
+      sql`${t.deletedAt} IS NULL OR ${t.status} <> 'published'`,
+    ),
   ],
 );
+
+export const reviewAuthorBan = pgTable("review_author_ban", {
+  userId: text()
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  /** Email of the admin who banned the author. */
+  bannedBy: text().notNull(),
+  bannedAt: timestamp().notNull().defaultNow(),
+});

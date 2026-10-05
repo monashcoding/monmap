@@ -30,6 +30,8 @@ export interface PublicReview {
   edited: boolean
 }
 
-export type ReviewSort = "recent" | "highest" | "lowest"
+export const REVIEW_SORTS = ["recent", "highest", "lowest"] as const
+
+export type ReviewSort = (typeof REVIEW_SORTS)[number]
 
 export const REVIEW_PAGE_SIZE = 10

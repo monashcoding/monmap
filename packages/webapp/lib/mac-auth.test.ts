@@ -19,6 +19,7 @@ let privateKey: CryptoKey
 let authUrl: string
 let server: Server
 let verifyMacToken: (token: string) => Promise<unknown>
+let sessionCookieHeader: (cookie: string | null) => string | null
 
 const ready = (async () => {
   const pair = await generateKeyPair("EdDSA", { crv: "Ed25519" })
@@ -42,20 +43,30 @@ const ready = (async () => {
 
   process.env.AUTH_URL = authUrl
   process.env.JWT_AUDIENCE = AUDIENCE
-  ;({ verifyMacToken } = await import("./mac-auth.ts"))
+  ;({ verifyMacToken, sessionCookieHeader } = await import("./mac-auth.ts"))
 })()
 
 function sign(
   claims: Record<string, unknown>,
-  opts: { iss?: string; aud?: string; expiresIn?: string } = {}
+  opts: {
+    iss?: string
+    aud?: string
+    expiresIn?: string
+    alg?: string
+    key?: CryptoKey | Uint8Array
+  } = {}
 ) {
   return new SignJWT(claims)
-    .setProtectedHeader({ alg: "EdDSA", kid: "test-key" })
+    .setProtectedHeader({ alg: opts.alg ?? "EdDSA", kid: "test-key" })
     .setIssuedAt()
     .setIssuer(opts.iss ?? authUrl)
     .setAudience(opts.aud ?? AUDIENCE)
     .setExpirationTime(opts.expiresIn ?? "15m")
-    .sign(privateKey)
+    .sign(opts.key ?? privateKey)
+}
+
+function base64url(v: unknown) {
+  return Buffer.from(JSON.stringify(v)).toString("base64url")
 }
 
 after(() => {
@@ -115,4 +126,77 @@ test("verifyMacToken rejects an expired token", async () => {
     { expiresIn: "-1m" }
   )
   await assert.rejects(() => verifyMacToken(token))
+})
+
+test("verifyMacToken rejects a token signed by another key with the same kid", async () => {
+  await ready
+  const other = await generateKeyPair("EdDSA", { crv: "Ed25519" })
+  const token = await sign(
+    { macUserId: "u", email: "e@monash.edu" },
+    { key: other.privateKey }
+  )
+  await assert.rejects(() => verifyMacToken(token))
+})
+
+test("verifyMacToken rejects an HS256 token", async () => {
+  await ready
+  const token = await sign(
+    { macUserId: "u", email: "e@monash.edu" },
+    { alg: "HS256", key: new Uint8Array(32).fill(7) }
+  )
+  await assert.rejects(() => verifyMacToken(token))
+})
+
+test("verifyMacToken rejects an unsigned alg none token", async () => {
+  await ready
+  const now = Math.floor(Date.now() / 1000)
+  const token = `${base64url({ alg: "none", kid: "test-key" })}.${base64url({
+    macUserId: "u",
+    email: "e@monash.edu",
+    iss: authUrl,
+    aud: AUDIENCE,
+    iat: now,
+    exp: now + 900,
+  })}.`
+  await assert.rejects(() => verifyMacToken(token))
+})
+
+test("verifyMacToken rejects claims with the wrong type", async () => {
+  await ready
+  for (const claims of [
+    { email: "e@monash.edu" },
+    { macUserId: "", email: "e@monash.edu" },
+    { macUserId: 42, email: "e@monash.edu" },
+    { macUserId: "u" },
+    { macUserId: "u", email: ["e@monash.edu"] },
+    { macUserId: "u", email: "e@monash.edu", roles: "admin" },
+    { macUserId: "u", email: "e@monash.edu", roles: ["member", 1] },
+    { macUserId: "u", email: "e@monash.edu", ver: "1" },
+  ]) {
+    const token = await sign(claims)
+    await assert.rejects(() => verifyMacToken(token), JSON.stringify(claims))
+  }
+})
+
+test("sessionCookieHeader keeps only Better Auth session cookies", async () => {
+  await ready
+  assert.equal(sessionCookieHeader(null), null)
+  assert.equal(sessionCookieHeader(""), null)
+  // Analytics cookies alone do not reach the auth service.
+  assert.equal(sessionCookieHeader("ph_abc_posthog=%7B%7D; theme=dark"), null)
+  assert.equal(
+    sessionCookieHeader(
+      "ph_abc_posthog=%7B%7D; better-auth.session_token=t.sig; theme=dark"
+    ),
+    "better-auth.session_token=t.sig"
+  )
+  assert.equal(
+    sessionCookieHeader(
+      "__Secure-mac.session_token=t; __Secure-mac.session_data.0=d0; __Secure-mac.session_data.1=d1"
+    ),
+    "__Secure-mac.session_token=t; __Secure-mac.session_data.0=d0; __Secure-mac.session_data.1=d1"
+  )
+  // A cache cookie without its token is not a session.
+  assert.equal(sessionCookieHeader("better-auth.session_data=d"), null)
+  assert.equal(sessionCookieHeader("my_session_token_x=1; session_token"), null)
 })

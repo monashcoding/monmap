@@ -1,6 +1,6 @@
 "use server"
 
-import { fetchSessionName, getCurrentUser } from "@/lib/auth-server"
+import { fetchSessionName, getClaims, getCurrentUser } from "@/lib/auth-server"
 import { listEntityYears } from "@/lib/db/handbook"
 import {
   countRecentReviews,
@@ -17,42 +17,44 @@ import {
   upsertReview,
 } from "@/lib/db/reviews"
 import { isReviewAdmin } from "@/lib/reviews/admin"
-import {
-  BODY_MAX,
-  BODY_MIN,
-  cleanRatings,
-  isRating,
-  isReviewKind,
-  type ReviewKind,
-} from "@/lib/reviews/axes"
+import { isReviewKind, type ReviewKind } from "@/lib/reviews/axes"
 import { moderateReview } from "@/lib/reviews/classifier"
 import { reviewInitials } from "@/lib/reviews/initials"
+import {
+  cleanEntityCode,
+  cleanListParams,
+  MAX_RATING_CODES,
+  parseReviewInput,
+  type ReviewInput,
+  sameReviewContent,
+} from "@/lib/reviews/input"
+import { takeReviewWrite } from "@/lib/reviews/rate-limit"
 import { revalidateReviewPages } from "@/lib/reviews/revalidate"
 
 /**
  * Server actions for reviews. Every response carries only what the
  * public pages show (initials, never a name, email or user id). The
  * author's own review comes back without its status, so a flagged or
- * shadowbanned review looks published to them.
+ * shadowbanned review looks published to them. Input checks live in
+ * lib/reviews/input.ts, where they are tested.
  */
 
 const MAX_REVIEWS_PER_DAY = 20
 
-function cleanCode(v: unknown): string | null {
-  if (typeof v !== "string") return null
-  const code = v.trim().toUpperCase()
-  return /^[A-Z0-9-]{2,16}$/.test(code) ? code : null
-}
+export type { ReviewInput }
 
 export async function getMyReviewAction(
   kind: ReviewKind,
   rawCode: string
 ): Promise<{ signedIn: boolean; review: PublicReview | null }> {
-  const code = cleanCode(rawCode)
+  const code = cleanEntityCode(rawCode)
   if (!isReviewKind(kind) || !code) return { signedIn: false, review: null }
-  const u = await getCurrentUser()
-  if (!u) return { signedIn: false, review: null }
-  return { signedIn: true, review: await getUserReview(u.id, kind, code) }
+  const claims = await getClaims()
+  if (!claims) return { signedIn: false, review: null }
+  return {
+    signedIn: true,
+    review: await getUserReview(claims.macUserId, kind, code),
+  }
 }
 
 export async function listReviewsAction(
@@ -61,17 +63,10 @@ export async function listReviewsAction(
   sort: ReviewSort,
   offset: number
 ): Promise<PublicReview[]> {
-  const code = cleanCode(rawCode)
+  const code = cleanEntityCode(rawCode)
   if (!isReviewKind(kind) || !code) return []
-  const safeSort: ReviewSort = ["recent", "highest", "lowest"].includes(sort)
-    ? sort
-    : "recent"
-  const safeOffset = Number.isInteger(offset)
-    ? Math.min(Math.max(offset, 0), 10_000)
-    : 0
   return listPublicReviews(kind, code, {
-    sort: safeSort,
-    offset: safeOffset,
+    ...cleanListParams(sort, offset),
     limit: REVIEW_PAGE_SIZE,
   })
 }
@@ -83,19 +78,10 @@ export async function ratingSummariesAction(
 ): Promise<Record<string, RatingSummary>> {
   if (!isReviewKind(kind) || !Array.isArray(codes)) return {}
   const clean = codes
-    .slice(0, 300)
-    .map(cleanCode)
+    .slice(0, MAX_RATING_CODES)
+    .map(cleanEntityCode)
     .filter((c): c is string => c != null)
   return ratingSummaries(kind, clean)
-}
-
-export interface ReviewInput {
-  kind: ReviewKind
-  code: string
-  overall: number
-  ratings: Record<string, number>
-  body: string
-  yearTaken: string | null
 }
 
 export type SaveReviewResult =
@@ -105,6 +91,12 @@ export type SaveReviewResult =
       reason: "unauthenticated" | "invalid" | "not_found" | "rate_limited"
       message: string
     }
+
+const RATE_LIMITED = {
+  ok: false,
+  reason: "rate_limited",
+  message: "You're saving reviews too often. Wait a moment and try again.",
+} as const
 
 export async function saveReviewAction(
   input: ReviewInput
@@ -117,34 +109,21 @@ export async function saveReviewAction(
       message: "Sign in to write a review.",
     }
   }
-  const kind = input?.kind
-  const code = cleanCode(input?.code)
-  if (!isReviewKind(kind) || !code) {
-    return { ok: false, reason: "invalid", message: "Unknown page." }
+  const parsed = parseReviewInput(input)
+  if (!parsed.ok) {
+    return { ok: false, reason: "invalid", message: parsed.message }
   }
-  if (!isRating(input.overall)) {
-    return {
-      ok: false,
-      reason: "invalid",
-      message: "Choose an overall rating from 1 to 5 stars.",
-    }
-  }
-  const body = typeof input.body === "string" ? input.body.trim() : ""
-  if (body.length < BODY_MIN || body.length > BODY_MAX) {
-    return {
-      ok: false,
-      reason: "invalid",
-      message: `Write between ${BODY_MIN} and ${BODY_MAX} characters.`,
-    }
-  }
-  const yearTaken =
-    typeof input.yearTaken === "string" && /^\d{4}$/.test(input.yearTaken)
-      ? input.yearTaken
-      : null
+  const { kind, code, overall, ratings, body, yearTaken } = parsed.value
   if ((await listEntityYears(kind, code)).length === 0) {
     return { ok: false, reason: "not_found", message: "Unknown page." }
   }
   const existing = await getUserReview(u.id, kind, code)
+  // Saving the same review again changes nothing: skip the classifier,
+  // the write and the page revalidation.
+  if (existing && sameReviewContent(existing, parsed.value)) {
+    return { ok: true, review: existing }
+  }
+  if (!takeReviewWrite(u.id)) return RATE_LIMITED
   if (!existing && (await countRecentReviews(u.id)) >= MAX_REVIEWS_PER_DAY) {
     return {
       ok: false,
@@ -161,8 +140,8 @@ export async function saveReviewAction(
     userId: u.id,
     kind,
     code,
-    overall: input.overall,
-    ratings: cleanRatings(kind, input.ratings),
+    overall,
+    ratings,
     body,
     yearTaken,
     initials: reviewInitials(name ?? u.name, u.email),
@@ -176,11 +155,11 @@ export async function deleteReviewAction(
   kind: ReviewKind,
   rawCode: string
 ): Promise<{ ok: boolean }> {
-  const code = cleanCode(rawCode)
+  const code = cleanEntityCode(rawCode)
   if (!isReviewKind(kind) || !code) return { ok: false }
-  const u = await getCurrentUser()
-  if (!u) return { ok: false }
-  const ok = await deleteUserReview(u.id, kind, code)
+  const claims = await getClaims()
+  if (!claims || !takeReviewWrite(claims.macUserId)) return { ok: false }
+  const ok = await deleteUserReview(claims.macUserId, kind, code)
   if (ok) await revalidateReviewPages([{ kind, code }])
   return { ok }
 }
@@ -190,8 +169,8 @@ export async function deleteReviewAction(
  * ------------------------------------------------------------------ */
 
 async function requireAdmin(): Promise<string | null> {
-  const u = await getCurrentUser()
-  return u && isReviewAdmin(u.email) ? u.email : null
+  const claims = await getClaims()
+  return claims && isReviewAdmin(claims.email) ? claims.email : null
 }
 
 export async function moderateReviewAction(
