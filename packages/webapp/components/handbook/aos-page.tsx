@@ -183,7 +183,7 @@ export async function AosPage({
         </Section>
 
         {a.description ? (
-          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+          <Section clamp id="overview" title="Overview" icon={BookOpenIcon}>
             <Prose
               html={a.description}
               linkYear={linkYear}
@@ -227,7 +227,12 @@ export async function AosPage({
         ) : null}
 
         {a.learningOutcomes.length > 0 ? (
-          <Section id="outcomes" title="Learning outcomes" icon={TargetIcon}>
+          <Section
+            clamp
+            id="outcomes"
+            title="Learning outcomes"
+            icon={TargetIcon}
+          >
             {a.outcomesIntro ? (
               <Prose
                 html={a.outcomesIntro}

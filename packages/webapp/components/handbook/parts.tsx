@@ -19,7 +19,8 @@ import { RatingInline } from "@/components/reviews/stars"
 import { type RatingSummary, ratingSummaries } from "@/lib/db/reviews"
 import { cn } from "@/lib/utils"
 
-import { PageToc, type TocItem } from "./page-toc"
+import { MobileClamp } from "./mobile-clamp"
+import { MobileToc, PageToc, type TocItem } from "./page-toc"
 import { YearSelect } from "./year-select"
 
 /* ------------------------------------------------------------------ *
@@ -250,7 +251,8 @@ export function Notice({ children }: { children: React.ReactNode }) {
 
 /**
  * The sections of a page in one column, with "On this page" in a
- * sticky rail beside them on wide screens.
+ * sticky rail beside them on wide screens and as a sticky row of chips
+ * above them on narrow ones.
  */
 export function DetailLayout({
   toc,
@@ -262,7 +264,10 @@ export function DetailLayout({
   const items = toc.filter((t): t is TocItem => !!t)
   return (
     <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_200px]">
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-5">{children}</div>
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-5">
+        <MobileToc items={items} className="lg:hidden" />
+        {children}
+      </div>
       <aside className="sticky top-[4.5rem] hidden lg:block">
         <PageToc items={items} />
       </aside>
@@ -275,6 +280,7 @@ export function Section({
   title,
   icon: Icon,
   action,
+  clamp = false,
   children,
   className,
 }: {
@@ -283,6 +289,8 @@ export function Section({
   icon?: LucideIcon
   /** Something for the heading's right side, such as a count. */
   action?: React.ReactNode
+  /** Cut long text short on phones, behind "Show more". */
+  clamp?: boolean
   children: React.ReactNode
   className?: string
 }) {
@@ -291,7 +299,9 @@ export function Section({
       id={id}
       aria-labelledby={id ? `${id}-title` : undefined}
       className={cn(
-        "scroll-mt-20 rounded-panel border bg-card p-5 shadow-card sm:p-7",
+        // Below lg the chip row sticks under the header too, so a jump
+        // to a section stops lower.
+        "scroll-mt-28 rounded-panel border bg-card p-5 shadow-card sm:p-7 lg:scroll-mt-20",
         className
       )}
     >
@@ -310,7 +320,7 @@ export function Section({
         </h2>
         {action}
       </div>
-      {children}
+      {clamp ? <MobileClamp>{children}</MobileClamp> : children}
     </section>
   )
 }
@@ -508,7 +518,7 @@ function EntityRow({
           {row.title ?? ""}
         </span>
       </span>
-      <span className="flex items-center justify-end gap-3 text-xs whitespace-nowrap text-muted-foreground">
+      <span className="col-start-2 flex items-center gap-3 text-xs whitespace-nowrap text-muted-foreground sm:col-start-auto sm:justify-end">
         {row.linkable !== false ? (
           <RatingInline summary={rating} size="xs" />
         ) : null}
@@ -517,7 +527,9 @@ function EntityRow({
     </>
   )
   const cls =
-    "grid grid-cols-[minmax(4.5rem,auto)_minmax(0,1fr)_auto] items-baseline gap-x-3 px-3 py-2 text-sm"
+    // Below sm the rating and note drop under the title, so a long
+    // title keeps the width it needs.
+    "grid grid-cols-[minmax(4.5rem,auto)_minmax(0,1fr)] items-baseline gap-x-3 gap-y-0.5 px-3 py-2 text-sm sm:grid-cols-[minmax(4.5rem,auto)_minmax(0,1fr)_auto] sm:gap-y-0"
   if (row.linkable === false) {
     return <div className={cls}>{body}</div>
   }

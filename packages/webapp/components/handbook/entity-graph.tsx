@@ -1,6 +1,6 @@
 "use client"
 
-import { LoaderCircleIcon } from "lucide-react"
+import { LoaderCircleIcon, Maximize2Icon, XIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { fetchTreeDataAction } from "@/app/actions"
@@ -15,8 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -44,9 +46,11 @@ const KIND_SHORT: Record<string, string> = {
 
 /**
  * The requisite map on a unit, course or area of study page: the same
- * graph as the plan map, read-only, drawn inside the page's section. Clicking a unit traces its chain
- * and opens its details, with a link to its page. The scroll wheel
- * scrolls the page; pinch, drag and the zoom buttons move the map.
+ * graph as the plan map, read-only, drawn inside the page's section.
+ * Clicking a unit traces its chain and opens its details, with a link
+ * to its page. The scroll wheel scrolls the page; pinch, drag and the
+ * zoom buttons move the map. On a phone the inline map is a preview
+ * that opens full screen, so it never traps the page's scroll.
  *
  * On a course page, `course` adds a picker that redraws the map for
  * one area of study.
@@ -71,6 +75,7 @@ export function EntityGraph({
   const [aosCode, setAosCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(false)
 
   const courseCode = course?.code ?? null
   useEffect(() => {
@@ -103,12 +108,14 @@ export function EntityGraph({
   // Short graphs get a shorter canvas, so a unit with two
   // prerequisites isn't a small cluster in a large empty box. The
   // smallest still fits the unit panel that opens on a click.
+  // On a phone the inline map is only a preview, so it stays short.
+  // CSS picks the height, so the server HTML already has it.
   const height =
     nodes.length <= 6
-      ? "h-[420px]"
+      ? "h-[300px] md:h-[420px]"
       : nodes.length <= 16
-        ? "h-[440px] sm:h-[500px]"
-        : "h-[460px] sm:h-[600px]"
+        ? "h-[300px] md:h-[500px]"
+        : "h-[300px] md:h-[600px]"
 
   return (
     <div className="flex flex-col gap-3">
@@ -174,14 +181,29 @@ export function EntityGraph({
             key={payload.graph.nodes.join(",")}
             nodes={nodes}
             edges={edges}
-            focused={focused}
+            focused={isMobile ? null : focused}
             variantCounts={variantCounts}
             onFocus={setFocused}
             fitAll
             minimap={false}
             scrollZoom={false}
+            interactive={!isMobile}
             className="h-full min-h-0 rounded-none border-0 shadow-none"
           />
+          {isMobile ? (
+            // On a phone the inline map is a preview. A swipe over it
+            // scrolls the page; a tap opens the map full screen.
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="absolute inset-0 z-10 flex items-end justify-center bg-gradient-to-t from-card/90 via-transparent to-transparent pb-4"
+            >
+              <span className="flex h-10 items-center gap-2 rounded-full bg-foreground px-4 text-sm font-medium text-background shadow-lg">
+                <Maximize2Icon className="size-4" />
+                Explore the map
+              </span>
+            </button>
+          ) : null}
           {detail && !isMobile ? (
             <div className="pointer-events-none absolute inset-y-3 right-3 z-20 flex w-[min(360px,calc(100%-1.5rem))] flex-col">
               <div className="pointer-events-auto h-full">
@@ -202,33 +224,59 @@ export function EntityGraph({
       )}
 
       <Sheet
-        open={isMobile && detail != null}
+        open={isMobile && expanded}
         onOpenChange={(open) => {
+          setExpanded(open)
           if (!open) setFocused(null)
         }}
       >
         <SheetContent
           side="bottom"
-          className="gap-0 p-0 data-[side=bottom]:h-[85svh]"
+          className="gap-0 p-0 data-[side=bottom]:h-[100svh]"
           showCloseButton={false}
         >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Unit details</SheetTitle>
-            <SheetDescription>
-              Requisites, offerings and enrolment rules for the selected unit.
-            </SheetDescription>
-          </SheetHeader>
-          {detail ? (
-            <div className="h-full overflow-hidden">
-              <TreeSidePanel
-                detail={detail}
-                year={year}
-                detailsHref={detailsHref}
-                onClose={() => setFocused(null)}
-                variant="flush"
-              />
+          <SheetHeader className="flex-row items-center justify-between gap-2 border-b px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+            <div className="min-w-0">
+              <SheetTitle>Requisite map</SheetTitle>
+              <SheetDescription className="text-xs">
+                Pinch to zoom, drag to move. Tap a unit for its details.
+              </SheetDescription>
             </div>
-          ) : null}
+            <SheetClose
+              render={
+                <Button variant="ghost" size="icon-sm" aria-label="Close map" />
+              }
+            >
+              <XIcon className="size-4" />
+            </SheetClose>
+          </SheetHeader>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="relative min-h-0 flex-1">
+              {expanded ? (
+                <TreeGraph
+                  key={payload.graph.nodes.join(",")}
+                  nodes={nodes}
+                  edges={edges}
+                  focused={focused}
+                  variantCounts={variantCounts}
+                  onFocus={setFocused}
+                  minimap={false}
+                  className="h-full min-h-0 rounded-none border-0 shadow-none"
+                />
+              ) : null}
+            </div>
+            {detail ? (
+              <div className="h-[55%] shrink-0 overflow-hidden border-t pb-[env(safe-area-inset-bottom)]">
+                <TreeSidePanel
+                  detail={detail}
+                  year={year}
+                  detailsHref={detailsHref}
+                  onClose={() => setFocused(null)}
+                  variant="flush"
+                />
+              </div>
+            ) : null}
+          </div>
         </SheetContent>
       </Sheet>
     </div>

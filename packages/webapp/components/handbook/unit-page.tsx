@@ -389,7 +389,7 @@ export async function UnitPage({
         ) : null}
 
         {u.synopsis ? (
-          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+          <Section clamp id="overview" title="Overview" icon={BookOpenIcon}>
             <Prose
               html={u.synopsis}
               linkYear={linkYear}
@@ -519,7 +519,12 @@ export async function UnitPage({
         ) : null}
 
         {u.learningOutcomes.length > 0 ? (
-          <Section id="outcomes" title="Learning outcomes" icon={TargetIcon}>
+          <Section
+            clamp
+            id="outcomes"
+            title="Learning outcomes"
+            icon={TargetIcon}
+          >
             <p className="mb-4 text-sm text-muted-foreground">
               When you finish this unit, you should be able to:
             </p>

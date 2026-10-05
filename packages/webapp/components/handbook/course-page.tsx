@@ -261,7 +261,7 @@ export async function CoursePage({
         </Section>
 
         {c.overview ? (
-          <Section id="overview" title="Overview" icon={BookOpenIcon}>
+          <Section clamp id="overview" title="Overview" icon={BookOpenIcon}>
             <Prose
               html={c.overview}
               linkYear={linkYear}
@@ -343,7 +343,12 @@ export async function CoursePage({
         ) : null}
 
         {c.learningOutcomes.length > 0 ? (
-          <Section id="outcomes" title="Learning outcomes" icon={TargetIcon}>
+          <Section
+            clamp
+            id="outcomes"
+            title="Learning outcomes"
+            icon={TargetIcon}
+          >
             {c.outcomesIntro ? (
               <Prose
                 html={c.outcomesIntro}
@@ -365,7 +370,12 @@ export async function CoursePage({
         ) : null}
 
         {hasEntry ? (
-          <Section id="entry" title="Entry requirements" icon={DoorOpenIcon}>
+          <Section
+            clamp
+            id="entry"
+            title="Entry requirements"
+            icon={DoorOpenIcon}
+          >
             <div className="flex flex-col gap-6">
               {c.atar ? (
                 <div>
@@ -398,7 +408,7 @@ export async function CoursePage({
         ) : null}
 
         {hasMore ? (
-          <Section id="more" title="More information" icon={InfoIcon}>
+          <Section clamp id="more" title="More information" icon={InfoIcon}>
             <div className="flex flex-col gap-6">
               {c.progression ? (
                 <div>
