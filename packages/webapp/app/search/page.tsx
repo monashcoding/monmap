@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { redirect } from "next/navigation"
+import { permanentRedirect } from "next/navigation"
 import { CheckIcon, ChevronRightIcon, XIcon } from "lucide-react"
 
 import { EntityLink } from "@/components/handbook/entity-link"
@@ -95,7 +95,10 @@ export default async function SearchPage({
 }) {
   const sp = await searchParams
 
-  // /search?unit=, ?course= and ?aos= were the old search screen's links.
+  // /search?unit=, ?course= and ?aos= were the old search screen's links
+  // (also reached from /tree; see next.config.mjs). The move is
+  // permanent, so search engines move the old URLs' standing to the
+  // entity pages.
   const legacyYear = typeof sp.year === "string" ? sp.year : null
   for (const [param, kind] of [
     ["unit", "unit"],
@@ -104,7 +107,7 @@ export default async function SearchPage({
   ] as const) {
     const code = sp[param]
     if (typeof code === "string" && code.trim()) {
-      redirect(entityHref(kind, code.trim(), legacyYear))
+      permanentRedirect(entityHref(kind, code.trim(), legacyYear))
     }
   }
 

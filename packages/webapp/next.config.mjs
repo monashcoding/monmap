@@ -78,13 +78,19 @@ const nextConfig = {
   // rather than treat them as prebuilt deps.
   transpilePackages: ["@monmap/db", "@monmap/scraper"],
 
-  // /search was called /tree until 2026-10. Old /tree?unit= and
-  // ?course= links reach /search, which redirects them to the
-  // /units/[code] and /courses/[code] pages.
+  // /search was called /tree until 2026-10. A bare /tree redirects to
+  // /search. Old /tree?unit=, ?course= and ?aos= links are rewritten
+  // to /search instead (see rewrites below), so the search page sends
+  // them to the entity page in one permanent redirect, not two.
   async redirects() {
     return [
       {
         source: "/tree",
+        missing: [
+          { type: "query", key: "unit" },
+          { type: "query", key: "course" },
+          { type: "query", key: "aos" },
+        ],
         destination: "/search",
         permanent: true,
       },
@@ -108,6 +114,8 @@ const nextConfig = {
       beforeFiles: [
         { source: "/courses{/}?", destination: "/hubs/courses" },
         { source: "/aos{/}?", destination: "/hubs/aos" },
+        // Legacy entity links; the redirect above takes every other /tree.
+        { source: "/tree", destination: "/search" },
       ],
     }
   },
