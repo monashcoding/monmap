@@ -107,6 +107,10 @@ Course pages have a "Plan this course" button: `/?course=C2001&year=2027`.
 With no saved plan the planner opens that course. Over a saved plan it
 offers "Switch to C2001" instead of replacing the plan.
 
+`robots.txt` disallows `/?course=`. Each of those URLs is the home page
+with the canonical `/`, so crawling them spends visits that the unit
+and course pages need.
+
 ## After a deploy
 
 1. Submit `/sitemap.xml` in Google Search Console.

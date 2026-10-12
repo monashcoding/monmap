@@ -10,7 +10,16 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        disallow: ["/api/", "/sign-in", "/plans", "/admin", "/my-reviews"],
+        // "/?course=" is "Plan this course" (planCourseHref): the
+        // planner home page, whose canonical is "/".
+        disallow: [
+          "/api/",
+          "/sign-in",
+          "/plans",
+          "/admin",
+          "/my-reviews",
+          "/?course=",
+        ],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
