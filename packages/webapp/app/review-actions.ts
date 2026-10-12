@@ -7,8 +7,10 @@ import {
   deleteUserReview,
   getUserReview,
   type PublicReview,
+  reactionsFor,
   setReviewStatus,
   shadowbanAuthorOf,
+  toggleUserReaction,
   upsertReview,
 } from "@/lib/db/reviews"
 import { isReviewAdmin } from "@/lib/reviews/admin"
@@ -21,7 +23,13 @@ import {
   type ReviewInput,
   sameReviewContent,
 } from "@/lib/reviews/input"
-import { takeReviewWrite } from "@/lib/reviews/rate-limit"
+import { takeReactionWrite, takeReviewWrite } from "@/lib/reviews/rate-limit"
+import {
+  isReaction,
+  MAX_REACTION_IDS,
+  type ReactionId,
+  type ReviewReactions,
+} from "@/lib/reviews/reactions"
 import { revalidateReviewPages } from "@/lib/reviews/revalidate"
 
 /**
@@ -130,6 +138,56 @@ export async function deleteReviewAction(
   const ok = await deleteUserReview(claims.macUserId, kind, code)
   if (ok) await revalidateReviewPages([{ kind, code }])
   return { ok }
+}
+
+/* ------------------------------------------------------------------ *
+ * Reactions
+ * ------------------------------------------------------------------ */
+
+/** Review ids are UUIDs (crypto.randomUUID in packages/db). */
+const REVIEW_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+/**
+ * Reaction counts on these reviews, and the visitor's own reactions
+ * when signed in. Counts load after the page because its HTML is cached
+ * for a day.
+ */
+export async function getReactionsAction(
+  reviewIds: string[]
+): Promise<Record<string, ReviewReactions>> {
+  if (!Array.isArray(reviewIds)) return {}
+  const ids = reviewIds
+    .filter((id) => typeof id === "string" && REVIEW_ID.test(id))
+    .slice(0, MAX_REACTION_IDS)
+  const claims = await getClaims()
+  return reactionsFor(ids, claims?.macUserId ?? null)
+}
+
+export type ReactResult =
+  | { ok: true; reactions: ReviewReactions }
+  | {
+      ok: false
+      reason:
+        | "unauthenticated"
+        | "invalid"
+        | "not_found"
+        | "own_review"
+        | "rate_limited"
+    }
+
+export async function toggleReactionAction(
+  reviewId: string,
+  reaction: ReactionId
+): Promise<ReactResult> {
+  if (typeof reviewId !== "string" || !REVIEW_ID.test(reviewId)) {
+    return { ok: false, reason: "invalid" }
+  }
+  if (!isReaction(reaction)) return { ok: false, reason: "invalid" }
+  const u = await getCurrentUser()
+  if (!u) return { ok: false, reason: "unauthenticated" }
+  if (!takeReactionWrite(u.id)) return { ok: false, reason: "rate_limited" }
+  return toggleUserReaction(u.id, reviewId, reaction)
 }
 
 /* ------------------------------------------------------------------ *

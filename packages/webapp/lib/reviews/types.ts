@@ -30,7 +30,13 @@ export interface PublicReview {
   edited: boolean
 }
 
-export const REVIEW_SORTS = ["recent", "highest", "lowest"] as const
+export const REVIEW_SORTS = [
+  "recent",
+  "helpful",
+  "reactions",
+  "highest",
+  "lowest",
+] as const
 
 export type ReviewSort = (typeof REVIEW_SORTS)[number]
 

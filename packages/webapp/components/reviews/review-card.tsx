@@ -23,6 +23,7 @@ export function ReviewCard({
   kind,
   mine = false,
   actions,
+  footer,
   className,
 }: {
   review: PublicReview
@@ -30,6 +31,8 @@ export function ReviewCard({
   /** The viewer wrote it: "(Your review)" follows the initials. */
   mine?: boolean
   actions?: React.ReactNode
+  /** Below the review, such as its reactions. */
+  footer?: React.ReactNode
   className?: string
 }) {
   const [open, setOpen] = useState(false)
@@ -117,6 +120,7 @@ export function ReviewCard({
           })}
         </ul>
       ) : null}
+      {footer}
     </article>
   )
 }

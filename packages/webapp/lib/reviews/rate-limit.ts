@@ -56,3 +56,9 @@ export const takeReviewWrite = createWriteLimiter({
   gapMs: 5_000,
   perDay: 30,
 })
+
+/** Reactions are cheap, but a script must not flood them. */
+export const takeReactionWrite = createWriteLimiter({
+  gapMs: 300,
+  perDay: 500,
+})

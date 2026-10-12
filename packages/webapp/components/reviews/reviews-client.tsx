@@ -5,7 +5,12 @@ import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { deleteReviewAction, getMyReviewAction } from "@/app/review-actions"
+import {
+  deleteReviewAction,
+  getMyReviewAction,
+  getReactionsAction,
+  toggleReactionAction,
+} from "@/app/review-actions"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import {
   AlertDialog,
@@ -23,16 +28,31 @@ import { fetchReviews } from "@/lib/api/client"
 import { useSession } from "@/lib/auth-client"
 import type { PublicReview, ReviewSort } from "@/lib/reviews/types"
 import type { ReviewKind } from "@/lib/reviews/axes"
+import {
+  NO_REACTIONS,
+  type ReactionId,
+  type ReviewReactions,
+  toggleReaction,
+} from "@/lib/reviews/reactions"
 
 import { toastReviewSaved } from "./own-review-editor"
 import { ReviewCard } from "./review-card"
 import { ReviewForm } from "./review-form"
+import { type ReactionViewer, ReviewReactionsBar } from "./review-reactions"
 import { StarInput } from "./star-input"
 
 const SORT_LABEL: Record<ReviewSort, string> = {
   recent: "Most recent",
+  helpful: "Most helpful",
+  reactions: "Most reactions",
   highest: "Highest rated",
   lowest: "Lowest rated",
+}
+
+const REACT_ERROR: Record<string, string> = {
+  own_review: "You can't react to your own review.",
+  rate_limited: "You're reacting too fast. Wait a moment.",
+  not_found: "That review is no longer available.",
 }
 
 type Mine =
@@ -132,6 +152,52 @@ export function ReviewsClient({
   const others = list.filter((r) => r.id !== myReview?.id)
   const hasMore = list.length < total
 
+  // Reaction counts load after the page, whose HTML is a day old at
+  // most, and again when the visitor signs in, for their own reactions.
+  const [reactions, setReactions] = useState<Record<string, ReviewReactions>>(
+    {}
+  )
+  const reviewIds = [...list.map((r) => r.id), myReview?.id ?? ""]
+    .filter(Boolean)
+    .join(",")
+  const reactionsReady = hydrated && sessionKnown
+  useEffect(() => {
+    if (!reactionsReady || !reviewIds) return
+    let cancelled = false
+    void getReactionsAction(reviewIds.split(",")).then((r) => {
+      if (!cancelled) setReactions((prev) => ({ ...prev, ...r }))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [reactionsReady, reviewIds, key])
+  const reactionsOf = (id: string) => reactions[id] ?? NO_REACTIONS
+  const viewer: ReactionViewer = key ? "member" : "anonymous"
+  const react = async (id: string, r: ReactionId) => {
+    const before = reactionsOf(id)
+    setReactions((prev) => ({
+      ...prev,
+      [id]: toggleReaction(prev[id] ?? NO_REACTIONS, r),
+    }))
+    const res = await toggleReactionAction(id, r).catch(() => null)
+    if (res?.ok) {
+      setReactions((prev) => ({ ...prev, [id]: res.reactions }))
+      return
+    }
+    setReactions((prev) => ({ ...prev, [id]: before }))
+    toast.error(
+      (res && REACT_ERROR[res.reason]) ?? "Couldn't save your reaction."
+    )
+  }
+  const reactionsBar = (id: string, as: ReactionViewer) => (
+    <ReviewReactionsBar
+      reactions={reactionsOf(id)}
+      viewer={as}
+      signInUrl={`${pathname}#reviews`}
+      onToggle={(r) => void react(id, r)}
+    />
+  )
+
   // The list requests run in parallel, so only the latest one may
   // write: a slow answer for an older sort, or a "Show more" page of
   // it, would otherwise land on the list for the new sort.
@@ -222,6 +288,7 @@ export function ReviewsClient({
             review={myReview}
             kind={kind}
             mine
+            footer={reactionsBar(myReview.id, "author")}
             actions={
               <div className="flex gap-1">
                 <Button
@@ -296,7 +363,11 @@ export function ReviewsClient({
           >
             {others.map((r) => (
               <li key={r.id} className="py-4 first:pt-1 last:pb-1">
-                <ReviewCard review={r} kind={kind} />
+                <ReviewCard
+                  review={r}
+                  kind={kind}
+                  footer={reactionsBar(r.id, viewer)}
+                />
               </li>
             ))}
           </ul>

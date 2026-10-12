@@ -83,6 +83,29 @@ with tests; the delete rule is SQL in `deleteUserReview`.
   stays flagged or shadowbanned. An edit to a published review clears
   them. A deleted review that is written again gets a new `created_at`.
 
+## Reactions
+
+Signed-in users can react to other people's published reviews with a
+fixed set of six: 👍 👎 😂 😢 😡 😮. The ids live in
+`lib/reviews/reactions.ts`; `toggleReactionAction` refuses any other
+value, so no one can spell words with letter emoji.
+
+- A user can add several reactions to one review, but 👍 and 👎
+  exclude each other.
+- Authors cannot react to their own review, and only published reviews
+  take reactions.
+- Pages show counts only, never who reacted.
+- Reactions by a banned author count only in that author's own view.
+- A user can react at most once every 0.3 seconds and 500 times in 24
+  hours (`takeReactionWrite`).
+- Signed-out visitors who press a reaction get a sign-in prompt.
+
+Counts load after the page through `getReactionsAction`, because the
+page HTML is cached for a day. Deleting a review deletes its reactions.
+
+The review list sorts by most recent, most helpful (👍 minus 👎, then
+👍), most reactions, highest rated or lowest rated.
+
 ## Where ratings show
 
 Ratings use the Google Maps form, "4.3 ★★★★☆ (12)", and "☆☆☆☆☆ (0)"

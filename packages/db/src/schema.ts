@@ -641,6 +641,43 @@ export const reviewAuthorBan = pgTable("review_author_ban", {
 });
 
 /* ------------------------------------------------------------------ *
+ * Review reactions
+ *
+ * A signed-in user can react to another user's published review with
+ * one of a fixed set of emoji, stored as ids (the webapp's
+ * `lib/reviews/reactions.ts` maps them to emoji). A user can add
+ * several different reactions to one review, but not "up" and "down"
+ * together. Pages show only counts, never who reacted.
+ * ------------------------------------------------------------------ */
+
+export const reviewReactionEnum = pgEnum("review_reaction_kind", [
+  "up",
+  "down",
+  "laugh",
+  "sad",
+  "angry",
+  "wow",
+]);
+
+export const reviewReaction = pgTable(
+  "review_reaction",
+  {
+    reviewId: text()
+      .notNull()
+      .references(() => review.id, { onDelete: "cascade" }),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    reaction: reviewReactionEnum().notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.reviewId, t.userId, t.reaction] }),
+    index("review_reaction_user_idx").on(t.userId),
+  ],
+);
+
+/* ------------------------------------------------------------------ *
  * Search popularity
  *
  * The /search sorts read these tables, which the webapp rebuilds once

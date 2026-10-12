@@ -16,6 +16,11 @@ import { and, eq, gt, isNull, sql, type SQL } from "drizzle-orm"
 import { getDb } from "./client.ts"
 import { containsPattern } from "./like.ts"
 import { REVIEW_AXES, type ReviewKind } from "../reviews/axes.ts"
+import {
+  OPPOSITE,
+  type ReactionId,
+  type ReviewReactions,
+} from "../reviews/reactions.ts"
 import type { ModerationResult } from "../reviews/classifier.ts"
 import {
   classifierColumns,
@@ -196,7 +201,18 @@ export async function listPublicReviews(
       ? [sql`${review.overall} DESC`, sql`${review.createdAt} DESC`]
       : sort === "lowest"
         ? [sql`${review.overall} ASC`, sql`${review.createdAt} DESC`]
-        : [sql`${review.createdAt} DESC`]
+        : sort === "helpful"
+          ? [
+              sql`${countReactions(sql`IN ('up')`)} - ${countReactions(sql`IN ('down')`)} DESC`,
+              sql`${countReactions(sql`IN ('up')`)} DESC`,
+              sql`${review.createdAt} DESC`,
+            ]
+          : sort === "reactions"
+            ? [
+                sql`${countReactions(sql`IS NOT NULL`)} DESC`,
+                sql`${review.createdAt} DESC`,
+              ]
+            : [sql`${review.createdAt} DESC`]
   const r = await getDb()
     .select(PUBLIC_COLUMNS)
     .from(review)
@@ -205,6 +221,111 @@ export async function listPublicReviews(
     .offset(offset)
     .limit(limit)
   return r.map(toPublic)
+}
+
+/* ------------------------------------------------------------------ *
+ * Reactions
+ * ------------------------------------------------------------------ */
+
+/**
+ * Counted reactions: reactions by authors an admin banned are kept, so
+ * the banned user still sees their own, but no one else counts them.
+ */
+const COUNTED = sql`rr.user_id NOT IN (SELECT user_id FROM review_author_ban)`
+
+/** The number of counted reactions on `review` whose kind matches `kinds`. */
+function countReactions(kinds: SQL): SQL {
+  return sql`(SELECT count(*) FROM review_reaction rr
+    WHERE rr.review_id = ${review.id} AND rr.reaction ${kinds} AND ${COUNTED})`
+}
+
+/**
+ * Reaction counts on each review, and `userId`'s own reactions. Reviews
+ * with none are absent. A banned user's reactions count only in their
+ * own view. Only counts leave this function, never who reacted.
+ */
+export async function reactionsFor(
+  reviewIds: readonly string[],
+  userId: string | null
+): Promise<Record<string, ReviewReactions>> {
+  const ids = [...new Set(reviewIds)]
+  if (ids.length === 0) return {}
+  const r = await rows<{
+    review_id: string
+    reaction: ReactionId
+    n: number
+    mine: boolean
+  }>(sql`
+    SELECT rr.review_id, rr.reaction,
+      count(*) FILTER (WHERE ${COUNTED} OR rr.user_id = ${userId ?? ""})::int AS n,
+      coalesce(bool_or(rr.user_id = ${userId ?? ""}), false) AS mine
+    FROM review_reaction rr
+    WHERE rr.review_id IN (${sql.join(
+      ids.map((id) => sql`${id}`),
+      sql`, `
+    )})
+    GROUP BY rr.review_id, rr.reaction
+  `)
+  const out: Record<string, ReviewReactions> = {}
+  for (const x of r) {
+    const entry = (out[x.review_id] ??= { counts: {}, mine: [] })
+    if (x.n > 0) entry.counts[x.reaction] = x.n
+    if (x.mine) entry.mine.push(x.reaction)
+  }
+  return out
+}
+
+export type ToggleReactionResult =
+  | { ok: true; reactions: ReviewReactions }
+  | { ok: false; reason: "not_found" | "own_review" }
+
+/**
+ * Add `reaction` to a published review, or remove it if the user has
+ * it. Adding "up" removes the user's "down", and the other way round.
+ * Authors cannot react to their own review.
+ */
+export async function toggleUserReaction(
+  userId: string,
+  reviewId: string,
+  reaction: ReactionId
+): Promise<ToggleReactionResult> {
+  const result = await getDb().transaction(async (tx) => {
+    const run = async <T>(q: SQL) => (await tx.execute(q)) as unknown as T[]
+    const [target] = await run<{ user_id: string }>(sql`
+      SELECT user_id FROM review
+      WHERE id = ${reviewId} AND status = 'published' AND deleted_at IS NULL
+      FOR SHARE
+    `)
+    if (!target) return { ok: false, reason: "not_found" } as const
+    if (target.user_id === userId) {
+      return { ok: false, reason: "own_review" } as const
+    }
+    const removed = await run(sql`
+      DELETE FROM review_reaction
+      WHERE review_id = ${reviewId} AND user_id = ${userId}
+        AND reaction = ${reaction}
+      RETURNING 1
+    `)
+    if (removed.length === 0) {
+      const opposite = OPPOSITE[reaction]
+      if (opposite) {
+        await run(sql`
+          DELETE FROM review_reaction
+          WHERE review_id = ${reviewId} AND user_id = ${userId}
+            AND reaction = ${opposite}
+        `)
+      }
+      await run(sql`
+        INSERT INTO review_reaction (review_id, user_id, reaction)
+        VALUES (${reviewId}, ${userId}, ${reaction})
+        ON CONFLICT DO NOTHING
+      `)
+    }
+    return { ok: true } as const
+  })
+  if (!result.ok) return result
+  const all = await reactionsFor([reviewId], userId)
+  return { ok: true, reactions: all[reviewId] ?? { counts: {}, mine: [] } }
 }
 
 /* ------------------------------------------------------------------ *
