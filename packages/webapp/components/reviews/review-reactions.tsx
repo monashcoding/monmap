@@ -60,7 +60,7 @@ export function ReviewReactionsBar({
         const chip = cn(
           "inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs tabular-nums max-md:h-9",
           mine
-            ? "border-emphasis bg-emphasis-soft font-semibold text-foreground"
+            ? "border-foreground/25 bg-muted font-semibold text-foreground"
             : "border-border bg-card text-muted-foreground"
         )
         return viewer === "author" ? (
@@ -123,7 +123,7 @@ export function ReviewReactionsBar({
                     onClick={() => react(r.id)}
                     className={cn(
                       "flex size-9 items-center justify-center rounded-control text-lg hover:bg-muted",
-                      reactions.mine.includes(r.id) && "bg-emphasis-soft"
+                      reactions.mine.includes(r.id) && "bg-muted"
                     )}
                   >
                     {r.emoji}
