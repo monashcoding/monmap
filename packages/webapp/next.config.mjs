@@ -78,6 +78,13 @@ const nextConfig = {
   // rather than treat them as prebuilt deps.
   transpilePackages: ["@monmap/db", "@monmap/scraper"],
 
+  // Keep ISR pages in the in-memory LRU cache only. On disk, Next.js
+  // writes every unit, course and AoS page for every year into the
+  // container and never deletes them: 12 GB in 3 days in production,
+  // on the disk that Postgres shares. The cache now starts empty after
+  // each deploy.
+  experimental: { isrFlushToDisk: false },
+
   // /search was called /tree until 2026-10. A bare /tree redirects to
   // /search. Old /tree?unit=, ?course= and ?aos= links are rewritten
   // to /search instead (see rewrites below), so the search page sends
