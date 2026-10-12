@@ -24,6 +24,7 @@ import { useSession } from "@/lib/auth-client"
 import type { PublicReview, ReviewSort } from "@/lib/reviews/types"
 import type { ReviewKind } from "@/lib/reviews/axes"
 
+import { toastReviewSaved } from "./own-review-editor"
 import { ReviewCard } from "./review-card"
 import { ReviewForm } from "./review-form"
 import { StarInput } from "./star-input"
@@ -212,9 +213,7 @@ export function ReviewsClient({
           onSaved={(review) => {
             setMyReview(review)
             setEditing(false)
-            toast.success(myReview ? "Review updated" : "Review posted", {
-              description: "Thanks for helping other students.",
-            })
+            toastReviewSaved(myReview != null)
           }}
         />
       ) : myReview ? (

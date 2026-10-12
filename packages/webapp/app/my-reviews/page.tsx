@@ -5,8 +5,10 @@ import { ChevronRightIcon, MessageSquareTextIcon } from "lucide-react"
 import { PageShell } from "@/components/page-shell"
 import { GoogleSignInButton } from "@/components/google-sign-in-button"
 import { KindBadge } from "@/components/handbook/frame"
+import { QuickReviewDialog } from "@/components/reviews/review-dialogs"
 import { ReviewCard } from "@/components/reviews/review-card"
 import { getCurrentUser } from "@/lib/auth-server"
+import { latestHandbookYear } from "@/lib/db/queries"
 import { listUserReviews } from "@/lib/db/reviews"
 import { entityHref } from "@/lib/handbook/links"
 import { reviewCount } from "@/lib/reviews/format"
@@ -23,7 +25,10 @@ export const metadata: Metadata = {
  */
 export default async function MyReviewsPage() {
   const user = await getCurrentUser()
-  const reviews = user ? await listUserReviews(user.id) : []
+  const [reviews, year] = await Promise.all([
+    user ? listUserReviews(user.id) : [],
+    latestHandbookYear(),
+  ])
 
   return (
     // Same frame as every other page, so the header keeps its width;
@@ -37,10 +42,20 @@ export default async function MyReviewsPage() {
               Others see your initials only.
             </p>
           </div>
-          {reviews.length > 0 ? (
-            <span className="text-sm text-muted-foreground">
-              {reviewCount(reviews.length)}
-            </span>
+          {user ? (
+            <div className="flex items-center gap-3">
+              {reviews.length > 0 ? (
+                <span className="text-sm text-muted-foreground">
+                  {reviewCount(reviews.length)}
+                </span>
+              ) : null}
+              <QuickReviewDialog
+                year={year}
+                reviewedCodes={reviews
+                  .filter((r) => r.kind === "unit")
+                  .map((r) => r.code)}
+              />
+            </div>
           ) : null}
         </header>
 

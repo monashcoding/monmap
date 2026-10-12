@@ -6,10 +6,12 @@ import {
   CircleAlertIcon,
   MoreVerticalIcon,
   MoveIcon,
+  StarIcon,
   XIcon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
+import { UnitReviewDialog } from "@/components/reviews/review-dialogs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -107,6 +109,7 @@ export function UnitCard({
   const isCore = coreCodes.has(code)
   const [menuOpen, setMenuOpen] = useState(false)
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
   const gradeEntry = grades.get(code)
 
   const dragId = unitDragId(yearIndex, slotIndex, code)
@@ -278,6 +281,7 @@ export function UnitCard({
         <UnitMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
+          onReview={() => setReviewOpen(true)}
           moveTargets={
             slotLocked
               ? []
@@ -316,6 +320,24 @@ export function UnitCard({
           }}
         />
       )}
+
+      {reviewOpen ? (
+        // The dialog renders in a portal, but React still bubbles its
+        // events up to the card, so keep presses and keys from reaching
+        // the drag listeners.
+        <div
+          className="contents"
+          {...stopDrag}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <UnitReviewDialog
+            code={code}
+            title={unit?.title}
+            open
+            onOpenChange={setReviewOpen}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -374,10 +396,12 @@ function UnitMenu({
   onOpenChange,
   moveTargets,
   onMove,
+  onReview,
   onRemove,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
+  onReview: () => void
   moveTargets: MoveTarget[]
   onMove: (target: MoveTarget) => void
   onRemove: () => void
@@ -426,6 +450,16 @@ function UnitMenu({
               <DropdownMenuSeparator />
             </>
           ) : null}
+          <DropdownMenuItem
+            onClick={() => {
+              onOpenChange(false)
+              onReview()
+            }}
+          >
+            <StarIcon className="size-3" />
+            Review unit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {
               onOpenChange(false)
