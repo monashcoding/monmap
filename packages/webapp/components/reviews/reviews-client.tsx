@@ -23,6 +23,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useHydrated } from "@/hooks/use-hydrated"
 import { fetchReviews } from "@/lib/api/client"
 import { useSession } from "@/lib/auth-client"
@@ -342,20 +350,31 @@ export function ReviewsClient({
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">What students say</h3>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              Sort by
-              <select
-                value={sort}
-                onChange={(e) => changeSort(e.target.value as ReviewSort)}
-                className="h-8 rounded-control border border-input bg-field px-2 text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 max-md:h-10"
+            <Select
+              value={sort}
+              onValueChange={(v) => changeSort(v as ReviewSort)}
+            >
+              <SelectTrigger
+                aria-label="Sort reviews"
+                size="sm"
+                className="min-w-[170px] max-md:h-10"
               >
-                {(Object.keys(SORT_LABEL) as ReviewSort[]).map((s) => (
-                  <option key={s} value={s}>
-                    {SORT_LABEL[s]}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <SelectValue>
+                  {(v: unknown) =>
+                    `Sort: ${SORT_LABEL[(v as ReviewSort) ?? sort]}`
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {(Object.keys(SORT_LABEL) as ReviewSort[]).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {SORT_LABEL[s]}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <ul
             className="flex flex-col divide-y"
