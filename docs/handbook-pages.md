@@ -62,6 +62,57 @@ With these, a search spends 10-35 ms in Postgres, down from 140-220 ms.
 A query that is a code the year lacks (FIT2004 in 2027) points to the
 latest year that has it.
 
+## Sorting
+
+The `sort` parameter picks the order of /search results:
+
+| Sort | Order |
+| --- | --- |
+| Default | With a query, relevance first (the tiers above). Without one, a score: `3·ln(1+reviews) + 2·ln(1+core) + ln(1+views) + ln(1+planners)`. |
+| A to Z | Title. |
+| Highest rated | Mean overall stars, counted as if every entity had 2 extra 3-star reviews. Entities with no reviews go last. |
+| Easiest first | Mean review difficulty, with the same 2 extra 3s. Entities with no difficulty ratings go last. |
+| Most reviews | Published review count. |
+| Most planned | Distinct students with it on a plan. |
+
+Reviews are read live. The other numbers come from a snapshot that
+`lib/db/entity-stats.ts` rebuilds once a day:
+
+- `planners`: distinct users with the entity on any plan (units in a
+  slot, the course, a picked area of study). A count under 5 is stored
+  as 0 and never shown, so a rare unit cannot point at the student who
+  plans it. The daily snapshot means that one student's change cannot
+  be matched to a change in a count.
+- `views`: daily unique visitors over the last 90 days.
+- `unit_core.sources`: per handbook year, the courses whose mandatory
+  requirement groups name the unit, plus the areas of study that list
+  it under "Core units".
+
+Views are a Default input only; there is no "Most viewed" sort.
+
+The first /search or `/api/views` request after the snapshot turns a
+day old starts a rebuild in the background. An advisory lock keeps it
+to one server at a time, and `job_run` records when it finished. To
+rebuild now, run `pnpm --filter webapp refresh:stats`.
+
+### Page views
+
+Unit, course and area of study pages send one `POST /api/views` from
+the browser (`components/handbook/view-beacon.tsx`). The route:
+
+1. drops requests with no IP address or with a crawler or script user
+   agent;
+2. keys the visitor with an HMAC of the Melbourne date, the IP address
+   (`cf-connecting-ip`) and the user agent, under `VIEW_KEY_SECRET`;
+3. stores one `entity_view` row per visitor, page and day, and only
+   for codes in the handbook;
+4. always answers 204.
+
+No IP address is stored, and the date in the key means a visitor
+cannot be linked across days. The daily rebuild rolls finished days
+into `entity_view_daily` counts and deletes their `entity_view` rows,
+so a visitor key lasts about a day.
+
 ## Links between pages
 
 - Every unit, course and area of study named on a page links to its

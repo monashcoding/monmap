@@ -120,6 +120,13 @@
       "when": 1791204235874,
       "tag": "0016_review_bans_drop_user_email_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791787966385,
+      "tag": "0017_add_search_popularity",
+      "breakpoints": true
     }
   ]
 }

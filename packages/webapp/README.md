@@ -15,6 +15,8 @@ reviews. It is a Next.js app in the monorepo.
   `captureServer` in `lib/posthog-server.ts`. Neither sends anything
   outside production, and no event carries an email, a name, a plan
   name or a grade.
+- Page views for the /search sorts are counted in Postgres, not
+  PostHog: [`docs/handbook-pages.md`](../../docs/handbook-pages.md#sorting).
 
 UI components come from shadcn/ui. Add one with:
 

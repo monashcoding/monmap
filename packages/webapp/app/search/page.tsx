@@ -9,9 +9,11 @@ import { JsonLd } from "@/components/handbook/json-ld"
 import { MobileCollapsible } from "@/components/handbook/mobile-collapsible"
 import { loadRatings, ratingKey } from "@/components/handbook/ratings"
 import { SearchBox } from "@/components/handbook/search-box"
+import { SortSelect } from "@/components/handbook/sort-select"
 import { YearSelect } from "@/components/handbook/year-select"
 import { Pagination } from "@/components/pagination"
 import { RatingInline } from "@/components/reviews/stars"
+import { refreshEntityStatsIfStale } from "@/lib/db/entity-stats"
 import {
   listSearchFacets,
   SEARCH_PAGE_SIZE,
@@ -22,9 +24,11 @@ import { latestHandbookYear, listAvailableYears } from "@/lib/db/queries"
 import { entityHref, type EntityKind } from "@/lib/handbook/links"
 import {
   parseSearchState,
+  SEARCH_SORTS,
   searchHref,
   searchParamsOf,
   STUDY_LEVELS,
+  type SearchSort,
   type SearchState,
   type SearchTab,
 } from "@/lib/handbook/search-url"
@@ -128,10 +132,13 @@ export default async function SearchPage({
       level: state.level,
       period: state.period,
       campus: state.campus,
+      sort: state.sort,
       page: state.page,
     }),
     listSearchFacets(year),
   ])
+
+  refreshEntityStatsIfStale()
 
   // Ratings are live (this page renders per request), one query a kind.
   const ratings = await loadRatings(result.hits)
@@ -262,6 +269,15 @@ export default async function SearchPage({
               ) : null}{" "}
               in the {year} handbook
             </span>
+            <div className="order-last ml-auto sm:order-none">
+              <SortSelect
+                value={state.sort}
+                options={SEARCH_SORTS.map((sort) => ({
+                  sort,
+                  href: searchHref(state, { sort }),
+                }))}
+              />
+            </div>
             {activeFilters.map((f) => (
               <Link
                 key={f.label}
@@ -298,6 +314,7 @@ export default async function SearchPage({
                     hit={h}
                     words={words}
                     linkYear={state.year}
+                    sort={state.sort}
                     rating={ratings.get(ratingKey(h.kind, h.code))}
                   />
                 </li>
@@ -369,11 +386,13 @@ function Hit({
   hit,
   words,
   linkYear,
+  sort,
   rating,
 }: {
   hit: SearchHit
   words: string[]
   linkYear: string | null
+  sort: SearchSort
   rating: RatingSummary | undefined
 }) {
   const facts = [
@@ -397,7 +416,20 @@ function Hit({
             {highlight(hit.title, words)}
           </span>
         </p>
-        <RatingInline summary={rating} size="sm" />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          <RatingInline summary={rating} size="sm" />
+          {sort === "easiest" && hit.difficulty ? (
+            <span className="text-xs text-muted-foreground">
+              Difficulty {hit.difficulty.mean.toFixed(1)} of 5 (
+              {hit.difficulty.count})
+            </span>
+          ) : null}
+          {sort === "planned" && hit.planners > 0 ? (
+            <span className="text-xs text-muted-foreground">
+              On {hit.planners.toLocaleString("en-AU")} students&apos; plans
+            </span>
+          ) : null}
+        </div>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <KindBadge kind={hit.kind} />
           {facts.map((f, i) => (

@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "warm:pages": "node scripts/warm-pages.ts",
     "verify:resolver": "tsx scripts/verify-resolver.mts",
-    "verify:corpus": "tsx scripts/verify-corpus.mts"
+    "verify:corpus": "tsx scripts/verify-corpus.mts",
+    "refresh:stats": "tsx scripts/refresh-stats.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

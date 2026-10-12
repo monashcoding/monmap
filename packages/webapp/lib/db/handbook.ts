@@ -42,7 +42,11 @@ import {
 } from "../handbook/curriculum-tree.ts"
 import { aosKind, kindFromCode } from "../handbook/kinds.ts"
 import type { EntityKind } from "../handbook/links.ts"
-import type { SearchTab, StudyLevel } from "../handbook/search-url.ts"
+import type {
+  SearchSort,
+  SearchTab,
+  StudyLevel,
+} from "../handbook/search-url.ts"
 import * as raw from "../handbook/raw.ts"
 import { classifyTeachingPeriod } from "../planner/teaching-period.ts"
 import type {
@@ -634,6 +638,7 @@ export interface SearchInput {
   level: string | null
   period: PeriodKind | null
   campus: string | null
+  sort: SearchSort
   page: number
 }
 
@@ -651,6 +656,10 @@ export interface SearchHit {
   snippet: string | null
   periods: PeriodKind[]
   campuses: string[]
+  /** Distinct students with it on a plan; 0 under MIN_PLANNERS. */
+  planners: number
+  /** Mean difficulty from reviews, 1 (easy) to 5, and how many rated it. */
+  difficulty: { mean: number; count: number } | null
 }
 
 export interface SearchResult {
@@ -814,6 +823,64 @@ function plainText(htmlText: string | null, max = 240): string | null {
   return t.length > max ? `${t.slice(0, max).replace(/\s+\S*$/, "")}...` : t
 }
 
+/**
+ * A rating that starts as 2 reviews of 3, so one 5-star review does
+ * not outrank twenty 4.5-star ones. Null with no ratings.
+ */
+const BAYES = (sum: string, n: string) =>
+  sql.raw(`(${sum} + 6) / nullif(${n} + 2, 2)`)
+
+/**
+ * The default order without a query: reviews count most, then how many
+ * courses and areas of study make a unit core, then 90-day page views
+ * and the number of students who plan it. Logs keep one heavily viewed
+ * page from outranking everything else.
+ */
+const DEFAULT_SCORE = sql`(
+  3 * ln(1 + coalesce(r.reviews, 0))
+  + 2 * ln(1 + coalesce(uc.sources, 0))
+  + ln(1 + coalesce(st.views, 0))
+  + ln(1 + coalesce(st.planners, 0))
+)`
+
+/**
+ * The ORDER BY for a sort. With a query, Default is relevance: tier;
+ * then, among prose matches, the full-text rank; then closeness to the
+ * title; then the default score; then the shorter title (C2001
+ * "Bachelor of Computer Science" before the double degrees that
+ * contain it). The other sorts break ties by relevance, then title.
+ * Rows with no reviews go last in the rating sorts.
+ */
+function searchOrder(sort: SearchSort, hasQuery: boolean): SQL {
+  const tail = sql`rank DESC, title, kind_order, code`
+  switch (sort) {
+    case "alpha":
+      return sql`title, kind_order, code`
+    case "rating":
+      return sql`rating_score DESC NULLS LAST, reviews DESC, ${tail}`
+    case "easiest":
+      return sql`ease_score ASC NULLS LAST, difficulty_n DESC, ${tail}`
+    case "reviews":
+      return sql`reviews DESC, ${tail}`
+    case "planned":
+      return sql`planners DESC, ${tail}`
+    case "default":
+      return hasQuery
+        ? sql`rank DESC, (CASE WHEN rank = 300 THEN text_rank ELSE 0 END) DESC,
+            round(sim::numeric, 1) DESC, score DESC, length(title), kind_order, code`
+        : sql`score DESC, ${tail}`
+  }
+}
+
+interface SearchBase {
+  kind: EntityKind
+  code: string
+  title: string
+  planners: number
+  difficulty: number | null
+  difficultyCount: number
+}
+
 async function _searchHandbook(input: SearchInput): Promise<SearchResult> {
   const { q, year } = input
   const unitOnly =
@@ -886,19 +953,12 @@ async function _searchHandbook(input: SearchInput): Promise<SearchResult> {
     vector: sql`u.search_vector`,
   })
   const kind = TAB_KIND[input.tab]
-  // With a query: relevance; then, among prose matches, the full-text
-  // rank; then closeness to the title; then the shorter title
-  // (C2001 "Bachelor of Computer Science" before the double degrees
-  // that contain it). Without one: alphabetical, like a handbook index.
-  const order = q.trim()
-    ? sql`rank DESC, (CASE WHEN rank = 300 THEN text_rank ELSE 0 END) DESC,
-        round(sim::numeric, 1) DESC, length(title), kind_order, code`
-    : sql`title, kind_order, code`
+  const order = searchOrder(input.sort, q.trim() !== "")
   const offset = Math.max(0, input.page - 1) * SEARCH_PAGE_SIZE
 
   const [result] = await rows<{
     counts: Record<string, number> | null
-    hits: Array<{ kind: EntityKind; code: string; title: string }> | null
+    hits: SearchBase[] | null
     exact: { kind: EntityKind; code: string } | null
   }>(sql`
     WITH ranked AS (
@@ -913,9 +973,29 @@ async function _searchHandbook(input: SearchInput): Promise<SearchResult> {
       FROM units u WHERE ${where([...unitWhere, unit.where])}
     ),
     matched AS MATERIALIZED (SELECT * FROM ranked WHERE rank > 0),
+    reviewed AS (
+      SELECT entity_kind::text AS kind, entity_code AS code,
+        count(*)::int AS reviews, sum(overall)::float AS overall_sum,
+        count(ratings->'difficulty')::int AS difficulty_n,
+        sum((ratings->>'difficulty')::float) AS difficulty_sum
+      FROM review WHERE status = 'published'
+      GROUP BY entity_kind, entity_code
+    ),
     page AS (
-      SELECT kind, code, title, rank, text_rank, sim, kind_order FROM matched
-      WHERE ${kind ? sql`kind = ${kind}` : sql`TRUE`}
+      SELECT m.kind, m.code, m.title, m.rank, m.text_rank, m.sim, m.kind_order,
+        coalesce(r.reviews, 0) AS reviews,
+        coalesce(r.difficulty_n, 0) AS difficulty_n,
+        r.difficulty_sum / nullif(r.difficulty_n, 0) AS difficulty,
+        ${BAYES("r.overall_sum", "r.reviews")} AS rating_score,
+        ${BAYES("r.difficulty_sum", "r.difficulty_n")} AS ease_score,
+        coalesce(st.planners, 0) AS planners,
+        ${DEFAULT_SCORE} AS score
+      FROM matched m
+      LEFT JOIN reviewed r ON r.kind = m.kind AND r.code = m.code
+      LEFT JOIN entity_stats st ON st.kind::text = m.kind AND st.code = m.code
+      LEFT JOIN unit_core uc
+        ON m.kind = 'unit' AND uc.year = ${year} AND uc.unit_code = m.code
+      WHERE ${kind ? sql`m.kind = ${kind}` : sql`TRUE`}
       ORDER BY ${order}
       LIMIT ${SEARCH_PAGE_SIZE} OFFSET ${offset}
     )
@@ -923,7 +1003,9 @@ async function _searchHandbook(input: SearchInput): Promise<SearchResult> {
       (SELECT json_object_agg(kind, n) FROM (
         SELECT kind, count(*)::int AS n FROM matched GROUP BY kind
       ) k) AS counts,
-      (SELECT json_agg(json_build_object('kind', kind, 'code', code, 'title', title)
+      (SELECT json_agg(json_build_object('kind', kind, 'code', code,
+        'title', title, 'planners', planners, 'difficulty', difficulty,
+        'difficultyCount', difficulty_n)
         ORDER BY ${order}) FROM page) AS hits,
       (SELECT json_build_object('kind', kind, 'code', code) FROM matched
         WHERE rank = 1000 ORDER BY kind_order LIMIT 1) AS exact
@@ -971,9 +1053,14 @@ async function findCodeElsewhere(
 export const searchHandbook = cacheHandbook(_searchHandbook)
 
 async function hydrateHits(
-  base: Array<{ kind: EntityKind; code: string; title: string }>,
+  hits: SearchBase[],
   year: string
 ): Promise<SearchHit[]> {
+  const base = hits.map(({ difficulty, difficultyCount, ...h }) => ({
+    ...h,
+    difficulty:
+      difficulty == null ? null : { mean: difficulty, count: difficultyCount },
+  }))
   const codesOf = (k: EntityKind) =>
     base.filter((h) => h.kind === k).map((h) => h.code)
   const unitCodes = codesOf("unit")

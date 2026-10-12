@@ -27,6 +27,7 @@ import {
   boolean,
   check,
   customType,
+  date,
   index,
   integer,
   jsonb,
@@ -637,4 +638,78 @@ export const reviewAuthorBan = pgTable("review_author_ban", {
   /** Email of the admin who banned the author. */
   bannedBy: text().notNull(),
   bannedAt: timestamp().notNull().defaultNow(),
+});
+
+/* ------------------------------------------------------------------ *
+ * Search popularity
+ *
+ * The /search sorts read these tables, which the webapp rebuilds once
+ * a day (`lib/db/entity-stats.ts`). A daily snapshot means that one
+ * student's change to a plan cannot be matched to a change in a count.
+ *
+ * `entity_stats.planners` is the number of distinct users with the
+ * entity on any of their plans. Counts under 5 are stored as 0, so a
+ * unit only one or two students plan cannot point at them. No user id
+ * is stored here.
+ *
+ * `entity_view` holds one row per visitor per page per day. `visitor`
+ * is an HMAC of the IP address and user agent under a key that changes
+ * every day, so the same visitor cannot be linked across days and no
+ * IP address is stored. The daily rebuild rolls finished days into
+ * `entity_view_daily` and deletes their `entity_view` rows.
+ *
+ * `unit_core` counts, per handbook year, the courses whose mandatory
+ * requirement groups name a unit plus the areas of study that list it
+ * under "Core units".
+ * ------------------------------------------------------------------ */
+
+export const entityStats = pgTable(
+  "entity_stats",
+  {
+    kind: reviewEntityKindEnum().notNull(),
+    code: text().notNull(),
+    /** Distinct users with it on a plan; 0 when fewer than 5. */
+    planners: integer().notNull().default(0),
+    /** Daily unique visitors summed over the last 90 days. */
+    views: integer().notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.kind, t.code] })],
+);
+
+export const unitCore = pgTable(
+  "unit_core",
+  {
+    year: text().notNull(),
+    unitCode: text().notNull(),
+    sources: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.year, t.unitCode] })],
+);
+
+export const entityView = pgTable(
+  "entity_view",
+  {
+    day: date().notNull(),
+    kind: reviewEntityKindEnum().notNull(),
+    code: text().notNull(),
+    visitor: text().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.kind, t.code, t.visitor] })],
+);
+
+export const entityViewDaily = pgTable(
+  "entity_view_daily",
+  {
+    day: date().notNull(),
+    kind: reviewEntityKindEnum().notNull(),
+    code: text().notNull(),
+    viewers: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.kind, t.code] })],
+);
+
+/** When each scheduled job last finished, so servers share one schedule. */
+export const jobRun = pgTable("job_run", {
+  name: text().primaryKey(),
+  finishedAt: timestamp().notNull(),
 });

@@ -59,6 +59,7 @@ import {
   OverviewSection,
   ProseBlocks,
 } from "./sections"
+import { ViewBeacon } from "./view-beacon"
 
 export async function courseMetadata(
   rawCode: string,
@@ -200,6 +201,7 @@ export async function CoursePage({
           { id: "details", label: "Course details" },
         ]}
       >
+        <ViewBeacon kind="course" code={c.code} />
         <ReviewsSection
           kind="course"
           code={c.code}

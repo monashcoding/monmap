@@ -19,6 +19,8 @@ test("unknown tab, study and period values are ignored", () => {
   assert.equal(s.study, null)
   assert.equal(parse({ type: "units", period: "S9" }).period, null)
   assert.equal(parse({ type: "units", level: "12" }).level, null)
+  assert.equal(parse({ sort: "views" }).sort, "default")
+  assert.equal(parse({ sort: "planned" }).sort, "planned")
 })
 
 test("page numbers below 2 or not whole give page 1, and cap at 500", () => {
@@ -64,6 +66,7 @@ test("a full state survives a trip through the URL", () => {
     level: "2",
     period: "S1",
     campus: "Clayton",
+    sort: "rating",
     page: 3,
   }
   const sp = Object.fromEntries(searchParamsOf(s))

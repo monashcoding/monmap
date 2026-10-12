@@ -63,6 +63,7 @@ import {
   LearningOutcomesSection,
   OverviewSection,
 } from "./sections"
+import { ViewBeacon } from "./view-beacon"
 
 /** "Clayton, Caulfield, Peninsula and 2 more", or null with none. */
 function campusSummary(campuses: string[]): string | null {
@@ -269,6 +270,7 @@ export async function UnitPage({
           { id: "details", label: "More details" },
         ]}
       >
+        <ViewBeacon kind="unit" code={u.code} />
         <ReviewsSection
           kind="unit"
           code={u.code}

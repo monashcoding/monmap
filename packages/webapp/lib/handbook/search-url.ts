@@ -1,6 +1,7 @@
 /**
  * The /search page's state lives in its query string so every search
- * is a link: ?q=&type=&year=&faculty=&study=&level=&period=&campus=&page=.
+ * is a link:
+ * ?q=&type=&year=&faculty=&study=&level=&period=&campus=&sort=&page=.
  * Defaults are left out to keep URLs short.
  */
 
@@ -12,7 +13,18 @@ export type SearchTab = "all" | "courses" | "aos" | "units"
 export type StudyLevel =
   "Undergraduate" | "Honours" | "Postgraduate" | "Research"
 
+export type SearchSort =
+  "default" | "alpha" | "rating" | "easiest" | "reviews" | "planned"
+
 export const SEARCH_TABS: SearchTab[] = ["all", "courses", "aos", "units"]
+export const SEARCH_SORTS: SearchSort[] = [
+  "default",
+  "alpha",
+  "rating",
+  "easiest",
+  "reviews",
+  "planned",
+]
 export const STUDY_LEVELS: StudyLevel[] = [
   "Undergraduate",
   "Honours",
@@ -31,6 +43,7 @@ export interface SearchState {
   level: string | null
   period: PeriodKind | null
   campus: string | null
+  sort: SearchSort
   page: number
 }
 
@@ -54,6 +67,7 @@ export function parseSearchState(
   const study = firstParam(sp.study) as StudyLevel | null
   const period = firstParam(sp.period) as PeriodKind | null
   const level = firstParam(sp.level)
+  const sort = firstParam(sp.sort) as SearchSort | null
   const year = firstParam(sp.year)
   const page = Number(firstParam(sp.page) ?? 1)
   const resolvedTab = tab && SEARCH_TABS.includes(tab) ? tab : "all"
@@ -68,6 +82,7 @@ export function parseSearchState(
     period:
       units && period && PERIOD_KIND_ORDER.includes(period) ? period : null,
     campus: units ? text(sp.campus) : null,
+    sort: sort && SEARCH_SORTS.includes(sort) ? sort : "default",
     page: Number.isInteger(page) && page > 1 ? Math.min(page, 500) : 1,
   }
 }
@@ -82,6 +97,7 @@ export function searchParamsOf(s: SearchState): URLSearchParams {
   if (s.level) sp.set("level", s.level)
   if (s.period) sp.set("period", s.period)
   if (s.campus) sp.set("campus", s.campus)
+  if (s.sort !== "default") sp.set("sort", s.sort)
   if (s.page > 1) sp.set("page", String(s.page))
   return sp
 }

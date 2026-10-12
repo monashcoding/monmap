@@ -55,6 +55,7 @@ import {
   LearningOutcomesSection,
   OverviewSection,
 } from "./sections"
+import { ViewBeacon } from "./view-beacon"
 
 export async function aosMetadata(
   rawCode: string,
@@ -165,6 +166,7 @@ export async function AosPage({
           { id: "details", label: "Details" },
         ]}
       >
+        <ViewBeacon kind="aos" code={a.code} />
         <ReviewsSection
           kind="aos"
           code={a.code}
