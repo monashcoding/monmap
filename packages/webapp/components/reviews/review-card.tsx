@@ -56,8 +56,8 @@ export function ReviewCard({
           </span>
           <span className="text-xs text-muted-foreground">
             {reviewDate(review.createdAt)}
-            {review.edited ? " · edited" : ""}
-            {review.yearTaken ? ` · ${yearWord} ${review.yearTaken}` : ""}
+            {review.edited ? " - edited" : ""}
+            {review.yearTaken ? ` - ${yearWord} ${review.yearTaken}` : ""}
           </span>
         </div>
         {actions}

@@ -244,9 +244,9 @@ function AdminReviewCard({ review: r }: { review: AdminReview }) {
         <div className="flex flex-col text-xs text-muted-foreground">
           <span className="font-semibold text-foreground">{r.initials}</span>
           <span>
-            Author #{r.authorTag} · {reviewCount(r.authorReviews)} ·{" "}
+            Author #{r.authorTag} - {reviewCount(r.authorReviews)} -{" "}
             {reviewDate(r.createdAt)}
-            {r.edited ? " · edited" : ""}
+            {r.edited ? " - edited" : ""}
           </span>
         </div>
         <Stars value={r.overall} size="sm" className="ml-auto" />
@@ -262,7 +262,7 @@ function AdminReviewCard({ review: r }: { review: AdminReview }) {
                 ? `${a.label} ${r.ratings[a.id]}/5`
                 : `${a.label}: ${a.steps?.[r.ratings[a.id] - 1]}`
             )
-            .join(" · ")}
+            .join(" - ")}
         </p>
       ) : null}
 
@@ -277,14 +277,14 @@ function AdminReviewCard({ review: r }: { review: AdminReview }) {
             <span className="font-semibold">Classifier:</span>{" "}
             {r.classifierLabel}
             {nonFair != null
-              ? ` · ${Math.round(nonFair * 100)}% not a fair review`
+              ? ` - ${Math.round(nonFair * 100)}% not a fair review`
               : ""}
           </span>
         ) : null}
         {r.moderatedBy ? (
           <span className="text-muted-foreground">
             Last set by {r.moderatedBy}
-            {r.moderatedAt ? ` in ${reviewDate(r.moderatedAt)}` : ""}
+            {r.moderatedAt ? ` on ${reviewDate(r.moderatedAt)}` : ""}
           </span>
         ) : null}
       </div>
