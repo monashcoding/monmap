@@ -230,15 +230,28 @@ gh release create handbook-YYYYMMDD monmap-handbook-YYYYMMDD.tar.gz \
 Built and maintained by the [**MAC Projects team**](https://monashcoding.com/team)
 at the [Monash Association of Coding](https://monashcoding.com).
 
-**Core maintainers**
-
-- ![](https://github.com/jason301c.png?size=32) **Jason Alexander Sutiono** ([@jason301c](https://github.com/jason301c)), ex-MAC Projects
-- ![](https://github.com/oliverhuangcode.png?size=32) **Oliver Huang** ([@oliverhuangcode](https://github.com/oliverhuangcode)), ex-MAC Projects
-
-**Contributors**
-
-- ![](https://github.com/ryanhiizy.png?size=32) [**@ryanhiizy**](https://github.com/ryanhiizy)
-- ![](https://github.com/coldfinity.png?size=32) [**@coldfinity**](https://github.com/coldfinity)
+<table>
+  <tr>
+    <th colspan="2">Core maintainers</th>
+    <th colspan="2">Contributors</th>
+  </tr>
+  <tr>
+    <td align="center" width="160">
+      <a href="https://github.com/jason301c"><img src="https://github.com/jason301c.png" width="64" height="64" alt=""><br><b>Jason Alexander Sutiono</b></a><br>
+      <sub>ex-MAC Projects</sub>
+    </td>
+    <td align="center" width="160">
+      <a href="https://github.com/oliverhuangcode"><img src="https://github.com/oliverhuangcode.png" width="64" height="64" alt=""><br><b>Oliver Huang</b></a><br>
+      <sub>ex-MAC Projects</sub>
+    </td>
+    <td align="center" width="160">
+      <a href="https://github.com/ryanhiizy"><img src="https://github.com/ryanhiizy.png" width="64" height="64" alt=""><br><b>@ryanhiizy</b></a>
+    </td>
+    <td align="center" width="160">
+      <a href="https://github.com/coldfinity"><img src="https://github.com/coldfinity.png" width="64" height="64" alt=""><br><b>@coldfinity</b></a>
+    </td>
+  </tr>
+</table>
 
 Thanks to the MAC committee for backing the project, every Monash
 student who's filed a bug or sent a screenshot, and the maintainers of
