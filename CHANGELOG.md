@@ -4,6 +4,20 @@ Notable changes to MonMap, newest first. Version numbers follow
 [Semantic Versioning](https://semver.org). Dates are when the last
 change in the release landed on `main`.
 
+## 2.0.2 (16 October 2026)
+
+### Changed
+
+- Review dates show the day: "12 October 2026" instead of "October 2026".
+- Review cards use hyphens instead of middle dots.
+- Next.js upgraded to 16.4.0, drizzle-orm to 0.45.4, and seven other
+  packages to their latest versions.
+
+### Security
+
+- The dependency upgrade clears the high-severity `source-map-js`
+  advisory.
+
 ## 2.0.1 (12 October 2026)
 
 ### Added

@@ -10,7 +10,7 @@ Built to replace [MonPlan](https://monplan.apps.monash.edu), which Monash sunset
 [![Report a bug](https://img.shields.io/badge/Report_a_bug-252525?style=for-the-badge&logo=github)](https://github.com/monashcoding/monmap/issues)
 [![Feedback form](https://img.shields.io/badge/Feedback_form-252525?style=for-the-badge&logo=googleforms&logoColor=white)](https://docs.google.com/forms/d/e/1FAIpQLSfEMCU4OCItlK6DGgIXTovH7_sPSW6mZtMaPGf1OCUQW_43kg/viewform)
 
-[![Version](https://img.shields.io/badge/version-2.0.1-ffe330?labelColor=252525)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.2-ffe330?labelColor=252525)](CHANGELOG.md)
 [![Build](https://github.com/monashcoding/monmap/actions/workflows/deploy.yml/badge.svg)](https://github.com/monashcoding/monmap/actions/workflows/deploy.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
