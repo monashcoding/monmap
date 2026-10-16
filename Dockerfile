@@ -12,7 +12,7 @@
 # query — so DATABASE_URL is a *runtime*-only var, set in Dokploy.
 # ---------------------------------------------------------------------------
 
-FROM node:22-slim AS base
+FROM node:24-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 # Corepack reads the `packageManager` field in package.json to pin the exact
@@ -49,7 +49,7 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
 RUN pnpm --filter webapp build
 
 # ---- runtime ------------------------------------------------------------
-FROM node:22-slim AS runner
+FROM node:24-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

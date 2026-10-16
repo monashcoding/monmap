@@ -86,7 +86,7 @@ you don't need to scrape to run a working instance.
 
 ### Prerequisites
 
-- Node ≥ 22 (CI and the Docker image use Node 22)
+- Node ≥ 24 (CI and the Docker image use Node 24)
 - pnpm ≥ 10
 - Postgres ≥ 14 running locally
 - The [`gh` CLI](https://cli.github.com), to download the handbook data

@@ -146,7 +146,7 @@ Work on `main` unless the user asks for a branch.
   exception only for a security fix, and say so in the commit.
 - Keep the TypeScript, ESLint and `@types/node` majors where they are.
   typescript-eslint supports TypeScript below 6.1, Next's lint plugins
-  support ESLint 9, and `@types/node` follows the Node 22 runtime in
+  support ESLint 9, and `@types/node` follows the Node 24 runtime in
   the Docker image. `.github/dependabot.yml` holds the same list.
 - Keep exactly one `drizzle-orm` version. `pnpm-workspace.yaml` and
   `.npmrc` pin it; a second copy breaks typechecking.

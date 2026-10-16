@@ -12,6 +12,7 @@ change in the release landed on `main`.
 - Review cards use hyphens instead of middle dots.
 - Next.js upgraded to 16.4.0, drizzle-orm to 0.45.4, and seven other
   packages to their latest versions.
+- The server runs on Node 24 LTS instead of Node 22.
 
 ### Security
 
