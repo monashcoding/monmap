@@ -6,7 +6,15 @@
 
 Built to replace [MonPlan](https://monplan.apps.monash.edu), which Monash sunset on 2 June 2026.
 
-[**Live site**](https://monmap.monashcoding.com) · [Report a bug](https://github.com/monashcoding/monmap/issues) · [Feedback form](https://docs.google.com/forms/d/e/1FAIpQLSfEMCU4OCItlK6DGgIXTovH7_sPSW6mZtMaPGf1OCUQW_43kg/viewform)
+[![Open MonMap](https://img.shields.io/badge/Open_MonMap-ffe330?style=for-the-badge&logoColor=252525)](https://monmap.monashcoding.com)
+[![Report a bug](https://img.shields.io/badge/Report_a_bug-252525?style=for-the-badge&logo=github)](https://github.com/monashcoding/monmap/issues)
+[![Feedback form](https://img.shields.io/badge/Feedback_form-252525?style=for-the-badge&logo=googleforms&logoColor=white)](https://docs.google.com/forms/d/e/1FAIpQLSfEMCU4OCItlK6DGgIXTovH7_sPSW6mZtMaPGf1OCUQW_43kg/viewform)
+
+[![Version](https://img.shields.io/badge/version-2.0.1-ffe330?labelColor=252525)](CHANGELOG.md)
+[![Build](https://github.com/monashcoding/monmap/actions/workflows/deploy.yml/badge.svg)](https://github.com/monashcoding/monmap/actions/workflows/deploy.yml)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![Postgres](https://img.shields.io/badge/Postgres-14%2B-336791?logo=postgresql&logoColor=white)
 
 ![MonMap planner screenshot](docs/screenshot.webp)
 
@@ -19,55 +27,69 @@ time, whether your plan works. It checks prerequisites and offerings
 against the Monash handbook, flags what doesn't fit, shows what your
 course requirements still need, and keeps a running WAM. Every unit,
 course and major also has its own page with student reviews and a
-requisite map. Sign in to save plans across devices, or use it
-anonymously (the plan stays in your browser) and export it to CSV.
+requisite map.
+
+No account is needed. Without one, your plan stays in your browser.
+Sign in with your Monash Google account to keep several plans and sync
+them across devices.
 
 ## Features
 
-- **Quick unit search.** Two-pane layout with slot-fit hints and
-  suggestions from your course, so common picks are one click away.
-- **Student reviews.** Rate units, courses and majors on teaching,
-  content, assessment, difficulty and workload. Reviews show initials
-  only, and a classifier screens out abuse, spam and personal details
-  ([how it works](docs/reviews.md)).
-- **Handbook pages and search.** A page for every unit, course and area
-  of study from 2020 to 2027, with a requisite map of what each unit
-  needs and unlocks, and one search over all of them
-  ([details](docs/handbook-pages.md)).
-- **Plans you own.** Export to CSV or print. Your data travels with
-  you.
-- **Faithful handbook coverage.** Cross-year prereqs, honours track
-  variations, and the trickier offering rules are all modelled
-  explicitly.
-- **Open source.** If something looks off for your course, read the
-  code, file an issue, or send a PR.
+| | |
+| --- | --- |
+| 🗓️ **Planner** | Drag units onto semesters, with undo, slot-fit hints and suggestions from your course. Works on touch screens with long-press drag. |
+| ✅ **Requirement checks** | Prerequisites, offerings, cross-year rules and honours variations, checked live against the handbook. |
+| 🎓 **Double majors and minors** | Plan up to two majors or minors of each kind, with a campus preference and overlap detection. |
+| 📊 **WAM tracking** | Enter grades as you go and see your running WAM. |
+| ⭐ **Student reviews** | Rate units, courses and majors on teaching, content, assessment, difficulty and workload. Reviews show initials only. React with emoji and sort by reactions. A classifier screens out abuse, spam and personal details ([how it works](docs/reviews.md)). |
+| 📚 **Handbook pages** | A page for every unit, course and area of study from 2020 to 2027, with a requisite map of what each unit needs and unlocks ([details](docs/handbook-pages.md)). |
+| 🔎 **Search** | One sortable search over every unit, course and area of study. |
+| 📤 **Export** | Download a plan as CSV or print it. |
 
-## Getting started
-
-Just visit [**monmap.monashcoding.com**](https://monmap.monashcoding.com).
-No account required to start planning; sign in with your Monash Google
-account to sync across devices.
+If something looks wrong for your course, read the code, file an
+issue, or send a PR. For what changed in each release, see the
+[changelog](CHANGELOG.md).
 
 ## Contributing
 
-PRs welcome. If you're a Monash student and something feels off about
-how a unit, prereq, or course is rendered, that's almost always a bug
-worth filing. Open an [issue](https://github.com/monashcoding/monmap/issues)
-with the unit code and what you expected. For non-code feedback there's
-a **Feedback** form linked in the app.
+PRs welcome. If a unit, requisite or course renders wrongly, that is
+almost always a bug worth filing. Open an
+[issue](https://github.com/monashcoding/monmap/issues) with the unit
+code and what you expected. For non-code feedback, use the
+**Feedback** form linked in the app.
 
 ## Development
 
-Single Next.js app backed by a local Postgres copy of the Monash
-handbook. The handbook data is published as a tarball on
+### Repository layout
+
+A pnpm workspace with four packages:
+
+| Package | Does |
+| --- | --- |
+| [`packages/webapp`](packages/webapp) | The Next.js app: planner, handbook pages, reviews, search. |
+| [`packages/db`](packages/db) | Drizzle schema, migrations and the shared Postgres client. |
+| [`packages/scraper`](packages/scraper) | Fetches handbook data from CourseLoop into `packages/scraper/data`. |
+| [`packages/ingest`](packages/ingest) | Loads the scraped data into Postgres. |
+
+```mermaid
+flowchart LR
+  CL[Monash handbook<br/>CourseLoop] -->|pnpm scrape:all| S[scraper<br/>raw JSON]
+  S -->|pnpm package| R[GitHub Release<br/>tarball]
+  R -->|download + untar| S2[packages/scraper/data]
+  S2 -->|pnpm ingest:all| DB[(Postgres)]
+  DB --> W[webapp]
+```
+
+The handbook data is published as a tarball on
 [GitHub Releases](https://github.com/monashcoding/monmap/releases), so
-you don't need scraper credentials to spin up a working instance.
+you don't need to scrape to run a working instance.
 
 ### Prerequisites
 
-- Node ≥ 22 (tested on 25.8)
+- Node ≥ 22 (CI and the Docker image use Node 22)
 - pnpm ≥ 10
 - Postgres ≥ 14 running locally
+- The [`gh` CLI](https://cli.github.com), to download the handbook data
 
 ### First-time setup
 
@@ -83,61 +105,66 @@ cp .env.example .env
 createdb monmap
 pnpm db:migrate
 
-# 4. Download the latest handbook corpus from GitHub releases
-#    (~120 MB; covers 2020–2026, the live site also has 2027).
-#    Requires the gh CLI; alternatively
-#    grab it from https://github.com/monashcoding/monmap/releases/latest
+# 4. Download the latest handbook data (~120 MB, 2020–2026).
+#    Or download it from https://github.com/monashcoding/monmap/releases/latest
 gh release download --repo monashcoding/monmap --pattern 'monmap-handbook-*.tar.gz'
 
-# 5. Unpack into the scraper data directory
+# 5. Unpack it into the scraper data directory
 mkdir -p packages/scraper/data
 tar -xzf monmap-handbook-*.tar.gz -C packages/scraper/data
 
-# 6. Load every year into Postgres (~37k units, ~3k courses, ~70k
-#    offerings across 7 academic years)
+# 6. Load every year into Postgres
+#    (~37k units, ~3k courses, ~70k offerings across 7 years)
 pnpm ingest:all
 ```
+
+The release does not include 2027 yet. The live site has it.
 
 ### Running the app
 
 ```bash
-pnpm --filter webapp dev         # http://localhost:3000
+pnpm dev                         # http://localhost:3000
 ```
 
-On `localhost` you can't use your real MAC login: the shared
-`.monashcoding.com` session cookie is never sent to `localhost`, so the
-server renders you as signed out (the avatar may still show, because the
-browser asks auth.monashcoding.com directly). To sign in locally, serve
-the app from a `monashcoding.com` hostname instead:
+<details>
+<summary><b>Signing in locally</b></summary>
+
+On `localhost` you can't use your real MAC login: the browser never
+sends the shared `.monashcoding.com` session cookie to `localhost`, so
+the server renders you as signed out. The avatar can still show,
+because the browser asks auth.monashcoding.com directly. To sign in
+locally, serve the app from a `monashcoding.com` hostname:
 
 1. Point `local.monashcoding.com` at your machine. Add these lines to
-   `/etc/hosts` (needs `sudo`). The IPv6 line matters: without it the
-   system still gets Cloudflare's IPv6 address from public DNS (the
-   `*.monashcoding.com` wildcard), and browsers try IPv6 first.
+   `/etc/hosts` (needs `sudo`). You need the IPv6 line: without it,
+   public DNS still returns Cloudflare's IPv6 address for the
+   `*.monashcoding.com` wildcard, and browsers try IPv6 first.
 
    ```
    127.0.0.1 local.monashcoding.com
    ::1 local.monashcoding.com
    ```
 
-2. Run the HTTPS dev server and open https://local.monashcoding.com:3000:
+2. Start the HTTPS dev server and open https://local.monashcoding.com:3000:
 
    ```bash
    pnpm dev:sso
    ```
 
-   The first run creates a local certificate authority with `mkcert`
-   and may ask for your password to trust it. The certificate lands in
-   `packages/webapp/certificates/`, which is git-ignored.
+   On the first run, Next.js creates a local certificate authority with
+   `mkcert` and can ask for your password to trust it. The certificate
+   goes in `packages/webapp/certificates/`, which is git-ignored.
 
 The auth service must list `https://local.monashcoding.com:3000` in its
 `TRUSTED_ORIGINS` setting (monashcoding/mac-auth). Its built-in
 `https://*.monashcoding.com` wildcard does not match an origin with a
-port, so without that entry sign-in and sign-out fail with "Invalid
+port. Without that entry, sign-in and sign-out fail with "Invalid
 origin" even though the session still shows.
 
-Signed in this way, you read and write your real plans in whatever
-database `DATABASE_URL` points at.
+When you sign in this way, you read and write your real plans in the
+database that `DATABASE_URL` points at.
+
+</details>
 
 ### Day-to-day commands
 
@@ -146,60 +173,80 @@ pnpm db:generate                 # after editing schema.ts, write a new migratio
 pnpm db:migrate                  # apply pending migrations
 pnpm db:studio                   # open drizzle-kit's db browser
 
-pnpm --filter webapp test        # pure-function unit tests (node --test)
-pnpm --filter webapp typecheck
+pnpm test                        # unit tests in every package (node --test)
+pnpm typecheck                   # tsc in every package
 pnpm lint                        # eslint over the webapp
 
-pnpm ingest                      # load a single year (default 2026) from ./packages/scraper/data
-pnpm ingest:all                  # load every year present in the data dir
+pnpm ingest                      # load one year (default 2026) from packages/scraper/data
+pnpm ingest:all                  # load every year in the data directory
 ```
 
-CI (the `verify` job in `.github/workflows/deploy.yml`) runs `pnpm lint`,
-`pnpm typecheck`, `pnpm test` and a critical-advisory `pnpm audit` on
-every pull request and push to `main` that changes a package, the
-Dockerfile or the root workspace files. On `main` it then builds the
-Docker image, but only when the checks pass.
-
+> [!NOTE]
 > `drizzle-kit push` is deliberately not wired up. Schema changes go
-> through `db:generate` + `db:migrate` so the history stays auditable
+> through `db:generate` and `db:migrate` so the history stays auditable
 > (CLAUDE.md §2).
+
+### CI and deployment
+
+The `verify` job in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+runs `pnpm lint`, `pnpm typecheck`, `pnpm test` and a critical-advisory
+`pnpm audit`. It runs on every pull request and push to `main` that
+changes a package, the Dockerfile or the root workspace files.
+
+If the checks pass on `main`, the `build` job:
+
+1. builds an arm64 Docker image and pushes it to `ghcr.io/monashcoding/monmap`;
+2. calls the Dokploy webhook, and Dokploy pulls the image and redeploys
+   it on the Oracle Cloud server.
 
 ### Cutting a new handbook release (maintainers)
 
-The corpus on [GitHub Releases](https://github.com/monashcoding/monmap/releases)
-is the canonical source for everyone's local Postgres. To refresh it,
-re-scrape from CourseLoop and pack the result:
+The tarball on [GitHub Releases](https://github.com/monashcoding/monmap/releases)
+is the source of everyone's local Postgres. To refresh it, scrape
+CourseLoop again and pack the result:
 
 ```bash
-pnpm scrape:all                  # fetch every published year (slow, hours)
-pnpm package                     # roll monmap-handbook-YYYYMMDD.tar.gz
+pnpm scrape:all                  # fetch every published year (takes hours)
+pnpm package                     # write monmap-handbook-YYYYMMDD.tar.gz
 gh release create handbook-YYYYMMDD monmap-handbook-YYYYMMDD.tar.gz \
   --title "Handbook snapshot: YYYY-YYYY (Month YYYY)"
 ```
 
-### Project conventions and gotchas
+### Docs
 
-- Repo-wide conventions: [`CLAUDE.md`](CLAUDE.md).
-- Handbook data quirks (fields that silently lie, JSONB tree shapes,
-  cross-year references): [`docs/handbook-internals.md`](docs/handbook-internals.md).
-  Worth skimming before writing a query.
-- Handbook pages, search and caching: [`docs/handbook-pages.md`](docs/handbook-pages.md).
-- Reviews and moderation: [`docs/reviews.md`](docs/reviews.md).
-- SEO: [`docs/seo.md`](docs/seo.md).
+| Doc | Covers |
+| --- | --- |
+| [`CLAUDE.md`](CLAUDE.md) | Repo-wide conventions. |
+| [`docs/handbook-internals.md`](docs/handbook-internals.md) | Handbook data quirks: fields that silently lie, JSONB tree shapes, cross-year references. Read it before you write a query. |
+| [`docs/handbook-pages.md`](docs/handbook-pages.md) | Handbook pages, search and caching. |
+| [`docs/reviews.md`](docs/reviews.md) | Reviews and moderation. |
+| [`docs/seo.md`](docs/seo.md) | SEO. |
+| [`docs/plan-multiple-aos.md`](docs/plan-multiple-aos.md) | Design record for multiple majors and minors and the campus preference. |
+| [`docs/data-gaps-audit-2026-08.md`](docs/data-gaps-audit-2026-08.md) | Audit of gaps in the handbook data, August 2026. |
+| [`docs/feedback-triage-2026-05.md`](docs/feedback-triage-2026-05.md) | Triage of the May 2026 feedback form. |
 
 ## Credits
 
 Built and maintained by the [**MAC Projects team**](https://monashcoding.com/team)
 at the [Monash Association of Coding](https://monashcoding.com).
 
+**Core maintainers**
+
+- ![](https://github.com/jason301c.png?size=32) **Jason Alexander Sutiono** ([@jason301c](https://github.com/jason301c)), ex-MAC Projects
+- ![](https://github.com/oliverhuangcode.png?size=32) **Oliver Huang** ([@oliverhuangcode](https://github.com/oliverhuangcode)), ex-MAC Projects
+
+**Contributors**
+
+- ![](https://github.com/ryanhiizy.png?size=32) [**@ryanhiizy**](https://github.com/ryanhiizy)
+- ![](https://github.com/coldfinity.png?size=32) [**@coldfinity**](https://github.com/coldfinity)
+
 Thanks to the MAC committee for backing the project, every Monash
 student who's filed a bug or sent a screenshot, and the maintainers of
-the open-source libraries we lean on.
+the open-source libraries we use.
 
 ## License
 
 [AGPL-3.0-only](LICENSE). If you run a modified version of MonMap as a
-network service, you must make your source available to its users.
-Internal forks and private experimentation are fine; redistributing or
-hosting a modified copy means publishing your changes under the same
-license.
+network service, you must make its source available to its users.
+Private forks and experiments are fine. If you redistribute or host a
+modified copy, you must publish your changes under the same license.
