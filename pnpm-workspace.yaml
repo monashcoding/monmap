@@ -5,7 +5,7 @@ packages:
 # better-auth's kysely fork a second copy and the workspace stops
 # typechecking (two unrelated `SQL<unknown>` types). See .npmrc too.
 overrides:
-  drizzle-orm: 0.45.3
+  drizzle-orm: 0.45.4
 
 # Install scripts pnpm may run. esbuild and unrs-resolver set up native
 # binaries; sharp backs next/image. The rest only print banners or
