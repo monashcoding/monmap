@@ -16,6 +16,7 @@ export const SORT_LABEL: Record<SearchSort, string> = {
   default: "Default",
   alpha: "A to Z",
   rating: "Highest rated",
+  lowest: "Lowest rated",
   easiest: "Easiest first",
   reviews: "Most reviews",
   planned: "Most planned",

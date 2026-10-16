@@ -858,6 +858,8 @@ function searchOrder(sort: SearchSort, hasQuery: boolean): SQL {
       return sql`title, kind_order, code`
     case "rating":
       return sql`rating_score DESC NULLS LAST, reviews DESC, ${tail}`
+    case "lowest":
+      return sql`rating_score ASC NULLS LAST, reviews DESC, ${tail}`
     case "easiest":
       return sql`ease_score ASC NULLS LAST, difficulty_n DESC, ${tail}`
     case "reviews":

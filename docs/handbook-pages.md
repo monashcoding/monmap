@@ -71,6 +71,7 @@ The `sort` parameter picks the order of /search results:
 | Default | With a query, relevance first (the tiers above). Without one, a score: `3·ln(1+reviews) + 2·ln(1+core) + ln(1+views) + ln(1+planners)`. |
 | A to Z | Title. |
 | Highest rated | Mean overall stars, counted as if every entity had 2 extra 3-star reviews. Entities with no reviews go last. |
+| Lowest rated | The same score, lowest first. Entities with no reviews still go last. |
 | Easiest first | Mean review difficulty, with the same 2 extra 3s. Entities with no difficulty ratings go last. |
 | Most reviews | Published review count. |
 | Most planned | Distinct students with it on a plan. |

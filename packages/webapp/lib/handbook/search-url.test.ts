@@ -21,6 +21,7 @@ test("unknown tab, study and period values are ignored", () => {
   assert.equal(parse({ type: "units", level: "12" }).level, null)
   assert.equal(parse({ sort: "views" }).sort, "default")
   assert.equal(parse({ sort: "planned" }).sort, "planned")
+  assert.equal(parse({ sort: "lowest" }).sort, "lowest")
 })
 
 test("page numbers below 2 or not whole give page 1, and cap at 500", () => {
