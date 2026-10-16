@@ -223,7 +223,6 @@ gh release create handbook-YYYYMMDD monmap-handbook-YYYYMMDD.tar.gz \
 | [`docs/seo.md`](docs/seo.md) | SEO. |
 | [`docs/plan-multiple-aos.md`](docs/plan-multiple-aos.md) | Design record for multiple majors and minors and the campus preference. |
 | [`docs/data-gaps-audit-2026-08.md`](docs/data-gaps-audit-2026-08.md) | Audit of gaps in the handbook data, August 2026. |
-| [`docs/feedback-triage-2026-05.md`](docs/feedback-triage-2026-05.md) | Triage of the May 2026 feedback form. |
 
 ## Credits
 

@@ -6,7 +6,8 @@
 > original design record; its code references describe the code as of
 > `818d67a`.
 
-Covers feature #2 from `feedback-triage-2026-05.md`: **multiple
+Covers feature #2 from the May 2026 feedback triage (removed in
+October 2026; it is in git history): **multiple
 majors / minors (9 requests — #15, #24, #34, #41, #50, #63, #67, #77,
 #81)**, plus the unfinished **campus preference** half of B4, which is
 folded in because both change the persisted state shape and doing them
