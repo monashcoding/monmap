@@ -1,7 +1,7 @@
 /**
- * Shared shell for OG images: the site-wide card at
- * app/opengraph-image.tsx and the unit, course and area of study cards
- * in lib/og-entity.tsx. Headline text, subtitle and chips are all
+ * Shared shell for the unit, course and area of study OG cards in
+ * lib/og-entity.tsx. The site-wide card is a static image,
+ * app/opengraph-image.png. Headline text, subtitle and chips are all
  * props.
  *
  * Returns a `ReactElement` plus the font byte arrays — the calling
