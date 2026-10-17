@@ -14,13 +14,14 @@ export type StudyLevel =
   "Undergraduate" | "Honours" | "Postgraduate" | "Research"
 
 export type SearchSort =
-  "default" | "alpha" | "rating" | "easiest" | "reviews" | "planned"
+  "default" | "alpha" | "rating" | "lowest" | "easiest" | "reviews" | "planned"
 
 export const SEARCH_TABS: SearchTab[] = ["all", "courses", "aos", "units"]
 export const SEARCH_SORTS: SearchSort[] = [
   "default",
   "alpha",
   "rating",
+  "lowest",
   "easiest",
   "reviews",
   "planned",
