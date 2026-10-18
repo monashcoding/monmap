@@ -12,8 +12,13 @@
  * it.
  */
 export function HandbookAttribution({ year }: { year: string }) {
+  // data-nosnippet: the same text is on every page, and Google quoted
+  // it as the snippet for /search instead of the page's description.
   return (
-    <aside className="rounded-panel border border-dashed bg-muted/30 p-4 text-xs text-muted-foreground sm:p-5">
+    <aside
+      data-nosnippet=""
+      className="rounded-panel border border-dashed bg-muted/30 p-4 text-xs text-muted-foreground sm:p-5"
+    >
       <p>
         <strong className="font-semibold text-foreground">MonMap</strong> is a
         student-built course planning tool by the{" "}

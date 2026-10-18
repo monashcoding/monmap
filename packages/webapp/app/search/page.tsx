@@ -5,7 +5,6 @@ import { CheckIcon, ChevronRightIcon, XIcon } from "lucide-react"
 
 import { EntityLink } from "@/components/handbook/entity-link"
 import { HandbookMain, KindBadge } from "@/components/handbook/frame"
-import { JsonLd } from "@/components/handbook/json-ld"
 import { MobileCollapsible } from "@/components/handbook/mobile-collapsible"
 import { loadRatings, ratingKey } from "@/components/handbook/ratings"
 import { SearchBox } from "@/components/handbook/search-box"
@@ -37,7 +36,6 @@ import {
   PERIOD_KIND_ORDER,
 } from "@/lib/planner/teaching-period"
 import type { RatingSummary } from "@/lib/reviews/types"
-import { absoluteUrl } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 type Params = Promise<Record<string, string | string[] | undefined>>
@@ -340,23 +338,6 @@ export default async function SearchPage({
           ) : null}
         </div>
       </div>
-
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "MonMap",
-          url: absoluteUrl("/"),
-          potentialAction: {
-            "@type": "SearchAction",
-            target: {
-              "@type": "EntryPoint",
-              urlTemplate: `${absoluteUrl("/search")}?q={search_term_string}`,
-            },
-            "query-input": "required name=search_term_string",
-          },
-        }}
-      />
     </HandbookMain>
   )
 }

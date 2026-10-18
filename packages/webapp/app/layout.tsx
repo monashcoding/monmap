@@ -106,7 +106,8 @@ export default function RootLayout({
       name: "Monash University",
       sameAs: "https://www.monash.edu/",
     },
-    // The SearchAction for /search?q= is declared on the search page.
+    // The home page declares the WebSite, which names the site in
+    // Google results.
   }
   return (
     <html

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 
+import { JsonLd } from "@/components/handbook/json-ld"
 import { PlannerSkeleton } from "@/components/planner/planner-skeleton"
 import { PlannerStreaming } from "@/components/planner/planner-streaming"
 import { HomeAbout } from "@/components/home-about"
@@ -20,6 +21,7 @@ import {
 import { firstParam } from "@/lib/handbook/search-url"
 import { codesToHydrate } from "@/lib/planner/hydration"
 import { plannerUnitCodes, type PlannerState } from "@/lib/planner/types"
+import { absoluteUrl } from "@/lib/seo"
 
 // Only the home page claims "/" as canonical; a layout-level canonical
 // would leak onto every page without its own, 404s included. Query
@@ -58,6 +60,25 @@ export default function Page({
         <PlannerData searchParams={searchParams} />
       </Suspense>
       <HomeAbout />
+      {/* Google takes the site name in results from a WebSite on the
+          home page. Without it, results showed "Monash Association of
+          Coding", the parent domain's name. */}
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "MonMap",
+          url: absoluteUrl("/"),
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${absoluteUrl("/search")}?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
     </main>
   )
 }

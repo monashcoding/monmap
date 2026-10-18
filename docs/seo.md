@@ -78,6 +78,8 @@ another copy of `/`). The year picker uses the router.
 
 Monash's own prose (`Prose` in `components/handbook/frame.tsx`) carries
 `data-nosnippet`, so search results quote MonMap's summary instead.
+The "not affiliated" footer (`HandbookAttribution`) carries it too,
+because it is the same text on every page.
 
 ## Structured data
 
@@ -89,7 +91,19 @@ Monash's own prose (`Prose` in `components/handbook/frame.tsx`) carries
 - Areas of study: `Course`, with `aggregateRating` and `review`.
 - Every `description` is MonMap's summary, not the handbook's text.
 - Each page has a `BreadcrumbList`. Pages are `lang="en-AU"`.
-- Home: `WebApplication`. `/search`: `WebSite` with a `SearchAction`.
+- Home: `WebSite` with a `SearchAction`. Google takes the site name
+  in results from its `name`, so it must stay on the home page.
+- Every page: `WebApplication`, from the root layout.
+
+## Favicon
+
+Google drops the favicon's alpha channel, so transparent pixels show
+as black in results. `app/favicon.ico` (16, 32 and 48px),
+`app/icon.png` (192px) and `app/apple-icon.png` (180px) are opaque:
+the logo on its own yellow, cropped to 80% so the mark reads at 32px.
+Google also wants a size that is a multiple of 48px. To remake them
+from `public/brand-logo.png`, flatten it onto `#ffe530`, crop the
+centre 80% and resize.
 
 ## Crawl paths
 
