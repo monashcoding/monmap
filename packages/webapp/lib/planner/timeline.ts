@@ -48,20 +48,60 @@ export function startYearOf(state: Pick<PlannerState, "courseYear">): number {
 }
 
 /**
- * Handbook year whose data the planner uses for study year
- * `studyYearIndex`: courseYear + index, or the latest published year
- * when that one doesn't exist yet (Year 4 of a 2024 plan with no 2027
- * handbook reads 2026). Hydration, validation and the search and
- * detail views all use this, so they agree on which data a slot shows.
+ * Handbook year whose data the planner uses for teaching periods in
+ * `calendarYear`: that year's handbook, or the latest published year
+ * when it doesn't exist yet (2027 with no 2027 handbook reads 2026).
+ * Falls back to `courseYear` when no years are known at all.
  */
 export function handbookYearFor(
-  studyYearIndex: number,
+  calendarYear: number,
   courseYear: string,
   availableYears: readonly string[]
 ): string {
-  const target = String(Number(courseYear) + studyYearIndex)
+  const target = String(calendarYear)
   if (availableYears.includes(target)) return target
   return [...availableYears].sort().at(-1) ?? courseYear
+}
+
+/**
+ * Handbook year for a slot: the one for the slot's calendar year, so
+ * Semester 1 of a mid-year start's first study year reads the next
+ * year's handbook. Without a kind it uses the study year's first
+ * semester. Hydration, validation and the search and detail views all
+ * use this, so they agree on which data a slot shows.
+ */
+export function slotHandbookYear(
+  state: Pick<PlannerState, "courseYear" | "startPeriod">,
+  yearIndex: number,
+  kind: PeriodKind | undefined,
+  availableYears: readonly string[]
+): string {
+  return handbookYearFor(
+    slotCalendarYear(state, yearIndex, kind ?? startPeriodOf(state)),
+    state.courseYear,
+    availableYears
+  )
+}
+
+/**
+ * Every handbook year the plan's slots read, plus the intake year
+ * (credit and the course itself). Each study year counts both
+ * semesters even when one has no slot yet.
+ */
+export function planHandbookYears(
+  state: Pick<PlannerState, "courseYear" | "startPeriod" | "years">,
+  availableYears: readonly string[]
+): Set<string> {
+  const years = new Set([
+    handbookYearFor(startYearOf(state), state.courseYear, availableYears),
+  ])
+  for (let yi = 0; yi < Math.max(1, state.years.length); yi++) {
+    const kinds: PeriodKind[] = ["S1", "S2"]
+    for (const slot of state.years[yi]?.slots ?? []) kinds.push(slot.kind)
+    for (const kind of kinds)
+      years.add(slotHandbookYear(state, yi, kind, availableYears))
+  }
+  return years
 }
 
 const RANK: Record<StartPeriod, Record<PeriodKind, number>> = {

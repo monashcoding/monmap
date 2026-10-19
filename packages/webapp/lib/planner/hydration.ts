@@ -1,4 +1,4 @@
-import { handbookYearFor } from "./timeline.ts"
+import { handbookYearFor, slotHandbookYear, startYearOf } from "./timeline.ts"
 import type {
   PlannerOffering,
   PlannerState,
@@ -34,14 +34,14 @@ export function isFreshFor(
 /**
  * Codes to fetch, by handbook year. Each code is processed at its first
  * occurrence: credit first (from the plan's own handbook year), then
- * slots in study-year order, each slot reading `handbookYearFor` its
- * study year. A code is skipped when its cached unit is fresh for that
- * year and its offerings and requisites are loaded, or when `empty`
- * holds `emptyKey(year, code)` because that request already came back
- * with no unit.
+ * slots in study-year order, each slot reading `slotHandbookYear`, the
+ * handbook for its calendar year. A code is skipped when its cached
+ * unit is fresh for that year and its offerings and requisites are
+ * loaded, or when `empty` holds `emptyKey(year, code)` because that
+ * request already came back with no unit.
  */
 export function codesToHydrate(params: {
-  state: Pick<PlannerState, "years" | "credit" | "courseYear">
+  state: Pick<PlannerState, "years" | "credit" | "courseYear" | "startPeriod">
   availableYears: readonly string[]
   units: ReadonlyMap<string, Pick<PlannerUnit, "year" | "fallbackFor">>
   offerings: ReadonlyMap<string, PlannerOffering[]>
@@ -71,13 +71,17 @@ export function codesToHydrate(params: {
   // year: they never sit in a slot, but their `equivalents` decide
   // whether credit for FIT1053 satisfies a prerequisite naming
   // FIT1045.
-  const creditYear = handbookYearFor(0, state.courseYear, availableYears)
+  const creditYear = handbookYearFor(
+    startYearOf(state),
+    state.courseYear,
+    availableYears
+  )
   for (const entry of state.credit ?? [])
     if (entry.code) want(entry.code, creditYear)
 
   for (let yi = 0; yi < state.years.length; yi++) {
-    const hYear = handbookYearFor(yi, state.courseYear, availableYears)
     for (const slot of state.years[yi]?.slots ?? []) {
+      const hYear = slotHandbookYear(state, yi, slot.kind, availableYears)
       for (const code of slot.unitCodes) want(code, hYear)
     }
   }

@@ -19,9 +19,10 @@ interface Params {
 /**
  * Keep unit data hydrated for every code placed in the plan. Re-fetches
  * codes that are missing OR cached from the wrong handbook year (stale).
- * Each code is processed at its first study-year occurrence; this is
- * what lets year-N units pull from year-N handbook offerings instead of
- * year-0's. See `codesToHydrate` for the rule.
+ * Each code is processed at its first occurrence in the plan; this is
+ * what lets a slot's units pull offerings from the handbook for the
+ * slot's calendar year instead of the intake year's. See
+ * `codesToHydrate` for the rule.
  *
  * Two cases would otherwise refetch on every render: a unit the server
  * returns from an earlier year (`fallbackFor`, counted as fresh) and a
@@ -66,6 +67,7 @@ export function useUnitDataHydration({
         years: state.years,
         credit: state.credit,
         courseYear: state.courseYear,
+        startPeriod: state.startPeriod,
       },
       availableYears,
       units: unitData.units,
@@ -114,6 +116,7 @@ export function useUnitDataHydration({
     state.years,
     state.credit,
     state.courseYear,
+    state.startPeriod,
     unitData,
     availableYears,
     mergeUnitData,

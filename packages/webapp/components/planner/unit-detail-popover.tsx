@@ -26,7 +26,7 @@ import { UnitSynopsis } from "@/components/unit-detail/unit-synopsis"
 import { useUnitText } from "@/components/unit-detail/use-unit-text"
 import { fetchUnits } from "@/lib/api/client"
 import { entityHref } from "@/lib/handbook/links"
-import { handbookYearFor } from "@/lib/planner/timeline"
+import { slotHandbookYear } from "@/lib/planner/timeline"
 import {
   completedBefore,
   keyFor,
@@ -150,12 +150,12 @@ export function UnitDetailView({
   // from context; year-switching is opt-in and fetches a one-off
   // snapshot for just this code.
   const defaultYear = useMemo(() => {
-    if (yearIndex !== undefined)
-      return handbookYearFor(yearIndex, state.courseYear, availableYears)
-    return availableYears.includes(state.courseYear)
-      ? state.courseYear
-      : ([...availableYears].sort().at(-1) ?? state.courseYear)
-  }, [yearIndex, state.courseYear, availableYears])
+    const kind =
+      yearIndex !== undefined && slotIndex !== undefined
+        ? state.years[yearIndex]?.slots[slotIndex]?.kind
+        : undefined
+    return slotHandbookYear(state, yearIndex ?? 0, kind, availableYears)
+  }, [yearIndex, slotIndex, state, availableYears])
 
   const [selectedYear, setSelectedYear] = useState(defaultYear)
 

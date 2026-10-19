@@ -3,7 +3,9 @@ import assert from "node:assert/strict"
 
 import {
   handbookYearFor,
+  planHandbookYears,
   slotCalendarYear,
+  slotHandbookYear,
   slotLabel,
   sortSlots,
   studyYearSpan,
@@ -248,12 +250,41 @@ test("study years are named by position", () => {
   assert.equal(studyYearName(10), "Year 11")
 })
 
-test("handbookYearFor: courseYear + study year, else the latest year", () => {
+test("handbookYearFor: the calendar year's handbook, else the latest year", () => {
   const years = ["2024", "2026", "2025"]
-  assert.equal(handbookYearFor(0, "2024", years), "2024")
-  assert.equal(handbookYearFor(2, "2024", years), "2026")
-  // 2027 isn't published, so Year 4 reads the latest handbook.
-  assert.equal(handbookYearFor(3, "2024", years), "2026")
+  assert.equal(handbookYearFor(2024, "2024", years), "2024")
+  assert.equal(handbookYearFor(2026, "2024", years), "2026")
+  // 2027 isn't published, so it reads the latest handbook.
+  assert.equal(handbookYearFor(2027, "2024", years), "2026")
   // No years known at all: fall back to the plan's own year.
-  assert.equal(handbookYearFor(1, "2024", []), "2024")
+  assert.equal(handbookYearFor(2025, "2024", []), "2024")
+})
+
+test("slotHandbookYear: a mid-year start's Semester 1 reads the next year's handbook", () => {
+  const years = ["2026", "2027"]
+  const mid = { courseYear: "2026", startPeriod: "S2" as const }
+  assert.equal(slotHandbookYear(mid, 0, "S2", years), "2026")
+  assert.equal(slotHandbookYear(mid, 0, "S1", years), "2027")
+  assert.equal(slotHandbookYear(mid, 0, "WINTER", years), "2027")
+  // No kind: the study year's first semester.
+  assert.equal(slotHandbookYear(mid, 0, undefined, years), "2026")
+  // A Semester 1 start keeps both semesters in one year.
+  const jan = { courseYear: "2026" }
+  assert.equal(slotHandbookYear(jan, 0, "S1", years), "2026")
+  assert.equal(slotHandbookYear(jan, 0, "S2", years), "2026")
+  assert.equal(slotHandbookYear(jan, 1, "S1", years), "2027")
+})
+
+test("planHandbookYears: both calendar years of a mid-year study year", () => {
+  const years = ["2025", "2026", "2027", "2028"]
+  const mid = {
+    courseYear: "2026",
+    startPeriod: "S2" as const,
+    years: [
+      { label: "Year 1", slots: [{ kind: "S2" as const, unitCodes: [] }] },
+    ],
+  }
+  assert.deepEqual([...planHandbookYears(mid, years)].sort(), ["2026", "2027"])
+  const jan = { ...mid, startPeriod: "S1" as const }
+  assert.deepEqual([...planHandbookYears(jan, years)].sort(), ["2026"])
 })

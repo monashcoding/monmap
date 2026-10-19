@@ -85,3 +85,28 @@ test("hydration: isFreshFor", () => {
   assert.equal(isFreshFor({ year: "2026" }, "2027"), false)
   assert.equal(isFreshFor({ year: "2026", fallbackFor: "2027" }, "2027"), true)
 })
+
+test("hydration: a mid-year start's Semester 1 reads the next year's handbook", () => {
+  const state: PlannerState = {
+    ...plan("2026"),
+    startPeriod: "S2",
+    years: [
+      {
+        label: "Year 1",
+        slots: [
+          { kind: "S2", unitCodes: ["FIT1045"] },
+          { kind: "S1", unitCodes: ["FIT1061"] },
+        ],
+      },
+    ],
+  }
+  assert.deepEqual(run(state, []), {
+    "2026": ["FIT1045"],
+    "2027": ["FIT1061"],
+  })
+  // The 2026 copy is stale for the S1 2027 slot.
+  assert.deepEqual(run(state, [unit("FIT1061", "2026")]), {
+    "2026": ["FIT1045"],
+    "2027": ["FIT1061"],
+  })
+})

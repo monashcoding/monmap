@@ -7,6 +7,7 @@ import {
   referencedCodes,
 } from "./requisites.ts"
 import { PERIOD_KIND_LABEL } from "./teaching-period.ts"
+import { slotCalendarYear } from "./timeline.ts"
 import type {
   PeriodKind,
   PlannerOffering,
@@ -56,7 +57,7 @@ export interface ValidationInput {
   requisites: RequisiteBlock[]
   slotCreditLoad: number
   /**
-   * Calendar year this slot represents (courseYear + studyYearIndex).
+   * Calendar year this slot falls in (see slotCalendarYear).
    * When it matches `unit.year` the loaded handbook *is* the right one
    * for this slot and a period mismatch is a hard error. When it
    * differs, we're forecasting against a different handbook year — the
@@ -245,7 +246,7 @@ export function validatePlan(
   // slot, which would walk the plan again for every slot.
   const completed = completedAtStart(state, unitsByCode)
 
-  // Used to derive the expected handbook year per study-year so the
+  // Used to derive the expected handbook year per slot so the
   // validator can compare against the actually-loaded `unit.year`.
   // If courseYear isn't a parseable number (shouldn't happen, but be
   // defensive), every slot falls back to treating its data as
@@ -255,11 +256,11 @@ export function validatePlan(
 
   for (let y = 0; y < state.years.length; y++) {
     const year = state.years[y]
-    const expectedHandbookYear = courseYearIsNumeric
-      ? String(courseYearNum + y)
-      : undefined
     for (let s = 0; s < year.slots.length; s++) {
       const slot = year.slots[s]
+      const expectedHandbookYear = courseYearIsNumeric
+        ? String(slotCalendarYear(state, y, slot.kind))
+        : undefined
       // Equivalents (advanced twins, cross-listings) count as having
       // taken the unit they're equivalent to, so a prereq/coreq naming
       // FIT1045 is met by completing FIT1053. Prohibitions are checked
@@ -306,12 +307,12 @@ export function validatePlan(
           offerings: offeringsByCode.get(code) ?? [],
           requisites: requisitesByCode.get(code) ?? [],
           slotCreditLoad,
-          // The hydration layer fetches a year-N slot's unit data from
-          // handbook year (courseYear + N) when available, falling back
-          // to the latest published year when it isn't. If that fallback
-          // kicked in (loaded year ≠ slot year), the period mismatch is
-          // a stale-data forecast, not a hard fact, and downgrades to
-          // amber. See use-unit-data-hydration.ts / handbookYearFor.
+          // The hydration layer fetches a slot's unit data from the
+          // handbook for the slot's calendar year when available,
+          // falling back to the latest published year when it isn't. If
+          // that fallback kicked in (loaded year ≠ slot year), the period
+          // mismatch is a stale-data forecast, not a hard fact, and
+          // downgrades to amber. See hydration.ts / slotHandbookYear.
           expectedHandbookYear,
         })
         out.set(keyFor(y, s, code), v)

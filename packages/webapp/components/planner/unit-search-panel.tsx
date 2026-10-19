@@ -12,7 +12,7 @@ import {
   type FiltersValue,
 } from "@/lib/planner/search-filters"
 import { PERIOD_KIND_LABEL } from "@/lib/planner/teaching-period"
-import { handbookYearFor } from "@/lib/planner/timeline"
+import { slotHandbookYear } from "@/lib/planner/timeline"
 import type { PlannerUnit } from "@/lib/planner/types"
 import type { UnitBundle } from "@/lib/planner/unit-cache"
 
@@ -54,7 +54,7 @@ export function UnitSearchPanel() {
 
   const q = useDebouncedValue(query, 180).trim()
 
-  const handbookYear = handbookYearFor(0, state.courseYear, availableYears)
+  const handbookYear = slotHandbookYear(state, 0, undefined, availableYears)
 
   // The same pool the search dialog suggests from, in course order.
   const suggestions = useMemo<PlannerUnit[]>(

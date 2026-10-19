@@ -592,3 +592,32 @@ test("validatePlan: an earlier-year fallback unit's period mismatch is a warning
   assert.equal(v.warnings[0]?.kind, "not_offered_in_period")
   assert.match(v.warnings[0].message, /2026 handbook/)
 })
+
+test("validatePlan: a mid-year start's Semester 1 checks the next year's offerings", () => {
+  // Starts Semester 2, 2026, so the first study year's S1 is 2027.
+  // FIT1061 runs in S1 in the 2027 handbook (S2 only in 2026).
+  const state = planState([{ S2: [], S1: ["FIT1061"] }], {
+    courseYear: "2026",
+    startPeriod: "S2",
+  })
+  const ok = validatePlan(
+    state,
+    new Map([["FIT1061", unit("FIT1061", { year: "2027" })]]),
+    new Map([["FIT1061", [offering("FIT1061", "S1")]]]),
+    new Map()
+  ).get(keyFor(0, 1, "FIT1061"))
+  assert.ok(ok)
+  assert.equal(ok.errors.length, 0)
+  assert.equal(ok.warnings.length, 0)
+
+  // Loaded from 2026 (no 2027 handbook yet): a forecast, so amber.
+  const stale = validatePlan(
+    state,
+    new Map([["FIT1061", unit("FIT1061", { year: "2026" })]]),
+    new Map([["FIT1061", [offering("FIT1061", "S2")]]]),
+    new Map()
+  ).get(keyFor(0, 1, "FIT1061"))
+  assert.ok(stale)
+  assert.equal(stale.errors.length, 0)
+  assert.match(stale.warnings[0].message, /2027 offerings may differ/)
+})

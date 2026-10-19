@@ -56,7 +56,7 @@ import type {
   RequisiteBlock,
   SlotUnitValidation,
 } from "@/lib/planner/types"
-import { handbookYearFor, yearsNeeded } from "@/lib/planner/timeline"
+import { planHandbookYears, yearsNeeded } from "@/lib/planner/timeline"
 import {
   keepUnitYears,
   mergeUnitMaps,
@@ -398,11 +398,9 @@ export function PlannerProvider({
       setCourse(res.course)
       setUnitData((m) => {
         if (!yearChanged) return mergeUnitMaps(m, res)
-        const studyYears = lastSnapshotRef.current.years.length
-        const reads = new Set(
-          Array.from({ length: Math.max(1, studyYears) }, (_, i) =>
-            handbookYearFor(i, year, availableYears)
-          )
+        const reads = planHandbookYears(
+          { ...lastSnapshotRef.current, courseYear: year },
+          availableYears
         )
         return mergeUnitMaps(keepUnitYears(m, reads), res)
       })

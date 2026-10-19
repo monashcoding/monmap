@@ -350,3 +350,12 @@ test("suggestionPool: course template, then AoS units, minus planned and unloade
     ["ENG1005", "FIT2014", "FIT3144"]
   )
 })
+
+test("slotContextFor: a mid-year start's Semester 1 expects the next year's handbook", () => {
+  const s = planState([{ S2: [], S1: [] }], {
+    courseYear: "2026",
+    startPeriod: "S2",
+  })
+  assert.equal(slotContextFor(s, 0, 0).expectedHandbookYear, "2026")
+  assert.equal(slotContextFor(s, 0, 1).expectedHandbookYear, "2027")
+})

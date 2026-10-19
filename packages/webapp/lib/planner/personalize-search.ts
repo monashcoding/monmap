@@ -9,6 +9,7 @@ import type {
   PlannerUnit,
   RequisiteBlock,
 } from "./types.ts"
+import { slotCalendarYear, startPeriodOf } from "./timeline.ts"
 import { unitLevel } from "./unit-level.ts"
 import { completedBefore, isOfferedInPeriod } from "./validation.ts"
 
@@ -57,7 +58,7 @@ export interface SlotContext {
   completedBefore: ReadonlySet<string>
   /** Codes already in this slot. */
   concurrentWith: ReadonlySet<string>
-  /** Expected handbook year for the slot (courseYear + yearIndex). */
+  /** Expected handbook year for the slot: its calendar year. */
   expectedHandbookYear: string | undefined
 }
 
@@ -182,7 +183,9 @@ export function slotContextFor(
   const concurrent = slot ? new Set(slot.unitCodes) : new Set<string>()
   const courseYearNum = Number(state.courseYear)
   const expectedHandbookYear = Number.isFinite(courseYearNum)
-    ? String(courseYearNum + yearIndex)
+    ? String(
+        slotCalendarYear(state, yearIndex, slot?.kind ?? startPeriodOf(state))
+      )
     : undefined
   return {
     yearIndex,

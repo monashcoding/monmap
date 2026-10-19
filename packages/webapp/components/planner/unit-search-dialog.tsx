@@ -44,7 +44,7 @@ import {
   PERIOD_KIND_SHORT,
 } from "@/lib/planner/teaching-period"
 import {
-  handbookYearFor,
+  slotHandbookYear,
   slotLabel as timelineSlotLabel,
 } from "@/lib/planner/timeline"
 import type {
@@ -205,9 +205,10 @@ function UnitSearchView({
   const slotLabel = slot
     ? timelineSlotLabel(state, yearIndex, slot)
     : "this slot"
-  const handbookYear = handbookYearFor(
+  const handbookYear = slotHandbookYear(
+    state,
     yearIndex,
-    state.courseYear,
+    slotKind,
     availableYears
   )
 
