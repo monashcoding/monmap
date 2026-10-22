@@ -110,8 +110,9 @@ test("validateUnitInSlot: term-only schedule is always a warning, never an error
   })
   assert.equal(v.errors.length, 0)
   assert.equal(v.warnings.length, 1)
-  assert.match(v.warnings[0].message, /non-standard schedule/)
-  assert.match(v.warnings[0].message, /Term 1.*Term 3|Term 3.*Term 1/)
+  assert.match(v.warnings[0].message, /own dates/)
+  assert.match(v.warnings[0].message, /before or end after Semester 2/)
+  assert.doesNotMatch(v.warnings[0].message, /Term \d/)
 })
 
 test("validateUnitInSlot: prereq unmet → error lists missing codes", () => {
@@ -620,4 +621,43 @@ test("validatePlan: a mid-year start's Semester 1 checks the next year's offerin
   assert.ok(stale)
   assert.equal(stale.errors.length, 0)
   assert.match(stale.warnings[0].message, /2027 offerings may differ/)
+})
+
+test("validatePlan: IBL onboarding in the same slot meets the placement's prerequisite", () => {
+  // 2026: FIT3201 onboarding runs Term 1/3, FIT4042 placement Term 2/4,
+  // so a student does both inside one semester, onboarding first.
+  const term = (code: string, n: number) =>
+    offering(code, "OTHER", { teachingPeriod: `Term ${n}` })
+  const state = planState([{ S2: ["FIT3201", "FIT4042"] }])
+  const out = validatePlan(
+    state,
+    unitMap(["FIT3201", "FIT4042"]),
+    new Map([
+      ["FIT3201", [term("FIT3201", 1), term("FIT3201", 3)]],
+      ["FIT4042", [term("FIT4042", 2), term("FIT4042", 4)]],
+    ]),
+    new Map([["FIT4042", [prereqAny("FIT3201", "FIT3202")]]])
+  )
+  const v = out.get(keyFor(0, 0, "FIT4042"))
+  assert.ok(v)
+  assert.deepEqual(
+    v.errors.map((e) => e.kind),
+    []
+  )
+})
+
+test("validatePlan: a semester unit in the same slot still isn't done before", () => {
+  const state = planState([{ S2: ["FIT1008", "FIT4042"] }])
+  const out = validatePlan(
+    state,
+    unitMap(["FIT1008", "FIT4042"]),
+    new Map([
+      ["FIT1008", [offering("FIT1008", "S2")]],
+      ["FIT4042", [offering("FIT4042", "OTHER", { teachingPeriod: "Term 4" })]],
+    ]),
+    new Map([["FIT4042", [prereq("FIT1008")]]])
+  )
+  const v = out.get(keyFor(0, 0, "FIT4042"))
+  assert.ok(v)
+  assert.equal(v.errors[0]?.kind, "prereq_unmet")
 })

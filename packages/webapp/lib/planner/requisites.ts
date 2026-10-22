@@ -20,9 +20,9 @@ import type {
  * - An empty tree / null tree = no requirement = satisfied.
  *
  * Missing-code extraction: for an unsatisfied tree we return a flat
- * list of *every* code referenced. That's the UI's cheapest hint —
- * "add one of: FIT1008, FIT2085, FIT1054" — without trying to re-
- * render the AND/OR structure inline. Rich AND/OR rendering is the
+ * list of the codes under the branches that still fail. That's the
+ * UI's cheapest hint — "add one of: FIT1008, FIT2085, FIT1054" —
+ * without trying to re-render the AND/OR structure inline. Rich AND/OR rendering is the
  * detail-popover's job (which walks the same tree with full context).
  */
 export interface RequisiteEvalResult {
@@ -51,14 +51,36 @@ export function evaluateRequisiteTree(
     evaluateContainer(container, completed)
   )
 
-  const missing = satisfied
-    ? []
-    : [...referenced].filter((c) => !completed.has(c))
+  const missing = new Set<string>()
+  if (!satisfied) {
+    for (const container of rule) {
+      collectMissingCodes(container, completed, missing)
+    }
+  }
 
   return {
     satisfied,
     referencedCodes: [...referenced].sort(),
-    missingCodes: missing.sort(),
+    missingCodes: [...missing].sort(),
+  }
+}
+
+/**
+ * Codes under the branches that still fail. A satisfied branch adds
+ * nothing, so `(FIT1008 OR FIT2085) AND (FIT3201 OR FIT3202)` with
+ * FIT2085 done asks only for FIT3201 or FIT3202, not FIT1008 too.
+ */
+function collectMissingCodes(
+  container: RequisiteContainer,
+  completed: ReadonlySet<string>,
+  out: Set<string>
+): void {
+  if (evaluateContainer(container, completed)) return
+  for (const sub of container.containers ?? []) {
+    collectMissingCodes(sub, completed, out)
+  }
+  for (const leaf of container.relationships ?? []) {
+    if (!evaluateLeaf(leaf, completed)) out.add(leaf.academic_item_code)
   }
 }
 

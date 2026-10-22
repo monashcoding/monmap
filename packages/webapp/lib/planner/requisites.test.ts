@@ -56,13 +56,10 @@ test("null rule is satisfied", () => {
 })
 
 test("FIT2004 shape: need one from each OR group", () => {
-  // Has FIT1008 but nothing from second group
+  // Has FIT1008 but nothing from second group: only that group is missing
   let r = evaluateRequisiteTree(fit2004Shape, new Set(["FIT1008"]))
   assert.equal(r.satisfied, false)
-  assert.deepEqual(
-    r.missingCodes,
-    ["FIT1058", "FIT2085", "FIT1054", "MAT1830"].sort()
-  )
+  assert.deepEqual(r.missingCodes, ["FIT1058", "MAT1830"])
 
   // One from each group
   r = evaluateRequisiteTree(fit2004Shape, new Set(["FIT1008", "MAT1830"]))
@@ -196,4 +193,47 @@ test("prohibition: null rule is always satisfied", () => {
     satisfied: true,
     conflictingCodes: [],
   })
+})
+
+test("FIT4042 shape: a met OR group is left out of missingCodes", () => {
+  // 2026 FIT4042: (FIT2085 OR FIT1008) AND ((FIT3202 OR FIT3201))
+  const rule: RequisiteRule = [
+    {
+      title: "Container 1",
+      parent_connector: { value: "AND" },
+      containers: [
+        {
+          title: "Container 1.2",
+          parent_connector: { value: "OR" },
+          relationships: [
+            { academic_item_code: "FIT2085" },
+            { academic_item_code: "FIT1008" },
+          ],
+        },
+        {
+          title: "Container 1.5",
+          parent_connector: { value: "AND" },
+          containers: [
+            {
+              title: "Container 1.5.6",
+              parent_connector: { value: "OR" },
+              relationships: [
+                { academic_item_code: "FIT3202" },
+                { academic_item_code: "FIT3201" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ]
+  for (const done of ["FIT2085", "FIT1008"]) {
+    const r = evaluateRequisiteTree(rule, new Set([done]))
+    assert.equal(r.satisfied, false)
+    assert.deepEqual(r.missingCodes, ["FIT3201", "FIT3202"])
+  }
+  assert.equal(
+    evaluateRequisiteTree(rule, new Set(["FIT1008", "FIT3201"])).satisfied,
+    true
+  )
 })

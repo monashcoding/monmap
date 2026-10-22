@@ -82,7 +82,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     // schools, …) have every offering classified as OTHER and so will
     // *never* match an S1/S2 slot, even when the data is fresh. The
     // unit still needs to live somewhere on the planner grid, so flag
-    // it as a yellow "non-standard schedule — verify timing manually"
+    // it as a yellow "runs on its own dates — check them"
     // rather than a red blocker.
     const termOnly =
       input.offerings.length > 0 &&
@@ -90,7 +90,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     const issue: ValidationIssue = {
       kind: "not_offered_in_period",
       message: termOnly
-        ? `${input.unit.code} runs on a non-standard schedule (${formatPeriodList(input.offerings)}); verify it overlaps ${PERIOD_KIND_LABEL[input.slotKind]}.`
+        ? `${input.unit.code} runs on its own dates, not the semester calendar, so it may start before or end after ${PERIOD_KIND_LABEL[input.slotKind]}. Check the dates with your faculty.`
         : dataIsReliable
           ? `${input.unit.code} isn't offered in ${PERIOD_KIND_LABEL[input.slotKind]} for ${input.unit.year}.`
           : `${input.unit.code} isn't offered in ${PERIOD_KIND_LABEL[input.slotKind]} in the ${input.unit.year} handbook - ${expectedYear} offerings may differ.`,
@@ -178,21 +178,6 @@ export function isOfferedInPeriod(
     }
     return false
   })
-}
-
-/**
- * Render a list of teaching periods from the offerings, deduped. Used
- * in the "non-standard schedule" warning to tell the student what
- * timing the unit actually runs in (e.g. "Term 1, Term 3").
- */
-function formatPeriodList(offerings: PlannerOffering[]): string {
-  const seen = new Set<string>()
-  for (const o of offerings) seen.add(o.teachingPeriod)
-  const list = [...seen].sort()
-  if (list.length === 0) return "off-cycle"
-  if (list.length === 1) return list[0]
-  if (list.length === 2) return `${list[0]} or ${list[1]}`
-  return `${list.slice(0, -1).join(", ")} or ${list.at(-1)}`
 }
 
 function formatCodeList(codes: string[]): string {
@@ -295,12 +280,17 @@ export function validatePlan(
         const concurrentWithoutSelf = new Set(concurrent)
         concurrentWithoutSelf.delete(code)
 
+        const earlier = earlierTermUnits(code, slot.unitCodes, offeringsByCode)
+        const completedForUnit = earlier.length
+          ? new Set([...completed, ...withEquivalents(earlier, unitsByCode)])
+          : completed
+
         const v = validateUnitInSlot({
           unit,
           slotKind: slot.kind,
           yearIndex: y,
           slotIndex: s,
-          completedBefore: completed,
+          completedBefore: completedForUnit,
           concurrentWith: concurrentWithoutSelf,
           prohibitedBy: [...(prohibitedBy.get(code) ?? [])],
           allPlannedCodes: new Set([...allPlanned].filter((c) => c !== code)),
@@ -323,6 +313,43 @@ export function validatePlan(
     }
   }
 
+  return out
+}
+
+/**
+ * Units in the same slot that finish before `code` starts. Only term
+ * units qualify: the IBL program runs FIT3201/FIT3202 onboarding in
+ * Term 1 or 3 and the FIT4042/FIT3045 placement straight after in
+ * Term 2 or 4, so both sit in one semester slot yet the onboarding is
+ * a real prerequisite taken first. A unit with any offering that is
+ * not a numbered term never counts, since its timing can't be ordered.
+ */
+export function earlierTermUnits(
+  code: string,
+  slotCodes: readonly string[],
+  offeringsByCode: ReadonlyMap<string, PlannerOffering[]>
+): string[] {
+  const own = termNumbers(offeringsByCode.get(code))
+  if (!own) return []
+  const latest = Math.max(...own)
+  return slotCodes.filter((other) => {
+    if (other === code) return false
+    const terms = termNumbers(offeringsByCode.get(other))
+    return terms !== null && Math.min(...terms) < latest
+  })
+}
+
+/** Term numbers a unit runs in, or null unless every offering is a "Term N". */
+function termNumbers(
+  offerings: readonly PlannerOffering[] | undefined
+): number[] | null {
+  if (!offerings?.length) return null
+  const out: number[] = []
+  for (const o of offerings) {
+    const m = /^Term (\d+)$/i.exec(o.teachingPeriod.trim())
+    if (!m) return null
+    out.push(Number(m[1]))
+  }
   return out
 }
 
