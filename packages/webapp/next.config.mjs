@@ -83,7 +83,9 @@ const nextConfig = {
   // container and never deletes them: 12 GB in 3 days in production,
   // on the disk that Postgres shares. The cache now starts empty after
   // each deploy.
-  experimental: { isrFlushToDisk: false },
+  // `agentUpgrade: "security"` nudges coding agents about Next.js
+  // security upgrades only, not every stable release.
+  experimental: { isrFlushToDisk: false, agentUpgrade: "security" },
 
   // /search was called /tree until 2026-10. A bare /tree redirects to
   // /search. Old /tree?unit=, ?course= and ?aos= links are rewritten
