@@ -43,16 +43,18 @@ const securityHeaders = [
         // nothing. Next's inline scripts and the ISR pages (which can't
         // carry a nonce) need 'unsafe-inline'. PostHog loads through
         // /ingest and runs its recorder in blob workers; sign-in and
-        // useSession() call the central auth origin.
+        // useSession() call the central auth origin. Google Analytics
+        // loads gtag.js from googletagmanager.com and sends hits to
+        // google-analytics.com (region1. for the AU/EU endpoints).
         {
           key: "Content-Security-Policy-Report-Only",
           value: [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob: https:",
             "font-src 'self' data:",
-            `connect-src 'self' ${authOrigin}`,
+            `connect-src 'self' ${authOrigin} https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com`,
             "worker-src 'self' blob:",
             `form-action 'self' ${authOrigin}`,
           ].join("; "),
@@ -83,7 +85,9 @@ const nextConfig = {
   // container and never deletes them: 12 GB in 3 days in production,
   // on the disk that Postgres shares. The cache now starts empty after
   // each deploy.
-  experimental: { isrFlushToDisk: false },
+  // `agentUpgrade: "security"` nudges coding agents about Next.js
+  // security upgrades only, not every stable release.
+  experimental: { isrFlushToDisk: false, agentUpgrade: "security" },
 
   // /search was called /tree until 2026-10. A bare /tree redirects to
   // /search. Old /tree?unit=, ?course= and ?aos= links are rewritten

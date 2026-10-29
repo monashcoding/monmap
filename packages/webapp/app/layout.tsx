@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Poppins } from "next/font/google"
+import { GoogleAnalytics } from "@next/third-parties/google"
 
 import "./globals.css"
 import { PostHogIdentify } from "@/components/posthog-identify"
@@ -15,6 +16,9 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-sans",
 })
+
+// Public by design (it ships in every page), so it lives in code, not .env.
+const GA_MEASUREMENT_ID = "G-6QWVWW0NLG"
 
 const SITE_DESCRIPTION =
   "Plan your Monash degree: drag units into semesters, check prerequisites and track your WAM. Read student reviews and see requisite maps for every Monash unit and course."
@@ -128,6 +132,9 @@ export default function RootLayout({
             mobileOffset={{ bottom: 80 }}
           />
         </ThemeProvider>
+        {/* Page views only, Loads in dev too; filter
+            localhost out by hostname in the GA reports. */}
+        <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
