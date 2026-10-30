@@ -241,8 +241,7 @@ export function UnitDataOverlay({
   const ctx = usePlanner()
   const value = useMemo<PlannerContextValue>(() => {
     if (!bundle) return ctx
-    // Search results are fully hydrated: no offerings means none.
-    const maps = mergeUnitMaps(ctx, bundle, Object.keys(bundle.units))
+    const maps = mergeUnitMaps(ctx, bundle)
     return {
       ...ctx,
       ...maps,

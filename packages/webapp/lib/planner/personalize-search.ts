@@ -61,6 +61,7 @@ export interface SlotContext {
   concurrentWith: ReadonlySet<string>
   /** Expected handbook year for the slot: its calendar year. */
   expectedHandbookYear: string | undefined
+  transitions: Transitions
 }
 
 /** Feature-by-feature breakdown returned with each candidate. */
@@ -119,7 +120,8 @@ function aosKindWeight(kind: string): number {
 export function buildPersonalSignals(
   state: PlannerState,
   course: PlannerCourseWithAoS | null,
-  requisitesByCode: ReadonlyMap<string, RequisiteBlock[]>
+  requisitesByCode: ReadonlyMap<string, RequisiteBlock[]>,
+  transitions: Transitions = TRANSITIONS
 ): PersonalSignals {
   const placed = plannedUnitCodes(state)
 
@@ -144,7 +146,8 @@ export function buildPersonalSignals(
   const fillsGap = new Set<string>()
   if (course) {
     for (const g of courseRequirementGroups(course)) {
-      if (groupProgress(g, placed, course.conflicts).satisfied) continue
+      if (groupProgress(g, placed, course.conflicts, transitions).satisfied)
+        continue
       for (const code of g.options) if (!placed.has(code)) fillsGap.add(code)
     }
   }
@@ -177,8 +180,13 @@ export function slotContextFor(
   state: PlannerState,
   yearIndex: number,
   slotIndex: number,
-  units: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">> = new Map(),
-  transitions: Transitions = TRANSITIONS
+  {
+    units = new Map(),
+    transitions = TRANSITIONS,
+  }: {
+    units?: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+    transitions?: Transitions
+  } = {}
 ): SlotContext {
   const slot = state.years[yearIndex]?.slots[slotIndex]
   const completed = completedBefore(
@@ -202,6 +210,7 @@ export function slotContextFor(
     completedBefore: completed,
     concurrentWith: concurrent,
     expectedHandbookYear,
+    transitions,
   }
 }
 
@@ -230,6 +239,7 @@ export function personalScore(args: {
       offerings,
       slotKind: slot.slotKind,
       slotYear: slot.expectedHandbookYear,
+      transitions: slot.transitions,
     })
       ? 1
       : 0

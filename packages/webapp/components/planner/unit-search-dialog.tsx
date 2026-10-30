@@ -53,6 +53,7 @@ import type {
   PlannerUnit,
 } from "@/lib/planner/types"
 import type { UnitBundle } from "@/lib/planner/unit-cache"
+import { statedPeriods } from "@/lib/planner/transitions"
 import { offeringIssue, type OfferingIssue } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
 
@@ -221,7 +222,7 @@ function UnitSearchView({
     [state, course, requisites]
   )
   const slotCtx = useMemo(
-    () => slotContextFor(state, yearIndex, slotIndex, units),
+    () => slotContextFor(state, yearIndex, slotIndex, { units }),
     [state, yearIndex, slotIndex, units]
   )
 
@@ -289,12 +290,13 @@ function UnitSearchView({
   ])
 
   const items = useMemo(() => ranked.map((r) => r.unit), [ranked])
-  const issueFor = (code: string): OfferingIssue | null => {
-    const u = units.get(code)
-    return slotKind && u
+  const offeringFor = (code: string): OfferingIssue | null => {
+    const unit = units.get(code)
+    const unitOfferings = offerings.get(code)
+    return slotKind && unit && unitOfferings
       ? offeringIssue({
-          unit: u,
-          offerings: offerings.get(code) ?? [],
+          unit,
+          offerings: unitOfferings,
           slotKind,
           slotYear: slotCtx.expectedHandbookYear,
         })
@@ -473,7 +475,7 @@ function UnitSearchView({
                       unit={u}
                       offerings={offs}
                       offeringsLoaded={offerings.has(u.code)}
-                      issue={issueFor(u.code)}
+                      offering={offeringFor(u.code)}
                       slotKind={slotKind}
                       placed={inSlot}
                       onPlanElsewhere={!inSlot && plannedCodes.has(u.code)}
@@ -511,7 +513,7 @@ function UnitSearchView({
               key={detailCode}
               code={detailCode}
               slotKind={slotKind}
-              issue={issueFor(detailCode)}
+              offering={offeringFor(detailCode)}
               hasOfferingData={
                 offerings.has(detailCode) ||
                 (offerings.get(detailCode) ?? []).length > 0
@@ -544,7 +546,7 @@ function UnitRow({
   unit,
   offerings,
   offeringsLoaded,
-  issue,
+  offering,
   slotKind,
   placed,
   onPlanElsewhere,
@@ -555,7 +557,7 @@ function UnitRow({
   unit: PlannerUnit
   offerings: PlannerOffering[]
   offeringsLoaded: boolean
-  issue: OfferingIssue | null
+  offering: OfferingIssue | null
   slotKind: PeriodKind | undefined
   /** Already in THIS slot — the only hard non-action. */
   placed: boolean
@@ -566,20 +568,11 @@ function UnitRow({
   onClick: () => void
 }) {
   const periods = useMemo(() => {
-    const s = new Set<PeriodKind>()
-    for (const o of offerings) s.add(o.periodKind)
+    const s = new Set(offerings.map((o) => o.periodKind))
+    if (s.size === 0) for (const p of statedPeriods(unit.code)) s.add(p)
     return PERIOD_KIND_ORDER.filter((p) => s.has(p))
-  }, [offerings])
-  // Overrides the period chips, which may be from an older handbook.
-  const transitionLabel =
-    issue?.issue.kind === "no_longer_offered" ||
-    issue?.issue.kind === "not_yet_offered"
-      ? issue.label
-      : null
-  const note = cn(
-    "text-[10px] italic",
-    focused ? "text-accent-foreground/70" : "text-muted-foreground"
-  )
+  }, [offerings, unit.code])
+  const note = rowNote(offeringsLoaded, offerings, offering, periods)
 
   return (
     <button
@@ -625,15 +618,14 @@ function UnitRow({
             <span className="ml-0.5">On plan</span>
           </PeriodChip>
         ) : null}
-        {transitionLabel ? (
-          <span className={note}>{transitionLabel}</span>
-        ) : periods.length === 0 ? (
-          <span className={note}>
-            {!offeringsLoaded
-              ? "Checking offerings…"
-              : offerings.length === 0
-                ? (issue?.label ?? "No offerings listed")
-                : "Off-cycle"}
+        {note ? (
+          <span
+            className={cn(
+              "text-[10px] italic",
+              focused ? "text-accent-foreground/70" : "text-muted-foreground"
+            )}
+          >
+            {note}
           </span>
         ) : (
           periods.map((p) => (
@@ -645,6 +637,23 @@ function UnitRow({
       </div>
     </button>
   )
+}
+
+/** Text in place of a row's period chips, or null to show the chips. */
+function rowNote(
+  loaded: boolean,
+  offerings: readonly PlannerOffering[],
+  offering: OfferingIssue | null,
+  periods: readonly PeriodKind[]
+): string | null {
+  if (!loaded) return "Checking offerings…"
+  // Outranks the chips, which may come from an older handbook.
+  const kind = offering?.issue.kind
+  if (offering && (kind === "no_longer_offered" || kind === "not_yet_offered"))
+    return offering.label
+  if (periods.length > 0) return null
+  if (offerings.length > 0) return "Off-cycle"
+  return offering?.label ?? "No offerings published"
 }
 
 function PeriodChip({
@@ -674,7 +683,7 @@ function PeriodChip({
 function FocusedDetails({
   code,
   slotKind,
-  issue,
+  offering,
   hasOfferingData,
   placed,
   settled,
@@ -683,7 +692,7 @@ function FocusedDetails({
 }: {
   code: string
   slotKind: PeriodKind | undefined
-  issue: OfferingIssue | null
+  offering: OfferingIssue | null
   hasOfferingData: boolean
   placed: boolean
   /** False while the pointer is passing over rows: fetch nothing yet. */
@@ -703,14 +712,14 @@ function FocusedDetails({
             <span className="inline-flex items-center gap-1 rounded-control border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
               Checking fit for {PERIOD_KIND_LABEL[slotKind]}…
             </span>
-          ) : !issue ? (
+          ) : !offering ? (
             <span className="inline-flex items-center gap-1 rounded-control border border-success/30 bg-success-soft px-2 py-0.5 font-medium text-success-foreground">
               <CheckIcon className="size-3" />
               Fits {PERIOD_KIND_LABEL[slotKind]}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-control border border-warning/40 bg-warning-soft px-2 py-0.5 font-medium text-warning-foreground">
-              {issue.label}
+              {offering.label}
             </span>
           )}
         </div>

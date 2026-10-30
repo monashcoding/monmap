@@ -6,6 +6,7 @@ import {
   afterLastOffering,
   beforeFirstOffering,
   buildTransitions,
+  statedPeriods,
   termLabel,
   type TransitionSource,
 } from "./transitions.ts"
@@ -30,6 +31,7 @@ const SOURCE: TransitionSource = {
       lastOffered: { year: 2026 },
       replacedBy: [["FIT3230", "FIT3231"]],
     },
+    { code: "FIT2119", firstOffered: { year: 2028 }, periods: ["S1", "S2"] },
   ],
 }
 
@@ -52,39 +54,46 @@ test("countsAs: part of a multi-unit replacement isn't the old unit", () => {
   assert.equal(countsAs.get("FIT3230"), undefined)
 })
 
+test("buildTransitions: a code in two sources is an error", () => {
+  const other = { name: "Faculty of Science", units: [SOURCE.units[0]] }
+  assert.throws(() => buildTransitions([SOURCE, other]), /FIT1008/)
+})
+
 test("afterLastOffering: a final S1 offering rules out S2 of that year", () => {
-  const t = { code: "X", lastOffered: { year: 2027, period: "S1" } } as const
-  assert.equal(afterLastOffering(t, "S1", 2027), false)
-  assert.equal(afterLastOffering(t, "WINTER", 2027), true)
-  assert.equal(afterLastOffering(t, "S2", 2027), true)
-  assert.equal(afterLastOffering(t, "SUMMER_A", 2027), false)
-  assert.equal(afterLastOffering(t, "SUMMER_A", 2028), true)
+  const last = { year: 2027, period: "S1" } as const
+  assert.equal(afterLastOffering(last, "S1", 2027), false)
+  assert.equal(afterLastOffering(last, "WINTER", 2027), true)
+  assert.equal(afterLastOffering(last, "S2", 2027), true)
+  assert.equal(afterLastOffering(last, "SUMMER_A", 2027), false)
+  assert.equal(afterLastOffering(last, "SUMMER_A", 2028), true)
 })
 
 test("afterLastOffering: a final full-year offering runs to the end of S2", () => {
-  const t = {
-    code: "X",
-    lastOffered: { year: 2027, period: "FULL_YEAR" },
-  } as const
-  assert.equal(afterLastOffering(t, "S2", 2027), false)
-  assert.equal(afterLastOffering(t, "S1", 2028), true)
+  const last = { year: 2027, period: "FULL_YEAR" } as const
+  assert.equal(afterLastOffering(last, "S2", 2027), false)
+  assert.equal(afterLastOffering(last, "S1", 2028), true)
 })
 
 test("afterLastOffering: 'no longer offered' is every year after", () => {
-  const t = { code: "X", lastOffered: { year: 2026 } }
-  assert.equal(afterLastOffering(t, "S2", 2026), false)
-  assert.equal(afterLastOffering(t, "S1", 2027), true)
-  assert.equal(afterLastOffering(t, "OTHER", 2027), true)
+  const last = { year: 2026 }
+  assert.equal(afterLastOffering(last, "S2", 2026), false)
+  assert.equal(afterLastOffering(last, "S1", 2027), true)
+  assert.equal(afterLastOffering(last, "OTHER", 2027), true)
 })
 
 test("beforeFirstOffering: a unit first run in S2 isn't there in S1", () => {
-  const t = { code: "X", firstOffered: { year: 2027, period: "S2" } } as const
-  assert.equal(beforeFirstOffering(t, "S1", 2027), true)
-  assert.equal(beforeFirstOffering(t, "S2", 2027), false)
-  assert.equal(beforeFirstOffering(t, "OTHER", 2027), false)
-  const fromYear = { code: "X", firstOffered: { year: 2028 } }
-  assert.equal(beforeFirstOffering(fromYear, "S2", 2027), true)
-  assert.equal(beforeFirstOffering(fromYear, "S1", 2028), false)
+  const first = { year: 2027, period: "S2" } as const
+  assert.equal(beforeFirstOffering(first, "S1", 2027), true)
+  assert.equal(beforeFirstOffering(first, "S2", 2027), false)
+  assert.equal(beforeFirstOffering(first, "OTHER", 2027), false)
+  assert.equal(beforeFirstOffering({ year: 2028 }, "S2", 2027), true)
+  assert.equal(beforeFirstOffering({ year: 2028 }, "S1", 2028), false)
+})
+
+test("statedPeriods: a new unit's periods, or none", () => {
+  const transitions = buildTransitions([SOURCE])
+  assert.deepEqual(statedPeriods("FIT2119", transitions), ["S1", "S2"])
+  assert.deepEqual(statedPeriods("FIT1008", transitions), [])
 })
 
 test("termLabel and adviceSentence read as the page does", () => {

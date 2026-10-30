@@ -1259,6 +1259,11 @@ async function hydrateFromYear(
       { ...u, equivalents: equivalents.get(u.code) ?? [] },
     ])
   )
+  // An empty list says "none"; a missing key means "not loaded".
+  for (const code of unitsByCode.keys()) {
+    if (!offerings.has(code)) offerings.set(code, [])
+    if (!reqs.has(code)) reqs.set(code, [])
+  }
   return { units: unitsByCode, offerings, requisites: reqs }
 }
 

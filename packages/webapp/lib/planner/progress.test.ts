@@ -210,7 +210,7 @@ test("groupProgress caps the target at the reachable options", () => {
     required: 6,
     placed: 6,
     satisfied: true,
-    coveredBy: new Map([...planned].map((c) => [c, [c]])),
+    viaReplacement: new Map(),
   })
   // Without the conflict data the old, unreachable target stands.
   assert.equal(groupProgress(sevenGroup, planned).satisfied, false)
@@ -256,7 +256,7 @@ test("groupProgress counts an approved replacement toward the option it replaces
     replacements
   )
   assert.equal(res.satisfied, true)
-  assert.deepEqual(res.coveredBy.get("FIT2014"), ["FIT3235"])
+  assert.deepEqual(res.viaReplacement.get("FIT2014"), ["FIT3235"])
 })
 
 test("groupProgress spends each replacement on one option per group", () => {
@@ -297,5 +297,5 @@ test("groupProgress needs every unit of a multi-unit replacement", () => {
     undefined,
     replacements
   )
-  assert.deepEqual(whole.coveredBy.get("FIT3144"), ["FIT3230", "FIT3231"])
+  assert.deepEqual(whole.viaReplacement.get("FIT3144"), ["FIT3230", "FIT3231"])
 })

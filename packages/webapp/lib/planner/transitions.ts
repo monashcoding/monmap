@@ -52,10 +52,15 @@ export function buildTransitions(
 ): Transitions {
   const byCode = new Map<string, TransitionEntry>()
   const countsAs = new Map<string, string[]>()
-  const add = (from: string, to: string) =>
-    countsAs.set(from, [...(countsAs.get(from) ?? []), to])
+  const add = (from: string, to: string) => {
+    const list = countsAs.get(from)
+    if (list) list.push(to)
+    else countsAs.set(from, [to])
+  }
   for (const source of sources) {
     for (const unit of source.units) {
+      if (byCode.has(unit.code))
+        throw new Error(`${unit.code} has more than one transition entry`)
       byCode.set(unit.code, { unit, source })
       const ways = unit.replacedBy ?? []
       if (ways.length === 1) for (const c of ways[0]) add(unit.code, c)
@@ -69,37 +74,47 @@ export const TRANSITIONS = buildTransitions([IT_2027])
 
 // [start, end] within a calendar year; summers are Jan-Feb. OTHER has no
 // place, so it never compares.
-const SPAN: Partial<Record<PeriodKind, readonly [number, number]>> = {
+const SPAN = {
   SUMMER_A: [0, 0],
   SUMMER_B: [0, 0],
   S1: [1, 1],
   WINTER: [2, 2],
   S2: [3, 3],
   FULL_YEAR: [1, 3],
-}
+} as const satisfies Record<Exclude<PeriodKind, "OTHER">, readonly number[]>
 
 export function afterLastOffering(
-  t: UnitTransition,
+  last: TransitionTerm,
   slotKind: PeriodKind,
   slotYear: number
 ): boolean {
-  const last = t.lastOffered
-  if (!last) return false
   if (slotYear !== last.year) return slotYear > last.year
-  const slot = SPAN[slotKind]
-  return !!last.period && !!slot && slot[0] > SPAN[last.period]![1]
+  return (
+    !!last.period &&
+    slotKind !== "OTHER" &&
+    SPAN[slotKind][0] > SPAN[last.period][1]
+  )
 }
 
 export function beforeFirstOffering(
-  t: UnitTransition,
+  first: TransitionTerm,
   slotKind: PeriodKind,
   slotYear: number
 ): boolean {
-  const first = t.firstOffered
-  if (!first) return false
   if (slotYear !== first.year) return slotYear < first.year
-  const slot = SPAN[slotKind]
-  return !!first.period && !!slot && slot[1] < SPAN[first.period]![0]
+  return (
+    !!first.period &&
+    slotKind !== "OTHER" &&
+    SPAN[slotKind][1] < SPAN[first.period][0]
+  )
+}
+
+/** A new unit's stated periods, for while the handbook lists none. */
+export function statedPeriods(
+  code: string,
+  transitions: Transitions = TRANSITIONS
+): readonly PeriodKind[] {
+  return transitions.byCode.get(code)?.unit.periods ?? []
 }
 
 /** "Semester 2, 2027", or "2028" when the page names only the year. */

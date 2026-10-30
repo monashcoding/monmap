@@ -2,7 +2,6 @@ import { creditedCodes } from "./credit.ts"
 import { perSlotCreditPoints } from "./full-year.ts"
 import { plannedUnitCodes } from "./progress.ts"
 import {
-  describeMissing,
   evaluateProhibition,
   evaluateRequisiteTree,
   referencedCodes,
@@ -16,7 +15,9 @@ import {
   termLabel,
   TRANSITIONS,
   type TransitionEntry,
+  type TransitionTerm,
   type Transitions,
+  type UnitTransition,
 } from "./transitions.ts"
 import type {
   PeriodKind,
@@ -26,6 +27,7 @@ import type {
   RequisiteBlock,
   SlotUnitValidation,
   ValidationIssue,
+  ValidationIssueKind,
 } from "./types.ts"
 
 const MAX_CREDIT_LOAD_PER_SLOT = 24
@@ -103,7 +105,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     if (!res.satisfied) {
       errors.push({
         kind: "prereq_unmet",
-        message: `Prerequisite not satisfied: need ${describeMissing(block.rule, input.completedBefore)} before ${input.unit.code}.`,
+        message: `Prerequisite not satisfied: need ${res.missingText} before ${input.unit.code}.`,
         relatedCodes: res.missingCodes,
       })
     }
@@ -121,7 +123,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     if (!res.satisfied) {
       errors.push({
         kind: "coreq_unmet",
-        message: `Corequisite not satisfied: need ${describeMissing(block.rule, combined)} by the end of this slot.`,
+        message: `Corequisite not satisfied: need ${res.missingText} by the end of this slot.`,
         relatedCodes: res.missingCodes,
       })
     }
@@ -197,35 +199,70 @@ export function offeringIssue(args: {
 }): OfferingIssue | null {
   const { unit, offerings, slotKind } = args
   const slotYear = args.slotYear ?? unit.year
-  const reliable = unit.year === slotYear
   const offered = isOfferedInPeriod(offerings, slotKind)
-  if (reliable && offered) return null
+  if (unit.year === slotYear && offered) return null
 
+  const entry = (args.transitions ?? TRANSITIONS).byCode.get(unit.code)
+  if (entry) {
+    const listed = offerings.length > 0
+    const outside = outsideRun(entry, slotKind, Number(slotYear), listed)
+    if (outside) return outside
+    const { firstOffered } = entry.unit
+    if (firstOffered && !listed)
+      return statedRunIssue(entry.unit, firstOffered, slotKind)
+  }
+  if (offered) return null
+  return handbookIssue(unit, offerings, slotKind, slotYear)
+}
+
+/** After the unit's final offering, or before a new unit's first. */
+function outsideRun(
+  entry: TransitionEntry,
+  slotKind: PeriodKind,
+  slotYear: number,
+  listed: boolean
+): OfferingIssue | null {
+  const { code, lastOffered, firstOffered } = entry.unit
+  if (lastOffered && afterLastOffering(lastOffered, slotKind, slotYear))
+    return noLongerOffered(entry, lastOffered)
+  if (
+    !listed &&
+    firstOffered &&
+    beforeFirstOffering(firstOffered, slotKind, slotYear)
+  )
+    return notYetOffered(code, firstOffered)
+  return null
+}
+
+function statedRunIssue(
+  t: UnitTransition,
+  first: TransitionTerm,
+  slotKind: PeriodKind
+): OfferingIssue | null {
+  const from = termLabel(first)
+  const period = PERIOD_KIND_LABEL[slotKind]
+  if (!t.periods)
+    return warning(
+      "Periods not published",
+      `${t.code} is a new unit from ${from}. Its teaching periods aren't published yet, so check them with your faculty.`
+    )
+  if (t.periods.some((p) => covers(p, slotKind))) return null
+  const runs = t.periods.map((p) => PERIOD_KIND_LABEL[p]).join(" and ")
+  return warning(
+    `Not offered in ${period}`,
+    `${t.code} runs in ${runs} from ${from}, not ${period}.`
+  )
+}
+
+function handbookIssue(
+  unit: Pick<PlannerUnit, "code" | "year" | "firstYear">,
+  offerings: readonly PlannerOffering[],
+  slotKind: PeriodKind,
+  slotYear: string
+): OfferingIssue {
   const { code } = unit
   const period = PERIOD_KIND_LABEL[slotKind]
   const notOffered = `Not offered in ${period}`
-  const entry = (args.transitions ?? TRANSITIONS).byCode.get(code)
-  if (entry && afterLastOffering(entry.unit, slotKind, Number(slotYear)))
-    return noLongerOffered(entry)
-  const t = entry?.unit
-  if (entry && t?.firstOffered && offerings.length === 0) {
-    if (beforeFirstOffering(t, slotKind, Number(slotYear)))
-      return notYetOffered(entry)
-    const from = termLabel(t.firstOffered)
-    if (!t.periods)
-      return warning(
-        "Periods not published",
-        `${code} is a new unit from ${from}. Its teaching periods aren't published yet, so check them with your faculty.`
-      )
-    if (t.periods.some((p) => covers(p, slotKind))) return null
-    const runs = t.periods.map((p) => PERIOD_KIND_LABEL[p]).join(" and ")
-    return warning(
-      notOffered,
-      `${code} runs in ${runs} from ${from}, not ${period}.`
-    )
-  }
-  if (offered) return null
-
   // Term-only units (IBL placements / onboarding, trimester field
   // schools, …) have every offering classified as OTHER and so will
   // *never* match an S1/S2 slot, even when the data is fresh. The
@@ -242,7 +279,7 @@ export function offeringIssue(args: {
       "No offerings published",
       `${code} is a new unit with no offerings in the ${unit.year} handbook yet. Check when it first runs.`
     )
-  if (!reliable)
+  if (unit.year !== slotYear)
     return warning(
       notOffered,
       `${code} isn't offered in ${period} in the ${unit.year} handbook - ${slotYear} offerings may differ.`
@@ -257,20 +294,23 @@ export function offeringIssue(args: {
   }
 }
 
-function warning(label: string, message: string): OfferingIssue {
-  return {
-    severity: "warning",
-    label,
-    issue: { kind: "not_offered_in_period", message },
-  }
+function warning(
+  label: string,
+  message: string,
+  kind: ValidationIssueKind = "not_offered_in_period"
+): OfferingIssue {
+  return { severity: "warning", label, issue: { kind, message } }
 }
 
-function noLongerOffered(entry: TransitionEntry): OfferingIssue {
-  const { code, lastOffered } = entry.unit
-  const final = lastOffered!.period ? termLabel(lastOffered!) : null
+function noLongerOffered(
+  entry: TransitionEntry,
+  last: TransitionTerm
+): OfferingIssue {
+  const { code } = entry.unit
+  const final = last.period ? termLabel(last) : null
   const status = final
     ? `${code}'s final offering is ${final}.`
-    : `${code} is no longer offered from ${lastOffered!.year + 1}.`
+    : `${code} is no longer offered from ${last.year + 1}.`
   return {
     severity: "error",
     label: final ? `Final offering ${final}` : "No longer offered",
@@ -281,33 +321,42 @@ function noLongerOffered(entry: TransitionEntry): OfferingIssue {
   }
 }
 
-function notYetOffered(entry: TransitionEntry): OfferingIssue {
-  const first = termLabel(entry.unit.firstOffered!)
+function notYetOffered(code: string, first: TransitionTerm): OfferingIssue {
+  const when = termLabel(first)
   return {
     severity: "error",
-    label: `New from ${first}`,
+    label: `New from ${when}`,
     issue: {
       kind: "not_yet_offered",
-      message: `${entry.unit.code} is a new unit and first runs in ${first}.`,
+      message: `${code} is a new unit and first runs in ${when}.`,
     },
   }
 }
 
-/** Retired units have no page in later handbooks. */
+/** Retired units have no page in later handbooks, and new ones may not yet. */
 function missingUnitIssue(
   code: string,
   slotKind: PeriodKind,
   slotYear: string | undefined,
   transitions: Transitions
-): ValidationIssue {
+): OfferingIssue {
   const entry = transitions.byCode.get(code)
-  if (entry && afterLastOffering(entry.unit, slotKind, Number(slotYear)))
-    return noLongerOffered(entry).issue
-  if (entry && beforeFirstOffering(entry.unit, slotKind, Number(slotYear)))
-    return notYetOffered(entry).issue
+  const outside = entry && outsideRun(entry, slotKind, Number(slotYear), false)
+  if (outside) return outside
+  const first = entry?.unit.firstOffered
+  if (first)
+    return warning(
+      "Not in the handbook yet",
+      `${code} is a new unit from ${termLabel(first)} and isn't in the handbook yet.`,
+      "unknown_unit"
+    )
   return {
-    kind: "unknown_unit",
-    message: `Unit ${code} not found in this handbook year.`,
+    severity: "error",
+    label: "Not in this handbook",
+    issue: {
+      kind: "unknown_unit",
+      message: `Unit ${code} not found in this handbook year.`,
+    },
   }
 }
 
@@ -400,17 +449,16 @@ export function validatePlan(
       for (const code of slot.unitCodes) {
         const unit = unitsByCode.get(code)
         if (!unit) {
+          const { severity, issue } = missingUnitIssue(
+            code,
+            slot.kind,
+            expectedHandbookYear,
+            transitions
+          )
           out.set(keyFor(y, s, code), {
             code,
-            errors: [
-              missingUnitIssue(
-                code,
-                slot.kind,
-                expectedHandbookYear,
-                transitions
-              ),
-            ],
-            warnings: [],
+            errors: severity === "error" ? [issue] : [],
+            warnings: severity === "warning" ? [issue] : [],
           })
           continue
         }

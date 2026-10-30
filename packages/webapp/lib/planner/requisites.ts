@@ -34,6 +34,8 @@ export interface RequisiteEvalResult {
   referencedCodes: string[]
   /** Subset of referencedCodes the student hasn't completed. */
   missingCodes: string[]
+  /** The unmet part, with its connectors: "FIT2115 and MAT1830". */
+  missingText: string
 }
 
 export function evaluateRequisiteTree(
@@ -41,7 +43,12 @@ export function evaluateRequisiteTree(
   completed: ReadonlySet<string>
 ): RequisiteEvalResult {
   if (!rule || rule.length === 0) {
-    return { satisfied: true, referencedCodes: [], missingCodes: [] }
+    return {
+      satisfied: true,
+      referencedCodes: [],
+      missingCodes: [],
+      missingText: "",
+    }
   }
 
   const referenced = new Set<string>()
@@ -62,6 +69,7 @@ export function evaluateRequisiteTree(
     satisfied,
     referencedCodes: [...referenced].sort(),
     missingCodes: [...missing].sort(),
+    missingText: satisfied ? "" : describeMissing(rule, completed),
   }
 }
 
@@ -84,12 +92,11 @@ function collectMissingCodes(
   }
 }
 
-/** The unmet part of a rule with its connectors: "FIT2115 and MAT1830". */
-export function describeMissing(
-  rule: RequisiteRule | null | undefined,
+function describeMissing(
+  rule: RequisiteRule,
   completed: ReadonlySet<string>
 ): string {
-  const failing = (rule ?? []).filter((c) => !evaluateContainer(c, completed))
+  const failing = rule.filter((c) => !evaluateContainer(c, completed))
   return joinWith(
     failing.map((c) => describeContainer(c, completed, failing.length > 1)),
     "AND"

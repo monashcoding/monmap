@@ -274,9 +274,10 @@ SFTWRENG02 → `/2025/units/FIT4190`, resolves now that FIT4190 has a
 A handbook can't say when a unit stops: 2027 still runs FIT2014, whose
 final offering is S2 2027 per the Faculty of IT. Renamed replacements
 (FIT1008 → FIT2115) also fail the equivalence test above.
-`lib/planner/transitions.ts` holds these facts, copied by hand from
-faculty pages. The slot year's own handbook still wins; delete a
-source once the handbooks catch up.
+`lib/planner/transitions-it-2027.ts` holds these facts, copied by hand
+from the faculty page, and `transitions.ts` applies them. The slot
+year's own handbook still wins; delete a source once the handbooks
+catch up.
 
 ## Tree structures inside JSONB
 

@@ -353,7 +353,6 @@ export const IT_2027: TransitionSource = {
       advice:
         "2027: Replace 12 point FIT3170 with FIT3170 (6 pts) and FIT3184. 2028: Replace 12 point FIT3170 with FIT2130 (6 pts) and FIT3184, replace 6 pt FIT3170 with FIT2130",
       lastOffered: { year: 2027, period: "S2" },
-      replacedBy: [["FIT2130", "FIT3184"]],
     },
     {
       code: "FIT3171",

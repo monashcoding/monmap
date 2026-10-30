@@ -814,6 +814,18 @@ test("validatePlan: replaced units meet a new unit's prerequisites", () => {
   assert.equal(v.warnings[0]?.kind, "not_offered_in_period")
 })
 
+test("validatePlan: a new unit missing from the handbook is a warning", () => {
+  const state = planState([{ S1: [] }, { S1: [] }, { S1: ["FIT3235"] }])
+  const v = validatePlan(state, new Map(), new Map(), new Map(), IT).get(
+    keyFor(2, 0, "FIT3235")
+  )
+  assert.equal(v?.errors.length, 0)
+  assert.equal(
+    v?.warnings[0]?.message,
+    "FIT3235 is a new unit from 2028 and isn't in the handbook yet."
+  )
+})
+
 test("validatePlan: a retired unit missing from the handbook says so", () => {
   const state = planState([{ S1: [] }, { S1: ["FIT1008"] }])
   const out = validatePlan(state, new Map(), new Map(), new Map(), IT)
