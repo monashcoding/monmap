@@ -2,6 +2,7 @@ import { creditedCodes, creditPointsFromCredit } from "./credit.ts"
 import { slotBlockCredit } from "./timeline.ts"
 import { isFullYearUnit, perSlotCreditPoints } from "./full-year.ts"
 import { effectiveRequired, reachableOptions } from "./reachable.ts"
+import { TRANSITIONS, type Transitions } from "./transitions.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
@@ -136,21 +137,42 @@ export interface GroupProgress {
    * only when a unit on the plan prohibits an option.
    */
   required: number
-  /** Options on the plan (placed or credited). */
+  /** Options on the plan (placed or credited) or covered by a replacement. */
   placed: number
   satisfied: boolean
+  /** Covered options and what covers each: itself or a replacement. */
+  coveredBy: ReadonlyMap<string, readonly string[]>
 }
 
 /** One requirement group's progress, with the reachability cap. */
 export function groupProgress(
   group: RequirementGroup,
   plannedCodes: ReadonlySet<string>,
-  conflicts?: Readonly<Record<string, string[]>>
+  conflicts?: Readonly<Record<string, string[]>>,
+  transitions: Transitions = TRANSITIONS
 ): GroupProgress {
   const required = effectiveRequired(group, plannedCodes, conflicts)
-  let placed = 0
-  for (const code of group.options) if (plannedCodes.has(code)) placed++
-  return { group, required, placed, satisfied: placed >= required }
+  const coveredBy = new Map<string, readonly string[]>()
+  // Each plan code covers at most one option per group.
+  const used = new Set<string>()
+  for (const code of group.options)
+    if (plannedCodes.has(code)) {
+      coveredBy.set(code, [code])
+      used.add(code)
+    }
+  for (const code of group.options) {
+    if (coveredBy.has(code)) continue
+    const way = transitions.byCode
+      .get(code)
+      ?.unit.replacedBy?.find((w) =>
+        w.every((c) => plannedCodes.has(c) && !used.has(c))
+      )
+    if (!way) continue
+    coveredBy.set(code, way)
+    for (const c of way) used.add(c)
+  }
+  const placed = coveredBy.size
+  return { group, required, placed, satisfied: placed >= required, coveredBy }
 }
 
 /**
@@ -224,18 +246,24 @@ export function summarizeAoSProgress(
     // Target is capped at what's still reachable: an option prohibited
     // by something already on the plan can never be taken, and asking
     // for it makes the AoS permanently incomplete.
-    const { required, placed } = groupProgress(group, plannedCodes, conflicts)
+    const { required, placed, coveredBy } = groupProgress(
+      group,
+      plannedCodes,
+      conflicts
+    )
     const reachable = new Set(reachableOptions(group, plannedCodes, conflicts))
     totalRequired += required
     satisfied += Math.min(placed, required)
     let placedSoFar = 0
     for (const code of group.options) {
-      if (plannedCodes.has(code)) {
+      const by = coveredBy.get(code)
+      if (by) {
         completedCodes.add(code)
         placedSoFar++
-        if (!cpSeen.has(code)) {
-          cpSeen.add(code)
-          plannedCp += unitsByCode.get(code)?.creditPoints ?? 0
+        for (const c of by) {
+          if (cpSeen.has(c)) continue
+          cpSeen.add(c)
+          plannedCp += unitsByCode.get(c)?.creditPoints ?? 0
         }
       } else if (placedSoFar < required && reachable.has(code)) {
         // Surface the first `required` unplaced options as "remaining"

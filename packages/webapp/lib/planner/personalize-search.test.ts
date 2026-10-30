@@ -10,6 +10,7 @@ import {
   topFeatures,
 } from "./personalize-search.ts"
 import {
+  NO_TRANSITIONS,
   offering as fixtureOffering,
   planState,
   prereq,
@@ -129,7 +130,7 @@ test("slotContextFor includes earlier slots in completedBefore but not concurren
     { S1: ["FIT1008", "MAT1830"], S2: ["FIT1045"] },
     { S1: ["FIT2099"], S2: [] },
   ])
-  const ctx = slotContextFor(s, 1, 0) // Year 2 S1
+  const ctx = slotContextFor(s, 1, 0, new Map(), NO_TRANSITIONS) // Year 2 S1
   assert.deepEqual([...ctx.completedBefore].sort(), [
     "FIT1008",
     "FIT1045",
@@ -271,7 +272,7 @@ test("slotContextFor counts credit and equivalents as completed", () => {
   const units = new Map([
     ["FIT1053", fixtureUnit("FIT1053", { equivalents: ["FIT1045"] })],
   ])
-  const ctx = slotContextFor(s, 0, 1, units)
+  const ctx = slotContextFor(s, 0, 1, units, NO_TRANSITIONS)
   assert.deepEqual([...ctx.completedBefore].sort(), [
     "FIT1045",
     "FIT1053",

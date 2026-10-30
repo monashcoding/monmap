@@ -859,6 +859,9 @@ async function _fetchUnitsByCode(
       creditPoints: units.creditPoints,
       level: units.level,
       school: units.school,
+      firstYear: sql<string>`(
+        select min(u2.year) from units u2 where u2.code = ${units.code}
+      )`,
     })
     .from(units)
     .where(and(eq(units.year, year), inArray(units.code, [...codes])))
@@ -870,6 +873,7 @@ async function _fetchUnitsByCode(
     creditPoints: r.creditPoints ?? 0,
     level: r.level,
     school: r.school,
+    firstYear: r.firstYear,
   }))
 }
 export async function fetchUnitsByCode(

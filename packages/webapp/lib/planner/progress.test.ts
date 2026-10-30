@@ -10,6 +10,7 @@ import {
   summarizePlan,
 } from "./progress.ts"
 import { offeringMap, planState, unit as fixtureUnit } from "./test-fixtures.ts"
+import { buildTransitions } from "./transitions.ts"
 import type { PlannerAreaOfStudy, PlannerCourseWithAoS } from "./types.ts"
 
 const unit = (code: string, creditPoints = 6) =>
@@ -209,6 +210,7 @@ test("groupProgress caps the target at the reachable options", () => {
     required: 6,
     placed: 6,
     satisfied: true,
+    coveredBy: new Map([...planned].map((c) => [c, [c]])),
   })
   // Without the conflict data the old, unreachable target stands.
   assert.equal(groupProgress(sevenGroup, planned).satisfied, false)
@@ -225,4 +227,75 @@ test("summarizeGroups totals each group's capped progress", () => {
     sum.groups.map((g) => g.satisfied),
     [false, true]
   )
+})
+
+const replacements = buildTransitions([
+  {
+    name: "Faculty of IT",
+    units: [
+      { code: "FIT2014", replacedBy: [["FIT3235"]] },
+      { code: "FIT3161", replacedBy: [["FIT3230"]] },
+      { code: "FIT3162", replacedBy: [["FIT3231"]] },
+      { code: "FIT3163", replacedBy: [["FIT3230"]] },
+      { code: "FIT3164", replacedBy: [["FIT3231"]] },
+      { code: "FIT3144", replacedBy: [["FIT3230", "FIT3231"]] },
+    ],
+  },
+])
+
+test("groupProgress counts an approved replacement toward the option it replaces", () => {
+  const core = {
+    grouping: "Part A",
+    required: 2,
+    options: ["FIT1045", "FIT2014"],
+  }
+  const res = groupProgress(
+    core,
+    new Set(["FIT1045", "FIT3235"]),
+    undefined,
+    replacements
+  )
+  assert.equal(res.satisfied, true)
+  assert.deepEqual(res.coveredBy.get("FIT2014"), ["FIT3235"])
+})
+
+test("groupProgress spends each replacement on one option per group", () => {
+  // 2026 C2001's pick-2 capstones.
+  const capstone = {
+    grouping: "Part D",
+    required: 2,
+    options: ["FIT3161", "FIT3162", "FIT3163", "FIT3164"],
+  }
+  const one = groupProgress(
+    capstone,
+    new Set(["FIT3230"]),
+    undefined,
+    replacements
+  )
+  assert.equal(one.placed, 1)
+  const pair = groupProgress(
+    capstone,
+    new Set(["FIT3230", "FIT3231"]),
+    undefined,
+    replacements
+  )
+  assert.equal(pair.satisfied, true)
+})
+
+test("groupProgress needs every unit of a multi-unit replacement", () => {
+  const honours = { grouping: "Project", required: 1, options: ["FIT3144"] }
+  const half = groupProgress(
+    honours,
+    new Set(["FIT3230"]),
+    undefined,
+    replacements
+  )
+  assert.equal(half.satisfied, false)
+  const whole = groupProgress(
+    honours,
+    new Set(["FIT3230", "FIT3231"]),
+    undefined,
+    replacements
+  )
+  assert.deepEqual(whole.coveredBy.get("FIT3144"), ["FIT3230", "FIT3231"])
 })

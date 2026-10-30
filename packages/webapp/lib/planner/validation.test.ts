@@ -1,14 +1,17 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
+import { buildTransitions } from "./transitions.ts"
 import {
   isOfferedInPeriod,
   keyFor,
+  offeringIssue,
   validatePlan,
   validateUnitInSlot,
 } from "./validation.ts"
 import {
   coreq,
+  NO_TRANSITIONS,
   offering,
   offeringMap,
   planState,
@@ -378,7 +381,8 @@ test("validatePlan: a completed unit WITHOUT an equivalence link does not satisf
       ["FIT1053", [offering("FIT1053", "S1")]],
       ["FIT2175", [offering("FIT2175", "S2")]],
     ]),
-    new Map([["FIT2175", [prereq("FIT1045")]]])
+    new Map([["FIT2175", [prereq("FIT1045")]]]),
+    NO_TRANSITIONS
   )
   const fit2175 = out.get(keyFor(0, 1, "FIT2175"))
   assert.ok(fit2175)
@@ -660,4 +664,163 @@ test("validatePlan: a semester unit in the same slot still isn't done before", (
   const v = out.get(keyFor(0, 0, "FIT4042"))
   assert.ok(v)
   assert.equal(v.errors[0]?.kind, "prereq_unmet")
+})
+
+const IT = buildTransitions([
+  {
+    name: "Faculty of IT",
+    units: [
+      {
+        code: "FIT2014",
+        appliesTo: "BCS",
+        advice: "Replace with FIT3235 from 2028",
+        lastOffered: { year: 2027, period: "S2" },
+        replacedBy: [["FIT3235"]],
+      },
+      {
+        code: "FIT1008",
+        advice: "Replace with FIT2115 (S1 and S2)",
+        lastOffered: { year: 2026 },
+        replacedBy: [["FIT2115"]],
+      },
+      {
+        code: "FIT1058",
+        advice: "Replace with MAT1830 (S1 and S2)",
+        lastOffered: { year: 2026 },
+        replacedBy: [["MAT1830"]],
+      },
+      { code: "FIT3235", firstOffered: { year: 2028 } },
+      {
+        code: "FIT2119",
+        firstOffered: { year: 2028 },
+        periods: ["S1", "S2"],
+      },
+    ],
+  },
+])
+
+test("offeringIssue: a unit is red after its final offering, with the faculty's advice", () => {
+  // 2028 has no handbook, and 2027's still runs FIT2014 in S1.
+  const res = offeringIssue({
+    unit: unit("FIT2014", { year: "2027" }),
+    offerings: [offering("FIT2014", "S1")],
+    slotKind: "S1",
+    slotYear: "2028",
+    transitions: IT,
+  })
+  assert.equal(res?.severity, "error")
+  assert.equal(res?.issue.kind, "no_longer_offered")
+  assert.equal(res?.label, "Final offering Semester 2, 2027")
+  assert.equal(
+    res?.issue.message,
+    "FIT2014's final offering is Semester 2, 2027. Faculty of IT advice (BCS): Replace with FIT3235 from 2028."
+  )
+})
+
+test("offeringIssue: the slot year's own handbook outranks a transition", () => {
+  const res = offeringIssue({
+    unit: unit("FIT2014", { year: "2028" }),
+    offerings: [offering("FIT2014", "S1")],
+    slotKind: "S1",
+    slotYear: "2028",
+    transitions: IT,
+  })
+  assert.equal(res, null)
+})
+
+test("offeringIssue: a new unit is red before it first runs and amber after", () => {
+  const fit3235 = unit("FIT3235", { year: "2027", firstYear: "2027" })
+  const before = offeringIssue({
+    unit: fit3235,
+    offerings: [],
+    slotKind: "S1",
+    slotYear: "2027",
+    transitions: IT,
+  })
+  assert.equal(before?.severity, "error")
+  assert.equal(before?.issue.kind, "not_yet_offered")
+  assert.equal(
+    before?.issue.message,
+    "FIT3235 is a new unit and first runs in 2028."
+  )
+  const after = offeringIssue({
+    unit: fit3235,
+    offerings: [],
+    slotKind: "S1",
+    slotYear: "2028",
+    transitions: IT,
+  })
+  assert.equal(after?.severity, "warning")
+  assert.match(after?.issue.message ?? "", /teaching periods aren't published/)
+})
+
+test("offeringIssue: a new unit's stated periods stand in for offerings", () => {
+  const args = {
+    unit: unit("FIT2119", { year: "2027", firstYear: "2027" }),
+    offerings: [],
+    slotYear: "2028",
+    transitions: IT,
+  }
+  assert.equal(offeringIssue({ ...args, slotKind: "S2" }), null)
+  const winter = offeringIssue({ ...args, slotKind: "WINTER" })
+  assert.equal(winter?.severity, "warning")
+  assert.equal(
+    winter?.issue.message,
+    "FIT2119 runs in Semester 1 and Semester 2 from 2028, not Winter."
+  )
+})
+
+test("offeringIssue: a new unit with no offerings is amber, an old one stays red", () => {
+  const args = {
+    offerings: [],
+    slotKind: "S1" as const,
+    slotYear: "2027",
+    transitions: IT,
+  }
+  const fresh = offeringIssue({
+    ...args,
+    unit: unit("ABC1234", { year: "2027", firstYear: "2027" }),
+  })
+  assert.equal(fresh?.severity, "warning")
+  assert.equal(fresh?.label, "No offerings published")
+  const old = offeringIssue({
+    ...args,
+    unit: unit("ABC1234", { year: "2027", firstYear: "2020" }),
+  })
+  assert.equal(old?.severity, "error")
+})
+
+test("validatePlan: replaced units meet a new unit's prerequisites", () => {
+  // FIT1058 and FIT1008 stand in for MAT1830 and FIT2115.
+  const state = planState([
+    { S1: ["FIT1058"], S2: ["FIT1008"] },
+    { S1: [], S2: [] },
+    { S1: ["FIT3235"], S2: [] },
+  ])
+  const out = validatePlan(
+    state,
+    new Map([
+      ["FIT1058", unit("FIT1058")],
+      ["FIT1008", unit("FIT1008")],
+      ["FIT3235", unit("FIT3235", { year: "2027", firstYear: "2027" })],
+    ]),
+    offeringMap({ FIT1058: ["S1"], FIT1008: ["S2"] }),
+    new Map([["FIT3235", [prereq("FIT2115", "MAT1830")]]]),
+    IT
+  )
+  const v = out.get(keyFor(2, 0, "FIT3235"))
+  assert.ok(v)
+  assert.equal(v.errors.length, 0)
+  assert.equal(v.warnings[0]?.kind, "not_offered_in_period")
+})
+
+test("validatePlan: a retired unit missing from the handbook says so", () => {
+  const state = planState([{ S1: [] }, { S1: ["FIT1008"] }])
+  const out = validatePlan(state, new Map(), new Map(), new Map(), IT)
+  const v = out.get(keyFor(1, 0, "FIT1008"))
+  assert.equal(v?.errors[0]?.kind, "no_longer_offered")
+  assert.equal(
+    v?.errors[0]?.message,
+    "FIT1008 is no longer offered from 2027. Faculty of IT advice: Replace with FIT2115 (S1 and S2)."
+  )
 })

@@ -9,6 +9,15 @@ import {
 } from "./requisites.ts"
 import { PERIOD_KIND_LABEL } from "./teaching-period.ts"
 import { slotCalendarYear } from "./timeline.ts"
+import {
+  adviceSentence,
+  afterLastOffering,
+  beforeFirstOffering,
+  termLabel,
+  TRANSITIONS,
+  type TransitionEntry,
+  type Transitions,
+} from "./transitions.ts"
 import type {
   PeriodKind,
   PlannerOffering,
@@ -69,36 +78,22 @@ export interface ValidationInput {
    * `unit.year` (treats data as authoritative for the slot).
    */
   expectedHandbookYear?: string
+  transitions?: Transitions
 }
 
 export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
   const errors: ValidationIssue[] = []
   const warnings: ValidationIssue[] = []
 
-  const expectedYear = input.expectedHandbookYear ?? input.unit.year
-  const dataIsReliable = input.unit.year === expectedYear
-
-  if (!isOfferedInPeriod(input.offerings, input.slotKind)) {
-    // Term-only units (IBL placements / onboarding, trimester field
-    // schools, …) have every offering classified as OTHER and so will
-    // *never* match an S1/S2 slot, even when the data is fresh. The
-    // unit still needs to live somewhere on the planner grid, so flag
-    // it as a yellow "runs on its own dates — check them"
-    // rather than a red blocker.
-    const termOnly =
-      input.offerings.length > 0 &&
-      input.offerings.every((o) => o.periodKind === "OTHER")
-    const issue: ValidationIssue = {
-      kind: "not_offered_in_period",
-      message: termOnly
-        ? `${input.unit.code} runs on its own dates, not the semester calendar, so it may start before or end after ${PERIOD_KIND_LABEL[input.slotKind]}. Check the dates with your faculty.`
-        : dataIsReliable
-          ? `${input.unit.code} isn't offered in ${PERIOD_KIND_LABEL[input.slotKind]} for ${input.unit.year}.`
-          : `${input.unit.code} isn't offered in ${PERIOD_KIND_LABEL[input.slotKind]} in the ${input.unit.year} handbook - ${expectedYear} offerings may differ.`,
-    }
-    if (termOnly || !dataIsReliable) warnings.push(issue)
-    else errors.push(issue)
-  }
+  const offering = offeringIssue({
+    unit: input.unit,
+    offerings: input.offerings,
+    slotKind: input.slotKind,
+    slotYear: input.expectedHandbookYear,
+    transitions: input.transitions,
+  })
+  if (offering?.severity === "error") errors.push(offering.issue)
+  else if (offering) warnings.push(offering.issue)
 
   const prereqs = input.requisites.filter(
     (r) => r.requisiteType === "prerequisite"
@@ -167,18 +162,153 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
 }
 
 export function isOfferedInPeriod(
-  offerings: PlannerOffering[],
+  offerings: readonly PlannerOffering[],
   period: PeriodKind
 ): boolean {
-  return offerings.some((o) => {
-    if (o.periodKind === period) return true
-    // Year-long offerings cover both S1 and S2 — a FY unit placed in
-    // either semester slot is still "being attended" that semester.
-    if (o.periodKind === "FULL_YEAR" && (period === "S1" || period === "S2")) {
-      return true
-    }
-    return false
-  })
+  return offerings.some((o) => covers(o.periodKind, period))
+}
+
+function covers(offered: PeriodKind, slot: PeriodKind): boolean {
+  // Year-long offerings cover both S1 and S2 — a FY unit placed in
+  // either semester slot is still "being attended" that semester.
+  return (
+    offered === slot ||
+    (offered === "FULL_YEAR" && (slot === "S1" || slot === "S2"))
+  )
+}
+
+export interface OfferingIssue {
+  severity: "error" | "warning"
+  issue: ValidationIssue
+  /** Short form for chips: "Final offering Semester 2, 2027". */
+  label: string
+}
+
+/**
+ * Whether a unit runs in a slot. The slot year's handbook wins, then a
+ * faculty transition; a new unit with no offerings only warns.
+ */
+export function offeringIssue(args: {
+  unit: Pick<PlannerUnit, "code" | "year" | "firstYear">
+  offerings: readonly PlannerOffering[]
+  slotKind: PeriodKind
+  slotYear?: string
+  transitions?: Transitions
+}): OfferingIssue | null {
+  const { unit, offerings, slotKind } = args
+  const slotYear = args.slotYear ?? unit.year
+  const reliable = unit.year === slotYear
+  const offered = isOfferedInPeriod(offerings, slotKind)
+  if (reliable && offered) return null
+
+  const { code } = unit
+  const period = PERIOD_KIND_LABEL[slotKind]
+  const notOffered = `Not offered in ${period}`
+  const entry = (args.transitions ?? TRANSITIONS).byCode.get(code)
+  if (entry && afterLastOffering(entry.unit, slotKind, Number(slotYear)))
+    return noLongerOffered(entry)
+  const t = entry?.unit
+  if (entry && t?.firstOffered && offerings.length === 0) {
+    if (beforeFirstOffering(t, slotKind, Number(slotYear)))
+      return notYetOffered(entry)
+    const from = termLabel(t.firstOffered)
+    if (!t.periods)
+      return warning(
+        "Periods not published",
+        `${code} is a new unit from ${from}. Its teaching periods aren't published yet, so check them with your faculty.`
+      )
+    if (t.periods.some((p) => covers(p, slotKind))) return null
+    const runs = t.periods.map((p) => PERIOD_KIND_LABEL[p]).join(" and ")
+    return warning(
+      notOffered,
+      `${code} runs in ${runs} from ${from}, not ${period}.`
+    )
+  }
+  if (offered) return null
+
+  // Term-only units (IBL placements / onboarding, trimester field
+  // schools, …) have every offering classified as OTHER and so will
+  // *never* match an S1/S2 slot, even when the data is fresh. The
+  // unit still needs to live somewhere on the planner grid, so flag
+  // it as a yellow "runs on its own dates — check them"
+  // rather than a red blocker.
+  if (offerings.length > 0 && offerings.every((o) => o.periodKind === "OTHER"))
+    return warning(
+      "Runs on its own dates",
+      `${code} runs on its own dates, not the semester calendar, so it may start before or end after ${period}. Check the dates with your faculty.`
+    )
+  if (offerings.length === 0 && unit.firstYear === unit.year)
+    return warning(
+      "No offerings published",
+      `${code} is a new unit with no offerings in the ${unit.year} handbook yet. Check when it first runs.`
+    )
+  if (!reliable)
+    return warning(
+      notOffered,
+      `${code} isn't offered in ${period} in the ${unit.year} handbook - ${slotYear} offerings may differ.`
+    )
+  return {
+    severity: "error",
+    label: notOffered,
+    issue: {
+      kind: "not_offered_in_period",
+      message: `${code} isn't offered in ${period} for ${unit.year}.`,
+    },
+  }
+}
+
+function warning(label: string, message: string): OfferingIssue {
+  return {
+    severity: "warning",
+    label,
+    issue: { kind: "not_offered_in_period", message },
+  }
+}
+
+function noLongerOffered(entry: TransitionEntry): OfferingIssue {
+  const { code, lastOffered } = entry.unit
+  const final = lastOffered!.period ? termLabel(lastOffered!) : null
+  const status = final
+    ? `${code}'s final offering is ${final}.`
+    : `${code} is no longer offered from ${lastOffered!.year + 1}.`
+  return {
+    severity: "error",
+    label: final ? `Final offering ${final}` : "No longer offered",
+    issue: {
+      kind: "no_longer_offered",
+      message: [status, adviceSentence(entry)].filter(Boolean).join(" "),
+    },
+  }
+}
+
+function notYetOffered(entry: TransitionEntry): OfferingIssue {
+  const first = termLabel(entry.unit.firstOffered!)
+  return {
+    severity: "error",
+    label: `New from ${first}`,
+    issue: {
+      kind: "not_yet_offered",
+      message: `${entry.unit.code} is a new unit and first runs in ${first}.`,
+    },
+  }
+}
+
+/** Retired units have no page in later handbooks. */
+function missingUnitIssue(
+  code: string,
+  slotKind: PeriodKind,
+  slotYear: string | undefined,
+  transitions: Transitions
+): ValidationIssue {
+  const entry = transitions.byCode.get(code)
+  if (entry && afterLastOffering(entry.unit, slotKind, Number(slotYear)))
+    return noLongerOffered(entry).issue
+  if (entry && beforeFirstOffering(entry.unit, slotKind, Number(slotYear)))
+    return notYetOffered(entry).issue
+  return {
+    kind: "unknown_unit",
+    message: `Unit ${code} not found in this handbook year.`,
+  }
 }
 
 function formatCodeList(codes: string[]): string {
@@ -196,7 +326,8 @@ export function validatePlan(
   state: PlannerState,
   unitsByCode: ReadonlyMap<string, PlannerUnit>,
   offeringsByCode: ReadonlyMap<string, PlannerOffering[]>,
-  requisitesByCode: ReadonlyMap<string, RequisiteBlock[]>
+  requisitesByCode: ReadonlyMap<string, RequisiteBlock[]>,
+  transitions: Transitions = TRANSITIONS
 ): Map<string, SlotUnitValidation> {
   const out = new Map<string, SlotUnitValidation>()
 
@@ -230,7 +361,7 @@ export function validatePlan(
 
   // Grown slot by slot below rather than calling completedBefore per
   // slot, which would walk the plan again for every slot.
-  const completed = completedAtStart(state, unitsByCode)
+  const completed = completedAtStart(state, unitsByCode, transitions)
 
   // Used to derive the expected handbook year per slot so the
   // validator can compare against the actually-loaded `unit.year`.
@@ -251,7 +382,11 @@ export function validatePlan(
       // taken the unit they're equivalent to, so a prereq/coreq naming
       // FIT1045 is met by completing FIT1053. Prohibitions are checked
       // against literal enrolments (allPlanned), so they're not expanded.
-      const concurrent = withEquivalents(slot.unitCodes, unitsByCode)
+      const concurrent = withEquivalents(
+        slot.unitCodes,
+        unitsByCode,
+        transitions
+      )
 
       // Per-slot CP load — full-year units contribute their half-year
       // share so a 12 CP FY twin doesn't single-handedly trip the
@@ -268,10 +403,12 @@ export function validatePlan(
           out.set(keyFor(y, s, code), {
             code,
             errors: [
-              {
-                kind: "unknown_unit",
-                message: `Unit ${code} not found in this handbook year.`,
-              },
+              missingUnitIssue(
+                code,
+                slot.kind,
+                expectedHandbookYear,
+                transitions
+              ),
             ],
             warnings: [],
           })
@@ -283,7 +420,10 @@ export function validatePlan(
 
         const earlier = earlierTermUnits(code, slot.unitCodes, offeringsByCode)
         const completedForUnit = earlier.length
-          ? new Set([...completed, ...withEquivalents(earlier, unitsByCode)])
+          ? new Set([
+              ...completed,
+              ...withEquivalents(earlier, unitsByCode, transitions),
+            ])
           : completed
 
         const v = validateUnitInSlot({
@@ -305,12 +445,12 @@ export function validatePlan(
           // mismatch is a stale-data forecast, not a hard fact, and
           // downgrades to amber. See hydration.ts / slotHandbookYear.
           expectedHandbookYear,
+          transitions,
         })
         out.set(keyFor(y, s, code), v)
       }
 
-      for (const c of withEquivalents(slot.unitCodes, unitsByCode))
-        completed.add(c)
+      for (const c of concurrent) completed.add(c)
     }
   }
 
@@ -361,9 +501,10 @@ function termNumbers(
  */
 export function completedAtStart(
   state: PlannerState,
-  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>,
+  transitions: Transitions = TRANSITIONS
 ): Set<string> {
-  return withEquivalents(creditedCodes(state), unitsByCode)
+  return withEquivalents(creditedCodes(state), unitsByCode, transitions)
 }
 
 /**
@@ -376,14 +517,19 @@ export function completedBefore(
   state: PlannerState,
   yearIndex: number,
   slotIndex: number,
-  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>,
+  transitions: Transitions = TRANSITIONS
 ): Set<string> {
-  const out = completedAtStart(state, unitsByCode)
+  const out = completedAtStart(state, unitsByCode, transitions)
   for (let y = 0; y <= yearIndex; y++) {
     const slots = state.years[y]?.slots ?? []
     for (let s = 0; s < slots.length; s++) {
       if (y === yearIndex && s >= slotIndex) break
-      for (const c of withEquivalents(slots[s].unitCodes, unitsByCode))
+      for (const c of withEquivalents(
+        slots[s].unitCodes,
+        unitsByCode,
+        transitions
+      ))
         out.add(c)
     }
   }
@@ -404,17 +550,19 @@ export function keyFor(
  * see PlannerUnit.equivalents). Returns a new set; the input is left
  * untouched. Used wherever "what has the student effectively completed?"
  * feeds requisite satisfaction, so e.g. completing FIT1053 satisfies a
- * prerequisite that names FIT1045. NOT used for prohibition checks,
- * which test literal enrolments.
+ * prerequisite that names FIT1045. Approved replacements count too. NOT
+ * used for prohibition checks, which test literal enrolments.
  */
 export function withEquivalents(
   codes: Iterable<string>,
-  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+  unitsByCode: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>,
+  transitions: Transitions = TRANSITIONS
 ): Set<string> {
   const out = new Set<string>()
   for (const c of codes) {
     out.add(c)
     for (const eq of unitsByCode.get(c)?.equivalents ?? []) out.add(eq)
+    for (const r of transitions.countsAs.get(c) ?? []) out.add(r)
   }
   return out
 }

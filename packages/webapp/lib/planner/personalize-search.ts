@@ -11,7 +11,8 @@ import type {
 } from "./types.ts"
 import { slotCalendarYear, startPeriodOf } from "./timeline.ts"
 import { unitLevel } from "./unit-level.ts"
-import { completedBefore, isOfferedInPeriod } from "./validation.ts"
+import { TRANSITIONS, type Transitions } from "./transitions.ts"
+import { completedBefore, offeringIssue } from "./validation.ts"
 
 /**
  * Per-plan precomputed signals — derived once when the plan changes,
@@ -176,10 +177,17 @@ export function slotContextFor(
   state: PlannerState,
   yearIndex: number,
   slotIndex: number,
-  units: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">> = new Map()
+  units: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">> = new Map(),
+  transitions: Transitions = TRANSITIONS
 ): SlotContext {
   const slot = state.years[yearIndex]?.slots[slotIndex]
-  const completed = completedBefore(state, yearIndex, slotIndex, units)
+  const completed = completedBefore(
+    state,
+    yearIndex,
+    slotIndex,
+    units,
+    transitions
+  )
   const concurrent = slot ? new Set(slot.unitCodes) : new Set<string>()
   const courseYearNum = Number(state.courseYear)
   const expectedHandbookYear = Number.isFinite(courseYearNum)
@@ -216,7 +224,15 @@ export function personalScore(args: {
     rank === undefined || total <= 1 ? 0 : 1 - rank / Math.max(1, total - 1)
 
   const periodFit =
-    slot.slotKind && isOfferedInPeriod([...offerings], slot.slotKind) ? 1 : 0
+    slot.slotKind &&
+    !offeringIssue({
+      unit,
+      offerings,
+      slotKind: slot.slotKind,
+      slotYear: slot.expectedHandbookYear,
+    })
+      ? 1
+      : 0
 
   const aos = signals.aosWeight.get(unit.code) ?? 0
   const fillsGap = signals.fillsGap.has(unit.code) ? 1 : 0

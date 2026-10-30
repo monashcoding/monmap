@@ -395,6 +395,7 @@ function GroupList({
           required,
           placed: placedCount,
           satisfied,
+          coveredBy,
         } = groupProgress(g, plannedCodes, conflicts)
         const isChoice = required < g.options.length
         const sortedOptions = [...g.options].sort((a, b) => a.localeCompare(b))
@@ -427,7 +428,9 @@ function GroupList({
             </div>
             <ul className="flex flex-wrap gap-1">
               {sortedOptions.map((code) => {
-                const placed = plannedCodes.has(code)
+                const by = coveredBy.get(code)
+                const placed = by !== undefined
+                const via = by && by[0] !== code ? by.join(" + ") : null
                 const placement = placements.get(code)
                 return (
                   <li key={`${g.grouping}:${code}`}>
@@ -454,6 +457,9 @@ function GroupList({
                           <CircleIcon className="size-2" />
                         )}
                         {code}
+                        {via ? (
+                          <span className="opacity-70">via {via}</span>
+                        ) : null}
                       </button>
                     </UnitDetailPopover>
                   </li>

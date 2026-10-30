@@ -3,6 +3,7 @@
  * doesn't execute it. Each builder fills the fields a test doesn't
  * care about; pass `overrides` for the ones it does.
  */
+import { buildTransitions } from "./transitions.ts"
 import type {
   PeriodKind,
   PlannerOffering,
@@ -12,6 +13,9 @@ import type {
   RequisiteBlock,
   RequisiteRule,
 } from "./types.ts"
+
+/** For tests that use real codes but aren't about course transitions. */
+export const NO_TRANSITIONS = buildTransitions([])
 
 export function unit(
   code: string,
