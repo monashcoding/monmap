@@ -2,6 +2,7 @@ import { creditedCodes } from "./credit.ts"
 import { perSlotCreditPoints } from "./full-year.ts"
 import { plannedUnitCodes } from "./progress.ts"
 import {
+  describeMissing,
   evaluateProhibition,
   evaluateRequisiteTree,
   referencedCodes,
@@ -107,7 +108,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     if (!res.satisfied) {
       errors.push({
         kind: "prereq_unmet",
-        message: `Prerequisite not satisfied: need ${formatCodeList(res.missingCodes)} before ${input.unit.code}.`,
+        message: `Prerequisite not satisfied: need ${describeMissing(block.rule, input.completedBefore)} before ${input.unit.code}.`,
         relatedCodes: res.missingCodes,
       })
     }
@@ -125,7 +126,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     if (!res.satisfied) {
       errors.push({
         kind: "coreq_unmet",
-        message: `Corequisite not satisfied: need ${formatCodeList(res.missingCodes)} by the end of this slot.`,
+        message: `Corequisite not satisfied: need ${describeMissing(block.rule, combined)} by the end of this slot.`,
         relatedCodes: res.missingCodes,
       })
     }

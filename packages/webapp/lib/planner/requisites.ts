@@ -84,6 +84,48 @@ function collectMissingCodes(
   }
 }
 
+/** The unmet part of a rule with its connectors: "FIT2115 and MAT1830". */
+export function describeMissing(
+  rule: RequisiteRule | null | undefined,
+  completed: ReadonlySet<string>
+): string {
+  const failing = (rule ?? []).filter((c) => !evaluateContainer(c, completed))
+  return joinWith(
+    failing.map((c) => describeContainer(c, completed, failing.length > 1)),
+    "AND"
+  )
+}
+
+function describeContainer(
+  container: RequisiteContainer,
+  completed: ReadonlySet<string>,
+  hasSiblings: boolean
+): string {
+  const connector = normalizeConnector(container.parent_connector?.value)
+  // A failing OR lists every option.
+  const subs = (container.containers ?? []).filter(
+    (s) => connector === "OR" || !evaluateContainer(s, completed)
+  )
+  const leaves = (container.relationships ?? []).filter(
+    (l) => connector === "OR" || !evaluateLeaf(l, completed)
+  )
+  const count = subs.length + leaves.length
+  const text = joinWith(
+    [
+      ...subs.map((s) => describeContainer(s, completed, count > 1)),
+      ...leaves.map((l) => l.academic_item_code),
+    ],
+    connector
+  )
+  return hasSiblings && count > 1 ? `(${text})` : text
+}
+
+function joinWith(parts: readonly string[], connector: "AND" | "OR"): string {
+  const word = connector === "OR" ? "or" : "and"
+  if (parts.length <= 2) return parts.join(` ${word} `)
+  return `${parts.slice(0, -1).join(", ")} ${word} ${parts.at(-1)}`
+}
+
 function evaluateContainer(
   container: RequisiteContainer,
   completed: ReadonlySet<string>

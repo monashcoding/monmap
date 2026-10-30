@@ -1,7 +1,12 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { evaluateProhibition, evaluateRequisiteTree } from "./requisites.ts"
+import {
+  describeMissing,
+  evaluateProhibition,
+  evaluateRequisiteTree,
+} from "./requisites.ts"
+import { rule } from "./test-fixtures.ts"
 import type { RequisiteRule } from "./types.ts"
 
 /** `(A OR B) AND (C OR D)` — the FIT2004 shape. */
@@ -235,5 +240,29 @@ test("FIT4042 shape: a met OR group is left out of missingCodes", () => {
   assert.equal(
     evaluateRequisiteTree(rule, new Set(["FIT1008", "FIT3201"])).satisfied,
     true
+  )
+})
+
+test("describeMissing: an AND rule asks for every unmet code with 'and'", () => {
+  // FIT3235's 2027 prerequisite.
+  const fit3235 = rule("AND", ["FIT2115", "MAT1830"])
+  assert.equal(describeMissing(fit3235, new Set()), "FIT2115 and MAT1830")
+  assert.equal(describeMissing(fit3235, new Set(["MAT1830"])), "FIT2115")
+})
+
+test("describeMissing: an OR rule lists its options with 'or'", () => {
+  const any = rule("OR", ["FIT1008", "FIT2085", "FIT1054"])
+  assert.equal(describeMissing(any, new Set()), "FIT1008, FIT2085 or FIT1054")
+})
+
+test("describeMissing: nested groups keep their structure", () => {
+  assert.equal(
+    describeMissing(fit2004Shape, new Set()),
+    "(FIT1008, FIT2085 or FIT1054) and (FIT1058 or MAT1830)"
+  )
+  // A met branch drops out.
+  assert.equal(
+    describeMissing(fit2004Shape, new Set(["MAT1830"])),
+    "FIT1008, FIT2085 or FIT1054"
   )
 })
