@@ -1,9 +1,10 @@
 import type { TransitionSource } from "./transitions.ts"
 
-// From https://www.monash.edu/it/current-students/courses/re-enrolment/undergraduate
-// on 30 October 2026. "Renamed" rows are left out; the handbook covers them.
+// From https://www.monash.edu/it/current-students/courses/re-enrolment/undergraduate.
+// "Renamed" rows are left out; the handbook covers them.
 export const IT_2027: TransitionSource = {
   name: "Faculty of IT",
+  retrieved: "2026-10-30",
   units: [
     {
       code: "FIT1006",

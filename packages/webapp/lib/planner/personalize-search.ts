@@ -59,8 +59,8 @@ export interface SlotContext {
   completedBefore: ReadonlySet<string>
   /** Codes already in this slot. */
   concurrentWith: ReadonlySet<string>
-  /** Expected handbook year for the slot: its calendar year. */
-  expectedHandbookYear: string | undefined
+  /** The slot's calendar year. */
+  slotYear: number
   transitions: Transitions
 }
 
@@ -189,6 +189,7 @@ export function slotContextFor(
   } = {}
 ): SlotContext {
   const slot = state.years[yearIndex]?.slots[slotIndex]
+
   const completed = completedBefore(
     state,
     yearIndex,
@@ -196,20 +197,19 @@ export function slotContextFor(
     units,
     transitions
   )
+
   const concurrent = slot ? new Set(slot.unitCodes) : new Set<string>()
-  const courseYearNum = Number(state.courseYear)
-  const expectedHandbookYear = Number.isFinite(courseYearNum)
-    ? String(
-        slotCalendarYear(state, yearIndex, slot?.kind ?? startPeriodOf(state))
-      )
-    : undefined
   return {
     yearIndex,
     slotIndex,
     slotKind: slot?.kind,
     completedBefore: completed,
     concurrentWith: concurrent,
-    expectedHandbookYear,
+    slotYear: slotCalendarYear(
+      state,
+      yearIndex,
+      slot?.kind ?? startPeriodOf(state)
+    ),
     transitions,
   }
 }
@@ -238,7 +238,7 @@ export function personalScore(args: {
       unit,
       offerings,
       slotKind: slot.slotKind,
-      slotYear: slot.expectedHandbookYear,
+      slotYear: slot.slotYear,
       transitions: slot.transitions,
     })
       ? 1

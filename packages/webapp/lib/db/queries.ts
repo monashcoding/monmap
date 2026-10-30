@@ -12,7 +12,8 @@ import {
   userGrade,
   userPlan,
 } from "@monmap/db"
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
+import { and, desc, eq, ilike, inArray, min, or, sql } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 
 import { getDb } from "./client.ts"
 import { containsPattern } from "./like.ts"
@@ -840,6 +841,17 @@ function kindOrder(k: PlannerAreaOfStudy["kind"]): number {
   }
 }
 
+const earlierUnits = alias(units, "earlier_units")
+
+// Earliest handbook year with a page for the unit's code. Raw SQL here
+// renders the outer column unqualified, so `code = code` matches every row.
+function unitFirstYear() {
+  return sql<string>`(${getDb()
+    .select({ year: min(earlierUnits.year) })
+    .from(earlierUnits)
+    .where(eq(earlierUnits.code, units.code))})`
+}
+
 /**
  * Fetch full unit records for the given codes. Missing codes are
  * silently dropped — the caller can diff against the input list.
@@ -859,9 +871,7 @@ async function _fetchUnitsByCode(
       creditPoints: units.creditPoints,
       level: units.level,
       school: units.school,
-      firstYear: sql<string>`(
-        select min(u2.year) from units u2 where u2.code = ${units.code}
-      )`,
+      firstYear: unitFirstYear(),
     })
     .from(units)
     .where(and(eq(units.year, year), inArray(units.code, [...codes])))
@@ -902,6 +912,7 @@ async function _searchUnits(
       creditPoints: units.creditPoints,
       level: units.level,
       school: units.school,
+      firstYear: unitFirstYear(),
     })
     .from(units)
     .where(
@@ -917,6 +928,7 @@ async function _searchUnits(
     creditPoints: r.creditPoints ?? 0,
     level: r.level,
     school: r.school,
+    firstYear: r.firstYear,
   }))
 }
 export const searchUnits = cacheHandbook(_searchUnits)

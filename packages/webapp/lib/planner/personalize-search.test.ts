@@ -139,7 +139,7 @@ test("slotContextFor includes earlier slots in completedBefore but not concurren
   ])
   assert.deepEqual([...ctx.concurrentWith].sort(), ["FIT2099"])
   assert.equal(ctx.slotKind, "S1")
-  assert.equal(ctx.expectedHandbookYear, "2027")
+  assert.equal(ctx.slotYear, 2027)
 })
 
 test("personalScore: prereq-ready vs not-ready", () => {
@@ -361,8 +361,8 @@ test("slotContextFor: a mid-year start's Semester 1 expects the next year's hand
     courseYear: "2026",
     startPeriod: "S2",
   })
-  assert.equal(slotContextFor(s, 0, 0).expectedHandbookYear, "2026")
-  assert.equal(slotContextFor(s, 0, 1).expectedHandbookYear, "2027")
+  assert.equal(slotContextFor(s, 0, 0).slotYear, 2026)
+  assert.equal(slotContextFor(s, 0, 1).slotYear, 2027)
 })
 
 test("personalScore: period fit uses the slot's transitions", () => {
@@ -370,6 +370,7 @@ test("personalScore: period fit uses the slot's transitions", () => {
   const retired = buildTransitions([
     {
       name: "Faculty of IT",
+      retrieved: "2026-10-30",
       units: [{ code: "FIT2014", lastOffered: { year: 2027, period: "S2" } }],
     },
   ])

@@ -6,6 +6,7 @@ import {
   afterLastOffering,
   beforeFirstOffering,
   buildTransitions,
+  SOURCES,
   statedPeriods,
   termLabel,
   type TransitionSource,
@@ -14,6 +15,7 @@ import { IT_2027 } from "./transitions-it-2027.ts"
 
 const SOURCE: TransitionSource = {
   name: "Faculty of IT",
+  retrieved: "2026-10-30",
   units: [
     {
       code: "FIT1008",
@@ -55,7 +57,7 @@ test("countsAs: part of a multi-unit replacement isn't the old unit", () => {
 })
 
 test("buildTransitions: a code in two sources is an error", () => {
-  const other = { name: "Faculty of Science", units: [SOURCE.units[0]] }
+  const other = { ...SOURCE, name: "Faculty of Science" }
   assert.throws(() => buildTransitions([SOURCE, other]), /FIT1008/)
 })
 
@@ -107,13 +109,27 @@ test("termLabel and adviceSentence read as the page does", () => {
   assert.equal(adviceSentence(byCode.get("MAT1841")!), null)
 })
 
+test("every source was copied within the last 18 months", () => {
+  for (const source of SOURCES) {
+    const staleOn = new Date(source.retrieved)
+    staleOn.setMonth(staleOn.getMonth() + 18)
+    assert.ok(
+      new Date() < staleOn,
+      `${source.name}'s transitions were copied on ${source.retrieved}. Re-copy the page, or delete the source once the handbooks cover it.`
+    )
+  }
+})
+
 test("IT 2027: one entry per code, and no unit replaces itself", () => {
   const codes = IT_2027.units.map((u) => u.code)
   assert.equal(new Set(codes).size, codes.length)
+
   for (const u of IT_2027.units) {
     assert.match(u.code, /^[A-Z]{3}\d{4}$/)
+
     for (const way of u.replacedBy ?? []) {
       assert.ok(way.length > 0, u.code)
+
       for (const c of way) {
         assert.match(c, /^[A-Z]{3}\d{4}$/)
         assert.notEqual(c, u.code)

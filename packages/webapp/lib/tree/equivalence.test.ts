@@ -13,6 +13,7 @@ function u(code: string, title: string): PlannerUnit {
     creditPoints: 6,
     level: null,
     school: null,
+    firstYear: "2020",
   }
 }
 

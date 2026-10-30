@@ -28,6 +28,7 @@ export function unit(
     creditPoints: 6,
     level: null,
     school: null,
+    firstYear: "2020", // not a new unit
     ...overrides,
   }
 }

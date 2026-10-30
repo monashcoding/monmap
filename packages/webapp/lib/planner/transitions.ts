@@ -30,6 +30,8 @@ export interface UnitTransition {
 export interface TransitionSource {
   /** As messages name the publisher: "Faculty of IT". */
   name: string
+  /** When the page was copied, as an ISO date. */
+  retrieved: string
   units: readonly UnitTransition[]
 }
 
@@ -52,25 +54,32 @@ export function buildTransitions(
 ): Transitions {
   const byCode = new Map<string, TransitionEntry>()
   const countsAs = new Map<string, string[]>()
+
   const add = (from: string, to: string) => {
     const list = countsAs.get(from)
+
     if (list) list.push(to)
     else countsAs.set(from, [to])
   }
+
   for (const source of sources) {
     for (const unit of source.units) {
       if (byCode.has(unit.code))
         throw new Error(`${unit.code} has more than one transition entry`)
       byCode.set(unit.code, { unit, source })
       const ways = unit.replacedBy ?? []
+
       if (ways.length === 1) for (const c of ways[0]) add(unit.code, c)
+
       for (const way of ways) if (way.length === 1) add(way[0], unit.code)
     }
   }
+
   return { byCode, countsAs }
 }
 
-export const TRANSITIONS = buildTransitions([IT_2027])
+export const SOURCES: readonly TransitionSource[] = [IT_2027]
+export const TRANSITIONS = buildTransitions(SOURCES)
 
 // [start, end] within a calendar year; summers are Jan-Feb. OTHER has no
 // place, so it never compares.
@@ -89,6 +98,7 @@ export function afterLastOffering(
   slotYear: number
 ): boolean {
   if (slotYear !== last.year) return slotYear > last.year
+
   return (
     !!last.period &&
     slotKind !== "OTHER" &&
@@ -102,6 +112,7 @@ export function beforeFirstOffering(
   slotYear: number
 ): boolean {
   if (slotYear !== first.year) return slotYear < first.year
+
   return (
     !!first.period &&
     slotKind !== "OTHER" &&
@@ -127,7 +138,9 @@ export function termLabel(term: TransitionTerm): string {
 /** "Faculty of IT advice (BCS): Replace with FIT2115.", or null. */
 export function adviceSentence(entry: TransitionEntry): string | null {
   const { unit, source } = entry
+
   if (!unit.advice) return null
   const scope = unit.appliesTo ? ` (${unit.appliesTo})` : ""
+
   return `${source.name} advice${scope}: ${unit.advice}.`
 }

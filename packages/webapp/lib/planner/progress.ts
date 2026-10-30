@@ -156,18 +156,24 @@ export function groupProgress(
   const viaReplacement = new Map<string, readonly string[]>()
   // Each plan code covers at most one option per group.
   const used = new Set(literal)
+
   for (const code of group.options) {
     if (plannedCodes.has(code)) continue
+
     const way = transitions.byCode
       .get(code)
       ?.unit.replacedBy?.find((w) =>
         w.every((c) => plannedCodes.has(c) && !used.has(c))
       )
+
     if (!way) continue
     viaReplacement.set(code, way)
+
     for (const c of way) used.add(c)
   }
+
   const placed = literal.length + viaReplacement.size
+
   return {
     group,
     required,
@@ -190,6 +196,7 @@ export function summarizeGroups(
   const out = groups.map((g) =>
     groupProgress(g, plannedCodes, conflicts, transitions)
   )
+
   return {
     groups: out,
     totalRequired: out.reduce((n, g) => n + g.required, 0),
@@ -258,15 +265,18 @@ export function summarizeAoSProgress(
       conflicts,
       transitions
     )
+
     const reachable = new Set(reachableOptions(group, plannedCodes, conflicts))
     totalRequired += required
     satisfied += Math.min(placed, required)
     let placedSoFar = 0
     for (const code of group.options) {
       const via = viaReplacement.get(code)
+
       if (plannedCodes.has(code) || via) {
         completedCodes.add(code)
         placedSoFar++
+
         for (const c of via ?? [code]) {
           if (cpSeen.has(c)) continue
           cpSeen.add(c)

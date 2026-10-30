@@ -47,7 +47,7 @@ export interface PlannerUnit {
    */
   fallbackFor?: string
   /** Earliest handbook year with this code; equals `year` for a new unit. */
-  firstYear?: string
+  firstYear: string
 }
 
 /** A single offering row as the planner needs it. */

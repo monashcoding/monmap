@@ -276,8 +276,9 @@ final offering is S2 2027 per the Faculty of IT. Renamed replacements
 (FIT1008 → FIT2115) also fail the equivalence test above.
 `lib/planner/transitions-it-2027.ts` holds these facts, copied by hand
 from the faculty page, and `transitions.ts` applies them. The slot
-year's own handbook still wins; delete a source once the handbooks
-catch up.
+year's own handbook still wins, so `pnpm --filter webapp
+verify:transitions` lists where the two disagree; delete a source once
+the handbooks catch up.
 
 ## Tree structures inside JSONB
 

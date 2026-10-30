@@ -290,18 +290,21 @@ function UnitSearchView({
   ])
 
   const items = useMemo(() => ranked.map((r) => r.unit), [ranked])
+
   const offeringFor = (code: string): OfferingIssue | null => {
     const unit = units.get(code)
     const unitOfferings = offerings.get(code)
+
     return slotKind && unit && unitOfferings
       ? offeringIssue({
           unit,
           offerings: unitOfferings,
           slotKind,
-          slotYear: slotCtx.expectedHandbookYear,
+          slotYear: slotCtx.slotYear,
         })
       : null
   }
+
   // One batched ratings request for the whole list, so the details pane
   // finds each row's rating cached instead of asking per row.
   useRatings(
@@ -569,6 +572,7 @@ function UnitRow({
 }) {
   const periods = useMemo(() => {
     const s = new Set(offerings.map((o) => o.periodKind))
+
     if (s.size === 0) for (const p of statedPeriods(unit.code)) s.add(p)
     return PERIOD_KIND_ORDER.filter((p) => s.has(p))
   }, [offerings, unit.code])
@@ -647,12 +651,17 @@ function rowNote(
   periods: readonly PeriodKind[]
 ): string | null {
   if (!loaded) return "Checking offerings…"
-  // Outranks the chips, which may come from an older handbook.
+
   const kind = offering?.issue.kind
+
+  // Outranks the chips, which may come from an older handbook.
   if (offering && (kind === "no_longer_offered" || kind === "not_yet_offered"))
     return offering.label
+
   if (periods.length > 0) return null
+
   if (offerings.length > 0) return "Off-cycle"
+
   return offering?.label ?? "No offerings published"
 }
 

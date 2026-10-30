@@ -428,19 +428,21 @@ function GroupList({
             </div>
             <ul className="flex flex-wrap gap-1">
               {sortedOptions.map((code) => {
-                const via = viaReplacement.get(code)?.join(" + ")
+                const via = viaReplacement.get(code)
                 const placed = plannedCodes.has(code) || via !== undefined
-                const placement = placements.get(code)
+                // A replaced option opens the unit placed in its stead.
+                const shown = via?.[0] ?? code
+                const placement = placements.get(shown)
                 return (
                   <li key={`${g.grouping}:${code}`}>
                     <UnitDetailPopover
-                      code={code}
+                      code={shown}
                       yearIndex={placement?.yearIndex}
                       slotIndex={placement?.slotIndex}
                     >
                       <button
                         type="button"
-                        aria-label={`Details for ${code}`}
+                        aria-label={`Details for ${shown}`}
                         className={cn(
                           "inline-flex cursor-pointer items-center gap-0.5 rounded-control border px-1 py-0.5 text-[9px] tabular-nums transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
                           placed
@@ -457,7 +459,9 @@ function GroupList({
                         )}
                         {code}
                         {via ? (
-                          <span className="opacity-70">via {via}</span>
+                          <span className="opacity-70">
+                            via {via.join(" + ")}
+                          </span>
                         ) : null}
                       </button>
                     </UnitDetailPopover>

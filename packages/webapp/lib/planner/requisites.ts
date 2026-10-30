@@ -97,6 +97,7 @@ function describeMissing(
   completed: ReadonlySet<string>
 ): string {
   const failing = rule.filter((c) => !evaluateContainer(c, completed))
+
   return joinWith(
     failing.map((c) => describeContainer(c, completed, failing.length > 1)),
     "AND"
@@ -109,14 +110,18 @@ function describeContainer(
   hasSiblings: boolean
 ): string {
   const connector = normalizeConnector(container.parent_connector?.value)
+
   // A failing OR lists every option.
   const subs = (container.containers ?? []).filter(
     (s) => connector === "OR" || !evaluateContainer(s, completed)
   )
+
   const leaves = (container.relationships ?? []).filter(
     (l) => connector === "OR" || !evaluateLeaf(l, completed)
   )
+
   const count = subs.length + leaves.length
+
   const text = joinWith(
     [
       ...subs.map((s) => describeContainer(s, completed, count > 1)),
@@ -124,12 +129,15 @@ function describeContainer(
     ],
     connector
   )
+
   return hasSiblings && count > 1 ? `(${text})` : text
 }
 
 function joinWith(parts: readonly string[], connector: "AND" | "OR"): string {
   const word = connector === "OR" ? "or" : "and"
+
   if (parts.length <= 2) return parts.join(` ${word} `)
+
   return `${parts.slice(0, -1).join(", ")} ${word} ${parts.at(-1)}`
 }
 
