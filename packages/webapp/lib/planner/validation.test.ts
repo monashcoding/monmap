@@ -873,3 +873,175 @@ test("validatePlan: a retired unit missing from the handbook says so", () => {
     "FIT1008 is no longer offered from 2027. Faculty of IT advice: Replace with FIT2115 (S1 and S2)."
   )
 })
+
+function waiverCheck(
+  years: Parameters<typeof planState>[0],
+  requisites: [string, RequisiteBlock[]][],
+  waivers: { unitCode: string; prerequisiteCode: string }[]
+) {
+  const codes = years.flatMap((y) => Object.values(y).flat()) as string[]
+
+  const offerings = Object.fromEntries(
+    codes.map((c) => [c, ["S1", "S2"] as const])
+  )
+
+  return validatePlan(
+    planState(years, { waivers }),
+    unitMap(codes),
+    offeringMap(offerings),
+    new Map(requisites),
+    NO_TRANSITIONS
+  )
+}
+
+const waive = (unitCode: string, prerequisiteCode: string) => ({
+  unitCode,
+  prerequisiteCode,
+})
+
+test("a waiver meets one code of an AND and leaves the rest required", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA3000"] }],
+    [["AAA3000", [prereq("AAA2000", "AAA1000")]]],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  const [issue] = out.get(keyFor(0, 0, "AAA3000"))!.errors
+
+  assert.equal(issue?.kind, "prereq_unmet")
+  assert.match(issue?.message ?? "", /need AAA2000 before AAA3000/)
+  assert.deepEqual(issue?.relatedCodes, ["AAA2000"])
+})
+
+test("waiving one option meets an OR, and the unit relies on the waiver", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA3000"] }],
+    [["AAA3000", [prereqAny("AAA1000", "AAA1001")]]],
+    [waive("AAA3000", "AAA1001")]
+  )
+
+  const v = out.get(keyFor(0, 0, "AAA3000"))!
+
+  assert.deepEqual(v.errors, [])
+  assert.equal(v.reliesOnWaiver, true)
+})
+
+test("a waiver isn't relied on once an equivalent unit meets the rule", () => {
+  const years = [{ S1: ["AAA1001"], S2: ["AAA3000"] }]
+
+  const out = validatePlan(
+    planState(years, { waivers: [waive("AAA3000", "AAA1000")] }),
+    new Map([
+      ["AAA1001", unit("AAA1001", { equivalents: ["AAA1000"] })],
+      ["AAA3000", unit("AAA3000")],
+    ]),
+    offeringMap({ AAA1001: ["S1"], AAA3000: ["S2"] }),
+    new Map([["AAA3000", [prereq("AAA1000")]]]),
+    NO_TRANSITIONS
+  )
+
+  assert.equal(out.get(keyFor(0, 1, "AAA3000"))!.reliesOnWaiver, false)
+})
+
+test("one block can rely on a waiver while another stays unmet", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA3000"] }],
+    [["AAA3000", [prereq("AAA1000"), prereq("AAA1001")]]],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  const v = out.get(keyFor(0, 0, "AAA3000"))!
+
+  assert.deepEqual(v.errors[0]?.relatedCodes, ["AAA1001"])
+  assert.equal(v.reliesOnWaiver, true)
+})
+
+test("a waiver nothing needed isn't reported as relied on", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA1000"], S2: ["AAA3000"] }],
+    [["AAA3000", [prereq("AAA1000")]]],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  assert.equal(out.get(keyFor(0, 1, "AAA3000"))!.reliesOnWaiver, false)
+})
+
+test("a waiver applies only to the unit it names", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA3000", "AAA3001"] }],
+    [
+      ["AAA3000", [prereq("AAA1000")]],
+      ["AAA3001", [prereq("AAA1000")]],
+    ],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  assert.deepEqual(out.get(keyFor(0, 0, "AAA3000"))!.errors, [])
+  assert.equal(
+    out.get(keyFor(0, 0, "AAA3001"))!.errors[0]?.kind,
+    "prereq_unmet"
+  )
+})
+
+test("a waived unit doesn't count as completed for later units", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA3000"], S2: ["AAA3001"] }],
+    [
+      ["AAA3000", [prereq("AAA1000")]],
+      ["AAA3001", [prereq("AAA1000")]],
+    ],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  assert.equal(
+    out.get(keyFor(0, 1, "AAA3001"))!.errors[0]?.kind,
+    "prereq_unmet"
+  )
+})
+
+test("a waiver doesn't meet a corequisite naming the same code", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA3000"] }],
+    [["AAA3000", [prereq("AAA1000"), coreq("AAA1000")]]],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  const { errors } = out.get(keyFor(0, 0, "AAA3000"))!
+
+  assert.deepEqual(
+    errors.map((e) => e.kind),
+    ["coreq_unmet"]
+  )
+})
+
+test("a waived code isn't taken, so it neither trips nor clears a prohibition", () => {
+  const notPlanned = waiverCheck(
+    [{ S1: ["AAA3000"] }],
+    [["AAA3000", [prereq("AAA1000"), prohibition("AAA1000")]]],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  assert.deepEqual(notPlanned.get(keyFor(0, 0, "AAA3000"))!.errors, [])
+
+  const planned = waiverCheck(
+    [{ S1: ["AAA1000"], S2: ["AAA3000"] }],
+    [["AAA3000", [prohibition("AAA1000")]]],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  assert.equal(
+    planned.get(keyFor(0, 1, "AAA3000"))!.errors[0]?.kind,
+    "prohibition_conflict"
+  )
+})
+
+test("a waiver covers a retake of the unit in a later slot", () => {
+  const out = waiverCheck(
+    [{ S1: ["AAA3000"], S2: ["AAA3000"] }],
+    [["AAA3000", [prereq("AAA1000")]]],
+    [waive("AAA3000", "AAA1000")]
+  )
+
+  assert.deepEqual(out.get(keyFor(0, 0, "AAA3000"))!.errors, [])
+  assert.deepEqual(out.get(keyFor(0, 1, "AAA3000"))!.errors, [])
+})

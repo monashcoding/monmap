@@ -13,6 +13,7 @@ import {
   NO_TRANSITIONS,
   offering as fixtureOffering,
   planState,
+  coreq,
   prereq,
   requisite,
   unit as fixtureUnit,
@@ -385,4 +386,36 @@ test("personalScore: period fit uses the slot's transitions", () => {
     }).periodFit
   assert.equal(score(NO_TRANSITIONS), 1)
   assert.equal(score(retired), 0)
+})
+
+test("buildPersonalSignals: a waived code isn't suggested for that unit", () => {
+  const s = planState([{ S1: ["AAA3000", "AAA3001"] }], {
+    waivers: [{ unitCode: "AAA3000", prerequisiteCode: "AAA1000" }],
+  })
+
+  const needed = (requisites: [string, RequisiteBlock[]][]) =>
+    buildPersonalSignals(s, course(), new Map(requisites)).prereqOfPlaced
+
+  assert.equal(needed([["AAA3000", [prereq("AAA1000")]]]).has("AAA1000"), false)
+  // Another unit still needs it, and so does a corequisite.
+  assert.equal(needed([["AAA3001", [prereq("AAA1000")]]]).has("AAA1000"), true)
+  assert.equal(needed([["AAA3000", [coreq("AAA1000")]]]).has("AAA1000"), true)
+})
+
+test("personalScore: a waiver makes only its unit prereq-ready", () => {
+  const s = planState([{ S1: [], S2: [] }], {
+    waivers: [{ unitCode: "AAA3000", prerequisiteCode: "AAA1000" }],
+  })
+
+  const score = (code: string) =>
+    personalScore({
+      unit: unit(code),
+      offerings: [offering("S1")],
+      requisites: [prereq("AAA1000")],
+      signals: buildPersonalSignals(s, course(), new Map()),
+      slot: slotContextFor(s, 0, 0),
+    }).prereqReady
+
+  assert.equal(score("AAA3000"), 1)
+  assert.equal(score("AAA3001"), 0)
 })

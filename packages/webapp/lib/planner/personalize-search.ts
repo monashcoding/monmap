@@ -13,6 +13,7 @@ import { slotCalendarYear, startPeriodOf } from "./timeline.ts"
 import { unitLevel } from "./unit-level.ts"
 import { TRANSITIONS, type Transitions } from "./transitions.ts"
 import { completedBefore, offeringIssue } from "./validation.ts"
+import { waiversByUnit, withWaived } from "./waivers.ts"
 
 /**
  * Per-plan precomputed signals — derived once when the plan changes,
@@ -62,6 +63,7 @@ export interface SlotContext {
   /** The slot's calendar year. */
   slotYear: number
   transitions: Transitions
+  waivers: ReadonlyMap<string, ReadonlySet<string>>
 }
 
 /** Feature-by-feature breakdown returned with each candidate. */
@@ -154,16 +156,19 @@ export function buildPersonalSignals(
 
   const prohibitedByPlaced = new Set<string>()
   const prereqOfPlaced = new Set<string>()
+  const waivers = waiversByUnit(state)
+
   for (const code of placed) {
     const blocks = requisitesByCode.get(code) ?? []
     for (const block of blocks) {
       const leaves = referencedCodes(block.rule)
       if (block.requisiteType === "prohibition") {
         for (const c of leaves) prohibitedByPlaced.add(c)
-      } else if (
-        block.requisiteType === "prerequisite" ||
-        block.requisiteType === "corequisite"
-      ) {
+      } else if (block.requisiteType === "prerequisite") {
+        // A waived code isn't one this unit still needs.
+        for (const c of leaves)
+          if (!waivers.get(code)?.has(c)) prereqOfPlaced.add(c)
+      } else if (block.requisiteType === "corequisite") {
         for (const c of leaves) prereqOfPlaced.add(c)
       }
     }
@@ -211,6 +216,7 @@ export function slotContextFor(
       slot?.kind ?? startPeriodOf(state)
     ),
     transitions,
+    waivers: waiversByUnit(state),
   }
 }
 
@@ -247,11 +253,16 @@ export function personalScore(args: {
   const aos = signals.aosWeight.get(unit.code) ?? 0
   const fillsGap = signals.fillsGap.has(unit.code) ? 1 : 0
 
+  const prereqsMetBy = withWaived(
+    slot.completedBefore,
+    slot.waivers.get(unit.code)
+  )
+
   let prereqReady = 1
   for (const block of requisites) {
     if (block.requisiteType !== "prerequisite") continue
     if (!block.rule || block.rule.length === 0) continue
-    const res = evaluateRequisiteTree(block.rule, slot.completedBefore)
+    const res = evaluateRequisiteTree(block.rule, prereqsMetBy)
     if (!res.satisfied) {
       prereqReady = 0
       break

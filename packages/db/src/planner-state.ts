@@ -103,6 +103,11 @@ export interface PlannerState {
    */
   credit?: PlannerCreditEntry[]
   /**
+   * Prerequisites the student has waived, per unit. Cleared when the
+   * course or start year changes, since they belong to this course map.
+   */
+  waivers?: PlannerPrerequisiteWaiver[]
+  /**
    * Campus the student is planning at, e.g. "Clayton" or "Malaysia".
    * Filters campus-scoped area-of-study options and requirement groups
    * down to what is actually offered there.
@@ -118,6 +123,15 @@ export interface PlannerState {
    * emptied.
    */
   campus?: string
+}
+
+/**
+ * `prerequisiteCode` counts as met for `unitCode`'s prerequisites only.
+ * It earns no credit and doesn't touch any other rule or unit.
+ */
+export interface PlannerPrerequisiteWaiver {
+  unitCode: string
+  prerequisiteCode: string
 }
 
 /**

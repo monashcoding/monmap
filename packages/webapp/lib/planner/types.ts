@@ -16,6 +16,7 @@ import type { RequirementGroup } from "@monmap/db/curriculum"
 export type {
   PeriodKind,
   PlannerCreditEntry,
+  PlannerPrerequisiteWaiver,
   PlannerSlot,
   PlannerState,
   PlannerYear,
@@ -283,6 +284,8 @@ export interface SlotUnitValidation {
   errors: ValidationIssue[]
   /** Soft — render unit amber/yellow. */
   warnings: ValidationIssue[]
+  /** Its prerequisites are only met because of a waiver. */
+  reliesOnWaiver?: boolean
 }
 
 export type ValidationIssueKind =

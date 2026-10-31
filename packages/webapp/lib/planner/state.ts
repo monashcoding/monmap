@@ -6,6 +6,7 @@ import {
   slotCapacity,
   type PeriodKind,
   type PlannerCreditEntry,
+  type PlannerPrerequisiteWaiver,
   type PlannerSlot,
   type PlannerState,
   type PlannerYear,
@@ -65,6 +66,33 @@ function yearFor(
   return defaultYear(nth, startPeriodOf(state), only)
 }
 
+function sameWaiver(
+  a: PlannerPrerequisiteWaiver,
+  b: PlannerPrerequisiteWaiver
+): boolean {
+  return a.unitCode === b.unitCode && a.prerequisiteCode === b.prerequisiteCode
+}
+
+function withoutWaivers(state: PlannerState): PlannerState {
+  const next = { ...state }
+  delete next.waivers
+
+  return next
+}
+
+/** The plan with its year moved to `fallback` when the database lacks it. */
+export function withKnownYear(
+  plan: PlannerState,
+  availableYears: readonly string[],
+  fallback: string
+): PlannerState {
+  // Always a new object: hydrating it has to re-run the persist effect.
+  if (plan.courseYear && availableYears.includes(plan.courseYear))
+    return { ...plan }
+
+  return withoutWaivers({ ...plan, courseYear: fallback })
+}
+
 export type PlannerAction =
   | { type: "set_course"; code: string | null }
   | { type: "set_year"; year: string }
@@ -83,6 +111,8 @@ export type PlannerAction =
   | { type: "set_campus"; campus: string | null }
   | { type: "add_credit"; entry: PlannerCreditEntry }
   | { type: "remove_credit"; index: number }
+  | { type: "add_waiver"; waiver: PlannerPrerequisiteWaiver }
+  | { type: "remove_waiver"; waiver: PlannerPrerequisiteWaiver }
   | { type: "add_unit"; yearIndex: number; slotIndex: number; code: string }
   | { type: "remove_unit"; yearIndex: number; slotIndex: number; code: string }
   | {
@@ -200,22 +230,24 @@ export function plannerReducer(
   switch (action.type) {
     case "set_course":
       if (state.courseCode === action.code) return state
-      return {
+
+      return withoutWaivers({
         ...state,
         courseCode: action.code,
         // Clear AoS selections when course changes — the prior picks
         // are almost certainly invalid for the new course.
         selectedAos: {},
-      }
+      })
 
     case "set_year":
       if (state.courseYear === action.year) return state
-      return {
+
+      return withoutWaivers({
         ...state,
         courseYear: action.year,
         selectedAos: {},
         years: state.years.map(withoutUnits),
-      }
+      })
 
     case "set_aos": {
       const next = { ...state.selectedAos }
@@ -258,6 +290,19 @@ export function plannerReducer(
         return state
       const next = credit.filter((_, i) => i !== action.index)
       return { ...state, credit: next }
+    }
+
+    case "add_waiver":
+      if (state.waivers?.some((w) => sameWaiver(w, action.waiver))) return state
+
+      return { ...state, waivers: [...(state.waivers ?? []), action.waiver] }
+
+    case "remove_waiver": {
+      const next = state.waivers?.filter((w) => !sameWaiver(w, action.waiver))
+
+      if (next?.length === state.waivers?.length) return state
+
+      return { ...state, waivers: next }
     }
 
     case "add_unit":
@@ -605,12 +650,13 @@ export function plannerReducer(
 
     case "reset": {
       const yearCount = action.yearCount ?? state.years.length
-      return {
+
+      return withoutWaivers({
         ...state,
         years: Array.from({ length: yearCount }, (_, i) =>
           yearFor(state, i + 1)
         ),
-      }
+      })
     }
 
     case "hydrate":

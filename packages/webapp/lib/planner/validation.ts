@@ -29,6 +29,7 @@ import type {
   ValidationIssue,
   ValidationIssueKind,
 } from "./types.ts"
+import { waiversByUnit, withWaived } from "./waivers.ts"
 
 const MAX_CREDIT_LOAD_PER_SLOT = 24
 
@@ -40,7 +41,8 @@ const MAX_CREDIT_LOAD_PER_SLOT = 24
  *   completed   = advanced standing + every unit in earlier years +
  *                 earlier periods of the same year
  *   concurrent  = every other unit in the same slot
- * Prereqs are satisfied iff their rule is met by `completed`.
+ * Prereqs are satisfied iff their rule is met by `completed`, plus any
+ *   prerequisites waived for this unit.
  * Coreqs are satisfied iff their rule is met by `completed ∪ concurrent`.
  * Prohibitions trip iff any referenced unit appears in the student's
  *   entire plan (past, present, future) — enrolling in any of them
@@ -80,6 +82,8 @@ export interface ValidationInput {
    */
   slotYear: number
   transitions?: Transitions
+  /** Prerequisites waived for this unit (see waivers.ts). */
+  waived?: ReadonlySet<string>
 }
 
 export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
@@ -100,14 +104,22 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
   const prereqs = input.requisites.filter(
     (r) => r.requisiteType === "prerequisite"
   )
+  const prereqsMetBy = withWaived(input.completedBefore, input.waived)
+  let reliesOnWaiver = false
+
   for (const block of prereqs) {
-    const res = evaluateRequisiteTree(block.rule, input.completedBefore)
+    const res = evaluateRequisiteTree(block.rule, prereqsMetBy)
     if (!res.satisfied) {
       errors.push({
         kind: "prereq_unmet",
         message: `Prerequisite not satisfied: need ${res.missingText} before ${input.unit.code}.`,
         relatedCodes: res.missingCodes,
       })
+    } else if (
+      input.waived &&
+      !evaluateRequisiteTree(block.rule, input.completedBefore).satisfied
+    ) {
+      reliesOnWaiver = true
     }
   }
 
@@ -160,7 +172,7 @@ export function validateUnitInSlot(input: ValidationInput): SlotUnitValidation {
     })
   }
 
-  return { code: input.unit.code, errors, warnings }
+  return { code: input.unit.code, errors, warnings, reliesOnWaiver }
 }
 
 export function isOfferedInPeriod(
@@ -451,6 +463,7 @@ export function validatePlan(
   // Grown slot by slot below rather than calling completedBefore per
   // slot, which would walk the plan again for every slot.
   const completed = completedAtStart(state, unitsByCode, transitions)
+  const waivers = waiversByUnit(state)
 
   for (let y = 0; y < state.years.length; y++) {
     const year = state.years[y]
@@ -528,6 +541,7 @@ export function validatePlan(
           // downgrades to amber. See hydration.ts / slotHandbookYear.
           slotYear,
           transitions,
+          waived: waivers.get(code),
         })
         out.set(keyFor(y, s, code), v)
       }

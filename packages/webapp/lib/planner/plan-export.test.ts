@@ -124,3 +124,40 @@ test("plan file names stay readable", () => {
   assert.equal(planFileName("a/b: c?", "csv"), "ab c.csv")
   assert.equal(planFileName("  ", "csv"), "MonMap plan.csv")
 })
+
+test("the CSV lists waivers for placed units, which add no credit points", () => {
+  let st = defaultState("2027", "C2001", 1)
+  st = plannerReducer(st, {
+    type: "add_unit",
+    yearIndex: 0,
+    slotIndex: 0,
+    code: "FIT3235",
+  })
+  st = plannerReducer(st, {
+    type: "add_waiver",
+    waiver: { unitCode: "FIT3235", prerequisiteCode: "MAT1830" },
+  })
+  st = plannerReducer(st, {
+    type: "add_waiver",
+    waiver: { unitCode: "FIT3999", prerequisiteCode: "MAT1830" },
+  })
+
+  const rows = parse(
+    buildCsv(st, {
+      units: new Map([
+        ["FIT3235", { title: "Theory", creditPoints: 6 }],
+        ["MAT1830", { title: "Discrete maths", creditPoints: 6 }],
+      ]),
+      grades: new Map(),
+    })
+  )
+
+  const waiverRows = rows.filter((r) => r[0] === "Waiver")
+  const waiverRow = waiverRows[0]
+
+  assert.equal(waiverRows.length, 1)
+  assert.equal(waiverRow?.[1], "FIT3235: MAT1830 waived")
+  assert.equal(waiverRow?.at(-1), "")
+  // FIT3235 only: the waived MAT1830 earns nothing.
+  assert.equal(rows.at(-1)?.at(-1), "6")
+})

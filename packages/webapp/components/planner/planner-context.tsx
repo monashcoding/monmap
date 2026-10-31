@@ -45,6 +45,7 @@ import {
   defaultState,
   historyReducer,
   initialHistory,
+  withKnownYear,
   type PlannerAction,
 } from "@/lib/planner/state"
 import type {
@@ -253,19 +254,6 @@ export function UnitDataOverlay({
     }
   }, [ctx, bundle])
   return <PlannerCtx.Provider value={value}>{children}</PlannerCtx.Provider>
-}
-
-/** The plan with its year moved to `fallback` when the database lacks it. */
-function withKnownYear(
-  plan: PlannerState,
-  availableYears: readonly string[],
-  fallback: string
-): PlannerState {
-  const year =
-    plan.courseYear && availableYears.includes(plan.courseYear)
-      ? plan.courseYear
-      : fallback
-  return { ...plan, courseYear: year }
 }
 
 export function PlannerProvider({
