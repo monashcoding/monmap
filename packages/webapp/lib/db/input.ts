@@ -146,5 +146,16 @@ export function isPlannerState(v: unknown): v is PlannerState {
       if (!optional(e.label, "string")) return false
     }
   }
+
+  if (v.waivers !== undefined) {
+    if (!Array.isArray(v.waivers) || v.waivers.length > 200) return false
+
+    for (const w of v.waivers) {
+      if (!isObj(w) || typeof w.unitCode !== "string") return false
+
+      if (typeof w.prerequisiteCode !== "string") return false
+    }
+  }
+
   return JSON.stringify(v).length <= MAX_PLAN_STATE_CHARS
 }

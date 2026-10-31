@@ -2,6 +2,7 @@ import { unitSlotCreditPoints } from "./capacity.ts"
 import { markToGrade } from "./grades.ts"
 import { summarizePlan } from "./progress.ts"
 import { slotBlockCredit, slotLabel } from "./timeline.ts"
+import { placedWaivers } from "./waivers.ts"
 import type { PlannerOffering, PlannerState, PlannerUnit } from "./types.ts"
 
 export interface CsvContext {
@@ -90,6 +91,10 @@ export function buildCsv(state: PlannerState, ctx: CsvContext): string {
       )
     )
   }
+
+  for (const { unitCode, prerequisiteCode } of placedWaivers(state))
+    rows.push(row("Waiver", [`${unitCode}: ${prerequisiteCode} waived`]))
+
   const total = summarizePlan(state, null, ctx.units, ctx.offerings)
   rows.push(row("Total", [], String(total.totalCreditPoints)))
 

@@ -288,3 +288,12 @@ test("planHandbookYears: both calendar years of a mid-year study year", () => {
   const jan = { ...mid, startPeriod: "S1" as const }
   assert.deepEqual([...planHandbookYears(jan, years)].sort(), ["2026"])
 })
+
+test("a plan with a waiver isn't fresh", () => {
+  const st = plannerReducer(defaultState("2026", "C2000"), {
+    type: "add_waiver",
+    waiver: { unitCode: "FIT3235", prerequisiteCode: "MAT1830" },
+  })
+
+  assert.equal(isFreshPlan(st), false)
+})

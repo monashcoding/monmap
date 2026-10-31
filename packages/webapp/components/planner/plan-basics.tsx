@@ -41,7 +41,7 @@ import { usePlanner } from "./planner-context"
  * When the student starts: intake (Semester 1 or 2) and starting year.
  * One set of controls, used by the first-run setup card and by the
  * "Starts …" control beside the plan title. Changing the year on a plan
- * with units asks first, because each year has its own handbook.
+ * with units or waivers asks first, because each year has its own handbook.
  */
 function StartFields() {
   const { state, dispatch, availableYears, switchYear } = usePlanner()
@@ -49,10 +49,12 @@ function StartFields() {
   const hasUnits = state.years.some((y) =>
     y.slots.some((s) => s.unitCodes.length > 0)
   )
+  const hasWaivers = (state.waivers?.length ?? 0) > 0
 
   function chooseYear(y: string) {
     if (y === state.courseYear) return
-    if (hasUnits) setPendingYear(y)
+
+    if (hasUnits || hasWaivers) setPendingYear(y)
     else void switchYear(y)
   }
 
@@ -68,8 +70,13 @@ function StartFields() {
           <AlertDialogHeader>
             <AlertDialogTitle>Start in {pendingYear}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Each starting year has its own handbook, so changing it clears the
-              units in your plan. You can undo this.
+              Each starting year has its own handbook, so changing it clears the{" "}
+              {hasUnits && hasWaivers
+                ? "units and waivers"
+                : hasWaivers
+                  ? "waivers"
+                  : "units"}{" "}
+              in your plan. You can undo this.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -30,7 +30,7 @@ export function yearsNeeded(creditPoints: number | null | undefined): number {
 }
 
 /**
- * A plan nobody has started on: no units, credit or leave/exchange
+ * A plan nobody has started on: no units, credit, waivers or leave/exchange
  * semesters, and setup not finished or skipped. Picked areas of study
  * don't count — the course panel offers them while the setup card is
  * still open, and picking one must not skip Create my map.
@@ -38,6 +38,8 @@ export function yearsNeeded(creditPoints: number | null | undefined): number {
 export function isFreshPlan(state: PlannerState): boolean {
   if (state.setupDone) return false
   if (state.credit && state.credit.length > 0) return false
+
+  if (state.waivers && state.waivers.length > 0) return false
   return state.years.every((y) =>
     y.slots.every((s) => s.unitCodes.length === 0 && !s.status)
   )

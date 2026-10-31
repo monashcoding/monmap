@@ -45,6 +45,7 @@ import {
   defaultState,
   historyReducer,
   initialHistory,
+  withKnownYear,
   type PlannerAction,
 } from "@/lib/planner/state"
 import type {
@@ -253,19 +254,6 @@ export function UnitDataOverlay({
     }
   }, [ctx, bundle])
   return <PlannerCtx.Provider value={value}>{children}</PlannerCtx.Provider>
-}
-
-/** The plan with its year moved to `fallback` when the database lacks it. */
-function withKnownYear(
-  plan: PlannerState,
-  availableYears: readonly string[],
-  fallback: string
-): PlannerState {
-  const year =
-    plan.courseYear && availableYears.includes(plan.courseYear)
-      ? plan.courseYear
-      : fallback
-  return { ...plan, courseYear: year }
 }
 
 export function PlannerProvider({
@@ -763,6 +751,12 @@ export function PlannerProvider({
         try {
           // Same year, so the units already cached stay valid: merge.
           const c = await loadYearData(year, code, false)
+
+          const { courseCode, waivers } = lastSnapshotRef.current
+
+          const clearsWaivers =
+            courseCode !== code && (waivers?.length ?? 0) > 0
+
           // One undo step reverts the whole switch.
           dispatch({
             type: "batch",
@@ -778,6 +772,11 @@ export function PlannerProvider({
                 : []),
             ],
           })
+
+          if (clearsWaivers)
+            toast("Waivers cleared", {
+              action: { label: "Undo", onClick: undo },
+            })
         } catch (err) {
           toast.error("Couldn't load course", {
             description: err instanceof Error ? err.message : "Unknown error",
@@ -785,7 +784,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state.courseYear, loadYearData]
+    [state.courseYear, loadYearData, undo]
   )
 
   // A "Plan this course" link landed on a saved plan for another

@@ -187,3 +187,31 @@ test("plannerUnitCodes covers AoS, course and component units once each", () => 
     ["FIT1045", "FIT2004", "FIT1047", "SCI1000"]
   )
 })
+
+test("a prohibition naming a code with stray whitespace still applies", () => {
+  const slim = slimRequisiteRule([
+    {
+      parent_connector: { value: "OR" },
+      relationships: [leaf("ITO5003 ", "x")],
+    },
+  ])
+
+  assert.deepEqual(
+    evaluateProhibition(slim, new Set(["ITO5003"])).conflictingCodes,
+    ["ITO5003"]
+  )
+})
+
+test("a leaf code with stray whitespace still matches the unit", () => {
+  const slim = slimRequisiteRule([
+    {
+      parent_connector: { value: "AND" },
+      relationships: [leaf("ADS2001 ", "x"), leaf("BFF5525\t\t", "y")],
+    },
+  ])
+
+  assert.equal(
+    evaluateRequisiteTree(slim, new Set(["ADS2001", "BFF5525"])).satisfied,
+    true
+  )
+})

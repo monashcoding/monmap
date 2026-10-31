@@ -10,6 +10,7 @@ import {
   PrinterIcon,
   Redo2Icon,
   RotateCcwIcon,
+  ShieldCheckIcon,
   Undo2Icon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -24,16 +25,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { buildCsv, downloadBlob, planFileName } from "@/lib/planner/plan-export"
+import { cn } from "@/lib/utils"
 
 import { CreditDialog } from "./credit-dialog"
 import { PlanStartControl } from "./plan-basics"
 import { usePlanner, usePlannerSync } from "./planner-context"
+import { TOUCH_HIT_ROW } from "./touch-target"
 import { useWam } from "./wam-context"
+import { WaiverDialog } from "./waiver-dialog"
 
 /**
  * Plan header above the grid: the plan's name (click to rename) and
  * its start ("Starts Semester 1, 2027") and validation status on the
- * left; undo/redo, Results, Credit and Print on the right, with
+ * left; undo/redo, Results, Credit, Waivers and Print on the right, with
  * Export to CSV and Reset under More. State-only operations
  * (no server round-trip).
  */
@@ -80,6 +84,8 @@ export function LeftSidebar() {
   const { showResults, toggleShowResults, grades } = useWam()
   const [creditOpen, setCreditOpen] = useState(false)
   const creditCount = state.credit?.length ?? 0
+  const [waiversOpen, setWaiversOpen] = useState(false)
+  const waiverCount = state.waivers?.length ?? 0
 
   const errorCount = useMemo(() => {
     let n = 0
@@ -87,8 +93,20 @@ export function LeftSidebar() {
     return n
   }, [validations])
 
+  const validText = useMemo(
+    () =>
+      [...validations.values()].some((v) => v.reliesOnWaiver)
+        ? "Every unit meets its prereqs or has them waived, and is offered in its slot"
+        : "Every unit meets its prereqs and is offered in its slot",
+    [validations]
+  )
+
   const onReset = useCallback(() => {
-    if (!confirm("Reset the whole plan? This clears every unit you've placed."))
+    if (
+      !confirm(
+        "Reset the whole plan? This clears every unit you've placed and any waivers."
+      )
+    )
       return
     dispatch({ type: "reset" })
   }, [dispatch])
@@ -149,17 +167,14 @@ export function LeftSidebar() {
           onClick={() => {
             if (errorCount === 0) {
               toast.success("Plan validates cleanly", {
-                description:
-                  "Every unit meets its prereqs and is offered in its slot.",
+                description: `${validText}.`,
               })
               return
             }
             flashErrors()
           }}
           title={
-            errorCount === 0
-              ? "Every unit meets its prereqs and is offered in its slot"
-              : "Highlight the units with problems"
+            errorCount === 0 ? validText : "Highlight the units with problems"
           }
           className="ml-1.5 shrink-0 self-center"
         >
@@ -212,6 +227,14 @@ export function LeftSidebar() {
           count={creditCount}
         />
         <ToolbarButton
+          icon={<ShieldCheckIcon />}
+          label="Waivers"
+          title="Prerequisites waived on this plan"
+          onClick={() => setWaiversOpen(true)}
+          count={waiverCount}
+          className={TOUCH_HIT_ROW}
+        />
+        <ToolbarButton
           icon={<PrinterIcon />}
           label="Print"
           title="Print or save as PDF"
@@ -248,6 +271,7 @@ export function LeftSidebar() {
       </div>
 
       <CreditDialog open={creditOpen} onOpenChangeAction={setCreditOpen} />
+      <WaiverDialog open={waiversOpen} onOpenChangeAction={setWaiversOpen} />
     </div>
   )
 }
@@ -262,12 +286,14 @@ function ToolbarButton({
   title,
   onClick,
   count = 0,
+  className,
 }: {
   icon: React.ReactNode
   label: string
   title: string
   onClick: () => void
   count?: number
+  className?: string
 }) {
   return (
     <Button
@@ -276,7 +302,7 @@ function ToolbarButton({
       onClick={onClick}
       title={title}
       aria-label={count > 0 ? `${label} (${count})` : label}
-      className="text-muted-foreground"
+      className={cn("text-muted-foreground", className)}
     >
       {icon}
       <span className="hidden lg:inline">{label}</span>

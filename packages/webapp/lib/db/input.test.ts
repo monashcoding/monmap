@@ -174,3 +174,27 @@ test("LIKE wildcards are escaped", () => {
   assert.equal(likeEscape("FIT1045"), "FIT1045")
   assert.equal(containsPattern("%"), "%\\%%")
 })
+
+test("isPlannerState checks waivers", () => {
+  const waiver = { unitCode: "FIT3235", prerequisiteCode: "MAT1830" }
+
+  assert.equal(isPlannerState(plan({ waivers: undefined })), true)
+  assert.equal(isPlannerState(plan({ waivers: [waiver] })), true)
+  assert.equal(isPlannerState(plan({ waivers: "FIT3235" })), false)
+  assert.equal(isPlannerState(plan({ waivers: [{ unitCode: 1 }] })), false)
+  assert.equal(isPlannerState(plan({ waivers: [null] })), false)
+  assert.equal(
+    isPlannerState(
+      plan({ waivers: [{ unitCode: "FIT3235", prerequisiteCode: 1 }] })
+    ),
+    false
+  )
+  assert.equal(
+    isPlannerState(plan({ waivers: [{ unitCode: "FIT3235" }] })),
+    false
+  )
+  assert.equal(
+    isPlannerState(plan({ waivers: Array(201).fill(waiver) })),
+    false
+  )
+})

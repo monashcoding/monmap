@@ -7,6 +7,7 @@ import {
   HISTORY_LIMIT,
   initialHistory,
   plannerReducer,
+  withKnownYear,
   type PlannerAction,
 } from "./state.ts"
 import { planState } from "./test-fixtures.ts"
@@ -962,4 +963,141 @@ test("batch applies several actions as one undo step", () => {
   h = historyReducer(h, { type: "undo" })
   assert.equal(h.present.years.length, 1)
   assert.equal(h.present.years[0].slots.length, 2)
+})
+
+const waiver = { unitCode: "FIT3235", prerequisiteCode: "MAT1830" }
+
+test("add_waiver records a waiver once", () => {
+  const s = plannerReducer(defaultState("2026", "C2000"), {
+    type: "add_waiver",
+    waiver,
+  })
+
+  assert.deepEqual(s.waivers, [waiver])
+  assert.equal(
+    plannerReducer(s, { type: "add_waiver", waiver: { ...waiver } }),
+    s
+  )
+})
+
+test("remove_waiver removes only that pair", () => {
+  const other = { unitCode: "FIT3235", prerequisiteCode: "FIT2115" }
+
+  const s = apply(
+    defaultState("2026", "C2000"),
+    { type: "add_waiver", waiver },
+    { type: "add_waiver", waiver: other }
+  )
+
+  assert.deepEqual(
+    plannerReducer(s, { type: "remove_waiver", waiver }).waivers,
+    [other]
+  )
+})
+
+test("removing a waiver that isn't there is a no-op", () => {
+  const s = defaultState("2026", "C2000")
+
+  assert.equal(plannerReducer(s, { type: "remove_waiver", waiver }), s)
+})
+
+test("a repeated waiver takes no undo step, and undo removes a waiver", () => {
+  let h = initialHistory(defaultState("2026", "C2000"))
+  h = historyReducer(h, { type: "add_waiver", waiver })
+  const once = h
+
+  h = historyReducer(h, { type: "add_waiver", waiver })
+  assert.equal(h, once)
+
+  h = historyReducer(h, { type: "undo" })
+  assert.equal(h.present.waivers, undefined)
+})
+
+test("changing the course or start year clears waivers, and undo restores them", () => {
+  const start = plannerReducer(defaultState("2026", "C2000"), {
+    type: "add_waiver",
+    waiver,
+  })
+
+  for (const action of [
+    { type: "set_course", code: "C2001" },
+    { type: "set_year", year: "2027" },
+  ] satisfies PlannerAction[]) {
+    let h = historyReducer(initialHistory(start), action)
+    assert.equal(h.present.waivers, undefined)
+
+    h = historyReducer(h, { type: "undo" })
+    assert.deepEqual(h.present.waivers, [waiver])
+  }
+})
+
+test("withKnownYear clears waivers only when it moves the year", () => {
+  const plan = plannerReducer(defaultState("2019", "C2000"), {
+    type: "add_waiver",
+    waiver,
+  })
+
+  const moved = withKnownYear(plan, ["2026", "2027"], "2027")
+
+  assert.equal(moved.courseYear, "2027")
+  assert.equal(moved.waivers, undefined)
+
+  const kept = withKnownYear(plan, ["2019"], "2027")
+
+  assert.deepEqual(kept, plan)
+  assert.notEqual(kept, plan)
+})
+
+test("waivers survive removing the unit", () => {
+  const start = apply(
+    defaultState("2026", "C2000"),
+    { type: "add_unit", yearIndex: 0, slotIndex: 0, code: "FIT3235" },
+    { type: "add_waiver", waiver }
+  )
+
+  const removed = plannerReducer(start, {
+    type: "remove_unit",
+    yearIndex: 0,
+    slotIndex: 0,
+    code: "FIT3235",
+  })
+
+  assert.deepEqual(removed.waivers, [waiver])
+})
+
+test("resetting the map clears waivers, and undo restores them", () => {
+  const start = plannerReducer(defaultState("2026", "C2000"), {
+    type: "add_waiver",
+    waiver,
+  })
+
+  let h = historyReducer(initialHistory(start), { type: "reset" })
+
+  assert.equal(h.present.waivers, undefined)
+
+  h = historyReducer(h, { type: "undo" })
+
+  assert.deepEqual(h.present.waivers, [waiver])
+})
+
+test("a batched course switch clears waivers in one undo step", () => {
+  const start = plannerReducer(defaultState("2026", "C2000"), {
+    type: "add_waiver",
+    waiver,
+  })
+
+  let h = historyReducer(initialHistory(start), {
+    type: "batch",
+    actions: [
+      { type: "set_course", code: "C2001" },
+      { type: "set_aos", role: "major", code: "SFTWRDEV01" },
+    ],
+  })
+
+  assert.equal(h.present.waivers, undefined)
+
+  h = historyReducer(h, { type: "undo" })
+
+  assert.equal(h.present.courseCode, "C2000")
+  assert.deepEqual(h.present.waivers, [waiver])
 })
