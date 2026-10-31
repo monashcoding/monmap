@@ -1,4 +1,7 @@
-import { RequisiteTreeView } from "@/components/planner/requisite-tree-view"
+import {
+  RequisiteTreeView,
+  type TreeWaivers,
+} from "@/components/planner/requisite-tree-view"
 import type { RequisiteBlock } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
 
@@ -12,16 +15,19 @@ export function blocksWithRules(blocks: RequisiteBlock[]): RequisiteBlock[] {
 /**
  * One requisite block: its heading and its AND/OR tree, with ticks
  * for the codes in `completed`. `units` names leaf codes with their
- * titles when the caller has them (the planner does).
+ * titles when the caller has them (the planner does). `waivers` only
+ * reach a prerequisite block, the one kind a waiver applies to.
  */
 export function RequisiteRuleBlock({
   block,
   completed,
   units,
+  waivers,
 }: {
   block: RequisiteBlock
   completed: ReadonlySet<string>
   units?: ReadonlyMap<string, { title: string }>
+  waivers?: TreeWaivers
 }) {
   const isProhibition = block.requisiteType === "prohibition"
   return (
@@ -39,6 +45,7 @@ export function RequisiteRuleBlock({
         completed={completed}
         isProhibition={isProhibition}
         units={units}
+        waivers={block.requisiteType === "prerequisite" ? waivers : undefined}
       />
     </div>
   )

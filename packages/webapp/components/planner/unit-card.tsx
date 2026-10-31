@@ -6,6 +6,7 @@ import {
   CircleAlertIcon,
   MoreVerticalIcon,
   MoveIcon,
+  ShieldCheckIcon,
   StarIcon,
   XIcon,
 } from "lucide-react"
@@ -228,7 +229,7 @@ export function UnitCard({
               ? "cursor-grabbing"
               : "cursor-grab active:cursor-grabbing"
           )}
-          aria-label={`Details for ${code}`}
+          aria-label={`Details for ${code}${validation?.reliesOnWaiver ? ", relies on a waived prerequisite" : ""}`}
           type="button"
         >
           <div className="flex items-center gap-1.5">
@@ -243,6 +244,14 @@ export function UnitCard({
               </span>
             ) : null}
             <StatusIcon status={status} />
+            {validation?.reliesOnWaiver ? (
+              <span title="Relies on a waived prerequisite">
+                <ShieldCheckIcon
+                  className="size-3 text-muted-foreground"
+                  aria-hidden
+                />
+              </span>
+            ) : null}
             {isFY ? (
               <span className="ml-auto rounded-tag bg-primary/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-primary-foreground uppercase">
                 Full year

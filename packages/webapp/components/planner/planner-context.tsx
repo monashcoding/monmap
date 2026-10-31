@@ -751,6 +751,12 @@ export function PlannerProvider({
         try {
           // Same year, so the units already cached stay valid: merge.
           const c = await loadYearData(year, code, false)
+
+          const { courseCode, waivers } = lastSnapshotRef.current
+
+          const clearsWaivers =
+            courseCode !== code && (waivers?.length ?? 0) > 0
+
           // One undo step reverts the whole switch.
           dispatch({
             type: "batch",
@@ -766,6 +772,11 @@ export function PlannerProvider({
                 : []),
             ],
           })
+
+          if (clearsWaivers)
+            toast("Waivers cleared", {
+              action: { label: "Undo", onClick: undo },
+            })
         } catch (err) {
           toast.error("Couldn't load course", {
             description: err instanceof Error ? err.message : "Unknown error",
@@ -773,7 +784,7 @@ export function PlannerProvider({
         }
       })
     },
-    [state.courseYear, loadYearData]
+    [state.courseYear, loadYearData, undo]
   )
 
   // A "Plan this course" link landed on a saved plan for another

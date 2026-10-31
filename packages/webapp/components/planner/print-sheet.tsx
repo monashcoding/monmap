@@ -31,6 +31,7 @@ import {
   type PlannerState,
   type PlannerUnit,
 } from "@/lib/planner/types"
+import { placedWaivers } from "@/lib/planner/waivers"
 import { cn } from "@/lib/utils"
 
 import { usePlanner, usePlannerSync } from "./planner-context"
@@ -145,6 +146,7 @@ export function PrintSheetView({
   )
 
   const credit = state.credit ?? []
+  const waivers = placedWaivers(state)
   // A code credited twice, or credited and placed, counts once.
   const creditTotal = creditPointsFromCredit(state, placedUnitCodes(state))
 
@@ -258,6 +260,15 @@ export function PrintSheetView({
           <p>
             Repeated units, counted once:{" "}
             {summary.duplicateUnitCodes.join(", ")}.
+          </p>
+        ) : null}
+        {waivers.length > 0 ? (
+          <p>
+            Prerequisites waived:{" "}
+            {waivers
+              .map((w) => `${w.prerequisiteCode} for ${w.unitCode}`)
+              .join(", ")}
+            .
           </p>
         ) : null}
         <p>

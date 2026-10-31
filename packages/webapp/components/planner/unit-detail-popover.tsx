@@ -39,9 +39,15 @@ import type {
 } from "@/lib/planner/types"
 import { RatingInline } from "@/components/reviews/stars"
 import { useRating } from "@/components/reviews/use-ratings"
+import {
+  waivableCodes,
+  waiverAccess,
+  waiversByUnit,
+} from "@/lib/planner/waivers"
 import { cn } from "@/lib/utils"
 
 import { usePlanner } from "./planner-context"
+import type { TreeWaivers } from "./requisite-tree-view"
 
 /**
  * Popover that shows everything the student might want to see about
@@ -138,6 +144,7 @@ export function UnitDetailView({
     requisites,
     validations,
     state,
+    dispatch,
     plannedCodes,
     availableYears,
   } = usePlanner()
@@ -182,9 +189,12 @@ export function UnitDetailView({
   // the planner may hold this code from another plan year. A fallback
   // unit (see PlannerUnit.fallbackFor) stands in for its requested year.
   const contextUnit = units.get(code)
-  const usingCurrentYear =
-    selectedYear ===
-    (contextUnit ? (contextUnit.fallbackFor ?? contextUnit.year) : defaultYear)
+
+  const contextYear = contextUnit
+    ? (contextUnit.fallbackFor ?? contextUnit.year)
+    : defaultYear
+
+  const usingCurrentYear = selectedYear === contextYear
 
   const [otherYearData, setOtherYearData] = useState<{
     year: string
@@ -260,6 +270,31 @@ export function UnitDetailView({
     [isPlaced, state, yearIndex, slotIndex, plannedCodes, units]
   )
 
+  const access = waiverAccess({
+    isPlaced,
+    usingCurrentYear,
+    selectedYear,
+    defaultYear,
+  })
+
+  const waivers = useMemo<TreeWaivers | undefined>(() => {
+    if (access === "none") return undefined
+
+    const waiver = (prerequisiteCode: string) => ({
+      unitCode: code,
+      prerequisiteCode,
+    })
+
+    return {
+      waived: waiversByUnit(state).get(code) ?? new Set(),
+      waivable: waivableCodes(validation),
+      editable: access === "edit",
+      onWaiveAction: (c) => dispatch({ type: "add_waiver", waiver: waiver(c) }),
+      onUnwaiveAction: (c) =>
+        dispatch({ type: "remove_waiver", waiver: waiver(c) }),
+    }
+  }, [access, code, state, validation, dispatch])
+
   // Links name the year whose data is shown: a fallback unit's page is
   // its own year's.
   const linkYear = unit?.year ?? selectedYear
@@ -333,7 +368,12 @@ export function UnitDetailView({
                 className="flex gap-2 rounded-control bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive"
               >
                 <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-                <span>{issue.message}</span>
+                <span>
+                  {issue.message}
+                  {access === "read" && issue.kind === "prereq_unmet"
+                    ? ` To waive it, switch to the ${contextYear} handbook.`
+                    : null}
+                </span>
               </li>
             ))}
             {validation.warnings.map((issue, i) => (
@@ -382,6 +422,7 @@ export function UnitDetailView({
               block={block}
               completed={completed}
               units={units}
+              waivers={waivers}
             />
           ))}
         </section>

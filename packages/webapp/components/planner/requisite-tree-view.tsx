@@ -2,6 +2,7 @@
 
 import { CheckIcon, MinusIcon } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import { normalizeConnector } from "@/lib/planner/requisites"
 import type {
   RequisiteContainer,
@@ -9,6 +10,19 @@ import type {
   RequisiteRule,
 } from "@/lib/planner/types"
 import { cn } from "@/lib/utils"
+
+import { TOUCH_HIT_ROW } from "./touch-target"
+
+/** A prerequisite tree's waivers. */
+export interface TreeWaivers {
+  waived: ReadonlySet<string>
+  /** Unmet codes offered a Waive button. */
+  waivable: ReadonlySet<string>
+  /** False shows waivers without Waive or Undo. */
+  editable: boolean
+  onWaiveAction: (code: string) => void
+  onUnwaiveAction: (code: string) => void
+}
 
 /**
  * Render an AND/OR tree. Each level prefixes a connector label so
@@ -25,11 +39,13 @@ export function RequisiteTreeView({
   completed,
   isProhibition = false,
   units,
+  waivers,
 }: {
   rule: RequisiteRule | null | undefined
   completed: ReadonlySet<string>
   isProhibition?: boolean
   units?: ReadonlyMap<string, { title: string }>
+  waivers?: TreeWaivers
 }) {
   if (!rule || rule.length === 0) {
     return (
@@ -48,6 +64,7 @@ export function RequisiteTreeView({
           completed={completed}
           isProhibition={isProhibition}
           units={units}
+          waivers={waivers}
         />
       ))}
     </div>
@@ -60,12 +77,14 @@ function ContainerNode({
   completed,
   isProhibition,
   units,
+  waivers,
 }: {
   container: RequisiteContainer
   depth: number
   completed: ReadonlySet<string>
   isProhibition: boolean
   units?: ReadonlyMap<string, { title: string }>
+  waivers?: TreeWaivers
 }) {
   const connector = normalizeConnector(container.parent_connector?.value)
   const children = [
@@ -77,6 +96,7 @@ function ContainerNode({
         completed={completed}
         isProhibition={isProhibition}
         units={units}
+        waivers={waivers}
       />
     )),
     ...(container.relationships ?? []).map((l, i) => (
@@ -86,6 +106,7 @@ function ContainerNode({
         completed={completed}
         isProhibition={isProhibition}
         units={units}
+        waivers={waivers}
       />
     )),
   ]
@@ -113,16 +134,22 @@ function LeafNode({
   completed,
   isProhibition,
   units,
+  waivers,
 }: {
   leaf: RequisiteLeaf
   completed: ReadonlySet<string>
   isProhibition: boolean
   units?: ReadonlyMap<string, { title: string }>
+  waivers?: TreeWaivers
 }) {
-  const taken = completed.has(leaf.academic_item_code)
+  const code = leaf.academic_item_code
+  const taken = completed.has(code)
+  // Actually taking the unit outranks a waiver for it.
+  const waived = !taken && !!waivers?.waived.has(code)
+  const met = taken || waived
 
   // Prohibitions invert: "taken" is a problem, not a check.
-  const good = isProhibition ? !taken : taken
+  const good = isProhibition ? !taken : met
 
   const name =
     units?.get(leaf.academic_item_code)?.title ?? leaf.academic_item_name
@@ -133,7 +160,7 @@ function LeafNode({
         "flex items-baseline gap-2 rounded-control px-2 py-1",
         good ? "text-foreground" : "text-muted-foreground",
         isProhibition && taken && "bg-destructive/10 text-destructive",
-        !isProhibition && taken && "bg-success-soft"
+        !isProhibition && met && "bg-success-soft"
       )}
     >
       <span
@@ -156,6 +183,25 @@ function LeafNode({
       </span>
       {name ? (
         <span className="truncate text-xs text-muted-foreground">{name}</span>
+      ) : null}
+      {waived ? (
+        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+          Waived
+        </span>
+      ) : null}
+      {/* One button that swaps its label, so keyboard focus stays on it. */}
+      {waivers?.editable && (waived || (!met && waivers.waivable.has(code))) ? (
+        <Button
+          variant="ghost"
+          size="xs"
+          aria-label={`${waived ? "Undo waiver of" : "Waive"} ${code}`}
+          className={cn("shrink-0", !waived && "ml-auto", TOUCH_HIT_ROW)}
+          onClick={() =>
+            waived ? waivers.onUnwaiveAction(code) : waivers.onWaiveAction(code)
+          }
+        >
+          {waived ? "Undo" : "Waive"}
+        </Button>
       ) : null}
     </div>
   )
