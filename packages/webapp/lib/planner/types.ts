@@ -46,6 +46,8 @@ export interface PlannerUnit {
    * offerings and requisites are that year's. See `unit_year_links`.
    */
   fallbackFor?: string
+  /** Earliest handbook year with this code; equals `year` for a new unit. */
+  firstYear: string
 }
 
 /** A single offering row as the planner needs it. */
@@ -80,11 +82,7 @@ export interface RequisiteLeaf {
 
 export interface RequisiteBlock {
   requisiteType:
-    | "prerequisite"
-    | "corequisite"
-    | "prohibition"
-    | "permission"
-    | "other"
+    "prerequisite" | "corequisite" | "prohibition" | "permission" | "other"
   /** May be null — unit has an enrolment rule prose block but no structured tree. */
   rule: RequisiteRule | null
 }
@@ -289,6 +287,8 @@ export interface SlotUnitValidation {
 
 export type ValidationIssueKind =
   | "not_offered_in_period"
+  | "no_longer_offered"
+  | "not_yet_offered"
   | "prereq_unmet"
   | "coreq_unmet"
   | "prohibition_conflict"

@@ -11,7 +11,8 @@ import type {
 } from "./types.ts"
 import { slotCalendarYear, startPeriodOf } from "./timeline.ts"
 import { unitLevel } from "./unit-level.ts"
-import { completedBefore, isOfferedInPeriod } from "./validation.ts"
+import { TRANSITIONS, type Transitions } from "./transitions.ts"
+import { completedBefore, offeringIssue } from "./validation.ts"
 
 /**
  * Per-plan precomputed signals — derived once when the plan changes,
@@ -58,8 +59,9 @@ export interface SlotContext {
   completedBefore: ReadonlySet<string>
   /** Codes already in this slot. */
   concurrentWith: ReadonlySet<string>
-  /** Expected handbook year for the slot: its calendar year. */
-  expectedHandbookYear: string | undefined
+  /** The slot's calendar year. */
+  slotYear: number
+  transitions: Transitions
 }
 
 /** Feature-by-feature breakdown returned with each candidate. */
@@ -118,7 +120,8 @@ function aosKindWeight(kind: string): number {
 export function buildPersonalSignals(
   state: PlannerState,
   course: PlannerCourseWithAoS | null,
-  requisitesByCode: ReadonlyMap<string, RequisiteBlock[]>
+  requisitesByCode: ReadonlyMap<string, RequisiteBlock[]>,
+  transitions: Transitions = TRANSITIONS
 ): PersonalSignals {
   const placed = plannedUnitCodes(state)
 
@@ -143,7 +146,8 @@ export function buildPersonalSignals(
   const fillsGap = new Set<string>()
   if (course) {
     for (const g of courseRequirementGroups(course)) {
-      if (groupProgress(g, placed, course.conflicts).satisfied) continue
+      if (groupProgress(g, placed, course.conflicts, transitions).satisfied)
+        continue
       for (const code of g.options) if (!placed.has(code)) fillsGap.add(code)
     }
   }
@@ -176,24 +180,37 @@ export function slotContextFor(
   state: PlannerState,
   yearIndex: number,
   slotIndex: number,
-  units: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">> = new Map()
+  {
+    units = new Map(),
+    transitions = TRANSITIONS,
+  }: {
+    units?: ReadonlyMap<string, Pick<PlannerUnit, "equivalents">>
+    transitions?: Transitions
+  } = {}
 ): SlotContext {
   const slot = state.years[yearIndex]?.slots[slotIndex]
-  const completed = completedBefore(state, yearIndex, slotIndex, units)
+
+  const completed = completedBefore(
+    state,
+    yearIndex,
+    slotIndex,
+    units,
+    transitions
+  )
+
   const concurrent = slot ? new Set(slot.unitCodes) : new Set<string>()
-  const courseYearNum = Number(state.courseYear)
-  const expectedHandbookYear = Number.isFinite(courseYearNum)
-    ? String(
-        slotCalendarYear(state, yearIndex, slot?.kind ?? startPeriodOf(state))
-      )
-    : undefined
   return {
     yearIndex,
     slotIndex,
     slotKind: slot?.kind,
     completedBefore: completed,
     concurrentWith: concurrent,
-    expectedHandbookYear,
+    slotYear: slotCalendarYear(
+      state,
+      yearIndex,
+      slot?.kind ?? startPeriodOf(state)
+    ),
+    transitions,
   }
 }
 
@@ -216,7 +233,16 @@ export function personalScore(args: {
     rank === undefined || total <= 1 ? 0 : 1 - rank / Math.max(1, total - 1)
 
   const periodFit =
-    slot.slotKind && isOfferedInPeriod([...offerings], slot.slotKind) ? 1 : 0
+    slot.slotKind &&
+    !offeringIssue({
+      unit,
+      offerings,
+      slotKind: slot.slotKind,
+      slotYear: slot.slotYear,
+      transitions: slot.transitions,
+    })
+      ? 1
+      : 0
 
   const aos = signals.aosWeight.get(unit.code) ?? 0
   const fillsGap = signals.fillsGap.has(unit.code) ? 1 : 0

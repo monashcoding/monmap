@@ -53,7 +53,8 @@ import type {
   PlannerUnit,
 } from "@/lib/planner/types"
 import type { UnitBundle } from "@/lib/planner/unit-cache"
-import { isOfferedInPeriod } from "@/lib/planner/validation"
+import { statedPeriods } from "@/lib/planner/transitions"
+import { offeringIssue, type OfferingIssue } from "@/lib/planner/validation"
 import { cn } from "@/lib/utils"
 
 import { UnitDataOverlay, usePlanner } from "./planner-context"
@@ -221,7 +222,7 @@ function UnitSearchView({
     [state, course, requisites]
   )
   const slotCtx = useMemo(
-    () => slotContextFor(state, yearIndex, slotIndex, units),
+    () => slotContextFor(state, yearIndex, slotIndex, { units }),
     [state, yearIndex, slotIndex, units]
   )
 
@@ -289,6 +290,21 @@ function UnitSearchView({
   ])
 
   const items = useMemo(() => ranked.map((r) => r.unit), [ranked])
+
+  const offeringFor = (code: string): OfferingIssue | null => {
+    const unit = units.get(code)
+    const unitOfferings = offerings.get(code)
+
+    return slotKind && unit && unitOfferings
+      ? offeringIssue({
+          unit,
+          offerings: unitOfferings,
+          slotKind,
+          slotYear: slotCtx.slotYear,
+        })
+      : null
+  }
+
   // One batched ratings request for the whole list, so the details pane
   // finds each row's rating cached instead of asking per row.
   useRatings(
@@ -461,6 +477,8 @@ function UnitSearchView({
                     <UnitRow
                       unit={u}
                       offerings={offs}
+                      offeringsLoaded={offerings.has(u.code)}
+                      offering={offeringFor(u.code)}
                       slotKind={slotKind}
                       placed={inSlot}
                       onPlanElsewhere={!inSlot && plannedCodes.has(u.code)}
@@ -498,11 +516,7 @@ function UnitSearchView({
               key={detailCode}
               code={detailCode}
               slotKind={slotKind}
-              fits={
-                slotKind
-                  ? isOfferedInPeriod(offerings.get(detailCode) ?? [], slotKind)
-                  : true
-              }
+              offering={offeringFor(detailCode)}
               hasOfferingData={
                 offerings.has(detailCode) ||
                 (offerings.get(detailCode) ?? []).length > 0
@@ -534,6 +548,8 @@ function GroupHeading({ children }: { children: React.ReactNode }) {
 function UnitRow({
   unit,
   offerings,
+  offeringsLoaded,
+  offering,
   slotKind,
   placed,
   onPlanElsewhere,
@@ -543,6 +559,8 @@ function UnitRow({
 }: {
   unit: PlannerUnit
   offerings: PlannerOffering[]
+  offeringsLoaded: boolean
+  offering: OfferingIssue | null
   slotKind: PeriodKind | undefined
   /** Already in THIS slot — the only hard non-action. */
   placed: boolean
@@ -553,10 +571,12 @@ function UnitRow({
   onClick: () => void
 }) {
   const periods = useMemo(() => {
-    const s = new Set<PeriodKind>()
-    for (const o of offerings) s.add(o.periodKind)
+    const s = new Set(offerings.map((o) => o.periodKind))
+
+    if (s.size === 0) for (const p of statedPeriods(unit.code)) s.add(p)
     return PERIOD_KIND_ORDER.filter((p) => s.has(p))
-  }, [offerings])
+  }, [offerings, unit.code])
+  const note = rowNote(offeringsLoaded, offerings, offering, periods)
 
   return (
     <button
@@ -602,14 +622,14 @@ function UnitRow({
             <span className="ml-0.5">On plan</span>
           </PeriodChip>
         ) : null}
-        {periods.length === 0 ? (
+        {note ? (
           <span
             className={cn(
               "text-[10px] italic",
               focused ? "text-accent-foreground/70" : "text-muted-foreground"
             )}
           >
-            {offerings.length === 0 ? "Checking offerings…" : "Off-cycle"}
+            {note}
           </span>
         ) : (
           periods.map((p) => (
@@ -621,6 +641,28 @@ function UnitRow({
       </div>
     </button>
   )
+}
+
+/** Text in place of a row's period chips, or null to show the chips. */
+function rowNote(
+  loaded: boolean,
+  offerings: readonly PlannerOffering[],
+  offering: OfferingIssue | null,
+  periods: readonly PeriodKind[]
+): string | null {
+  if (!loaded) return "Checking offerings…"
+
+  const kind = offering?.issue.kind
+
+  // Outranks the chips, which may come from an older handbook.
+  if (offering && (kind === "no_longer_offered" || kind === "not_yet_offered"))
+    return offering.label
+
+  if (periods.length > 0) return null
+
+  if (offerings.length > 0) return "Off-cycle"
+
+  return offering?.label ?? "No offerings published"
 }
 
 function PeriodChip({
@@ -650,7 +692,7 @@ function PeriodChip({
 function FocusedDetails({
   code,
   slotKind,
-  fits,
+  offering,
   hasOfferingData,
   placed,
   settled,
@@ -659,7 +701,7 @@ function FocusedDetails({
 }: {
   code: string
   slotKind: PeriodKind | undefined
-  fits: boolean
+  offering: OfferingIssue | null
   hasOfferingData: boolean
   placed: boolean
   /** False while the pointer is passing over rows: fetch nothing yet. */
@@ -679,14 +721,14 @@ function FocusedDetails({
             <span className="inline-flex items-center gap-1 rounded-control border border-border bg-muted px-2 py-0.5 font-medium text-muted-foreground">
               Checking fit for {PERIOD_KIND_LABEL[slotKind]}…
             </span>
-          ) : fits ? (
+          ) : !offering ? (
             <span className="inline-flex items-center gap-1 rounded-control border border-success/30 bg-success-soft px-2 py-0.5 font-medium text-success-foreground">
               <CheckIcon className="size-3" />
               Fits {PERIOD_KIND_LABEL[slotKind]}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-control border border-warning/40 bg-warning-soft px-2 py-0.5 font-medium text-warning-foreground">
-              Not offered in {PERIOD_KIND_LABEL[slotKind]}
+              {offering.label}
             </span>
           )}
         </div>

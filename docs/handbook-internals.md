@@ -269,6 +269,17 @@ since the October 2026 refresh: its one earlier link,
 SFTWRENG02 → `/2025/units/FIT4190`, resolves now that FIT4190 has a
 2026 page.
 
+## Course transitions live outside the handbook
+
+A handbook can't say when a unit stops: 2027 still runs FIT2014, whose
+final offering is S2 2027 per the Faculty of IT. Renamed replacements
+(FIT1008 → FIT2115) also fail the equivalence test above.
+`lib/planner/transitions-it-2027.ts` holds these facts, copied by hand
+from the faculty page, and `transitions.ts` applies them. The slot
+year's own handbook still wins, so `pnpm --filter webapp
+verify:transitions` lists where the two disagree; delete a source once
+the handbooks catch up.
+
 ## Tree structures inside JSONB
 
 When a UI reaches into a raw curriculum tree (courses, AoS), the

@@ -2,6 +2,7 @@ import { creditedCodes, creditPointsFromCredit } from "./credit.ts"
 import { slotBlockCredit } from "./timeline.ts"
 import { isFullYearUnit, perSlotCreditPoints } from "./full-year.ts"
 import { effectiveRequired, reachableOptions } from "./reachable.ts"
+import { TRANSITIONS, type Transitions } from "./transitions.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
@@ -136,21 +137,50 @@ export interface GroupProgress {
    * only when a unit on the plan prohibits an option.
    */
   required: number
-  /** Options on the plan (placed or credited). */
+  /** Options on the plan (placed or credited) or covered by a replacement. */
   placed: number
   satisfied: boolean
+  /** Options covered by a replacement on the plan: FIT2014 to [FIT3235]. */
+  viaReplacement: ReadonlyMap<string, readonly string[]>
 }
 
 /** One requirement group's progress, with the reachability cap. */
 export function groupProgress(
   group: RequirementGroup,
   plannedCodes: ReadonlySet<string>,
-  conflicts?: Readonly<Record<string, string[]>>
+  conflicts?: Readonly<Record<string, string[]>>,
+  transitions: Transitions = TRANSITIONS
 ): GroupProgress {
   const required = effectiveRequired(group, plannedCodes, conflicts)
-  let placed = 0
-  for (const code of group.options) if (plannedCodes.has(code)) placed++
-  return { group, required, placed, satisfied: placed >= required }
+  const literal = group.options.filter((c) => plannedCodes.has(c))
+  const viaReplacement = new Map<string, readonly string[]>()
+  // Each plan code covers at most one option per group.
+  const used = new Set(literal)
+
+  for (const code of group.options) {
+    if (plannedCodes.has(code)) continue
+
+    const way = transitions.byCode
+      .get(code)
+      ?.unit.replacedBy?.find((w) =>
+        w.every((c) => plannedCodes.has(c) && !used.has(c))
+      )
+
+    if (!way) continue
+    viaReplacement.set(code, way)
+
+    for (const c of way) used.add(c)
+  }
+
+  const placed = literal.length + viaReplacement.size
+
+  return {
+    group,
+    required,
+    placed,
+    satisfied: placed >= required,
+    viaReplacement,
+  }
 }
 
 /**
@@ -160,9 +190,13 @@ export function groupProgress(
 export function summarizeGroups(
   groups: readonly RequirementGroup[],
   plannedCodes: ReadonlySet<string>,
-  conflicts?: Readonly<Record<string, string[]>>
+  conflicts?: Readonly<Record<string, string[]>>,
+  transitions: Transitions = TRANSITIONS
 ): { groups: GroupProgress[]; totalRequired: number; satisfiedCount: number } {
-  const out = groups.map((g) => groupProgress(g, plannedCodes, conflicts))
+  const out = groups.map((g) =>
+    groupProgress(g, plannedCodes, conflicts, transitions)
+  )
+
   return {
     groups: out,
     totalRequired: out.reduce((n, g) => n + g.required, 0),
@@ -207,7 +241,8 @@ export function summarizeAoSProgress(
    * them every group keeps its full target, which is the old
    * behaviour.
    */
-  conflicts?: Readonly<Record<string, string[]>>
+  conflicts?: Readonly<Record<string, string[]>>,
+  transitions: Transitions = TRANSITIONS
 ): AoSProgress {
   // Group-wise counting: each grouping contributes
   // `min(placed_in_group, required)` to the satisfied count. Choice
@@ -224,18 +259,28 @@ export function summarizeAoSProgress(
     // Target is capped at what's still reachable: an option prohibited
     // by something already on the plan can never be taken, and asking
     // for it makes the AoS permanently incomplete.
-    const { required, placed } = groupProgress(group, plannedCodes, conflicts)
+    const { required, placed, viaReplacement } = groupProgress(
+      group,
+      plannedCodes,
+      conflicts,
+      transitions
+    )
+
     const reachable = new Set(reachableOptions(group, plannedCodes, conflicts))
     totalRequired += required
     satisfied += Math.min(placed, required)
     let placedSoFar = 0
     for (const code of group.options) {
-      if (plannedCodes.has(code)) {
+      const via = viaReplacement.get(code)
+
+      if (plannedCodes.has(code) || via) {
         completedCodes.add(code)
         placedSoFar++
-        if (!cpSeen.has(code)) {
-          cpSeen.add(code)
-          plannedCp += unitsByCode.get(code)?.creditPoints ?? 0
+
+        for (const c of via ?? [code]) {
+          if (cpSeen.has(c)) continue
+          cpSeen.add(c)
+          plannedCp += unitsByCode.get(c)?.creditPoints ?? 0
         }
       } else if (placedSoFar < required && reachable.has(code)) {
         // Surface the first `required` unplaced options as "remaining"

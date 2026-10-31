@@ -34,6 +34,8 @@ export interface RequisiteEvalResult {
   referencedCodes: string[]
   /** Subset of referencedCodes the student hasn't completed. */
   missingCodes: string[]
+  /** The unmet part, with its connectors: "FIT2115 and MAT1830". */
+  missingText: string
 }
 
 export function evaluateRequisiteTree(
@@ -41,7 +43,12 @@ export function evaluateRequisiteTree(
   completed: ReadonlySet<string>
 ): RequisiteEvalResult {
   if (!rule || rule.length === 0) {
-    return { satisfied: true, referencedCodes: [], missingCodes: [] }
+    return {
+      satisfied: true,
+      referencedCodes: [],
+      missingCodes: [],
+      missingText: "",
+    }
   }
 
   const referenced = new Set<string>()
@@ -62,6 +69,7 @@ export function evaluateRequisiteTree(
     satisfied,
     referencedCodes: [...referenced].sort(),
     missingCodes: [...missing].sort(),
+    missingText: satisfied ? "" : describeMissing(rule, completed),
   }
 }
 
@@ -82,6 +90,55 @@ function collectMissingCodes(
   for (const leaf of container.relationships ?? []) {
     if (!evaluateLeaf(leaf, completed)) out.add(leaf.academic_item_code)
   }
+}
+
+function describeMissing(
+  rule: RequisiteRule,
+  completed: ReadonlySet<string>
+): string {
+  const failing = rule.filter((c) => !evaluateContainer(c, completed))
+
+  return joinWith(
+    failing.map((c) => describeContainer(c, completed, failing.length > 1)),
+    "AND"
+  )
+}
+
+function describeContainer(
+  container: RequisiteContainer,
+  completed: ReadonlySet<string>,
+  hasSiblings: boolean
+): string {
+  const connector = normalizeConnector(container.parent_connector?.value)
+
+  // A failing OR lists every option.
+  const subs = (container.containers ?? []).filter(
+    (s) => connector === "OR" || !evaluateContainer(s, completed)
+  )
+
+  const leaves = (container.relationships ?? []).filter(
+    (l) => connector === "OR" || !evaluateLeaf(l, completed)
+  )
+
+  const count = subs.length + leaves.length
+
+  const text = joinWith(
+    [
+      ...subs.map((s) => describeContainer(s, completed, count > 1)),
+      ...leaves.map((l) => l.academic_item_code),
+    ],
+    connector
+  )
+
+  return hasSiblings && count > 1 ? `(${text})` : text
+}
+
+function joinWith(parts: readonly string[], connector: "AND" | "OR"): string {
+  const word = connector === "OR" ? "or" : "and"
+
+  if (parts.length <= 2) return parts.join(` ${word} `)
+
+  return `${parts.slice(0, -1).join(", ")} ${word} ${parts.at(-1)}`
 }
 
 function evaluateContainer(

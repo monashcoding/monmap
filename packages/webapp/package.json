@@ -16,6 +16,7 @@
     "warm:pages": "node scripts/warm-pages.ts",
     "verify:resolver": "tsx scripts/verify-resolver.mts",
     "verify:corpus": "tsx scripts/verify-corpus.mts",
+    "verify:transitions": "tsx scripts/verify-transitions.mts",
     "refresh:stats": "tsx scripts/refresh-stats.mts"
   },
   "dependencies": {

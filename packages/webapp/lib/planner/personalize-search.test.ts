@@ -10,12 +10,14 @@ import {
   topFeatures,
 } from "./personalize-search.ts"
 import {
+  NO_TRANSITIONS,
   offering as fixtureOffering,
   planState,
   prereq,
   requisite,
   unit as fixtureUnit,
 } from "./test-fixtures.ts"
+import { buildTransitions } from "./transitions.ts"
 import type {
   PlannerAreaOfStudy,
   PlannerCourseWithAoS,
@@ -129,7 +131,7 @@ test("slotContextFor includes earlier slots in completedBefore but not concurren
     { S1: ["FIT1008", "MAT1830"], S2: ["FIT1045"] },
     { S1: ["FIT2099"], S2: [] },
   ])
-  const ctx = slotContextFor(s, 1, 0) // Year 2 S1
+  const ctx = slotContextFor(s, 1, 0, { transitions: NO_TRANSITIONS }) // Year 2 S1
   assert.deepEqual([...ctx.completedBefore].sort(), [
     "FIT1008",
     "FIT1045",
@@ -137,7 +139,7 @@ test("slotContextFor includes earlier slots in completedBefore but not concurren
   ])
   assert.deepEqual([...ctx.concurrentWith].sort(), ["FIT2099"])
   assert.equal(ctx.slotKind, "S1")
-  assert.equal(ctx.expectedHandbookYear, "2027")
+  assert.equal(ctx.slotYear, 2027)
 })
 
 test("personalScore: prereq-ready vs not-ready", () => {
@@ -271,7 +273,10 @@ test("slotContextFor counts credit and equivalents as completed", () => {
   const units = new Map([
     ["FIT1053", fixtureUnit("FIT1053", { equivalents: ["FIT1045"] })],
   ])
-  const ctx = slotContextFor(s, 0, 1, units)
+  const ctx = slotContextFor(s, 0, 1, {
+    units,
+    transitions: NO_TRANSITIONS,
+  })
   assert.deepEqual([...ctx.completedBefore].sort(), [
     "FIT1045",
     "FIT1053",
@@ -356,6 +361,28 @@ test("slotContextFor: a mid-year start's Semester 1 expects the next year's hand
     courseYear: "2026",
     startPeriod: "S2",
   })
-  assert.equal(slotContextFor(s, 0, 0).expectedHandbookYear, "2026")
-  assert.equal(slotContextFor(s, 0, 1).expectedHandbookYear, "2027")
+  assert.equal(slotContextFor(s, 0, 0).slotYear, 2026)
+  assert.equal(slotContextFor(s, 0, 1).slotYear, 2027)
+})
+
+test("personalScore: period fit uses the slot's transitions", () => {
+  const s = planState([{ S1: [] }, { S1: [] }, { S1: [] }])
+  const retired = buildTransitions([
+    {
+      name: "Faculty of IT",
+      retrieved: "2026-10-30",
+      units: [{ code: "FIT2014", lastOffered: { year: 2027, period: "S2" } }],
+    },
+  ])
+  const score = (transitions: typeof retired) =>
+    personalScore({
+      // 2028 has no handbook, and 2027's runs FIT2014 in S1.
+      unit: fixtureUnit("FIT2014", { year: "2027" }),
+      offerings: [offering("S1")],
+      requisites: [],
+      signals: buildPersonalSignals(s, course(), new Map()),
+      slot: slotContextFor(s, 2, 0, { transitions }),
+    }).periodFit
+  assert.equal(score(NO_TRANSITIONS), 1)
+  assert.equal(score(retired), 0)
 })
