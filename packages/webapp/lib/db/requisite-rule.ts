@@ -39,12 +39,14 @@ function slimContainer(raw: unknown): RequisiteContainer | null {
 }
 
 // A leaf without a code (three in the whole corpus) keeps an empty
-// code, so it still blocks an AND exactly as the raw leaf did.
+// code, so it still blocks an AND exactly as the raw leaf did. Some
+// codes carry stray whitespace (ADS2002 names "ADS2001 "), which no
+// completed unit would ever match.
 function slimLeaf(raw: unknown): RequisiteLeaf | null {
   if (!raw || typeof raw !== "object") return null
   const l = raw as Record<string, unknown>
   const code =
-    typeof l.academic_item_code === "string" ? l.academic_item_code : ""
+    typeof l.academic_item_code === "string" ? l.academic_item_code.trim() : ""
   return typeof l.academic_item_name === "string"
     ? { academic_item_code: code, academic_item_name: l.academic_item_name }
     : { academic_item_code: code }
