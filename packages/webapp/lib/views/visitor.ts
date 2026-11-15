@@ -8,9 +8,11 @@
  */
 import { createHmac, randomBytes } from "node:crypto"
 
+import { env } from "../env.ts"
+
 // Without VIEW_KEY_SECRET each server process picks a random key, so a
 // restart counts a returning visitor again on that day.
-const SECRET = process.env.VIEW_KEY_SECRET || randomBytes(32).toString("hex")
+const SECRET = env.VIEW_KEY_SECRET || randomBytes(32).toString("hex")
 
 /** Today in Melbourne as YYYY-MM-DD: a view day follows Monash's day. */
 export function viewDay(now: Date = new Date()): string {

@@ -1,3 +1,5 @@
+import { handleRoute } from "@monashcoding/server"
+
 import type { PlanGraphData } from "@/lib/api/client"
 import { MAX_GRAPH_CODES, splitCodes } from "@/lib/api/query"
 import {
@@ -6,6 +8,7 @@ import {
   json,
   knownYear,
   searchParams,
+  ROUTE_OPTIONS,
 } from "@/lib/api/server"
 import { expandRequisiteGraph, hydratePlannerUnits } from "@/lib/db/queries"
 
@@ -19,7 +22,7 @@ import { expandRequisiteGraph, hydratePlannerUnits } from "@/lib/db/queries"
  */
 export const dynamic = "force-dynamic"
 
-export async function GET(req: Request): Promise<Response> {
+export const GET = handleRoute<unknown>(async function GET(req: Request) {
   const params = searchParams(req)
   const year = await knownYear(params.get("year"))
   const codes = splitCodes(params.get("codes"), MAX_GRAPH_CODES)
@@ -36,4 +39,4 @@ export async function GET(req: Request): Promise<Response> {
     units: Object.fromEntries(hydrated.units),
   }
   return json(body, HANDBOOK_CACHE)
-}
+}, ROUTE_OPTIONS)

@@ -32,7 +32,7 @@ import {
 } from "@/app/actions"
 
 import type { PlanPageData } from "./page"
-import { capture } from "@/lib/analytics"
+import { analytics } from "@/lib/analytics"
 import { fetchUnitsByYear } from "@/lib/api/client"
 import { codesToHydrate } from "@/lib/planner/hydration"
 import { MAX_PLANS_PER_USER } from "@/lib/db/input"
@@ -92,7 +92,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
     : null
 
   function handleDelete() {
-    capture("plan_deleted", {
+    analytics.capture("plan_deleted", {
       course_code: course?.code,
       total_credit_points: totalCreditPoints,
       completion_pct: pct,
@@ -104,7 +104,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
   }
 
   function handleDuplicate() {
-    capture("plan_duplicated", {
+    analytics.capture("plan_duplicated", {
       course_code: course?.code,
       total_credit_points: totalCreditPoints,
     })
@@ -262,7 +262,7 @@ export function PlanCard({ data }: { data: PlanPageData }) {
               className="h-8 gap-1.5 text-[11px] max-sm:h-10"
               disabled={isPending}
               onClick={() => {
-                capture("plan_exported", {
+                analytics.capture("plan_exported", {
                   format: "csv",
                   course_code: course?.code,
                 })

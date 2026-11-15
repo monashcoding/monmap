@@ -8,10 +8,23 @@
  * same for every visitor, which is what makes the public cache headers
  * safe. Per-user reads stay in the server actions.
  */
+import type { RouteOptions } from "@monashcoding/server"
+
 import { RATINGS_MAX_AGE_S } from "@/lib/api/query"
 import { cleanYear } from "@/lib/db/input"
 import { hydratePlannerUnits, listAvailableYears } from "@/lib/db/queries"
+import { logger } from "@/lib/log"
 import type { UnitBundle } from "@/lib/planner/unit-cache"
+
+/**
+ * Passed to `handleRoute` by every route: an unexpected failure is
+ * logged and answered as the standard `{ error, message }` 500.
+ *
+ * A route with no params calls `handleRoute<unknown>(...)`: left to
+ * infer, the context type is `never`, which Next's generated route
+ * types reject at build time.
+ */
+export const ROUTE_OPTIONS: RouteOptions = { logger }
 
 /**
  * Handbook data, which changes only when ingest runs. A shared cache

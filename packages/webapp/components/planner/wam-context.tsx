@@ -11,7 +11,7 @@ import {
 } from "react"
 
 import { migrateMyGradesAction, setMyGradeAction } from "@/app/actions"
-import { capture } from "@/lib/analytics"
+import { analytics } from "@/lib/analytics"
 import { computeGpa, computeWam, type GradedUnit } from "@/lib/planner/grades"
 import { STANDARD_CP } from "@/lib/planner/types"
 
@@ -142,7 +142,7 @@ export function WamProvider({
 
   const toggleShowResults = useCallback(() => {
     setShowResults((v) => {
-      capture("results_mode_toggled", { enabled: !v })
+      analytics.capture("results_mode_toggled", { enabled: !v })
       try {
         localStorage.setItem(SHOW_RESULTS_KEY, v ? "0" : "1")
       } catch {

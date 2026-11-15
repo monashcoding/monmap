@@ -15,7 +15,7 @@ import {
   extractRequirementGroups,
   units,
 } from "@monmap/db";
-import { DATABASE_URL } from "@monmap/db/env";
+import { DATABASE_SSL, DATABASE_URL } from "@monmap/db/env";
 import { loadCurriculumOverrides } from "./overrides.ts";
 import { foldPlaceholderUnits } from "./parse.ts";
 
@@ -28,7 +28,8 @@ console.log(
 );
 
 const db = createDb(DATABASE_URL, {
-  pool: { max: 2, idle_timeout: 0, prepare: false },
+  max: 2,
+  ssl: DATABASE_SSL,
 });
 
 const rows = await db

@@ -13,6 +13,7 @@ import { createHmac, randomBytes } from "node:crypto"
 import { review, reviewAuthorBan } from "@monmap/db"
 import { and, eq, gt, isNull, sql, type SQL } from "drizzle-orm"
 
+import { env } from "../env.ts"
 import { getDb } from "./client.ts"
 import { containsPattern } from "./like.ts"
 import { REVIEW_AXES, type ReviewKind } from "../reviews/axes.ts"
@@ -538,7 +539,7 @@ export interface AdminReview extends PublicReview {
  */
 let tagKey: string | null = null
 function authorTagKey(): string {
-  tagKey ??= process.env.REVIEW_TAG_SECRET || randomBytes(32).toString("hex")
+  tagKey ??= env.REVIEW_TAG_SECRET || randomBytes(32).toString("hex")
   return tagKey
 }
 

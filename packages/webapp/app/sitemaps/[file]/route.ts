@@ -1,3 +1,6 @@
+import { handleRoute } from "@monashcoding/server"
+
+import { ROUTE_OPTIONS } from "@/lib/api/server"
 import { listSitemapCodes } from "@/lib/db/handbook"
 import {
   entityUrls,
@@ -17,7 +20,7 @@ export const dynamic = "force-dynamic"
  * URL, which shows its latest handbook year. Year pages and retired
  * codes are noindex, so they are left out.
  */
-export async function GET(
+export const GET = handleRoute(async function GET(
   _req: Request,
   { params }: { params: Promise<{ file: string }> }
 ) {
@@ -37,4 +40,4 @@ export async function GET(
       "Cache-Control": "public, max-age=3600, s-maxage=86400",
     },
   })
-}
+}, ROUTE_OPTIONS)

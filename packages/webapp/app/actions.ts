@@ -1,7 +1,9 @@
 "use server"
 
-import { getClaims, getCurrentUser } from "@/lib/auth-server"
-import { captureServer } from "@/lib/posthog-server"
+import { getClaims } from "@monashcoding/auth/next"
+
+import { getCurrentUser } from "@/lib/auth-server"
+import { serverAnalytics } from "@/lib/analytics-server"
 import {
   cleanGradeCode,
   cleanMark,
@@ -132,7 +134,7 @@ export async function createBlankPlanAction(
     cleanPlanName(formData?.get("name")?.toString()) ?? "Default plan"
   const state = defaultState(year, null, 3)
   const plan = await createUserPlan(u.id, name, state)
-  await captureServer(u.id, "plan_created_server", { handbook_year: year })
+  await serverAnalytics.capture(u.id, "plan_created_server", { handbook_year: year })
   redirect(`/?plan=${plan.id}`)
 }
 

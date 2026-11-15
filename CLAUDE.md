@@ -91,8 +91,8 @@ than gray.
 
 - Client code sends PostHog events only through `lib/analytics.ts`. An
   eslint rule blocks direct `posthog-js` imports.
-- Server code sends events only through `captureServer` in
-  `lib/posthog-server.ts`.
+- Server code sends events only through `serverAnalytics` in
+  `lib/analytics-server.ts`.
 - No event, property or label may carry an email, a name, a plan name
   or a grade.
 - Page views for the `/search` sorts are counted in Postgres, not PostHog.

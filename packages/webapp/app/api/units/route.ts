@@ -1,3 +1,5 @@
+import { handleRoute } from "@monashcoding/server"
+
 import { splitCodes } from "@/lib/api/query"
 import {
   EMPTY_CACHE,
@@ -7,6 +9,7 @@ import {
   NOTHING_HYDRATED,
   plain,
   searchParams,
+  ROUTE_OPTIONS,
 } from "@/lib/api/server"
 import { hydratePlannerUnits } from "@/lib/db/queries"
 
@@ -18,10 +21,10 @@ import { hydratePlannerUnits } from "@/lib/db/queries"
  */
 export const dynamic = "force-dynamic"
 
-export async function GET(req: Request): Promise<Response> {
+export const GET = handleRoute<unknown>(async function GET(req: Request) {
   const params = searchParams(req)
   const year = await knownYear(params.get("year"))
   const codes = splitCodes(params.get("codes"))
   if (!year || codes.length === 0) return json(NOTHING_HYDRATED, EMPTY_CACHE)
   return json(plain(await hydratePlannerUnits(codes, year)), HANDBOOK_CACHE)
-}
+}, ROUTE_OPTIONS)

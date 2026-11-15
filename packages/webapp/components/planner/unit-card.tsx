@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { capture } from "@/lib/analytics"
+import { analytics } from "@/lib/analytics"
 import { canPlaceUnit, inLockedSlot } from "@/lib/planner/capacity"
 import { facultyStyle } from "@/lib/planner/faculty-color"
 import { perSlotCreditPoints } from "@/lib/planner/full-year"
@@ -317,7 +317,7 @@ export function UnitCard({
             )
           }
           onRemove={() => {
-            capture("unit_removed", {
+            analytics.capture("unit_removed", {
               unit_code: code,
               unit_title: unit?.title,
               credit_points: unit?.creditPoints,

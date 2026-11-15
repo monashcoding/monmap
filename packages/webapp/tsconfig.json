@@ -1,24 +1,11 @@
 {
+  "extends": "@monashcoding/tsconfig/nextjs.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
     "allowImportingTsExtensions": true,
+    // The preset turns this on. 162 index reads here do not handle
+    // undefined yet, so it stays off until they do.
+    "noUncheckedIndexedAccess": false,
     "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
       "@/*": ["./*"]
     }
@@ -31,5 +18,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "oxlint.config.ts"]
 }

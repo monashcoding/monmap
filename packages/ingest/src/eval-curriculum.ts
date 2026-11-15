@@ -41,7 +41,7 @@ import {
   units,
   type RequirementGroup,
 } from "@monmap/db";
-import { DATABASE_URL } from "@monmap/db/env";
+import { DATABASE_SSL, DATABASE_URL } from "@monmap/db/env";
 import { loadCurriculumOverrides } from "./overrides.ts";
 
 const outFlag = process.argv.indexOf("--out");
@@ -52,7 +52,8 @@ const onlyYear = yearFlag !== -1 ? process.argv[yearFlag + 1] : undefined;
 const overrides = loadCurriculumOverrides();
 
 const db = createDb(DATABASE_URL, {
-  pool: { max: 2, idle_timeout: 0, prepare: false },
+  max: 2,
+  ssl: DATABASE_SSL,
 });
 
 const legacyAuto = (groups: readonly RequirementGroup[]): Set<string> => {

@@ -99,7 +99,7 @@ export function ReviewsClient({
   const pathname = usePathname()
   const session = useSession()
   const hydrated = useHydrated()
-  const userId = session.data?.user?.id
+  const userId = session.user?.macUserId
   const key = userId ? `${userId} ${kind} ${code}` : null
   const [own, setOwn] = useState<Own | null>(null)
   const [editing, setEditing] = useState(false)
@@ -134,12 +134,10 @@ export function ReviewsClient({
     }
   }, [key, kind, code])
 
-  // Better Auth refetches the session when the tab regains focus, and
-  // for a signed-out visitor `isPending` is true again during that
-  // refetch. Remember that the session resolved once, so the sign-in
-  // prompt does not flip back to the skeleton each time.
+  // Remember that the session resolved once, so the sign-in prompt
+  // never flips back to the skeleton.
   const [sessionKnown, setSessionKnown] = useState(false)
-  if (!sessionKnown && !session.isPending) setSessionKnown(true)
+  if (!sessionKnown && session.status !== "loading") setSessionKnown(true)
 
   // Hold the skeleton until hydration, as the header's UserMenu does:
   // the session can resolve before this hydrates, and the first client

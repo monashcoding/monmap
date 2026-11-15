@@ -39,7 +39,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useHydrated } from "@/hooks/use-hydrated"
-import { signOut, useSession } from "@/lib/auth-client"
+import { authClient, useSession } from "@/lib/auth-client"
 import { reviewInitials } from "@/lib/reviews/initials"
 import { cn } from "@/lib/utils"
 
@@ -251,14 +251,15 @@ function checkReviewAdmin(userId: string): Promise<boolean> {
 }
 
 function UserMenu() {
-  const { data, isPending } = useSession()
+  const session = useSession()
+  const isPending = session.status === "loading"
   const router = useRouter()
   const [gradesOpen, setGradesOpen] = useState(false)
   const [admin, setAdmin] = useState<{ userId: string; ok: boolean } | null>(
     null
   )
   const hydrated = useHydrated()
-  const userId = data?.user?.id
+  const userId = session.user?.macUserId
   const isAdmin = admin != null && admin.userId === userId && admin.ok
 
   // Only admins see the moderation link. The server decides; the page
@@ -275,20 +276,13 @@ function UserMenu() {
   }, [userId])
 
   // Hold the skeleton until after hydration, even if the session has
-  // already resolved. Better Auth's `useStore` passes its *live client*
-  // getter as `useSyncExternalStore`'s `getServerSnapshot`, so React
-  // reads current atom state while hydrating rather than a frozen
-  // server value. The session request resolves fast when it fails —
-  // which it always does on localhost, where the shared
-  // `.monashcoding.com` cookie doesn't exist — so it routinely beat
-  // hydration of this page and React found the badge where the server
-  // had written the skeleton. Gating on `hydrated` makes the first
-  // client render match the server unconditionally.
+  // already resolved, so the first client render matches the server's
+  // skeleton unconditionally.
   if (!hydrated || isPending) {
     return <div className="size-8 animate-pulse rounded-full bg-muted" />
   }
 
-  const user = data?.user
+  const user = session.user
   if (!user) {
     return <AnonymousBadge />
   }
@@ -347,12 +341,18 @@ function UserMenu() {
           ) : null}
           <DropdownMenuItem
             onClick={async () => {
-              const { error } = await signOut()
-              if (error) {
-                // e.g. the auth service rejecting this origin. Say so
-                // instead of leaving the student signed in silently.
+              // The auth service can reject this origin, or be
+              // unreachable. The client reports neither, so ask it for
+              // the session again: still signed in means the sign-out
+              // did not happen. Say so instead of leaving the student
+              // signed in silently.
+              const after = await authClient
+                .signOut()
+                .then(() => authClient.refresh())
+                .catch(() => null)
+              if (after?.status !== "signed-out") {
                 toast.error("Couldn't sign out", {
-                  description: error.message ?? "Try again in a moment.",
+                  description: "Try again in a moment.",
                 })
                 return
               }

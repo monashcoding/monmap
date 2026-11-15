@@ -2,7 +2,7 @@ import { readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createDb } from "@monmap/db";
-import { DATABASE_URL } from "@monmap/db/env";
+import { DATABASE_SSL, DATABASE_URL } from "@monmap/db/env";
 import { ingest } from "./ingest.ts";
 
 function parseArgs(argv: readonly string[]): { year: string; allYears: boolean; dataDir: string } {
@@ -24,11 +24,11 @@ function parseArgs(argv: readonly string[]): { year: string; allYears: boolean; 
 }
 
 const args = parseArgs(process.argv.slice(2));
-// Ingest is a long-running CLI doing bulk inserts — opt out of the
-// serverless-tuned defaults from `createDb` and use a larger pool with
-// no idle reaping.
+// Ingest is a long-running CLI doing bulk inserts, on a small pool of
+// its own.
 const db = createDb(DATABASE_URL, {
-  pool: { max: 4, idle_timeout: 0, prepare: false },
+  max: 4,
+  ssl: DATABASE_SSL,
 });
 
 const years = args.allYears
