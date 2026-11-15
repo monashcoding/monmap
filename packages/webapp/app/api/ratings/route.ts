@@ -1,5 +1,7 @@
+import { handleRoute } from "@monashcoding/server"
+
 import { MAX_RATING_CODES, splitCodes } from "@/lib/api/query"
-import { json, RATINGS_CACHE, searchParams } from "@/lib/api/server"
+import { json, RATINGS_CACHE, searchParams, ROUTE_OPTIONS } from "@/lib/api/server"
 import { ratingSummaries } from "@/lib/db/reviews"
 import { isReviewKind } from "@/lib/reviews/axes"
 import { cleanEntityCode } from "@/lib/reviews/input"
@@ -13,7 +15,7 @@ import { cleanEntityCode } from "@/lib/reviews/input"
  */
 export const dynamic = "force-dynamic"
 
-export async function GET(req: Request): Promise<Response> {
+export const GET = handleRoute<unknown>(async function GET(req: Request) {
   const params = searchParams(req)
   const kind = params.get("kind")
   const codes = splitCodes(
@@ -23,4 +25,4 @@ export async function GET(req: Request): Promise<Response> {
   )
   if (!isReviewKind(kind) || codes.length === 0) return json({}, RATINGS_CACHE)
   return json(await ratingSummaries(kind, codes), RATINGS_CACHE)
-}
+}, ROUTE_OPTIONS)

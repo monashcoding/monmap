@@ -1,3 +1,5 @@
+import { handleRoute } from "@monashcoding/server"
+
 import type { RichSearchResult } from "@/lib/api/client"
 import {
   EMPTY_CACHE,
@@ -7,6 +9,7 @@ import {
   NOTHING_HYDRATED,
   plain,
   searchParams,
+  ROUTE_OPTIONS,
 } from "@/lib/api/server"
 import { cleanQuery } from "@/lib/db/input"
 import { searchUnitsRich } from "@/lib/db/queries"
@@ -23,7 +26,7 @@ import { searchUnitsRich } from "@/lib/db/queries"
  */
 export const dynamic = "force-dynamic"
 
-export async function GET(req: Request): Promise<Response> {
+export const GET = handleRoute<unknown>(async function GET(req: Request) {
   const params = searchParams(req)
   const year = await knownYear(params.get("year"))
   const q = cleanQuery(params.get("q"))
@@ -37,4 +40,4 @@ export async function GET(req: Request): Promise<Response> {
     rank: Object.fromEntries(rank),
   }
   return json(body, HANDBOOK_CACHE)
-}
+}, ROUTE_OPTIONS)

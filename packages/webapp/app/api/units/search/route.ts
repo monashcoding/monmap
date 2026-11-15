@@ -1,9 +1,12 @@
+import { handleRoute } from "@monashcoding/server"
+
 import {
   EMPTY_CACHE,
   HANDBOOK_CACHE,
   json,
   knownYear,
   searchParams,
+  ROUTE_OPTIONS,
 } from "@/lib/api/server"
 import { cleanQuery } from "@/lib/db/input"
 import { searchUnits } from "@/lib/db/queries"
@@ -15,10 +18,10 @@ import { searchUnits } from "@/lib/db/queries"
  */
 export const dynamic = "force-dynamic"
 
-export async function GET(req: Request): Promise<Response> {
+export const GET = handleRoute<unknown>(async function GET(req: Request) {
   const params = searchParams(req)
   const year = await knownYear(params.get("year"))
   const q = cleanQuery(params.get("q"))
   if (!year || !q) return json([], EMPTY_CACHE)
   return json(await searchUnits(q, 25, year), HANDBOOK_CACHE)
-}
+}, ROUTE_OPTIONS)

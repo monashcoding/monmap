@@ -1,8 +1,11 @@
+import { handleRoute } from "@monashcoding/server"
+
 import {
   EMPTY_CACHE,
   HANDBOOK_CACHE,
   json,
   searchParams,
+  ROUTE_OPTIONS,
 } from "@/lib/api/server"
 import { cleanTreeControls } from "@/lib/db/input"
 import { listAvailableYears } from "@/lib/db/queries"
@@ -17,7 +20,7 @@ import { EMPTY_TREE_PAYLOAD, prefetchTreeData } from "@/lib/tree/prefetch"
  */
 export const dynamic = "force-dynamic"
 
-export async function GET(req: Request): Promise<Response> {
+export const GET = handleRoute<unknown>(async function GET(req: Request) {
   const params = searchParams(req)
   const controls = cleanTreeControls(
     {
@@ -32,4 +35,4 @@ export async function GET(req: Request): Promise<Response> {
   )
   if (!controls) return json(EMPTY_TREE_PAYLOAD, EMPTY_CACHE)
   return json(await prefetchTreeData(controls), HANDBOOK_CACHE)
-}
+}, ROUTE_OPTIONS)

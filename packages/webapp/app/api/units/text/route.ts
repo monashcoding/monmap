@@ -1,3 +1,5 @@
+import { handleRoute } from "@monashcoding/server"
+
 import { MAX_TEXT_CODES, splitCodes } from "@/lib/api/query"
 import {
   EMPTY_CACHE,
@@ -5,6 +7,7 @@ import {
   json,
   knownYear,
   searchParams,
+  ROUTE_OPTIONS,
 } from "@/lib/api/server"
 import { fetchUnitText } from "@/lib/db/queries"
 
@@ -16,10 +19,10 @@ import { fetchUnitText } from "@/lib/db/queries"
  */
 export const dynamic = "force-dynamic"
 
-export async function GET(req: Request): Promise<Response> {
+export const GET = handleRoute<unknown>(async function GET(req: Request) {
   const params = searchParams(req)
   const year = await knownYear(params.get("year"))
   const codes = splitCodes(params.get("codes"), MAX_TEXT_CODES)
   if (!year || codes.length === 0) return json({}, EMPTY_CACHE)
   return json(await fetchUnitText(codes, year), HANDBOOK_CACHE)
-}
+}, ROUTE_OPTIONS)
