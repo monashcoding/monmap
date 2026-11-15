@@ -1,6 +1,8 @@
 "use server"
 
-import { fetchSessionName, getClaims, getCurrentUser } from "@/lib/auth-server"
+import { getClaims } from "@monashcoding/auth/next"
+
+import { fetchSessionName, getCurrentUser } from "@/lib/auth-server"
 import { listEntityYears } from "@/lib/db/handbook"
 import {
   countRecentReviews,

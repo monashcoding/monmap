@@ -31,8 +31,8 @@ import { useSession } from "@/lib/auth-client"
  * - 2xl and up: the pill with the "On this device only" note too.
  */
 export function AnonymousBadge() {
-  const { data, isPending } = useSession()
-  if (isPending || data?.user) return null
+  const session = useSession()
+  if (session.status !== "signed-out") return null
 
   return (
     <div

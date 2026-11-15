@@ -22,7 +22,7 @@ import {
   saveMyPlanAction,
   type SaveResult,
 } from "@/app/actions"
-import { capture } from "@/lib/analytics"
+import { analytics } from "@/lib/analytics"
 import { fetchPlannerYear, fetchUnits } from "@/lib/api/client"
 import { MAX_PLANS_PER_USER } from "@/lib/db/input"
 import type { PlanSummary } from "@/lib/db/queries"
@@ -813,7 +813,7 @@ export function PlannerProvider({
       if (year === state.courseYear) return
       startCourseTransition(async () => {
         try {
-          capture("handbook_year_switched", {
+          analytics.capture("handbook_year_switched", {
             from_year: state.courseYear,
             to_year: year,
             course_code: state.courseCode,

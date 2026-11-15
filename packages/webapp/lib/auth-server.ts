@@ -1,28 +1,18 @@
 import { cache } from "react"
-import { headers } from "next/headers"
 import { eq } from "drizzle-orm"
 import { user } from "@monmap/db"
+import { getClaims } from "@monashcoding/auth/next"
 
 import { getDb } from "./db/client"
-import {
-  AUTH_URL,
-  type MacClaims,
-  sessionCookieHeader,
-  verifyMacToken,
-} from "./mac-auth"
-
-
-/** After this long without an answer, the visitor counts as anonymous. */
-const AUTH_TIMEOUT_MS = 3000
 
 /**
  * Resolve the current user from the shared MAC session cookie.
  *
- * MonMap no longer mints its own sessions: it forwards the incoming
- * `.monashcoding.com` session cookie to the central service's
- * `/api/auth/token` endpoint, then verifies the returned EdDSA JWT
- * locally against the JWKS (no per-request network beyond the token
- * mint). The canonical identity is `claims.macUserId`, which — because
+ * MonMap does not mint its own sessions: `getClaims()` from
+ * `@monashcoding/auth/next` forwards the incoming `.monashcoding.com`
+ * session cookie to the central service's `/api/auth/token` endpoint,
+ * then verifies the returned EdDSA JWT locally against the JWKS (no
+ * per-request network beyond the token mint). The canonical identity is `claims.macUserId`, which — because
  * MonMap's 405 legacy accounts were migrated with their ids preserved —
  * equals the old Better Auth `user.id`. So every table keyed by
  * `user.id` (`user_plan`, `user_grade`, `review`) stays valid.
@@ -89,37 +79,6 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   }
 })
 
-/**
- * The verified MAC claims for this request, or null for anonymous
- * visitors. No database work, so actions that only need the user's id
- * or email can skip the mirror row.
- */
-export const getClaims = cache(async (): Promise<MacClaims | null> => {
-  const cookie = sessionCookieHeader((await headers()).get("cookie"))
-  if (!cookie) return null
-
-  let token: string | undefined
-  try {
-    const res = await fetch(`${AUTH_URL}/api/auth/token`, {
-      headers: { cookie },
-      // Central mints tokens per session; never cache across requests.
-      cache: "no-store",
-      signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
-    })
-    if (!res.ok) return null // 401 = not signed in
-    token = (await res.json())?.token
-  } catch {
-    return null
-  }
-  if (typeof token !== "string" || !token) return null
-
-  try {
-    return await verifyMacToken(token)
-  } catch {
-    return null
-  }
-})
-
 export interface CurrentUser {
   id: string
   email: string
@@ -129,24 +88,12 @@ export interface CurrentUser {
 }
 
 /**
- * The signed-in user's display name from the central session, or null.
- * The local `user` mirror only holds the email for users who joined
- * after the move to central auth, so code that needs a real name (the
- * initials on a review) asks the central service.
+ * The signed-in user's display name from the MAC token, or null. The
+ * local `user` mirror only holds the email for users who joined after
+ * the move to central auth, so code that needs a real name (the
+ * initials on a review) reads the token's `name` claim.
  */
 export async function fetchSessionName(): Promise<string | null> {
-  const cookie = sessionCookieHeader((await headers()).get("cookie"))
-  if (!cookie) return null
-  try {
-    const res = await fetch(`${AUTH_URL}/api/auth/get-session`, {
-      headers: { cookie },
-      cache: "no-store",
-      signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
-    })
-    if (!res.ok) return null
-    const name = (await res.json())?.user?.name
-    return typeof name === "string" && name.trim() ? name.trim() : null
-  } catch {
-    return null
-  }
+  const name = (await getClaims())?.name.trim()
+  return name || null
 }

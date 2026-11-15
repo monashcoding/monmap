@@ -27,7 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { capture } from "@/lib/analytics"
+import { analytics } from "@/lib/analytics"
 import { fetchRichUnitSearch } from "@/lib/api/client"
 import { canPlaceUnit } from "@/lib/planner/capacity"
 import {
@@ -344,7 +344,7 @@ function UnitSearchView({
       }
       const unit = units.get(code)
       const score = scoreByCode.get(code)
-      capture("unit_added", {
+      analytics.capture("unit_added", {
         unit_code: code,
         unit_title: unit?.title,
         credit_points: unit?.creditPoints,

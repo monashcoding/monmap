@@ -12,7 +12,7 @@ reviews. It is a Next.js app in the monorepo.
 - Analytics: client code sends PostHog events only through
   `lib/analytics.ts` (an eslint rule enforces it), which loads
   posthog-js on demand. Server code sends them only through
-  `captureServer` in `lib/posthog-server.ts`. Neither sends anything
+  `serverAnalytics.capture` in `lib/analytics-server.ts`. Neither sends anything
   outside production, and no event carries an email, a name, a plan
   name or a grade.
 - Page views for the /search sorts are counted in Postgres, not

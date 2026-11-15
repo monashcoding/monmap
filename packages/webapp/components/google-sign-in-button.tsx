@@ -1,8 +1,8 @@
 "use client"
 
-import { capture } from "@/lib/analytics"
+import { analytics } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
-import { signIn } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth-client"
 
 import { GoogleIcon } from "./icons/google"
 
@@ -13,7 +13,7 @@ import { GoogleIcon } from "./icons/google"
  *   subtly darkens), but cannot use it directly because the brand
  *   guidelines pin the surface to white regardless of theme
  *
- * Default action triggers `signIn.social({ provider: "google" })` with
+ * Default action triggers `authClient.signIn("google", ...)` with
  * a configurable callback URL; pass `onClick` to override.
  */
 export function GoogleSignInButton({
@@ -33,7 +33,7 @@ export function GoogleSignInButton({
       onClick={(e) => {
         rest.onClick?.(e)
         if (e.defaultPrevented) return
-        capture("sign_in_initiated", {
+        analytics.capture("sign_in_initiated", {
           provider: "google",
           callback_url: callbackURL,
         })
@@ -45,10 +45,8 @@ export function GoogleSignInButton({
           callbackURL,
           window.location.origin
         ).toString()
-        void signIn.social({
-          provider: "google",
-          callbackURL: absoluteCallback,
-        })
+        // A failed request leaves the student on this page, as before.
+        void authClient.signIn("google", absoluteCallback).catch(() => {})
       }}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-control border border-zinc-300 bg-white text-zinc-800 shadow-sm transition-colors",

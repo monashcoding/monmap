@@ -5,12 +5,11 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // posthog-js loads on demand through lib/analytics.ts. A static import
-  // anywhere else puts the whole library back on every route's first
-  // load.
+  // posthog-js loads on demand inside @monashcoding/analytics
+  // (lib/analytics.ts). A static import in the app puts the whole
+  // library back on every route's first load.
   {
     files: ["**/*.{ts,tsx}"],
-    ignores: ["lib/analytics.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -18,7 +17,7 @@ const eslintConfig = defineConfig([
           paths: [
             {
               name: "posthog-js",
-              message: "Use capture() and friends from @/lib/analytics.",
+              message: "Use analytics.capture() and friends from @/lib/analytics.",
             },
           ],
         },
