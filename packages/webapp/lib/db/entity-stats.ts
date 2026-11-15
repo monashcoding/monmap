@@ -10,7 +10,10 @@
  */
 import { sql, type SQL } from "drizzle-orm"
 
+import { defineJob } from "@monashcoding/server"
+
 import { getDb } from "./client.ts"
+import { logger } from "../log.ts"
 import type { EntityKind } from "../handbook/links.ts"
 import { viewDay } from "../views/visitor.ts"
 
@@ -154,6 +157,16 @@ function arrayOf(value: SQL): SQL {
   return sql`(CASE WHEN jsonb_typeof(${value}) = 'array' THEN ${value} ELSE '[]' END)`
 }
 
+// Never overlaps itself in this process, and logs a failure instead
+// of throwing (CONVENTIONS server.jobs).
+const refreshJob = defineJob({
+  name: "entity-stats-refresh",
+  logger,
+  run: async () => {
+    await refreshEntityStats()
+  },
+})
+
 let nextCheck = 0
 
 /**
@@ -164,7 +177,5 @@ let nextCheck = 0
 export function refreshEntityStatsIfStale(): void {
   if (Date.now() < nextCheck) return
   nextCheck = Date.now() + CHECK_MS
-  refreshEntityStats().catch((err) => {
-    console.error("entity_stats refresh failed", err)
-  })
+  void refreshJob.run()
 }
