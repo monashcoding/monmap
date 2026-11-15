@@ -11,7 +11,7 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
+    "migrate": "node src/migrate.ts",
     "studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "test": "node --test 'src/*.test.ts'"

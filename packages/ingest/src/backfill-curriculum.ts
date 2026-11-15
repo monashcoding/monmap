@@ -32,7 +32,7 @@ import {
   units,
   unitYearLinks,
 } from "@monmap/db";
-import { DATABASE_URL } from "@monmap/db/env";
+import { DATABASE_SSL, DATABASE_URL } from "@monmap/db/env";
 import {
   extractCourseAosRefs,
   extractUnitYearLinks,
@@ -51,7 +51,8 @@ if (yearFlag !== -1 && !/^\d{4}$/.test(onlyYear ?? ""))
 const overrides = loadCurriculumOverrides();
 
 const db = createDb(DATABASE_URL, {
-  pool: { max: 2, idle_timeout: 0, prepare: false },
+  max: 2,
+  ssl: DATABASE_SSL,
 });
 
 const rows = await db
