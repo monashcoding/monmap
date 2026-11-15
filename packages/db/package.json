@@ -17,12 +17,14 @@
     "test": "node --test 'src/*.test.ts'"
   },
   "dependencies": {
+    "@monashcoding/db": "0.2.0",
     "@monmap/scraper": "workspace:*",
     "dotenv": "^18.0.6",
     "drizzle-orm": "0.45.4",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
+    "@monashcoding/tsconfig": "0.2.0",
     "drizzle-kit": "^0.31.11"
   }
 }
