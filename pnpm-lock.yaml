@@ -93,7 +93,7 @@ importers:
         version: 6.3.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@monashcoding/analytics':
         specifier: 0.2.0
-        version: 0.2.0(posthog-js@1.438.3(@types/react@19.3.0)(react@19.3.0))(posthog-node@5.55.1)(react@19.3.0)
+        version: 0.2.0(posthog-js@1.438.3(@types/react@19.3.0)(react@19.3.0))(posthog-node@6.0.5(@opentelemetry/api@1.9.1))(react@19.3.0)
       '@monashcoding/auth':
         specifier: 0.2.0
         version: 0.2.0(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
@@ -140,8 +140,8 @@ importers:
         specifier: ^1.438.3
         version: 1.438.3(@types/react@19.3.0)(react@19.3.0)
       posthog-node:
-        specifier: ^5.55.1
-        version: 5.55.1
+        specifier: ^6.0.5
+        version: 6.0.5(@opentelemetry/api@1.9.1)
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -1344,8 +1344,14 @@ packages:
   '@posthog/core@1.57.3':
     resolution: {integrity: sha512-lag+QZE61kcYSjYN9lKwri6P4/DACOtyRsA41MSI6tdKHbSIyrPfQPkDQiPbq413AMbTXFjcN/N6bqxPhei93Q==}
 
+  '@posthog/core@1.69.2':
+    resolution: {integrity: sha512-toMfPKklwLW+a4ZY3/EzM3GNMVXmk2ylGb8NPJXRH4igXMoI8wgNL2jqXOiglWAXqFBLZGYFN1oQx6LVmUTxTg==}
+
   '@posthog/types@1.415.2':
     resolution: {integrity: sha512-BIIHPyXcPZuNTImrR1qLqLKFw7j9o8co6LG/9OpLtpWJ3RT0y89Lx6VCtd37N9/dkr/qW7y0uPjJxAxjsALHtw==}
+
+  '@posthog/types@1.427.0':
+    resolution: {integrity: sha512-2RPVfuGIx0iys78mTOcfdzN7/w7AM1Ak3yu9++4/FonPf08mwGqDkJjThz2dA/34666ToNw5Q4fZoFdgvfNUHw==}
 
   '@radix-ui/primitive@1.1.7':
     resolution: {integrity: sha512-rqWnm76nYT8HoNNqEjpgJ7Pw/DrBj5iBTrmEPo6HTX5+VJyBNOqTdv4g89G63HuR5g0AaENoAcH7Is5fF2kZ8Q==}
@@ -3131,12 +3137,18 @@ packages:
       react:
         optional: true
 
-  posthog-node@5.55.1:
-    resolution: {integrity: sha512-YLnILmFn1zxGYBuCaBldqMjTq9OZBNNbHIr2F0am3iLfU+6ZTvuRmUbTmys//+LnCA6DfZNGgqTb4goFa93u+Q==}
+  posthog-node@6.0.5:
+    resolution: {integrity: sha512-trvLy4y6I2SDU9DOJ6vVv3n2Gw8Jp1mbbaxSGGsrgO9ihF2l4Mz/AgVVdTSV9DPv7Y+VeQnfpE6I8ipJlAMtzg==}
     engines: {node: ^20.20.0 || >=22.22.0}
     peerDependencies:
+      '@opentelemetry/api': ^1.2.0
+      '@react-email/render': ^2.1.0
       rxjs: ^7.0.0
     peerDependenciesMeta:
+      '@opentelemetry/api':
+        optional: true
+      '@react-email/render':
+        optional: true
       rxjs:
         optional: true
 
@@ -3318,6 +3330,11 @@ packages:
 
   semver@7.8.5:
     resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -4296,10 +4313,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@monashcoding/analytics@0.2.0(posthog-js@1.438.3(@types/react@19.3.0)(react@19.3.0))(posthog-node@5.55.1)(react@19.3.0)':
+  '@monashcoding/analytics@0.2.0(posthog-js@1.438.3(@types/react@19.3.0)(react@19.3.0))(posthog-node@6.0.5(@opentelemetry/api@1.9.1))(react@19.3.0)':
     optionalDependencies:
       posthog-js: 1.438.3(@types/react@19.3.0)(react@19.3.0)
-      posthog-node: 5.55.1
+      posthog-node: 6.0.5(@opentelemetry/api@1.9.1)
       react: 19.3.0
 
   '@monashcoding/auth@0.2.0(next@16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)':
@@ -4457,14 +4474,20 @@ snapshots:
 
   '@posthog/browser-common@0.9.2':
     dependencies:
-      '@posthog/core': 1.57.3
+      '@posthog/core': 1.69.2
       '@posthog/types': 1.415.2
 
   '@posthog/core@1.57.3':
     dependencies:
       '@posthog/types': 1.415.2
 
+  '@posthog/core@1.69.2':
+    dependencies:
+      '@posthog/types': 1.427.0
+
   '@posthog/types@1.415.2': {}
+
+  '@posthog/types@1.427.0': {}
 
   '@radix-ui/primitive@1.1.7': {}
 
@@ -5735,7 +5758,7 @@ snapshots:
       '@petamoriken/float16': 3.9.3
       debug: 4.4.3
       env-paths: 3.0.0
-      semver: 7.8.5
+      semver: 7.8.6
       shell-quote: 1.12.0
       which: 4.0.0
     transitivePeerDependencies:
@@ -6326,9 +6349,11 @@ snapshots:
     transitivePeerDependencies:
       - preact-render-to-string
 
-  posthog-node@5.55.1:
+  posthog-node@6.0.5(@opentelemetry/api@1.9.1):
     dependencies:
-      '@posthog/core': 1.57.3
+      '@posthog/core': 1.69.2
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.1
 
   preact@10.29.8: {}
 
@@ -6453,6 +6478,9 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.8.5: {}
+
+  semver@7.8.6:
+    optional: true
 
   set-function-length@1.2.2:
     dependencies:
