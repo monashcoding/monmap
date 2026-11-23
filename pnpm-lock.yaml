@@ -31,7 +31,7 @@ importers:
     dependencies:
       '@monashcoding/db':
         specifier: 0.2.0
-        version: 0.2.0(drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@3.4.9))(postgres@3.4.9)
+        version: 0.2.0(drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@4.1.1))(postgres@4.1.1)
       '@monmap/scraper':
         specifier: workspace:*
         version: link:../scraper
@@ -40,10 +40,10 @@ importers:
         version: 18.0.6
       drizzle-orm:
         specifier: 0.45.4
-        version: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@3.4.9)
+        version: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@4.1.1)
       postgres:
-        specifier: ^3.4.9
-        version: 3.4.9
+        specifier: ^4.1.1
+        version: 4.1.1
     devDependencies:
       '@monashcoding/tsconfig':
         specifier: 0.2.0
@@ -62,7 +62,7 @@ importers:
         version: link:../scraper
       drizzle-orm:
         specifier: 0.45.4
-        version: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@3.4.9)
+        version: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@4.1.1)
     devDependencies:
       '@monashcoding/tsconfig':
         specifier: 0.2.0
@@ -123,7 +123,7 @@ importers:
         version: 18.0.6
       drizzle-orm:
         specifier: 0.45.4
-        version: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@3.4.9)
+        version: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@4.1.1)
       lucide-react:
         specifier: ^1.53.0
         version: 1.53.0(@types/react@19.3.0)(react@19.3.0)
@@ -134,8 +134,8 @@ importers:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       postgres:
-        specifier: ^3.4.9
-        version: 3.4.9
+        specifier: ^4.1.1
+        version: 4.1.1
       posthog-js:
         specifier: ^1.438.3
         version: 1.438.3(@types/react@19.3.0)(react@19.3.0)
@@ -3116,9 +3116,9 @@ packages:
     resolution: {integrity: sha512-49cGhUbXj8Qenv0iTMxA1cFBzxXoctpC9Ujd77t1WcbJIr6nF/eI7g/8MgxrYldFRuAXvja7xQRwavoW7kgrxQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postgres@3.4.9:
-    resolution: {integrity: sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw==}
-    engines: {node: '>=12'}
+  postgres@4.1.1:
+    resolution: {integrity: sha512-1kJDojqNZC+iTHHXh6eif0J98LUtyLAePe/qkW1GK35eh2JixlsAiIKq3FGI+xqI+SUGTNodzf7TScVeIIyUug==}
+    engines: {node: '>=18'}
 
   posthog-js@1.438.3:
     resolution: {integrity: sha512-3G+Dq/9iUgLMYK6R16Czi4IK+qzWXwqapVvyj65lieRJbO67Y0FDCWnz+1j3Tu9EFJ24Nl2dV+pYVLjI4tp4ZQ==}
@@ -3318,6 +3318,11 @@ packages:
 
   semver@7.8.5:
     resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -4310,10 +4315,10 @@ snapshots:
       next: 16.4.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react: 19.3.0
 
-  '@monashcoding/db@0.2.0(drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@3.4.9))(postgres@3.4.9)':
+  '@monashcoding/db@0.2.0(drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@4.1.1))(postgres@4.1.1)':
     dependencies:
-      drizzle-orm: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@3.4.9)
-      postgres: 3.4.9
+      drizzle-orm: 0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@4.1.1)
+      postgres: 4.1.1
       zod: 4.6.7
 
   '@monashcoding/lint@0.2.0(oxlint@1.93.0)':
@@ -5233,12 +5238,12 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.15
 
-  drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@3.4.9):
+  drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(gel@2.2.0)(kysely@0.29.6)(postgres@4.1.1):
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       gel: 2.2.0
       kysely: 0.29.6
-      postgres: 3.4.9
+      postgres: 4.1.1
 
   dunder-proto@1.0.1:
     dependencies:
@@ -5735,7 +5740,7 @@ snapshots:
       '@petamoriken/float16': 3.9.3
       debug: 4.4.3
       env-paths: 3.0.0
-      semver: 7.8.5
+      semver: 7.8.6
       shell-quote: 1.12.0
       which: 4.0.0
     transitivePeerDependencies:
@@ -6306,7 +6311,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  postgres@3.4.9: {}
+  postgres@4.1.1: {}
 
   posthog-js@1.438.3(@types/react@19.3.0)(react@19.3.0):
     dependencies:
@@ -6453,6 +6458,9 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.8.5: {}
+
+  semver@7.8.6:
+    optional: true
 
   set-function-length@1.2.2:
     dependencies:
