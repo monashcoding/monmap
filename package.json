@@ -25,9 +25,9 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@types/node": "^24.19.1",
+    "@types/node": "^24.19.2",
     "husky": "^9.1.7",
-    "lint-staged": "^17.6.0",
+    "lint-staged": "^17.6.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"
   }
