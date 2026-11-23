@@ -28,7 +28,7 @@
     "@monashcoding/auth": "0.2.0",
     "@monashcoding/server": "0.2.0",
     "@monmap/db": "workspace:*",
-    "@xyflow/react": "^12.12.0",
+    "@xyflow/react": "^13.0.2",
     "boring-avatars": "2.0.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
